@@ -36,16 +36,30 @@ export default function VenderMotoPage() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
-    setForm({ ...form, [name]: type === 'checkbox' ? checked : value })
+    const novoForm: any = { ...form, [name]: type === 'checkbox' ? checked : value }
+
+    if (name === 'valor_total_venda' || name === 'valor_entrada' || name === 'valor_recebido_a_vista') {
+      const total = Number(novoForm.valor_total_venda) || 0
+      const entrada = Number(novoForm.valor_entrada) || 0
+      const aVista = Number(novoForm.valor_recebido_a_vista) || 0
+      const financiado = total - entrada - aVista
+      novoForm.valor_financiado = financiado > 0 ? financiado.toFixed(2) : '0'
+    }
+
+    setForm(novoForm)
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErro('')
 
-    if (!form.customer_id) { setErro('Selecione um cliente.'); return }
+    if (!form.customer_id) {
+      setErro('Selecione um cliente.')
+      return
+    }
     if (!form.valor_total_venda || Number(form.valor_total_venda) <= 0) {
-      setErro('Informe o valor total da venda.'); return
+      setErro('Informe o valor total da venda.')
+      return
     }
 
     setSalvando(true)
@@ -89,12 +103,12 @@ export default function VenderMotoPage() {
         origem: 'venda',
         origem_id: venda.id,
         valor: totalRecebidoAgora,
-        descricao: `Venda referente à moto`,
+        descricao: 'Venda referente à moto',
       })
     }
 
     setSalvando(false)
-    router.push(`/motos/${params.id}`)
+    router.push('/motos/' + params.id)
     router.refresh()
   }
 
@@ -119,18 +133,37 @@ export default function VenderMotoPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelClass}>Data da venda</label><input type="date" name="data_venda" value={form.data_venda} onChange={handleChange} className={inputClass} /></div>
-          <div><label className={labelClass}>Valor total da venda (R$) *</label><input type="number" step="0.01" name="valor_total_venda" value={form.valor_total_venda} onChange={handleChange} className={inputClass} /></div>
+          <div>
+            <label className={labelClass}>Data da venda</label>
+            <input type="date" name="data_venda" value={form.data_venda} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Valor total da venda (R$) *</label>
+            <input type="number" step="0.01" name="valor_total_venda" value={form.valor_total_venda} onChange={handleChange} className={inputClass} />
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <div><label className={labelClass}>Entrada (R$)</label><input type="number" step="0.01" name="valor_entrada" value={form.valor_entrada} onChange={handleChange} className={inputClass} /></div>
-          <div><label className={labelClass}>Recebido à vista (R$)</label><input type="number" step="0.01" name="valor_recebido_a_vista" value={form.valor_recebido_a_vista} onChange={handleChange} className={inputClass} /></div>
-          <div><label className={labelClass}>Valor financiado (R$)</label><input type="number" step="0.01" name="valor_financiado" value={form.valor_financiado} onChange={handleChange} className={inputClass} /></div>
+          <div>
+            <label className={labelClass}>Entrada (R$)</label>
+            <input type="number" step="0.01" name="valor_entrada" value={form.valor_entrada} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Recebido à vista (R$)</label>
+            <input type="number" step="0.01" name="valor_recebido_a_vista" value={form.valor_recebido_a_vista} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Valor financiado (R$)</label>
+            <input type="number" step="0.01" name="valor_financiado" value={form.valor_financiado} readOnly className={inputClass + ' opacity-70 cursor-not-allowed'} />
+            <p className="text-xs text-texto-suave mt-1">Calculado automaticamente</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelClass}>Documentação cobrada (R$)</label><input type="number" step="0.01" name="valor_documentacao" value={form.valor_documentacao} onChange={handleChange} className={inputClass} /></div>
+          <div>
+            <label className={labelClass}>Documentação cobrada (R$)</label>
+            <input type="number" step="0.01" name="valor_documentacao" value={form.valor_documentacao} onChange={handleChange} className={inputClass} />
+          </div>
           <div className="flex items-end pb-3">
             <label className="flex items-center gap-2 text-sm text-texto">
               <input type="checkbox" name="documentacao_entra_no_lucro" checked={form.documentacao_entra_no_lucro} onChange={handleChange} />
@@ -143,21 +176,34 @@ export default function VenderMotoPage() {
           <div>
             <label className={labelClass}>Forma de pagamento</label>
             <select name="forma_pagamento" value={form.forma_pagamento} onChange={handleChange} className={inputClass}>
-              <option>À vista</option><option>Financiado</option><option>Pix</option><option>Cartão</option><option>Misto</option>
+              <option>À vista</option>
+              <option>Financiado</option>
+              <option>Pix</option>
+              <option>Cartão</option>
+              <option>Misto</option>
             </select>
           </div>
-          <div><label className={labelClass}>Financeira</label><input name="financeira" value={form.financeira} onChange={handleChange} className={inputClass} /></div>
-          <div><label className={labelClass}>Nº parcelas</label><input type="number" name="numero_parcelas" value={form.numero_parcelas} onChange={handleChange} className={inputClass} /></div>
+          <div>
+            <label className={labelClass}>Financeira</label>
+            <input name="financeira" value={form.financeira} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Nº parcelas</label>
+            <input type="number" name="numero_parcelas" value={form.numero_parcelas} onChange={handleChange} className={inputClass} />
+          </div>
         </div>
 
-        <div><label className={labelClass}>Observações</label><textarea name="observacoes" value={form.observacoes} onChange={handleChange} className={inputClass} rows={2} /></div>
+        <div>
+          <label className={labelClass}>Observações</label>
+          <textarea name="observacoes" value={form.observacoes} onChange={handleChange} className={inputClass} rows={2} />
+        </div>
 
         {erro && <div className="bg-red-950 border border-red-700 text-red-300 text-sm rounded-lg px-4 py-3">{erro}</div>}
 
         <button type="submit" disabled={salvando} className="bg-dourado hover:bg-dourado-claro text-preto font-semibold rounded-lg px-8 py-3 transition disabled:opacity-60">
           {salvando ? 'Salvando...' : 'Confirmar Venda'}
-        </button>
+         </button>
       </form>
     </div>
   )
-}
+}     
