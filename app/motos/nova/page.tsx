@@ -78,13 +78,11 @@ export default function NovaMotoPage() {
     setSalvando(false)
 
     if (error) {
-      if (error.code === '23505') {
-        setErro('Já existe uma moto cadastrada com essa placa.')
-      } else {
-        setErro('Não foi possível salvar a moto. Tente novamente.')
-      }
-      return
-    }
+  console.error("ERRO AO CADASTRAR MOTO:", error);
+  alert(`Erro ao cadastrar moto: ${error.message}`);
+  setSalvando(false);
+  return;
+}
 
     setSucesso('Moto cadastrada com sucesso!')
     setTimeout(() => {
