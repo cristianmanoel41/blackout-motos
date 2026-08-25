@@ -26,7 +26,6 @@ type StatusMoto =
 
 type FormMoto = {
   data_entrada: string;
-  hora_entrada: string;
   tipo_entrada: TipoEntrada;
 
   marca: string;
@@ -73,24 +72,8 @@ function hoje() {
   return `${ano}-${mes}-${dia}`;
 }
 
-
-function horaAtual() {
-  const data = new Date();
-
-  const hora = String(
-    data.getHours()
-  ).padStart(2, "0");
-
-  const minuto = String(
-    data.getMinutes()
-  ).padStart(2, "0");
-
-  return `${hora}:${minuto}`;
-}
-
 const formInicial: FormMoto = {
   data_entrada: hoje(),
-  hora_entrada: horaAtual(),
   tipo_entrada: "compra_nova",
 
   marca: "",
@@ -197,8 +180,6 @@ export default function NovaMotoPage() {
             "troca",
           data_entrada:
             hoje(),
-          hora_entrada:
-            horaAtual(),
         })
       );
     }
@@ -218,7 +199,6 @@ export default function NovaMotoPage() {
     setForm({
       ...formInicial,
       data_entrada: hoje(),
-      hora_entrada: horaAtual(),
     });
 
     setMotoCriadaId("");
@@ -237,13 +217,6 @@ export default function NovaMotoPage() {
     if (!form.data_entrada) {
       setErro(
         "Informe a data de entrada/compra da moto."
-      );
-      return;
-    }
-
-    if (!form.hora_entrada) {
-      setErro(
-        "Informe a hora de entrada/compra da moto."
       );
       return;
     }
@@ -285,6 +258,129 @@ export default function NovaMotoPage() {
     setSalvando(true);
 
     try {
+      // =====================================================
+      // 1. CADASTRA / ATUALIZA QUEM VENDEU A MOTO EM CLIENTES
+      // =====================================================
+
+      let fornecedorCustomerId: string | null = null;
+
+      const fornecedorNome =
+        form.fornecedor_nome.trim();
+
+      const fornecedorCpf =
+        form.fornecedor_cpf.trim();
+
+      if (fornecedorNome && fornecedorCpf) {
+        const cpfSomenteNumeros =
+          fornecedorCpf.replace(/\D/g, "");
+
+        const {
+          data: clientesExistentes,
+          error: clientesError,
+        } = await supabase
+          .from("customers")
+          .select("id, cpf");
+
+        if (clientesError) {
+          throw clientesError;
+        }
+
+        const clienteExistente =
+          (clientesExistentes || []).find(
+            (cliente) =>
+              (cliente.cpf || "")
+                .replace(/\D/g, "") ===
+              cpfSomenteNumeros
+          );
+
+        const dadosCliente: Record<string, string> = {
+          nome: fornecedorNome,
+          cpf: fornecedorCpf,
+        };
+
+        if (form.fornecedor_telefone.trim()) {
+          dadosCliente.telefone =
+            form.fornecedor_telefone.trim();
+        }
+
+        if (form.fornecedor_rg.trim()) {
+          dadosCliente.rg =
+            form.fornecedor_rg.trim();
+        }
+
+        if (form.fornecedor_rua.trim()) {
+          dadosCliente.rua =
+            form.fornecedor_rua.trim();
+        }
+
+        if (form.fornecedor_numero.trim()) {
+          dadosCliente.numero =
+            form.fornecedor_numero.trim();
+        }
+
+        if (form.fornecedor_bairro.trim()) {
+          dadosCliente.bairro =
+            form.fornecedor_bairro.trim();
+        }
+
+        if (form.fornecedor_cidade.trim()) {
+          dadosCliente.cidade =
+            form.fornecedor_cidade.trim();
+        }
+
+        if (form.fornecedor_estado.trim()) {
+          dadosCliente.estado =
+            form.fornecedor_estado
+              .trim()
+              .toUpperCase();
+        }
+
+        if (form.fornecedor_cep.trim()) {
+          dadosCliente.cep =
+            form.fornecedor_cep.trim();
+        }
+
+        if (clienteExistente) {
+          fornecedorCustomerId =
+            String(clienteExistente.id);
+
+          const { error: atualizarClienteError } =
+            await supabase
+              .from("customers")
+              .update(dadosCliente)
+              .eq("id", fornecedorCustomerId);
+
+          if (atualizarClienteError) {
+            throw atualizarClienteError;
+          }
+        } else {
+          const {
+            data: clienteCriado,
+            error: criarClienteError,
+          } = await supabase
+            .from("customers")
+            .insert(dadosCliente)
+            .select("id")
+            .single();
+
+          if (criarClienteError || !clienteCriado) {
+            throw (
+              criarClienteError ||
+              new Error(
+                "Não foi possível cadastrar quem vendeu a moto em Clientes."
+              )
+            );
+          }
+
+          fornecedorCustomerId =
+            String(clienteCriado.id);
+        }
+      }
+
+      // =====================================================
+      // 2. CADASTRA A MOTO JÁ VINCULADA AO CLIENTE/FORNECEDOR
+      // =====================================================
+
       const {
         data: motoCriada,
         error: motoError,
@@ -293,9 +389,6 @@ export default function NovaMotoPage() {
         .insert({
           data_entrada:
             form.data_entrada,
-
-          hora_entrada:
-            form.hora_entrada,
 
           tipo_entrada:
             form.tipo_entrada,
@@ -406,6 +499,9 @@ export default function NovaMotoPage() {
           fornecedor_cep:
             form.fornecedor_cep.trim() ||
             null,
+
+          fornecedor_customer_id:
+            fornecedorCustomerId,
 
           status: form.status,
 
@@ -528,8 +624,8 @@ export default function NovaMotoPage() {
 
       setMensagem(
         ehEstoqueInicial
-          ? "Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa."
-          : "Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa."
+          ? `Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
+          : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
       );
     } catch (error: any) {
       console.error(error);
@@ -679,20 +775,6 @@ export default function NovaMotoPage() {
                 onChange={(valor) =>
                   atualizarCampo(
                     "data_entrada",
-                    valor
-                  )
-                }
-              />
-
-              <Campo
-                label="Hora de entrada / compra *"
-                type="time"
-                value={
-                  form.hora_entrada
-                }
-                onChange={(valor) =>
-                  atualizarCampo(
-                    "hora_entrada",
                     valor
                   )
                 }
@@ -1179,11 +1261,11 @@ export default function NovaMotoPage() {
             <button
               type="button"
               disabled
-              title="A procuração será ativada quando o modelo Word for configurado."
+              title="Cadastre a moto primeiro para gerar a procuração."
               className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-dourado px-6 py-3 font-semibold text-dourado opacity-40"
             >
               <FileSignature size={18} />
-              Gerar Procuração
+              Gerar Procuração após salvar
             </button>
 
             <button
