@@ -1,31 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
-
-type Moto = {
-  id: string | number;
-  marca?: string;
-  modelo?: string;
-  versao?: string;
-  ano?: string | number;
-  ano_modelo?: string | number;
-  placa?: string;
-  status?: string;
-};
-
-function hoje() {
-  const data = new Date();
-
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
-}
 
 function moeda(valor: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -34,29 +14,36 @@ function moeda(valor: number) {
   }).format(valor || 0);
 }
 
-export default function VendasPage() {
-  const [motos, setMotos] = useState<Moto[]>([]);
-  const [carregandoMotos, setCarregandoMotos] = useState(true);
+export default function EditarVendaPage() {
+  const params = useParams();
+  const router = useRouter();
 
+  const id = params.id as string;
+
+  const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [mensagem, setMensagem] = useState("");
+
   const [erro, setErro] = useState("");
+  const [mensagem, setMensagem] = useState("");
 
-  const [dataVenda, setDataVenda] = useState(hoje());
-  const [motoId, setMotoId] = useState("");
-
+  const [dataVenda, setDataVenda] = useState("");
   const [cliente, setCliente] = useState("");
   const [telefone, setTelefone] = useState("");
   const [vendedor, setVendedor] = useState("");
+
   const [valorVenda, setValorVenda] = useState("");
   const [entrada, setEntrada] = useState("");
-
   const [banco, setBanco] = useState("");
 
-  const [transferenciaCliente, setTransferenciaCliente] = useState("");
-  const [transferenciaLoja, setTransferenciaLoja] = useState("");
+  const [transferenciaCliente, setTransferenciaCliente] =
+    useState("");
+
+  const [transferenciaLoja, setTransferenciaLoja] =
+    useState("");
 
   const [observacoes, setObservacoes] = useState("");
+
+  const [motoNome, setMotoNome] = useState("");
 
   const valorFinanciado = useMemo(() => {
     const venda = Number(valorVenda) || 0;
@@ -65,54 +52,96 @@ export default function VendasPage() {
     return Math.max(venda - valorEntrada, 0);
   }, [valorVenda, entrada]);
 
-  
-    async function carregarMotos() {
-  setCarregandoMotos(true);
+  useEffect(() => {
+    carregarVenda();
+  }, [id]);
 
-  const { data, error } = await supabase
-    .from("motorcycles")
-    .select("*")
-    .eq("status", "disponivel")
-    .order("criado_em", { ascending: false });
+  async function carregarVenda() {
+    setCarregando(true);
+    setErro("");
 
-    if (error) {
+    const { data, error } = await supabase
+      .from("sales")
+      .select(`
+        *,
+        motorcycles (
+          codigo,
+          marca,
+          modelo,
+          versao,
+          ano_modelo,
+          placa
+        )
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
       console.error(error);
+
       setErro(
-        "Não foi possível carregar as motos do estoque. Verifique a tabela motos no Supabase."
+        error?.message ||
+          "Não foi possível carregar os dados da venda."
       );
-      setCarregandoMotos(false);
+
+      setCarregando(false);
       return;
     }
 
-    setMotos(data || []);
-    setCarregandoMotos(false);
+    setDataVenda(data.data_venda || "");
+    setCliente(data.cliente || "");
+    setTelefone(data.telefone || "");
+    setVendedor(data.vendedor || "");
+
+    setValorVenda(
+      String(
+        data.valor_total_venda ??
+          data.valor_venda ??
+          ""
+      )
+    );
+
+    setEntrada(String(data.entrada ?? ""));
+    setBanco(data.banco || "");
+
+    setTransferenciaCliente(
+      String(data.transferencia_cliente ?? "")
+    );
+
+    setTransferenciaLoja(
+      String(data.transferencia_loja ?? "")
+    );
+
+    setObservacoes(data.observacoes || "");
+
+    const moto = data.motorcycles;
+
+    if (moto) {
+      const nome = [
+        moto.codigo,
+        moto.marca,
+        moto.modelo,
+        moto.versao,
+        moto.ano_modelo,
+        moto.placa,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+      setMotoNome(nome);
+    } else {
+      setMotoNome("Moto não encontrada");
+    }
+
+    setCarregando(false);
   }
 
-  useEffect(() => {
-    carregarMotos();
-  }, []);
-
-  function limparFormulario() {
-    setDataVenda(hoje());
-    setMotoId("");
-    setCliente("");
-    setTelefone("");
-    setValorVenda("");
-    setEntrada("");
-    setBanco("");
-    setTransferenciaCliente("");
-    setTransferenciaLoja("");
-    setObservacoes("");
-  }
-
-  async function salvarVenda(event: FormEvent) {
-    event.preventDefault();
-
+  async function salvarAlteracoes() {
     setErro("");
     setMensagem("");
 
-    if (!motoId) {
-      setErro("Selecione a moto vendida.");
+    if (!dataVenda) {
+      setErro("Informe a data da venda.");
       return;
     }
 
@@ -121,93 +150,109 @@ export default function VendasPage() {
       return;
     }
 
+    if (!vendedor) {
+      setErro("Selecione o vendedor.");
+      return;
+    }
+
     if (!valorVenda || Number(valorVenda) <= 0) {
       setErro("Informe o valor da venda.");
       return;
     }
 
+    const confirmar = window.confirm(
+      "Deseja salvar as alterações desta venda?"
+    );
+
+    if (!confirmar) return;
+
     setSalvando(true);
 
-    try {
-      const { error: vendaError } = await supabase.from("sales").insert({
+    const { error } = await supabase
+      .from("sales")
+      .update({
         data_venda: dataVenda,
-        motorcycle_id: motoId,
+
         cliente: cliente.trim(),
         telefone: telefone.trim(),
-        vendedor: vendedor,
+
+        vendedor,
+
         valor_venda: Number(valorVenda) || 0,
-        valor_total_venda: Number(valorVenda) || 0,
+
+        valor_total_venda:
+          Number(valorVenda) || 0,
+
         entrada: Number(entrada) || 0,
+
         valor_financiado: valorFinanciado,
+
         banco: banco.trim(),
-        transferencia_cliente: Number(transferenciaCliente) || 0,
-        transferencia_loja: Number(transferenciaLoja) || 0,
+
+        transferencia_cliente:
+          Number(transferenciaCliente) || 0,
+
+        transferencia_loja:
+          Number(transferenciaLoja) || 0,
+
         observacoes: observacoes.trim(),
-      });
+      })
+      .eq("id", id);
 
-      if (vendaError) {
-        throw vendaError;
-      }
+    if (error) {
+      console.error(error);
 
-      const { error: motoError } = await supabase
-  .from("motorcycles")
-  .update({
-    status: "vendida",
-  })
-  .eq("id", motoId);
+      setErro(
+        `Não foi possível salvar: ${error.message}`
+      );
 
-      if (motoError) {
-        throw motoError;
-      }
-
-      setMensagem("Venda registrada com sucesso!");
-
-      limparFormulario();
-      await carregarMotos();
-    } catch (error: any) {
-  const mensagemErro = [
-    error?.message,
-    error?.details,
-    error?.hint,
-    error?.code ? `Código: ${error.code}` : null,
-  ]
-    .filter(Boolean)
-    .join(" | ");
-
-  setErro(
-    mensagemErro ||
-      "Não foi possível registrar a venda. Erro desconhecido."
-  );
-    } finally {
       setSalvando(false);
+      return;
     }
+
+    setMensagem("Venda atualizada com sucesso!");
+    setSalvando(false);
+
+    setTimeout(() => {
+      router.push("/vendas/historico");
+      router.refresh();
+    }, 1000);
+  }
+
+  if (carregando) {
+    return (
+      <div className="p-6 text-zinc-400">
+        Carregando venda...
+      </div>
+    );
   }
 
   return (
     <main className="min-h-screen bg-[#070707] px-4 py-6 text-white md:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Cabeçalho */}
 
-        <div className="mb-8">
-          <p className="mb-1 text-sm font-semibold uppercase tracking-[0.25em] text-yellow-500">
-            Blackout Motos
-          </p>
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="mb-1 text-sm font-semibold uppercase tracking-[0.25em] text-yellow-500">
+              Blackout Motos
+            </p>
 
-          <h1 className="text-3xl font-bold md:text-4xl">
-            Registrar Venda
-          </h1>
-<Link
-  href="/vendas/historico"
-  className="mt-4 inline-flex rounded-lg border border-yellow-500 px-4 py-2 font-semibold text-yellow-500 transition hover:bg-yellow-500 hover:text-black"
->
-  Ver Todas as Vendas
-</Link>
-          <p className="mt-2 text-sm text-zinc-400">
-            Preencha os dados abaixo para registrar a venda da moto.
-          </p>
+            <h1 className="text-3xl font-bold">
+              Editar Venda
+            </h1>
+
+            <p className="mt-2 text-sm text-zinc-400">
+              Corrija os dados da venda registrada.
+            </p>
+          </div>
+
+          <Link
+            href="/vendas/historico"
+            className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
+          >
+            Voltar ao Histórico
+          </Link>
         </div>
-
-        {/* Mensagens */}
 
         {mensagem && (
           <div className="mb-6 rounded-xl border border-green-700 bg-green-950/40 p-4 text-green-300">
@@ -221,11 +266,7 @@ export default function VendasPage() {
           </div>
         )}
 
-        <form
-          onSubmit={salvarVenda}
-          className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-xl md:p-8"
-        >
-          {/* Venda */}
+        <div className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-xl md:p-8">
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -233,6 +274,7 @@ export default function VendasPage() {
             </h2>
 
             <div className="grid gap-4 md:grid-cols-2">
+
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
                   Data da venda
@@ -241,59 +283,55 @@ export default function VendasPage() {
                 <input
                   type="date"
                   value={dataVenda}
-                  onChange={(e) => setDataVenda(e.target.value)}
+                  onChange={(e) =>
+                    setDataVenda(e.target.value)
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
-                  Moto vendida *
+                  Moto
+                </label>
+
+                <div className="min-h-[50px] rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-300">
+                  {motoNome}
+                </div>
+
+                <p className="mt-2 text-xs text-zinc-500">
+                  A moto da venda não é alterada nesta tela.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Vendedor *
                 </label>
 
                 <select
-                  value={motoId}
-                  onChange={(e) => setMotoId(e.target.value)}
-                  disabled={carregandoMotos}
+                  value={vendedor}
+                  onChange={(e) =>
+                    setVendedor(e.target.value)
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 >
                   <option value="">
-                    {carregandoMotos
-                      ? "Carregando motos..."
-                      : "Selecione a moto"}
+                    Selecione o vendedor
                   </option>
 
-                  {motos.map((moto) => (
-                    <option key={moto.id} value={moto.id}>
-                      {moto.marca || ""} {moto.modelo || ""}{" "}
-                      {moto.versao || ""}
-                      {moto.ano_modelo || moto.ano
-                        ? ` - ${moto.ano_modelo || moto.ano}`
-                        : ""}
-                      {moto.placa ? ` - ${moto.placa}` : ""}
-                    </option>
-                  ))}
+                  <option value="Cristian">
+                    Cristian
+                  </option>
+
+                  <option value="Bruno">
+                    Bruno
+                  </option>
                 </select>
               </div>
-              <div>
-  <label className="mb-2 block text-sm text-zinc-300">
-    Vendedor *
-  </label>
 
-  <select
-    value={vendedor}
-    onChange={(e) => setVendedor(e.target.value)}
-    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-  >
-    <option value="">Selecione o vendedor</option>
-    <option value="Cristian">Cristian</option>
-    <option value="Bruno">Bruno</option>
-  </select>
-</div>
             </div>
           </section>
-
-          {/* Cliente */}
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -301,6 +339,7 @@ export default function VendasPage() {
             </h2>
 
             <div className="grid gap-4 md:grid-cols-2">
+
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
                   Nome do cliente *
@@ -309,8 +348,9 @@ export default function VendasPage() {
                 <input
                   type="text"
                   value={cliente}
-                  onChange={(e) => setCliente(e.target.value)}
-                  placeholder="Nome completo"
+                  onChange={(e) =>
+                    setCliente(e.target.value)
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
               </div>
@@ -321,17 +361,17 @@ export default function VendasPage() {
                 </label>
 
                 <input
-                  type="tel"
+                  type="text"
                   value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  placeholder="(12) 99999-9999"
+                  onChange={(e) =>
+                    setTelefone(e.target.value)
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
               </div>
+
             </div>
           </section>
-
-          {/* Valores */}
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -339,6 +379,7 @@ export default function VendasPage() {
             </h2>
 
             <div className="grid gap-4 md:grid-cols-3">
+
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
                   Valor da venda *
@@ -349,8 +390,9 @@ export default function VendasPage() {
                   step="0.01"
                   min="0"
                   value={valorVenda}
-                  onChange={(e) => setValorVenda(e.target.value)}
-                  placeholder="0,00"
+                  onChange={(e) =>
+                    setValorVenda(e.target.value)
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
               </div>
@@ -365,8 +407,9 @@ export default function VendasPage() {
                   step="0.01"
                   min="0"
                   value={entrada}
-                  onChange={(e) => setEntrada(e.target.value)}
-                  placeholder="0,00"
+                  onChange={(e) =>
+                    setEntrada(e.target.value)
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
               </div>
@@ -380,6 +423,7 @@ export default function VendasPage() {
                   {moeda(valorFinanciado)}
                 </div>
               </div>
+
             </div>
 
             <div className="mt-4">
@@ -390,14 +434,13 @@ export default function VendasPage() {
               <input
                 type="text"
                 value={banco}
-                onChange={(e) => setBanco(e.target.value)}
-                placeholder="Ex.: Banco Pan, Santander..."
+                onChange={(e) =>
+                  setBanco(e.target.value)
+                }
                 className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
               />
             </div>
           </section>
-
-          {/* Transferência */}
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -405,6 +448,7 @@ export default function VendasPage() {
             </h2>
 
             <div className="grid gap-4 md:grid-cols-2">
+
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
                   Transferência paga pelo cliente
@@ -415,14 +459,13 @@ export default function VendasPage() {
                   step="0.01"
                   min="0"
                   value={transferenciaCliente}
-                  onChange={(e) => setTransferenciaCliente(e.target.value)}
-                  placeholder="0,00"
+                  onChange={(e) =>
+                    setTransferenciaCliente(
+                      e.target.value
+                    )
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
-
-                <p className="mt-2 text-xs text-zinc-500">
-                  Use quando o cliente pagar a transferência.
-                </p>
               </div>
 
               <div>
@@ -435,19 +478,17 @@ export default function VendasPage() {
                   step="0.01"
                   min="0"
                   value={transferenciaLoja}
-                  onChange={(e) => setTransferenciaLoja(e.target.value)}
-                  placeholder="0,00"
+                  onChange={(e) =>
+                    setTransferenciaLoja(
+                      e.target.value
+                    )
+                  }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
-
-                <p className="mt-2 text-xs text-zinc-500">
-                  Use quando a loja der a transferência grátis.
-                </p>
               </div>
+
             </div>
           </section>
-
-          {/* Observações */}
 
           <section>
             <label className="mb-2 block text-sm text-zinc-300">
@@ -456,54 +497,77 @@ export default function VendasPage() {
 
             <textarea
               value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
+              onChange={(e) =>
+                setObservacoes(e.target.value)
+              }
               rows={4}
-              placeholder="Informações adicionais da venda..."
               className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
             />
           </section>
 
-          {/* Resumo */}
-
           <section className="rounded-xl border border-zinc-800 bg-black p-5">
             <h3 className="mb-4 font-semibold text-yellow-500">
-              Resumo da Venda
+              Resumo atualizado
             </h3>
 
             <div className="grid gap-3 text-sm md:grid-cols-3">
+
               <div>
-                <p className="text-zinc-500">Valor da venda</p>
+                <p className="text-zinc-500">
+                  Valor da venda
+                </p>
+
                 <p className="mt-1 text-lg font-semibold">
                   {moeda(Number(valorVenda))}
                 </p>
               </div>
 
               <div>
-                <p className="text-zinc-500">Entrada</p>
+                <p className="text-zinc-500">
+                  Entrada
+                </p>
+
                 <p className="mt-1 text-lg font-semibold">
                   {moeda(Number(entrada))}
                 </p>
               </div>
 
               <div>
-                <p className="text-zinc-500">Financiamento</p>
+                <p className="text-zinc-500">
+                  Financiamento
+                </p>
+
                 <p className="mt-1 text-lg font-semibold text-yellow-500">
                   {moeda(valorFinanciado)}
                 </p>
               </div>
+
             </div>
           </section>
 
-          {/* Botão */}
+          <div className="flex flex-col gap-3 md:flex-row">
 
-          <button
-            type="submit"
-            disabled={salvando}
-            className="w-full rounded-xl bg-yellow-500 px-6 py-4 text-base font-bold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {salvando ? "Salvando venda..." : "Registrar Venda"}
-          </button>
-        </form>
+            <button
+              type="button"
+              onClick={salvarAlteracoes}
+              disabled={salvando}
+              className="flex-1 rounded-xl bg-yellow-500 px-6 py-4 font-bold text-black transition hover:bg-yellow-400 disabled:opacity-50"
+            >
+              {salvando
+                ? "Salvando..."
+                : "Salvar Alterações"}
+            </button>
+
+            <Link
+              href="/vendas/historico"
+              className="rounded-xl border border-zinc-700 px-6 py-4 text-center font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
+            >
+              Cancelar
+            </Link>
+
+          </div>
+
+        </div>
       </div>
     </main>
   );
