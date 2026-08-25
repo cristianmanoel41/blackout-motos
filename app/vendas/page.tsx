@@ -46,7 +46,7 @@ export default function VendasPage() {
 
   const [cliente, setCliente] = useState("");
   const [telefone, setTelefone] = useState("");
-
+const [vendedor, setVendedor] = useState("");
   const [valorVenda, setValorVenda] = useState("");
   const [entrada, setEntrada] = useState("");
 
@@ -133,6 +133,7 @@ export default function VendasPage() {
         motorcycle_id: motoId,
         cliente: cliente.trim(),
         telefone: telefone.trim(),
+        vendedor: vendedor,
         valor_venda: Number(valorVenda) || 0,
         valor_total_venda: Number(valorVenda) || 0,
         entrada: Number(entrada) || 0,

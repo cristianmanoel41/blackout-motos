@@ -1,149 +1,308 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+type FormCliente = {
+  nome: string;
+  rg: string;
+  cpf: string;
+  data_nascimento: string;
+  telefone: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+};
+
+const formInicial: FormCliente = {
+  nome: "",
+  rg: "",
+  cpf: "",
+  data_nascimento: "",
+  telefone: "",
+  rua: "",
+  numero: "",
+  bairro: "",
+  cidade: "",
+  estado: "",
+  cep: "",
+};
 
 export default function NovoClientePage() {
-  const router = useRouter()
-  const supabase = createClient()
-  const [erro, setErro] = useState('')
-  const [salvando, setSalvando] = useState(false)
+  const router = useRouter();
+  const supabase = createClient();
 
-  const [form, setForm] = useState({
-    nome: '',
-    cpf: '',
-    rg: '',
-    data_nascimento: '',
-    telefone: '',
-    whatsapp: '',
-    email: '',
-    cep: '',
-    endereco: '',
-    numero: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    observacoes: '',
-  })
+  const [form, setForm] = useState<FormCliente>(formInicial);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  function atualizarCampo(
+    campo: keyof FormCliente,
+    valor: string
+  ) {
+    setForm((anterior) => ({
+      ...anterior,
+      [campo]: valor,
+    }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setErro('')
-    if (!form.nome) {
-      setErro('O nome é obrigatório.')
-      return
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+
+    setErro("");
+
+    if (!form.nome.trim()) {
+      setErro("Informe o nome completo do cliente.");
+      return;
     }
-    setSalvando(true)
-    const { error } = await supabase.from('customers').insert({
-      ...form,
-      cpf: form.cpf || null,
-      data_nascimento: form.data_nascimento || null,
-    })
-    setSalvando(false)
+
+    setSalvando(true);
+
+    const { error } = await supabase
+      .from("customers")
+      .insert({
+        nome: form.nome.trim(),
+        rg: form.rg.trim() || null,
+        cpf: form.cpf.trim() || null,
+        data_nascimento: form.data_nascimento || null,
+        telefone: form.telefone.trim() || null,
+        rua: form.rua.trim() || null,
+        numero: form.numero.trim() || null,
+        bairro: form.bairro.trim() || null,
+        cidade: form.cidade.trim() || null,
+        estado: form.estado.trim() || null,
+        cep: form.cep.trim() || null,
+      });
+
     if (error) {
-      setErro(error.code === '23505' ? 'Já existe um cliente com esse CPF.' : 'Erro ao salvar cliente.')
-      return
+      console.error(error);
+
+      if (error.code === "23505") {
+        setErro("Já existe um cliente cadastrado com esse CPF.");
+      } else {
+        setErro(`Erro ao cadastrar cliente: ${error.message}`);
+      }
+
+      setSalvando(false);
+      return;
     }
-    router.push('/clientes')
-    router.refresh()
+
+    router.push("/clientes");
+    router.refresh();
   }
 
-  const inputClass = 'w-full rounded-lg bg-grafite-claro border border-grafite-claro text-texto px-4 py-3 outline-none focus:border-dourado transition'
-  const labelClass = 'block text-sm font-medium text-texto mb-1'
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-dourado mb-6">Novo Cliente</h1>
-      <form onSubmit={handleSubmit} className="space-y-4 bg-grafite border border-grafite-claro rounded-xl p-5">
-        <div>
-          <label className={labelClass}>Nome *</label>
-          <input name="nome" value={form.nome} onChange={handleChange} className={inputClass} />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>CPF</label>
-            <input name="cpf" value={form.cpf} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>RG</label>
-            <input name="rg" value={form.rg} onChange={handleChange} className={inputClass} />
-          </div>
-        </div>
+    <main className="min-h-screen bg-preto text-texto">
+      <div className="mx-auto max-w-5xl p-4 md:p-8">
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Data de nascimento</label>
-            <input type="date" name="data_nascimento" value={form.data_nascimento} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>E-mail</label>
-            <input name="email" value={form.email} onChange={handleChange} className={inputClass} />
-          </div>
-        </div>
+        <div className="mb-8">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-dourado">
+            BLACKOUT MOTOS
+          </p>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Telefone</label>
-            <input name="telefone" value={form.telefone} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>WhatsApp</label>
-            <input name="whatsapp" value={form.whatsapp} onChange={handleChange} className={inputClass} />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>Endereço</label>
-          <input name="endereco" value={form.endereco} onChange={handleChange} className={inputClass} />
-        </div>
+          <h1 className="mt-2 text-3xl font-bold text-white">
+            Novo Cliente
+          </h1>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className={labelClass}>Número</label>
-            <input name="numero" value={form.numero} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Bairro</label>
-            <input name="bairro" value={form.bairro} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>CEP</label>
-            <input name="cep" value={form.cep} onChange={handleChange} className={inputClass} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Cidade</label>
-            <input name="cidade" value={form.cidade} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Estado</label>
-            <input name="estado" value={form.estado} onChange={handleChange} className={inputClass} />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>Observações</label>
-          <textarea name="observacoes" value={form.observacoes} onChange={handleChange} className={inputClass} rows={3} />
+          <p className="mt-2 text-sm text-texto-suave">
+            Preencha os dados completos do cliente.
+          </p>
         </div>
 
         {erro && (
-          <div className="bg-red-950 border border-red-700 text-red-300 text-sm rounded-lg px-4 py-3">
+          <div className="mb-6 rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
             {erro}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={salvando}
-          className="bg-dourado hover:bg-dourado-claro text-preto font-semibold rounded-lg px-8 py-3 transition disabled:opacity-60"
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8"
         >
-          {salvando ? 'Salvando...' : 'Cadastrar Cliente'}
-        </button>
-      </form>
+
+          <section>
+            <h2 className="mb-5 border-b border-grafite-claro pb-3 text-lg font-semibold text-dourado">
+              Dados Pessoais
+            </h2>
+
+            <div className="grid gap-5 md:grid-cols-2">
+
+              <Campo
+                label="Nome completo *"
+                value={form.nome}
+                onChange={(valor) =>
+                  atualizarCampo("nome", valor)
+                }
+                placeholder="Nome completo"
+              />
+
+              <Campo
+                label="RG"
+                value={form.rg}
+                onChange={(valor) =>
+                  atualizarCampo("rg", valor)
+                }
+                placeholder="RG"
+              />
+
+              <Campo
+                label="CPF"
+                value={form.cpf}
+                onChange={(valor) =>
+                  atualizarCampo("cpf", valor)
+                }
+                placeholder="000.000.000-00"
+              />
+
+              <Campo
+                label="Data de nascimento"
+                value={form.data_nascimento}
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "data_nascimento",
+                    valor
+                  )
+                }
+                type="date"
+              />
+
+              <Campo
+                label="Telefone / WhatsApp"
+                value={form.telefone}
+                onChange={(valor) =>
+                  atualizarCampo("telefone", valor)
+                }
+                placeholder="(12) 99999-9999"
+              />
+
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-5 border-b border-grafite-claro pb-3 text-lg font-semibold text-dourado">
+              Endereço
+            </h2>
+
+            <div className="grid gap-5 md:grid-cols-2">
+
+              <Campo
+                label="CEP"
+                value={form.cep}
+                onChange={(valor) =>
+                  atualizarCampo("cep", valor)
+                }
+                placeholder="00000-000"
+              />
+
+              <Campo
+                label="Rua"
+                value={form.rua}
+                onChange={(valor) =>
+                  atualizarCampo("rua", valor)
+                }
+                placeholder="Nome da rua"
+              />
+
+              <Campo
+                label="Número"
+                value={form.numero}
+                onChange={(valor) =>
+                  atualizarCampo("numero", valor)
+                }
+                placeholder="Número"
+              />
+
+              <Campo
+                label="Bairro"
+                value={form.bairro}
+                onChange={(valor) =>
+                  atualizarCampo("bairro", valor)
+                }
+                placeholder="Bairro"
+              />
+
+              <Campo
+                label="Cidade"
+                value={form.cidade}
+                onChange={(valor) =>
+                  atualizarCampo("cidade", valor)
+                }
+                placeholder="Cidade"
+              />
+
+              <Campo
+                label="Estado"
+                value={form.estado}
+                onChange={(valor) =>
+                  atualizarCampo("estado", valor)
+                }
+                placeholder="SP"
+              />
+
+            </div>
+          </section>
+
+          <div className="flex flex-col-reverse gap-3 md:flex-row md:justify-end">
+
+            <button
+              type="button"
+              onClick={() => router.push("/clientes")}
+              className="rounded-xl border border-grafite-claro px-6 py-3 font-semibold text-texto hover:border-dourado"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              disabled={salvando}
+              className="rounded-xl bg-dourado px-6 py-3 font-bold text-preto transition hover:bg-dourado-claro disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {salvando
+                ? "Salvando..."
+                : "Cadastrar Cliente"}
+            </button>
+
+          </div>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+type CampoProps = {
+  label: string;
+  value: string;
+  onChange: (valor: string) => void;
+  placeholder?: string;
+  type?: string;
+};
+
+function Campo({
+  label,
+  value,
+  onChange,
+  placeholder = "",
+  type = "text",
+}: CampoProps) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-texto-suave">
+        {label}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(e) =>
+          onChange(e.target.value)
+        }
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
+      />
     </div>
-  )
+  );
 }

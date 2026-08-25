@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -69,18 +70,26 @@ export default function Sidebar() {
           ${aberto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
         `}
       >
-        <div className="flex items-center justify-between px-6 py-6 border-b border-grafite-claro">
-          <h1 className="text-xl font-bold text-dourado tracking-wide">
-            BLACKOUT MOTOS
-          </h1>
-          <button
-            onClick={() => setAberto(false)}
-            className="md:hidden text-texto-suave"
-            aria-label="Fechar menu"
-          >
-            <X size={22} />
-          </button>
-        </div>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-grafite-claro">
+  <div className="flex items-center gap-3">
+    <Image
+      src="/logo-blackout.png"
+      alt="Blackout Motos"
+      width={120}
+      height={120}
+      priority
+      className="h-auto w-28 object-contain"
+    />
+  </div>
+
+  <button
+    onClick={() => setAberto(false)}
+    className="md:hidden text-texto-suave"
+    aria-label="Fechar menu"
+  >
+    <X size={22} />
+  </button>
+</div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {menuItems.map((item) => {
