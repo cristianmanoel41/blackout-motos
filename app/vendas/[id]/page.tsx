@@ -1,17 +1,38 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
+
 import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
+const formasPagamento = [
+  "Pix",
+  "Dinheiro",
+  "Transferência",
+  "Cartão",
+  "Financiamento",
+];
+
 function moeda(valor: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(valor || 0);
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL",
+    }
+  ).format(valor || 0);
 }
 
 export default function EditarVendaPage() {
@@ -20,37 +41,87 @@ export default function EditarVendaPage() {
 
   const id = params.id as string;
 
-  const [carregando, setCarregando] = useState(true);
-  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] =
+    useState(true);
 
-  const [erro, setErro] = useState("");
-  const [mensagem, setMensagem] = useState("");
+  const [salvando, setSalvando] =
+    useState(false);
 
-  const [dataVenda, setDataVenda] = useState("");
-  const [cliente, setCliente] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [vendedor, setVendedor] = useState("");
-
-  const [valorVenda, setValorVenda] = useState("");
-  const [entrada, setEntrada] = useState("");
-  const [banco, setBanco] = useState("");
-
-  const [transferenciaCliente, setTransferenciaCliente] =
+  const [erro, setErro] =
     useState("");
 
-  const [transferenciaLoja, setTransferenciaLoja] =
+  const [mensagem, setMensagem] =
     useState("");
 
-  const [observacoes, setObservacoes] = useState("");
+  const [dataVenda, setDataVenda] =
+    useState("");
 
-  const [motoNome, setMotoNome] = useState("");
+  const [cliente, setCliente] =
+    useState("");
 
-  const valorFinanciado = useMemo(() => {
-    const venda = Number(valorVenda) || 0;
-    const valorEntrada = Number(entrada) || 0;
+  const [telefone, setTelefone] =
+    useState("");
 
-    return Math.max(venda - valorEntrada, 0);
-  }, [valorVenda, entrada]);
+  const [vendedor, setVendedor] =
+    useState("");
+
+  const [
+    formaPagamento,
+    setFormaPagamento,
+  ] = useState("");
+
+  const [valorVenda, setValorVenda] =
+    useState("");
+
+  const [entrada, setEntrada] =
+    useState("");
+
+  const [banco, setBanco] =
+    useState("");
+
+  const [
+    transferenciaCliente,
+    setTransferenciaCliente,
+  ] = useState("");
+
+  const [
+    transferenciaLoja,
+    setTransferenciaLoja,
+  ] = useState("");
+
+  const [
+    observacoes,
+    setObservacoes,
+  ] = useState("");
+
+  const [motoNome, setMotoNome] =
+    useState("");
+
+  const ehFinanciamento =
+    formaPagamento ===
+    "Financiamento";
+
+  const valorFinanciado =
+    useMemo(() => {
+      if (!ehFinanciamento) {
+        return 0;
+      }
+
+      const venda =
+        Number(valorVenda) || 0;
+
+      const valorEntrada =
+        Number(entrada) || 0;
+
+      return Math.max(
+        venda - valorEntrada,
+        0
+      );
+    }, [
+      valorVenda,
+      entrada,
+      ehFinanciamento,
+    ]);
 
   useEffect(() => {
     carregarVenda();
@@ -60,21 +131,22 @@ export default function EditarVendaPage() {
     setCarregando(true);
     setErro("");
 
-    const { data, error } = await supabase
-      .from("sales")
-      .select(`
-        *,
-        motorcycles (
-          codigo,
-          marca,
-          modelo,
-          versao,
-          ano_modelo,
-          placa
-        )
-      `)
-      .eq("id", id)
-      .single();
+    const { data, error } =
+      await supabase
+        .from("sales")
+        .select(`
+          *,
+          motorcycles (
+            codigo,
+            marca,
+            modelo,
+            versao,
+            ano_modelo,
+            placa
+          )
+        `)
+        .eq("id", id)
+        .single();
 
     if (error || !data) {
       console.error(error);
@@ -88,10 +160,31 @@ export default function EditarVendaPage() {
       return;
     }
 
-    setDataVenda(data.data_venda || "");
-    setCliente(data.cliente || "");
-    setTelefone(data.telefone || "");
-    setVendedor(data.vendedor || "");
+    setDataVenda(
+      data.data_venda || ""
+    );
+
+    setCliente(
+      data.cliente || ""
+    );
+
+    setTelefone(
+      data.telefone || ""
+    );
+
+    setVendedor(
+      data.vendedor || ""
+    );
+
+    // Vendas antigas podem não ter forma de pagamento
+    setFormaPagamento(
+      data.forma_pagamento ||
+        (Number(
+          data.valor_financiado
+        ) > 0
+          ? "Financiamento"
+          : "")
+    );
 
     setValorVenda(
       String(
@@ -101,36 +194,54 @@ export default function EditarVendaPage() {
       )
     );
 
-    setEntrada(String(data.entrada ?? ""));
-    setBanco(data.banco || "");
+    setEntrada(
+      String(
+        data.entrada ?? ""
+      )
+    );
+
+    setBanco(
+      data.banco || ""
+    );
 
     setTransferenciaCliente(
-      String(data.transferencia_cliente ?? "")
+      String(
+        data.transferencia_cliente ??
+          ""
+      )
     );
 
     setTransferenciaLoja(
-      String(data.transferencia_loja ?? "")
+      String(
+        data.transferencia_loja ??
+          ""
+      )
     );
 
-    setObservacoes(data.observacoes || "");
+    setObservacoes(
+      data.observacoes || ""
+    );
 
-    const moto = data.motorcycles;
+    const moto =
+      data.motorcycles;
 
     if (moto) {
-      const nome = [
-        moto.codigo,
-        moto.marca,
-        moto.modelo,
-        moto.versao,
-        moto.ano_modelo,
-        moto.placa,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-
-      setMotoNome(nome);
+      setMotoNome(
+        [
+          moto.codigo,
+          moto.marca,
+          moto.modelo,
+          moto.versao,
+          moto.ano_modelo,
+          moto.placa,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      );
     } else {
-      setMotoNome("Moto não encontrada");
+      setMotoNome(
+        "Moto não encontrada"
+      );
     }
 
     setCarregando(false);
@@ -141,63 +252,130 @@ export default function EditarVendaPage() {
     setMensagem("");
 
     if (!dataVenda) {
-      setErro("Informe a data da venda.");
+      setErro(
+        "Informe a data da venda."
+      );
       return;
     }
 
     if (!cliente.trim()) {
-      setErro("Informe o nome do cliente.");
+      setErro(
+        "Informe o nome do cliente."
+      );
       return;
     }
 
     if (!vendedor) {
-      setErro("Selecione o vendedor.");
+      setErro(
+        "Selecione o vendedor."
+      );
       return;
     }
 
-    if (!valorVenda || Number(valorVenda) <= 0) {
-      setErro("Informe o valor da venda.");
+    if (!formaPagamento) {
+      setErro(
+        "Selecione a forma de pagamento."
+      );
       return;
     }
 
-    const confirmar = window.confirm(
-      "Deseja salvar as alterações desta venda?"
-    );
+    if (
+      !valorVenda ||
+      Number(valorVenda) <= 0
+    ) {
+      setErro(
+        "Informe o valor da venda."
+      );
+      return;
+    }
+
+    if (
+      ehFinanciamento &&
+      Number(entrada || 0) >
+        Number(valorVenda)
+    ) {
+      setErro(
+        "A entrada não pode ser maior que o valor da venda."
+      );
+      return;
+    }
+
+    if (
+      ehFinanciamento &&
+      !banco.trim()
+    ) {
+      setErro(
+        "Informe o banco ou financeira."
+      );
+      return;
+    }
+
+    const confirmar =
+      window.confirm(
+        "Deseja salvar as alterações desta venda?"
+      );
 
     if (!confirmar) return;
 
     setSalvando(true);
 
-    const { error } = await supabase
-      .from("sales")
-      .update({
-        data_venda: dataVenda,
+    const valorVendaNumero =
+      Number(valorVenda) || 0;
 
-        cliente: cliente.trim(),
-        telefone: telefone.trim(),
+    const entradaFinal =
+      ehFinanciamento
+        ? Number(entrada) || 0
+        : valorVendaNumero;
 
-        vendedor,
+    const { error } =
+      await supabase
+        .from("sales")
+        .update({
+          data_venda:
+            dataVenda,
 
-        valor_venda: Number(valorVenda) || 0,
+          cliente:
+            cliente.trim(),
 
-        valor_total_venda:
-          Number(valorVenda) || 0,
+          telefone:
+            telefone.trim(),
 
-        entrada: Number(entrada) || 0,
+          vendedor,
 
-        valor_financiado: valorFinanciado,
+          forma_pagamento:
+            formaPagamento,
 
-        banco: banco.trim(),
+          valor_venda:
+            valorVendaNumero,
 
-        transferencia_cliente:
-          Number(transferenciaCliente) || 0,
+          valor_total_venda:
+            valorVendaNumero,
 
-        transferencia_loja:
-          Number(transferenciaLoja) || 0,
+          entrada:
+            entradaFinal,
 
-        observacoes: observacoes.trim(),
-      })
-      .eq("id", id);
+          valor_financiado:
+            valorFinanciado,
+
+          banco:
+            ehFinanciamento
+              ? banco.trim()
+              : null,
+
+          transferencia_cliente:
+            Number(
+              transferenciaCliente
+            ) || 0,
+
+          transferencia_loja:
+            Number(
+              transferenciaLoja
+            ) || 0,
+
+          observacoes:
+            observacoes.trim(),
+        })
+        .eq("id", id);
 
     if (error) {
       console.error(error);
@@ -210,13 +388,19 @@ export default function EditarVendaPage() {
       return;
     }
 
-    setMensagem("Venda atualizada com sucesso!");
+    setMensagem(
+      "Venda atualizada com sucesso!"
+    );
+
     setSalvando(false);
 
     setTimeout(() => {
-      router.push("/vendas/historico");
+      router.push(
+        "/vendas/historico"
+      );
+
       router.refresh();
-    }, 1000);
+    }, 800);
   }
 
   if (carregando) {
@@ -230,6 +414,8 @@ export default function EditarVendaPage() {
   return (
     <main className="min-h-screen bg-[#070707] px-4 py-6 text-white md:px-8">
       <div className="mx-auto max-w-5xl">
+
+        {/* CABEÇALHO */}
 
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -266,7 +452,9 @@ export default function EditarVendaPage() {
           </div>
         )}
 
-        <div className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-xl md:p-8">
+        <div className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 md:p-8">
+
+          {/* DADOS */}
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -284,7 +472,9 @@ export default function EditarVendaPage() {
                   type="date"
                   value={dataVenda}
                   onChange={(e) =>
-                    setDataVenda(e.target.value)
+                    setDataVenda(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
@@ -298,10 +488,6 @@ export default function EditarVendaPage() {
                 <div className="min-h-[50px] rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-300">
                   {motoNome}
                 </div>
-
-                <p className="mt-2 text-xs text-zinc-500">
-                  A moto da venda não é alterada nesta tela.
-                </p>
               </div>
 
               <div>
@@ -312,12 +498,14 @@ export default function EditarVendaPage() {
                 <select
                   value={vendedor}
                   onChange={(e) =>
-                    setVendedor(e.target.value)
+                    setVendedor(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 >
                   <option value="">
-                    Selecione o vendedor
+                    Selecione
                   </option>
 
                   <option value="Cristian">
@@ -330,8 +518,53 @@ export default function EditarVendaPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Forma de pagamento *
+                </label>
+
+                <select
+                  value={
+                    formaPagamento
+                  }
+                  onChange={(e) => {
+                    const forma =
+                      e.target.value;
+
+                    setFormaPagamento(
+                      forma
+                    );
+
+                    if (
+                      forma !==
+                      "Financiamento"
+                    ) {
+                      setBanco("");
+                    }
+                  }}
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                >
+                  <option value="">
+                    Selecione
+                  </option>
+
+                  {formasPagamento.map(
+                    (forma) => (
+                      <option
+                        key={forma}
+                        value={forma}
+                      >
+                        {forma}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
             </div>
           </section>
+
+          {/* CLIENTE */}
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -349,7 +582,9 @@ export default function EditarVendaPage() {
                   type="text"
                   value={cliente}
                   onChange={(e) =>
-                    setCliente(e.target.value)
+                    setCliente(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
@@ -364,7 +599,9 @@ export default function EditarVendaPage() {
                   type="text"
                   value={telefone}
                   onChange={(e) =>
-                    setTelefone(e.target.value)
+                    setTelefone(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
@@ -373,12 +610,20 @@ export default function EditarVendaPage() {
             </div>
           </section>
 
+          {/* VALORES */}
+
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
               Valores
             </h2>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div
+              className={`grid gap-4 ${
+                ehFinanciamento
+                  ? "md:grid-cols-3"
+                  : "md:grid-cols-2"
+              }`}
+            >
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
@@ -391,28 +636,34 @@ export default function EditarVendaPage() {
                   min="0"
                   value={valorVenda}
                   onChange={(e) =>
-                    setValorVenda(e.target.value)
+                    setValorVenda(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm text-zinc-300">
-                  Entrada
-                </label>
+              {ehFinanciamento && (
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Entrada
+                  </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={entrada}
-                  onChange={(e) =>
-                    setEntrada(e.target.value)
-                  }
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                />
-              </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={entrada}
+                    onChange={(e) =>
+                      setEntrada(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
@@ -420,27 +671,47 @@ export default function EditarVendaPage() {
                 </label>
 
                 <div className="flex min-h-[50px] items-center rounded-xl border border-yellow-600/50 bg-yellow-500/10 px-4 py-3 text-lg font-bold text-yellow-500">
-                  {moeda(valorFinanciado)}
+                  {moeda(
+                    valorFinanciado
+                  )}
                 </div>
               </div>
 
             </div>
 
-            <div className="mt-4">
-              <label className="mb-2 block text-sm text-zinc-300">
-                Banco / Financeira
-              </label>
+            {ehFinanciamento && (
+              <div className="mt-4">
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Banco / Financeira *
+                </label>
 
-              <input
-                type="text"
-                value={banco}
-                onChange={(e) =>
-                  setBanco(e.target.value)
-                }
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-              />
-            </div>
+                <input
+                  type="text"
+                  value={banco}
+                  onChange={(e) =>
+                    setBanco(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                />
+              </div>
+            )}
+
+            {!ehFinanciamento &&
+              formaPagamento && (
+                <div className="mt-4 rounded-xl border border-green-800 bg-green-950/20 p-4 text-sm text-green-300">
+                  Venda à vista por{" "}
+                  <strong>
+                    {formaPagamento}
+                  </strong>
+                  . Valor financiado será
+                  R$ 0,00.
+                </div>
+              )}
           </section>
+
+          {/* TRANSFERÊNCIA */}
 
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
@@ -451,14 +722,16 @@ export default function EditarVendaPage() {
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
-                  Transferência paga pelo cliente
+                  Paga pelo cliente
                 </label>
 
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  value={transferenciaCliente}
+                  value={
+                    transferenciaCliente
+                  }
                   onChange={(e) =>
                     setTransferenciaCliente(
                       e.target.value
@@ -470,14 +743,16 @@ export default function EditarVendaPage() {
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
-                  Transferência paga pela loja
+                  Paga pela loja
                 </label>
 
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  value={transferenciaLoja}
+                  value={
+                    transferenciaLoja
+                  }
                   onChange={(e) =>
                     setTransferenciaLoja(
                       e.target.value
@@ -498,50 +773,75 @@ export default function EditarVendaPage() {
             <textarea
               value={observacoes}
               onChange={(e) =>
-                setObservacoes(e.target.value)
+                setObservacoes(
+                  e.target.value
+                )
               }
               rows={4}
               className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
             />
           </section>
 
+          {/* RESUMO */}
+
           <section className="rounded-xl border border-zinc-800 bg-black p-5">
             <h3 className="mb-4 font-semibold text-yellow-500">
-              Resumo atualizado
+              Resumo Atualizado
             </h3>
 
-            <div className="grid gap-3 text-sm md:grid-cols-3">
-
+            <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <p className="text-zinc-500">
-                  Valor da venda
+                <p className="text-xs text-zinc-500">
+                  Pagamento
                 </p>
 
-                <p className="mt-1 text-lg font-semibold">
-                  {moeda(Number(valorVenda))}
+                <p className="mt-1 font-semibold">
+                  {formaPagamento ||
+                    "-"}
                 </p>
               </div>
 
               <div>
-                <p className="text-zinc-500">
-                  Entrada
+                <p className="text-xs text-zinc-500">
+                  Venda
                 </p>
 
-                <p className="mt-1 text-lg font-semibold">
-                  {moeda(Number(entrada))}
+                <p className="mt-1 font-semibold">
+                  {moeda(
+                    Number(valorVenda)
+                  )}
                 </p>
               </div>
 
               <div>
-                <p className="text-zinc-500">
-                  Financiamento
+                <p className="text-xs text-zinc-500">
+                  Recebido / Entrada
                 </p>
 
-                <p className="mt-1 text-lg font-semibold text-yellow-500">
-                  {moeda(valorFinanciado)}
+                <p className="mt-1 font-semibold">
+                  {moeda(
+                    ehFinanciamento
+                      ? Number(
+                          entrada
+                        )
+                      : Number(
+                          valorVenda
+                        )
+                  )}
                 </p>
               </div>
 
+              <div>
+                <p className="text-xs text-zinc-500">
+                  Financiado
+                </p>
+
+                <p className="mt-1 font-semibold text-yellow-500">
+                  {moeda(
+                    valorFinanciado
+                  )}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -549,7 +849,9 @@ export default function EditarVendaPage() {
 
             <button
               type="button"
-              onClick={salvarAlteracoes}
+              onClick={
+                salvarAlteracoes
+              }
               disabled={salvando}
               className="flex-1 rounded-xl bg-yellow-500 px-6 py-4 font-bold text-black transition hover:bg-yellow-400 disabled:opacity-50"
             >
@@ -560,7 +862,7 @@ export default function EditarVendaPage() {
 
             <Link
               href="/vendas/historico"
-              className="rounded-xl border border-zinc-700 px-6 py-4 text-center font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
+              className="rounded-xl border border-zinc-700 px-6 py-4 text-center font-semibold text-zinc-300"
             >
               Cancelar
             </Link>

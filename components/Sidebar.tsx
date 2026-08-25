@@ -1,131 +1,210 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Warehouse,
-  PlusCircle,
+  Bike,
   ShoppingCart,
   Users,
   Wrench,
   Receipt,
   Wallet,
-  FileBarChart,
+  BarChart3,
   Settings,
+  LogOut,
   Menu,
   X,
-  LogOut,
-} from 'lucide-react'
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
-const menuItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Estoque', href: '/estoque', icon: Warehouse },
-  { label: 'Cadastrar Moto', href: '/motos/nova', icon: PlusCircle },
-  { label: 'Vendas', href: '/vendas', icon: ShoppingCart },
-  { label: 'Clientes', href: '/clientes', icon: Users },
-  { label: 'Gastos das Motos', href: '/gastos', icon: Wrench },
-  { label: 'Despesas da Loja', href: '/despesas', icon: Receipt },
-  { label: 'Caixa', href: '/caixa', icon: Wallet },
-  { label: 'Relatórios', href: '/relatorios', icon: FileBarChart },
-  { label: 'Configurações', href: '/configuracoes', icon: Settings },
-]
+const itens = [
+  {
+    nome: "Dashboard",
+    href: "/dashboard",
+    icone: LayoutDashboard,
+  },
+  {
+    nome: "Estoque",
+    href: "/estoque",
+    icone: Warehouse,
+  },
+  {
+    nome: "Comprar / Cadastrar Moto",
+    href: "/motos/nova",
+    icone: Bike,
+  },
+  {
+    nome: "Vendas",
+    href: "/vendas",
+    icone: ShoppingCart,
+  },
+  {
+    nome: "Clientes",
+    href: "/clientes",
+    icone: Users,
+  },
+  {
+    nome: "Gastos das Motos",
+    href: "/gastos",
+    icone: Wrench,
+  },
+  {
+    nome: "Despesas da Loja",
+    href: "/despesas",
+    icone: Receipt,
+  },
+  {
+    nome: "Caixa",
+    href: "/caixa",
+    icone: Wallet,
+  },
+  {
+    nome: "Relatórios",
+    href: "/relatorios",
+    icone: BarChart3,
+  },
+  {
+    nome: "Configurações",
+    href: "/configuracoes",
+    icone: Settings,
+  },
+];
 
 export default function Sidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
-  const [aberto, setAberto] = useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+  const [aberto, setAberto] = useState(false);
+  const [saindo, setSaindo] = useState(false);
+
+  function rotaAtiva(href: string) {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    );
+  }
+
+  async function sair() {
+    setSaindo(true);
+
+    try {
+      await supabase.auth.signOut();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setSaindo(false);
+      setAberto(false);
+    }
   }
 
   return (
     <>
       <button
+        type="button"
         onClick={() => setAberto(true)}
-        className="md:hidden fixed top-4 left-4 z-40 bg-grafite border border-grafite-claro rounded-lg p-2 text-dourado"
+        className="fixed left-4 top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-lg border border-grafite-claro bg-grafite text-dourado shadow-lg md:hidden"
         aria-label="Abrir menu"
       >
-        <Menu size={24} />
+        <Menu size={22} />
       </button>
 
       {aberto && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/60 z-40"
+        <button
+          type="button"
+          aria-label="Fechar menu"
           onClick={() => setAberto(false)}
+          className="fixed inset-0 z-40 bg-black/70 md:hidden"
         />
       )}
 
       <aside
-        className={`
-          fixed md:static top-0 left-0 h-full w-64 bg-grafite border-r border-grafite-claro
-          flex flex-col z-50 transition-transform duration-200
-          ${aberto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
-        `}
+        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-grafite-claro bg-grafite shadow-2xl transition-transform duration-200 ${
+          aberto
+            ? "translate-x-0"
+            : "-translate-x-full"
+        } md:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-4 py-4 border-b border-grafite-claro">
-  <div className="flex items-center gap-3">
-    <Image
-      src="/logo-blackout.png"
-      alt="Blackout Motos"
-      width={120}
-      height={120}
-      priority
-      className="h-auto w-28 object-contain"
-    />
-  </div>
+        <div className="flex h-20 items-center justify-between border-b border-grafite-claro px-4">
+          <Link
+            href="/dashboard"
+            onClick={() => setAberto(false)}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-preto">
+              <Image
+                src="/logo-blackout.png"
+                alt="Blackout Motos"
+                fill
+                className="object-contain"
+              />
+            </div>
 
-  <button
-    onClick={() => setAberto(false)}
-    className="md:hidden text-texto-suave"
-    aria-label="Fechar menu"
-  >
-    <X size={22} />
-  </button>
-</div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-dourado">
+                BLACKOUT MOTOS
+              </p>
+              <p className="text-[11px] text-texto-suave">
+                Gestão da Loja
+              </p>
+            </div>
+          </Link>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {menuItems.map((item) => {
-            const ativo = pathname === item.href
-            const Icone = item.icon
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setAberto(false)}
-                className={`
-                  flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition
-                  ${
+          <button
+            type="button"
+            onClick={() => setAberto(false)}
+            className="rounded-lg p-2 text-texto-suave hover:bg-preto hover:text-dourado md:hidden"
+            aria-label="Fechar menu"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto p-3">
+          <div className="space-y-1">
+            {itens.map((item) => {
+              const Icone = item.icone;
+              const ativo = rotaAtiva(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setAberto(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition ${
                     ativo
-                      ? 'bg-dourado text-preto'
-                      : 'text-texto-suave hover:bg-grafite-claro hover:text-texto'
-                  }
-                `}
-              >
-                <Icone size={18} />
-                {item.label}
-              </Link>
-            )
-          })}
+                      ? "bg-dourado text-preto"
+                      : "text-texto hover:bg-preto hover:text-dourado"
+                  }`}
+                >
+                  <Icone size={19} />
+                  <span>{item.nome}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
-        <div className="p-3 border-t border-grafite-claro">
+        <div className="border-t border-grafite-claro p-3">
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-texto-suave hover:bg-grafite-claro hover:text-red-400 transition"
+            type="button"
+            onClick={sair}
+            disabled={saindo}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-red-300 transition hover:bg-red-950/30 disabled:opacity-50"
           >
-            <LogOut size={18} />
-            Sair
+            <LogOut size={19} />
+            {saindo ? "Saindo..." : "Sair"}
           </button>
         </div>
       </aside>
     </>
-  )
+  );
 }

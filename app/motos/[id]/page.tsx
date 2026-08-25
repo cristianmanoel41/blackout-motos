@@ -223,7 +223,7 @@ export default function DetalheMotoPage() {
     Number(moto.valor_compra || 0) + totalGastos;
 
   const linkGasto = `/motos/${moto.id}/gasto`;
-  const linkVender = `/motos/${moto.id}/vender`;
+  const linkVender = `/vendas?moto=${moto.id}`
 
   return (
     <div className="max-w-5xl">

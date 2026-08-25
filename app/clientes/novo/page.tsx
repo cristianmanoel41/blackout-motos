@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -40,6 +40,16 @@ export default function NovoClientePage() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
+  const [retorno, setRetorno] = useState("");
+  const [motoRetorno, setMotoRetorno] = useState("");
+
+  useEffect(() => {
+    const parametros = new URLSearchParams(window.location.search);
+
+    setRetorno(parametros.get("retorno") || "");
+    setMotoRetorno(parametros.get("moto") || "");
+  }, []);
+
   function atualizarCampo(
     campo: keyof FormCliente,
     valor: string
@@ -62,7 +72,7 @@ export default function NovoClientePage() {
 
     setSalvando(true);
 
-    const { error } = await supabase
+    const { data: clienteCriado, error } = await supabase
       .from("customers")
       .insert({
         nome: form.nome.trim(),
@@ -76,29 +86,64 @@ export default function NovoClientePage() {
         cidade: form.cidade.trim() || null,
         estado: form.estado.trim() || null,
         cep: form.cep.trim() || null,
-      });
+      })
+      .select("id")
+      .single();
 
-    if (error) {
+    if (error || !clienteCriado) {
       console.error(error);
 
-      if (error.code === "23505") {
+      if (error?.code === "23505") {
         setErro("Já existe um cliente cadastrado com esse CPF.");
       } else {
-        setErro(`Erro ao cadastrar cliente: ${error.message}`);
+        setErro(
+          `Erro ao cadastrar cliente: ${
+            error?.message || "Erro desconhecido"
+          }`
+        );
       }
 
       setSalvando(false);
       return;
     }
 
+    if (retorno === "venda") {
+      const parametros = new URLSearchParams();
+
+      parametros.set("cliente", String(clienteCriado.id));
+
+      if (motoRetorno) {
+        parametros.set("moto", motoRetorno);
+      }
+
+      router.replace(`/vendas?${parametros.toString()}`);
+router.refresh();
+return;
+    }
+
     router.push("/clientes");
     router.refresh();
+  }
+
+  function cancelar() {
+    if (retorno === "venda") {
+      if (motoRetorno) {
+        router.push(
+          `/vendas?moto=${encodeURIComponent(motoRetorno)}`
+        );
+      } else {
+        router.push("/vendas");
+      }
+
+      return;
+    }
+
+    router.push("/clientes");
   }
 
   return (
     <main className="min-h-screen bg-preto text-texto">
       <div className="mx-auto max-w-5xl p-4 md:p-8">
-
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-dourado">
             BLACKOUT MOTOS
@@ -109,9 +154,17 @@ export default function NovoClientePage() {
           </h1>
 
           <p className="mt-2 text-sm text-texto-suave">
-            Preencha os dados completos do cliente.
+            {retorno === "venda"
+              ? "Cadastre o cliente e volte automaticamente para concluir a venda."
+              : "Preencha os dados completos do cliente."}
           </p>
         </div>
+
+        {retorno === "venda" && (
+          <div className="mb-6 rounded-xl border border-dourado/40 bg-dourado/5 p-4 text-sm text-texto">
+            Este cliente será usado na venda que você está registrando.
+          </div>
+        )}
 
         {erro && (
           <div className="mb-6 rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
@@ -123,14 +176,12 @@ export default function NovoClientePage() {
           onSubmit={handleSubmit}
           className="space-y-6 rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8"
         >
-
           <section>
             <h2 className="mb-5 border-b border-grafite-claro pb-3 text-lg font-semibold text-dourado">
               Dados Pessoais
             </h2>
 
             <div className="grid gap-5 md:grid-cols-2">
-
               <Campo
                 label="Nome completo *"
                 value={form.nome}
@@ -162,10 +213,7 @@ export default function NovoClientePage() {
                 label="Data de nascimento"
                 value={form.data_nascimento}
                 onChange={(valor) =>
-                  atualizarCampo(
-                    "data_nascimento",
-                    valor
-                  )
+                  atualizarCampo("data_nascimento", valor)
                 }
                 type="date"
               />
@@ -178,7 +226,6 @@ export default function NovoClientePage() {
                 }
                 placeholder="(12) 99999-9999"
               />
-
             </div>
           </section>
 
@@ -188,7 +235,6 @@ export default function NovoClientePage() {
             </h2>
 
             <div className="grid gap-5 md:grid-cols-2">
-
               <Campo
                 label="CEP"
                 value={form.cep}
@@ -242,15 +288,13 @@ export default function NovoClientePage() {
                 }
                 placeholder="SP"
               />
-
             </div>
           </section>
 
           <div className="flex flex-col-reverse gap-3 md:flex-row md:justify-end">
-
             <button
               type="button"
-              onClick={() => router.push("/clientes")}
+              onClick={cancelar}
               className="rounded-xl border border-grafite-claro px-6 py-3 font-semibold text-texto hover:border-dourado"
             >
               Cancelar
@@ -259,13 +303,14 @@ export default function NovoClientePage() {
             <button
               type="submit"
               disabled={salvando}
-              className="rounded-xl bg-dourado px-6 py-3 font-bold text-preto transition hover:bg-dourado-claro disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-dourado px-6 py-3 font-bold text-preto transition hover:bg-dourado-claro disabled:opacity-50"
             >
               {salvando
                 ? "Salvando..."
-                : "Cadastrar Cliente"}
+                : retorno === "venda"
+                  ? "Cadastrar e Voltar para Venda"
+                  : "Cadastrar Cliente"}
             </button>
-
           </div>
         </form>
       </div>
@@ -297,9 +342,7 @@ function Campo({
       <input
         type={type}
         value={value}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
       />
