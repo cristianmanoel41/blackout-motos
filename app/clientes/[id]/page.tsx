@@ -7,6 +7,7 @@ import {
   Bike,
   FileSignature,
   FileText,
+  ReceiptText,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -25,7 +26,7 @@ type Cliente = {
   cep: string | null;
 };
 
-type MotoComprada = {
+type MotoCompradaPelaLoja = {
   id: string;
   codigo: string | null;
   marca: string | null;
@@ -38,6 +39,23 @@ type MotoComprada = {
   valor_compra: number | null;
   data_entrada: string | null;
   status: string | null;
+};
+
+type VendaCliente = {
+  id: string;
+  data_venda: string | null;
+  valor_venda: number | null;
+  valor_total_venda: number | null;
+  motorcycle_id: string | null;
+  moto?: {
+    id: string;
+    codigo: string | null;
+    marca: string | null;
+    modelo: string | null;
+    versao: string | null;
+    ano_modelo: number | null;
+    placa: string | null;
+  } | null;
 };
 
 function moeda(valor: number | null | undefined) {
@@ -59,11 +77,25 @@ function dataBrasil(data: string | null | undefined) {
   return `${dia}/${mes}/${ano}`;
 }
 
-function nomeMoto(moto: MotoComprada) {
+function nomeMotoCompra(moto: MotoCompradaPelaLoja) {
   return [
     moto.marca,
     moto.modelo,
     moto.versao,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function nomeMotoVenda(venda: VendaCliente) {
+  if (!venda.moto) {
+    return "Moto não encontrada";
+  }
+
+  return [
+    venda.moto.marca,
+    venda.moto.modelo,
+    venda.moto.versao,
   ]
     .filter(Boolean)
     .join(" ");
@@ -79,8 +111,15 @@ export default function ClienteDetalhesPage() {
   const [cliente, setCliente] =
     useState<Cliente | null>(null);
 
-  const [motosCompradas, setMotosCompradas] =
-    useState<MotoComprada[]>([]);
+  const [
+    motosVendidasParaLoja,
+    setMotosVendidasParaLoja,
+  ] = useState<MotoCompradaPelaLoja[]>([]);
+
+  const [
+    vendasDoCliente,
+    setVendasDoCliente,
+  ] = useState<VendaCliente[]>([]);
 
   const [editando, setEditando] =
     useState(false);
@@ -107,7 +146,8 @@ export default function ClienteDetalhesPage() {
 
     const [
       resultadoCliente,
-      resultadoMotos,
+      resultadoMotosFornecedor,
+      resultadoVendas,
     ] = await Promise.all([
       supabase
         .from("customers")
@@ -135,6 +175,20 @@ export default function ClienteDetalhesPage() {
         .order("data_entrada", {
           ascending: false,
         }),
+
+      supabase
+        .from("sales")
+        .select(`
+          id,
+          data_venda,
+          valor_venda,
+          valor_total_venda,
+          motorcycle_id
+        `)
+        .eq("customer_id", id)
+        .order("data_venda", {
+          ascending: false,
+        }),
     ]);
 
     if (resultadoCliente.error) {
@@ -150,22 +204,104 @@ export default function ClienteDetalhesPage() {
       return;
     }
 
-    if (resultadoMotos.error) {
-      console.error(
-        resultadoMotos.error
-      );
-
-      setErro(
-        `Cliente carregado, mas não foi possível carregar as motos vinculadas: ${resultadoMotos.error.message}`
-      );
-    }
-
     setCliente(
       resultadoCliente.data
     );
 
-    setMotosCompradas(
-      resultadoMotos.data || []
+    if (resultadoMotosFornecedor.error) {
+      console.error(
+        resultadoMotosFornecedor.error
+      );
+
+      setErro(
+        `Cliente carregado, mas não foi possível carregar as motos vendidas para a loja: ${resultadoMotosFornecedor.error.message}`
+      );
+    } else {
+      setMotosVendidasParaLoja(
+        resultadoMotosFornecedor.data || []
+      );
+    }
+
+    if (resultadoVendas.error) {
+      console.error(
+        resultadoVendas.error
+      );
+
+      setErro(
+        `Cliente carregado, mas não foi possível carregar as vendas vinculadas: ${resultadoVendas.error.message}`
+      );
+
+      setCarregando(false);
+      return;
+    }
+
+    const vendas = resultadoVendas.data || [];
+
+    const idsMotos = vendas
+      .map(
+        (venda) =>
+          venda.motorcycle_id
+      )
+      .filter(
+        (motoId): motoId is string =>
+          Boolean(motoId)
+      );
+
+    let mapaMotos = new Map<
+      string,
+      VendaCliente["moto"]
+    >();
+
+    if (idsMotos.length > 0) {
+      const {
+        data: motosVenda,
+        error: motosVendaError,
+      } = await supabase
+        .from("motorcycles")
+        .select(`
+          id,
+          codigo,
+          marca,
+          modelo,
+          versao,
+          ano_modelo,
+          placa
+        `)
+        .in("id", idsMotos);
+
+      if (motosVendaError) {
+        console.error(
+          motosVendaError
+        );
+      } else {
+        mapaMotos = new Map(
+          (motosVenda || []).map(
+            (moto) => [
+              String(moto.id),
+              moto,
+            ]
+          )
+        );
+      }
+    }
+
+    const vendasComMoto =
+      vendas.map(
+        (venda) => ({
+          ...venda,
+          moto:
+            venda.motorcycle_id
+              ? mapaMotos.get(
+                  String(
+                    venda.motorcycle_id
+                  )
+                ) || null
+              : null,
+        })
+      );
+
+    setVendasDoCliente(
+      vendasComMoto
     );
 
     setCarregando(false);
@@ -304,7 +440,7 @@ export default function ClienteDetalhesPage() {
             </h1>
 
             <p className="mt-1 text-sm text-texto-suave">
-              Visualize os dados do cliente e os documentos das motos vinculadas.
+              Visualize os dados do cliente, compras, vendas e documentos.
             </p>
           </div>
 
@@ -574,7 +710,7 @@ export default function ClienteDetalhesPage() {
           </div>
         </section>
 
-        {/* MOTOS QUE ESTE CLIENTE VENDEU PARA A LOJA */}
+        {/* MOTOS VENDIDAS PARA A BLACKOUT */}
 
         <section className="mt-6 rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8">
           <div className="mb-6 flex flex-col gap-3 border-b border-grafite-claro pb-4 md:flex-row md:items-center md:justify-between">
@@ -584,7 +720,7 @@ export default function ClienteDetalhesPage() {
               </h2>
 
               <p className="mt-1 text-sm text-texto-suave">
-                Motos em que este cliente foi cadastrado como vendedor / fornecedor.
+                Motos que este cliente vendeu ou entregou para a loja.
               </p>
             </div>
 
@@ -594,13 +730,13 @@ export default function ClienteDetalhesPage() {
               </span>{" "}
               <strong className="text-dourado">
                 {
-                  motosCompradas.length
+                  motosVendidasParaLoja.length
                 }
               </strong>
             </div>
           </div>
 
-          {motosCompradas.length ===
+          {motosVendidasParaLoja.length ===
           0 ? (
             <div className="rounded-xl border border-grafite-claro bg-preto p-6 text-center">
               <Bike
@@ -609,16 +745,12 @@ export default function ClienteDetalhesPage() {
               />
 
               <p className="font-semibold text-white">
-                Nenhuma moto vinculada a este cliente.
-              </p>
-
-              <p className="mt-2 text-sm text-texto-suave">
-                Para aparecer aqui, a moto precisa ter este cliente vinculado como quem vendeu a moto para a loja.
+                Nenhuma moto vendida para a loja vinculada a este cliente.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {motosCompradas.map(
+              {motosVendidasParaLoja.map(
                 (moto) => (
                   <div
                     key={moto.id}
@@ -628,7 +760,7 @@ export default function ClienteDetalhesPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-lg font-bold text-white">
-                            {nomeMoto(
+                            {nomeMotoCompra(
                               moto
                             ) ||
                               "Moto"}
@@ -714,6 +846,143 @@ export default function ClienteDetalhesPage() {
                             size={16}
                           />
                           Gerar Contrato de Compra
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* MOTOS COMPRADAS DA BLACKOUT */}
+
+        <section className="mt-6 rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8">
+          <div className="mb-6 flex flex-col gap-3 border-b border-grafite-claro pb-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-dourado">
+                Motos Compradas da Blackout
+              </h2>
+
+              <p className="mt-1 text-sm text-texto-suave">
+                Vendas da loja vinculadas a este cliente.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-grafite-claro bg-preto px-4 py-2 text-sm">
+              <span className="text-texto-suave">
+                Total:
+              </span>{" "}
+              <strong className="text-dourado">
+                {
+                  vendasDoCliente.length
+                }
+              </strong>
+            </div>
+          </div>
+
+          {vendasDoCliente.length ===
+          0 ? (
+            <div className="rounded-xl border border-grafite-claro bg-preto p-6 text-center">
+              <ReceiptText
+                size={32}
+                className="mx-auto mb-3 text-texto-suave"
+              />
+
+              <p className="font-semibold text-white">
+                Nenhuma venda vinculada a este cliente.
+              </p>
+
+              <p className="mt-2 text-sm text-texto-suave">
+                O contrato de venda só aparece quando existe uma venda registrada com este cliente.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {vendasDoCliente.map(
+                (venda) => (
+                  <div
+                    key={venda.id}
+                    className="rounded-xl border border-grafite-claro bg-preto p-5"
+                  >
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-bold text-white">
+                            {nomeMotoVenda(
+                              venda
+                            )}
+                          </h3>
+
+                          {venda.moto?.codigo && (
+                            <span className="rounded-md border border-dourado/40 bg-dourado/10 px-2 py-1 text-xs font-bold text-dourado">
+                              {
+                                venda.moto.codigo
+                              }
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-3 grid gap-x-8 gap-y-2 text-sm text-texto-suave sm:grid-cols-2 lg:grid-cols-4">
+                          <p>
+                            <span className="text-zinc-500">
+                              Data:
+                            </span>{" "}
+                            {dataBrasil(
+                              venda.data_venda
+                            )}
+                          </p>
+
+                          <p>
+                            <span className="text-zinc-500">
+                              Placa:
+                            </span>{" "}
+                            {venda.moto?.placa ||
+                              "Não informada"}
+                          </p>
+
+                          <p>
+                            <span className="text-zinc-500">
+                              Ano:
+                            </span>{" "}
+                            {venda.moto?.ano_modelo ||
+                              "-"}
+                          </p>
+
+                          <p>
+                            <span className="text-zinc-500">
+                              Venda:
+                            </span>{" "}
+                            <strong className="text-white">
+                              {moeda(
+                                venda.valor_total_venda ??
+                                  venda.valor_venda
+                              )}
+                            </strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+                        <Link
+                          href={`/vendas/${venda.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+                        >
+                          <ReceiptText
+                            size={16}
+                          />
+                          Ver Venda
+                        </Link>
+
+                        <a
+                          href={`/api/contratos/venda/${venda.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
+                        >
+                          <FileText
+                            size={16}
+                          />
+                          Gerar Contrato de Venda
                         </a>
                       </div>
                     </div>
