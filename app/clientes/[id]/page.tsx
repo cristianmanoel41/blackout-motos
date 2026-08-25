@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Bike,
+  FileSignature,
+  FileText,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Cliente = {
@@ -19,6 +25,50 @@ type Cliente = {
   cep: string | null;
 };
 
+type MotoComprada = {
+  id: string;
+  codigo: string | null;
+  marca: string | null;
+  modelo: string | null;
+  versao: string | null;
+  ano_fabricacao: number | null;
+  ano_modelo: number | null;
+  placa: string | null;
+  cor: string | null;
+  valor_compra: number | null;
+  data_entrada: string | null;
+  status: string | null;
+};
+
+function moeda(valor: number | null | undefined) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(valor) || 0);
+}
+
+function dataBrasil(data: string | null | undefined) {
+  if (!data) return "Não informada";
+
+  const [ano, mes, dia] = data.split("-");
+
+  if (!ano || !mes || !dia) {
+    return data;
+  }
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function nomeMoto(moto: MotoComprada) {
+  return [
+    moto.marca,
+    moto.modelo,
+    moto.versao,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export default function ClienteDetalhesPage() {
   const params = useParams();
   const router = useRouter();
@@ -26,35 +76,98 @@ export default function ClienteDetalhesPage() {
 
   const id = params.id as string;
 
-  const [cliente, setCliente] = useState<Cliente | null>(null);
-  const [editando, setEditando] = useState(false);
-  const [carregando, setCarregando] = useState(true);
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState("");
-  const [mensagem, setMensagem] = useState("");
+  const [cliente, setCliente] =
+    useState<Cliente | null>(null);
+
+  const [motosCompradas, setMotosCompradas] =
+    useState<MotoComprada[]>([]);
+
+  const [editando, setEditando] =
+    useState(false);
+
+  const [carregando, setCarregando] =
+    useState(true);
+
+  const [salvando, setSalvando] =
+    useState(false);
+
+  const [erro, setErro] =
+    useState("");
+
+  const [mensagem, setMensagem] =
+    useState("");
 
   useEffect(() => {
-    carregarCliente();
+    carregarDados();
   }, [id]);
 
-  async function carregarCliente() {
+  async function carregarDados() {
     setCarregando(true);
     setErro("");
 
-    const { data, error } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const [
+      resultadoCliente,
+      resultadoMotos,
+    ] = await Promise.all([
+      supabase
+        .from("customers")
+        .select("*")
+        .eq("id", id)
+        .single(),
 
-    if (error) {
-      console.error(error);
-      setErro("Não foi possível carregar os dados do cliente.");
+      supabase
+        .from("motorcycles")
+        .select(`
+          id,
+          codigo,
+          marca,
+          modelo,
+          versao,
+          ano_fabricacao,
+          ano_modelo,
+          placa,
+          cor,
+          valor_compra,
+          data_entrada,
+          status
+        `)
+        .eq("fornecedor_customer_id", id)
+        .order("data_entrada", {
+          ascending: false,
+        }),
+    ]);
+
+    if (resultadoCliente.error) {
+      console.error(
+        resultadoCliente.error
+      );
+
+      setErro(
+        "Não foi possível carregar os dados do cliente."
+      );
+
       setCarregando(false);
       return;
     }
 
-    setCliente(data);
+    if (resultadoMotos.error) {
+      console.error(
+        resultadoMotos.error
+      );
+
+      setErro(
+        `Cliente carregado, mas não foi possível carregar as motos vinculadas: ${resultadoMotos.error.message}`
+      );
+    }
+
+    setCliente(
+      resultadoCliente.data
+    );
+
+    setMotosCompradas(
+      resultadoMotos.data || []
+    );
+
     setCarregando(false);
   }
 
@@ -80,28 +193,68 @@ export default function ClienteDetalhesPage() {
     const { error } = await supabase
       .from("customers")
       .update({
-        nome: cliente.nome,
-        rg: cliente.rg || null,
-        cpf: cliente.cpf || null,
-        data_nascimento: cliente.data_nascimento || null,
-        telefone: cliente.telefone || null,
-        rua: cliente.rua || null,
-        numero: cliente.numero || null,
-        bairro: cliente.bairro || null,
-        cidade: cliente.cidade || null,
-        estado: cliente.estado || null,
-        cep: cliente.cep || null,
+        nome:
+          cliente.nome.trim(),
+
+        rg:
+          cliente.rg?.trim() ||
+          null,
+
+        cpf:
+          cliente.cpf?.trim() ||
+          null,
+
+        data_nascimento:
+          cliente.data_nascimento ||
+          null,
+
+        telefone:
+          cliente.telefone?.trim() ||
+          null,
+
+        rua:
+          cliente.rua?.trim() ||
+          null,
+
+        numero:
+          cliente.numero?.trim() ||
+          null,
+
+        bairro:
+          cliente.bairro?.trim() ||
+          null,
+
+        cidade:
+          cliente.cidade?.trim() ||
+          null,
+
+        estado:
+          cliente.estado
+            ?.trim()
+            .toUpperCase() ||
+          null,
+
+        cep:
+          cliente.cep?.trim() ||
+          null,
       })
       .eq("id", id);
 
     if (error) {
       console.error(error);
-      setErro(`Erro ao salvar cliente: ${error.message}`);
+
+      setErro(
+        `Erro ao salvar cliente: ${error.message}`
+      );
+
       setSalvando(false);
       return;
     }
 
-    setMensagem("Dados do cliente atualizados com sucesso.");
+    setMensagem(
+      "Dados do cliente atualizados com sucesso."
+    );
+
     setEditando(false);
     setSalvando(false);
   }
@@ -117,7 +270,9 @@ export default function ClienteDetalhesPage() {
   if (erro && !cliente) {
     return (
       <div className="p-6">
-        <p className="text-red-400">{erro}</p>
+        <p className="text-red-400">
+          {erro}
+        </p>
       </div>
     );
   }
@@ -134,7 +289,9 @@ export default function ClienteDetalhesPage() {
 
   return (
     <main className="min-h-screen bg-preto text-texto">
-      <div className="mx-auto max-w-5xl p-4 md:p-8">
+      <div className="mx-auto max-w-6xl p-4 md:p-8">
+
+        {/* CABEÇALHO */}
 
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -147,14 +304,18 @@ export default function ClienteDetalhesPage() {
             </h1>
 
             <p className="mt-1 text-sm text-texto-suave">
-              Visualize e altere os dados completos do cliente.
+              Visualize os dados do cliente e os documentos das motos vinculadas.
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => router.push("/clientes")}
+              onClick={() =>
+                router.push(
+                  "/clientes"
+                )
+              }
               className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto hover:border-dourado"
             >
               Voltar
@@ -163,20 +324,41 @@ export default function ClienteDetalhesPage() {
             {!editando ? (
               <button
                 type="button"
-                onClick={() => setEditando(true)}
+                onClick={() =>
+                  setEditando(true)
+                }
                 className="rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto hover:bg-dourado-claro"
               >
                 Editar Cliente
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={salvarAlteracoes}
-                disabled={salvando}
-                className="rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto hover:bg-dourado-claro disabled:opacity-50"
-              >
-                {salvando ? "Salvando..." : "Salvar Alterações"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditando(false);
+                    carregarDados();
+                  }}
+                  className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    salvarAlteracoes
+                  }
+                  disabled={
+                    salvando
+                  }
+                  className="rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto hover:bg-dourado-claro disabled:opacity-50"
+                >
+                  {salvando
+                    ? "Salvando..."
+                    : "Salvar Alterações"}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -193,112 +375,354 @@ export default function ClienteDetalhesPage() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8">
+        {/* DADOS DO CLIENTE */}
+
+        <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8">
+          <div className="mb-6 border-b border-grafite-claro pb-4">
+            <h2 className="text-xl font-bold text-dourado">
+              Dados do Cliente
+            </h2>
+
+            <p className="mt-1 text-sm text-texto-suave">
+              Cadastro utilizado nas compras e vendas da loja.
+            </p>
+          </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-
             <Campo
               label="Nome completo"
-              value={cliente.nome || ""}
-              editando={editando}
+              value={
+                cliente.nome || ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("nome", valor)
+                atualizarCampo(
+                  "nome",
+                  valor
+                )
               }
             />
 
             <Campo
               label="RG"
-              value={cliente.rg || ""}
-              editando={editando}
+              value={
+                cliente.rg || ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("rg", valor)
+                atualizarCampo(
+                  "rg",
+                  valor
+                )
               }
             />
 
             <Campo
               label="CPF"
-              value={cliente.cpf || ""}
-              editando={editando}
+              value={
+                cliente.cpf || ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("cpf", valor)
+                atualizarCampo(
+                  "cpf",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Data de nascimento"
-              value={cliente.data_nascimento || ""}
-              editando={editando}
+              value={
+                cliente.data_nascimento ||
+                ""
+              }
+              editando={
+                editando
+              }
               type="date"
               onChange={(valor) =>
-                atualizarCampo("data_nascimento", valor)
+                atualizarCampo(
+                  "data_nascimento",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Telefone"
-              value={cliente.telefone || ""}
-              editando={editando}
+              value={
+                cliente.telefone ||
+                ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("telefone", valor)
+                atualizarCampo(
+                  "telefone",
+                  valor
+                )
               }
             />
 
             <Campo
               label="CEP"
-              value={cliente.cep || ""}
-              editando={editando}
+              value={
+                cliente.cep || ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("cep", valor)
+                atualizarCampo(
+                  "cep",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Rua"
-              value={cliente.rua || ""}
-              editando={editando}
+              value={
+                cliente.rua || ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("rua", valor)
+                atualizarCampo(
+                  "rua",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Número"
-              value={cliente.numero || ""}
-              editando={editando}
+              value={
+                cliente.numero ||
+                ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("numero", valor)
+                atualizarCampo(
+                  "numero",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Bairro"
-              value={cliente.bairro || ""}
-              editando={editando}
+              value={
+                cliente.bairro ||
+                ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("bairro", valor)
+                atualizarCampo(
+                  "bairro",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Cidade"
-              value={cliente.cidade || ""}
-              editando={editando}
+              value={
+                cliente.cidade ||
+                ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("cidade", valor)
+                atualizarCampo(
+                  "cidade",
+                  valor
+                )
               }
             />
 
             <Campo
               label="Estado"
-              value={cliente.estado || ""}
-              editando={editando}
+              value={
+                cliente.estado ||
+                ""
+              }
+              editando={
+                editando
+              }
               onChange={(valor) =>
-                atualizarCampo("estado", valor)
+                atualizarCampo(
+                  "estado",
+                  valor
+                )
               }
             />
-
           </div>
-        </div>
+        </section>
+
+        {/* MOTOS QUE ESTE CLIENTE VENDEU PARA A LOJA */}
+
+        <section className="mt-6 rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-8">
+          <div className="mb-6 flex flex-col gap-3 border-b border-grafite-claro pb-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-dourado">
+                Motos Vendidas para a Blackout
+              </h2>
+
+              <p className="mt-1 text-sm text-texto-suave">
+                Motos em que este cliente foi cadastrado como vendedor / fornecedor.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-grafite-claro bg-preto px-4 py-2 text-sm">
+              <span className="text-texto-suave">
+                Total:
+              </span>{" "}
+              <strong className="text-dourado">
+                {
+                  motosCompradas.length
+                }
+              </strong>
+            </div>
+          </div>
+
+          {motosCompradas.length ===
+          0 ? (
+            <div className="rounded-xl border border-grafite-claro bg-preto p-6 text-center">
+              <Bike
+                size={32}
+                className="mx-auto mb-3 text-texto-suave"
+              />
+
+              <p className="font-semibold text-white">
+                Nenhuma moto vinculada a este cliente.
+              </p>
+
+              <p className="mt-2 text-sm text-texto-suave">
+                Para aparecer aqui, a moto precisa ter este cliente vinculado como quem vendeu a moto para a loja.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {motosCompradas.map(
+                (moto) => (
+                  <div
+                    key={moto.id}
+                    className="rounded-xl border border-grafite-claro bg-preto p-5"
+                  >
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-bold text-white">
+                            {nomeMoto(
+                              moto
+                            ) ||
+                              "Moto"}
+                          </h3>
+
+                          {moto.codigo && (
+                            <span className="rounded-md border border-dourado/40 bg-dourado/10 px-2 py-1 text-xs font-bold text-dourado">
+                              {
+                                moto.codigo
+                              }
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-3 grid gap-x-8 gap-y-2 text-sm text-texto-suave sm:grid-cols-2 lg:grid-cols-4">
+                          <p>
+                            <span className="text-zinc-500">
+                              Ano:
+                            </span>{" "}
+                            {moto.ano_fabricacao ||
+                              "-"}
+                            /
+                            {moto.ano_modelo ||
+                              "-"}
+                          </p>
+
+                          <p>
+                            <span className="text-zinc-500">
+                              Placa:
+                            </span>{" "}
+                            {moto.placa ||
+                              "Não informada"}
+                          </p>
+
+                          <p>
+                            <span className="text-zinc-500">
+                              Entrada:
+                            </span>{" "}
+                            {dataBrasil(
+                              moto.data_entrada
+                            )}
+                          </p>
+
+                          <p>
+                            <span className="text-zinc-500">
+                              Compra:
+                            </span>{" "}
+                            <strong className="text-white">
+                              {moeda(
+                                moto.valor_compra
+                              )}
+                            </strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+                        <Link
+                          href={`/motos/${moto.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+                        >
+                          <Bike
+                            size={16}
+                          />
+                          Ver Moto
+                        </Link>
+
+                        <a
+                          href={`/api/contratos/procuracao/${moto.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
+                        >
+                          <FileSignature
+                            size={16}
+                          />
+                          Gerar Procuração
+                        </a>
+
+                        <a
+                          href={`/api/contratos/compra/${moto.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-dourado px-4 py-2 text-sm font-bold text-dourado transition hover:bg-dourado hover:text-preto"
+                        >
+                          <FileText
+                            size={16}
+                          />
+                          Gerar Contrato de Compra
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
@@ -309,7 +733,9 @@ type CampoProps = {
   value: string;
   editando: boolean;
   type?: string;
-  onChange: (valor: string) => void;
+  onChange: (
+    valor: string
+  ) => void;
 };
 
 function Campo({
@@ -329,12 +755,17 @@ function Campo({
         <input
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) =>
+            onChange(
+              e.target.value
+            )
+          }
           className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition focus:border-dourado"
         />
       ) : (
         <div className="min-h-[48px] rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white">
-          {value || "Não informado"}
+          {value ||
+            "Não informado"}
         </div>
       )}
     </div>
