@@ -80,6 +80,7 @@ export default async function RelatorioMensalPage({
     .select(`
       id,
       motorcycle_id,
+      vendedor,
       valor_total_venda,
       valor_documentacao,
       documentacao_entra_no_lucro
@@ -97,6 +98,50 @@ export default async function RelatorioMensalPage({
         soma + Number(venda.valor_total_venda || 0),
       0
     ) ?? 0
+
+  const normalizarVendedor = (valor: string | null | undefined) =>
+    (valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+
+  const vendasCristian =
+    vendasMes?.filter(
+      (venda) =>
+        normalizarVendedor(venda.vendedor).includes('cristian')
+    ) ?? []
+
+  const vendasBruno =
+    vendasMes?.filter(
+      (venda) =>
+        normalizarVendedor(venda.vendedor).includes('bruno')
+    ) ?? []
+
+  const qtdVendasCristian =
+    vendasCristian.length
+
+  const qtdVendasBruno =
+    vendasBruno.length
+
+  const faturamentoCristian =
+    vendasCristian.reduce(
+      (soma, venda) =>
+        soma + Number(venda.valor_total_venda || 0),
+      0
+    )
+
+  const faturamentoBruno =
+    vendasBruno.reduce(
+      (soma, venda) =>
+        soma + Number(venda.valor_total_venda || 0),
+      0
+    )
+
+  const vendasSemVendedor =
+    vendasMes?.filter(
+      (venda) => !normalizarVendedor(venda.vendedor)
+    ).length ?? 0
 
   const receitaDocNoLucro =
     vendasMes?.reduce(
@@ -503,6 +548,92 @@ export default async function RelatorioMensalPage({
             ),
             true
           )}
+        </div>
+
+        {/* VENDAS POR VENDEDOR */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Vendas por Vendedor
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              {nomesMeses[mesSelecionado - 1]} de {anoSelecionado}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 divide-y divide-grafite-claro md:grid-cols-2 md:divide-x md:divide-y-0">
+            <div className="p-5">
+              <p className="text-sm font-semibold text-white">
+                Cristian
+              </p>
+
+              <p className="mt-3 text-3xl font-bold text-dourado">
+                {qtdVendasCristian}
+              </p>
+
+              <p className="text-xs text-texto-suave">
+                vendas no mês
+              </p>
+
+              <div className="mt-4 border-t border-grafite-claro pt-3">
+                <p className="text-xs text-texto-suave">
+                  Faturamento
+                </p>
+
+                <p className="mt-1 font-semibold text-green-400">
+                  {formatarMoeda(faturamentoCristian)}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <p className="text-sm font-semibold text-white">
+                Bruno
+              </p>
+
+              <p className="mt-3 text-3xl font-bold text-dourado">
+                {qtdVendasBruno}
+              </p>
+
+              <p className="text-xs text-texto-suave">
+                vendas no mês
+              </p>
+
+              <div className="mt-4 border-t border-grafite-claro pt-3">
+                <p className="text-xs text-texto-suave">
+                  Faturamento
+                </p>
+
+                <p className="mt-1 font-semibold text-green-400">
+                  {formatarMoeda(faturamentoBruno)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 border-t border-grafite-claro md:grid-cols-2">
+            <div className="px-5 py-3">
+              <span className="text-sm text-texto-suave">
+                Total de vendas do mês
+              </span>
+
+              <span className="float-right font-bold text-white">
+                {qtdMotosVendidas}
+              </span>
+            </div>
+
+            <div className="border-t border-grafite-claro px-5 py-3 md:border-l md:border-t-0">
+              <span className="text-sm text-texto-suave">
+                Sem vendedor informado
+              </span>
+
+              <span className="float-right font-bold text-yellow-400">
+                {vendasSemVendedor}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* CAIXA DO PERÍODO */}
