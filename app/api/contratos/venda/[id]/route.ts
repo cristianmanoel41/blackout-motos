@@ -13,36 +13,35 @@ function moeda(valor: unknown) {
   }).format(Number(valor) || 0);
 }
 
-function dataExtenso(data: string | null) {
-  if (!data) return "data não informada";
+function dataAtualExtenso() {
+  const agora = new Date();
 
-  const [ano, mes, dia] = data.split("-");
+  const partes = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(agora);
 
-  const meses = [
-    "JANEIRO",
-    "FEVEREIRO",
-    "MARÇO",
-    "ABRIL",
-    "MAIO",
-    "JUNHO",
-    "JULHO",
-    "AGOSTO",
-    "SETEMBRO",
-    "OUTUBRO",
-    "NOVEMBRO",
-    "DEZEMBRO",
-  ];
+  const dia =
+    partes.find(
+      (parte) => parte.type === "day"
+    )?.value || "";
 
-  return `${Number(dia)} de ${meses[Number(mes) - 1]} de ${ano}`;
+  const mes =
+    partes.find(
+      (parte) => parte.type === "month"
+    )?.value || "";
+
+  const ano =
+    partes.find(
+      (parte) => parte.type === "year"
+    )?.value || "";
+
+  return `${dia} de ${mes.toUpperCase()} de ${ano}`;
 }
 
-function horaDocumento(
-  hora: string | null | undefined
-) {
-  if (hora) {
-    return hora.slice(0, 5);
-  }
-
+function horaAtual() {
   return new Intl.DateTimeFormat("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "2-digit",
@@ -119,13 +118,19 @@ function transferenciaDescricao(
   venda: any
 ) {
   const cliente =
-    Number(venda.transferencia_cliente) ||
-    0;
+    Number(
+      venda.transferencia_cliente
+    ) || 0;
 
   const loja =
-    Number(venda.transferencia_loja) || 0;
+    Number(
+      venda.transferencia_loja
+    ) || 0;
 
-  if (cliente > 0 && loja > 0) {
+  if (
+    cliente > 0 &&
+    loja > 0
+  ) {
     return `cliente no valor de ${moeda(
       cliente
     )} e loja no valor de ${moeda(
@@ -153,8 +158,14 @@ function nomeArquivoSeguro(
 ) {
   return valor
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9-_ ]/g, "")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .replace(
+      /[^a-zA-Z0-9-_ ]/g,
+      ""
+    )
     .trim()
     .replace(/\s+/g, "-")
     .toLowerCase();
@@ -171,13 +182,14 @@ export async function GET(
   }
 ) {
   try {
-    const { id } = await params;
+    const { id } =
+      await params;
 
     const supabase =
       await createClient();
 
     // =====================================================
-    // 1. CARREGA A VENDA SEM EMBED
+    // 1. CARREGA A VENDA
     // =====================================================
 
     const {
@@ -206,12 +218,15 @@ export async function GET(
     }
 
     // =====================================================
-    // 2. CARREGA O CLIENTE SEPARADAMENTE
+    // 2. CARREGA O CLIENTE
     // =====================================================
 
-    let cliente: any = null;
+    let cliente: any =
+      null;
 
-    if (venda.customer_id) {
+    if (
+      venda.customer_id
+    ) {
       const {
         data: clienteData,
         error: clienteError,
@@ -230,17 +245,21 @@ export async function GET(
           clienteError
         );
       } else {
-        cliente = clienteData;
+        cliente =
+          clienteData;
       }
     }
 
     // =====================================================
-    // 3. CARREGA A MOTO SEPARADAMENTE
+    // 3. CARREGA A MOTO
     // =====================================================
 
-    let moto: any = null;
+    let moto: any =
+      null;
 
-    if (venda.motorcycle_id) {
+    if (
+      venda.motorcycle_id
+    ) {
       const {
         data: motoData,
         error: motoError,
@@ -259,23 +278,28 @@ export async function GET(
           motoError
         );
       } else {
-        moto = motoData;
+        moto =
+          motoData;
       }
     }
 
     // =====================================================
-    // 4. CARREGA OS COMPONENTES DE PAGAMENTO
+    // 4. COMPONENTES DO PAGAMENTO
     // =====================================================
 
     const {
       data: componentes,
-      error: componentesError,
+      error:
+        componentesError,
     } = await supabase
       .from(
         "sale_payment_components"
       )
       .select("*")
-      .eq("sale_id", id)
+      .eq(
+        "sale_id",
+        id
+      )
       .order(
         "criado_em",
         {
@@ -283,7 +307,9 @@ export async function GET(
         }
       );
 
-    if (componentesError) {
+    if (
+      componentesError
+    ) {
       console.error(
         "Erro ao carregar componentes:",
         componentesError
@@ -291,7 +317,7 @@ export async function GET(
     }
 
     // =====================================================
-    // 5. VALIDA DADOS ESSENCIAIS
+    // 5. VALIDAÇÕES
     // =====================================================
 
     if (!moto) {
@@ -305,12 +331,6 @@ export async function GET(
         }
       );
     }
-
-    /*
-      Para vendas antigas sem customer_id,
-      usamos nome e telefone salvos na própria venda.
-      Os demais dados cadastrais ficam em branco.
-    */
 
     const nomeCliente =
       cliente?.nome ||
@@ -355,7 +375,10 @@ export async function GET(
         {
           paragraphLoop:
             true,
-          linebreaks: true,
+
+          linebreaks:
+            true,
+
           nullGetter:
             () => "",
         }
@@ -464,26 +487,25 @@ export async function GET(
           ) || 0
         ),
 
+      // DATA E HORA DO MOMENTO DA EMISSÃO
       data_extenso:
-        dataExtenso(
-          venda.data_venda
-        ),
+        dataAtualExtenso(),
 
       hora_documento:
-        horaDocumento(
-          venda.hora_venda
-        ),
+        horaAtual(),
     });
 
     // =====================================================
-    // 8. GERA O ARQUIVO WORD
+    // 8. GERA O WORD
     // =====================================================
 
     const buffer =
       doc
         .getZip()
         .generate({
-          type: "nodebuffer",
+          type:
+            "nodebuffer",
+
           compression:
             "DEFLATE",
         });
@@ -514,7 +536,9 @@ export async function GET(
   } catch (
     error: any
   ) {
-    console.error(error);
+    console.error(
+      error
+    );
 
     return Response.json(
       {
