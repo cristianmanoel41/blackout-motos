@@ -32,21 +32,19 @@ export default async function RelatorioMensalPage({
     ? Number(params.ano)
     : hoje.getFullYear()
 
-  const inicioMes = new Date(
-    anoSelecionado,
-    mesSelecionado - 1,
-    1
-  )
-    .toISOString()
-    .slice(0, 10)
-
-  const fimMes = new Date(
+  const ultimoDiaMes = new Date(
     anoSelecionado,
     mesSelecionado,
     0
-  )
-    .toISOString()
-    .slice(0, 10)
+  ).getDate()
+
+  const inicioMes =
+    `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-01`
+
+  const fimMes =
+    `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-${String(
+      ultimoDiaMes
+    ).padStart(2, '0')}`
 
   const supabase = await createClient()
 
@@ -408,8 +406,9 @@ export default async function RelatorioMensalPage({
       {/* FILTROS */}
 
       <form
+        action="/relatorios"
         method="GET"
-        className="mb-6 flex flex-wrap gap-3"
+        className="mb-6 flex flex-wrap items-center gap-3"
       >
         <select
           name="mes"
@@ -447,8 +446,15 @@ export default async function RelatorioMensalPage({
           type="submit"
           className="rounded-lg bg-dourado px-6 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
         >
-          Gerar
+          Gerar Relatório
         </button>
+
+        <a
+          href={`/api/relatorios/mensal?mes=${mesSelecionado}&ano=${anoSelecionado}`}
+          className="rounded-lg border border-dourado px-6 py-2 font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
+        >
+          Baixar Arquivo
+        </a>
       </form>
 
       {/* PRIMEIRA LINHA */}
