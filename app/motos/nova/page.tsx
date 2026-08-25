@@ -26,6 +26,7 @@ type StatusMoto =
 
 type FormMoto = {
   data_entrada: string;
+  hora_entrada: string;
   tipo_entrada: TipoEntrada;
 
   marca: string;
@@ -72,8 +73,24 @@ function hoje() {
   return `${ano}-${mes}-${dia}`;
 }
 
+
+function horaAtual() {
+  const data = new Date();
+
+  const hora = String(
+    data.getHours()
+  ).padStart(2, "0");
+
+  const minuto = String(
+    data.getMinutes()
+  ).padStart(2, "0");
+
+  return `${hora}:${minuto}`;
+}
+
 const formInicial: FormMoto = {
   data_entrada: hoje(),
+  hora_entrada: horaAtual(),
   tipo_entrada: "compra_nova",
 
   marca: "",
@@ -180,6 +197,8 @@ export default function NovaMotoPage() {
             "troca",
           data_entrada:
             hoje(),
+          hora_entrada:
+            horaAtual(),
         })
       );
     }
@@ -199,6 +218,7 @@ export default function NovaMotoPage() {
     setForm({
       ...formInicial,
       data_entrada: hoje(),
+      hora_entrada: horaAtual(),
     });
 
     setMotoCriadaId("");
@@ -217,6 +237,13 @@ export default function NovaMotoPage() {
     if (!form.data_entrada) {
       setErro(
         "Informe a data de entrada/compra da moto."
+      );
+      return;
+    }
+
+    if (!form.hora_entrada) {
+      setErro(
+        "Informe a hora de entrada/compra da moto."
       );
       return;
     }
@@ -266,6 +293,9 @@ export default function NovaMotoPage() {
         .insert({
           data_entrada:
             form.data_entrada,
+
+          hora_entrada:
+            form.hora_entrada,
 
           tipo_entrada:
             form.tipo_entrada,
@@ -573,15 +603,13 @@ export default function NovaMotoPage() {
                   Ver Moto Cadastrada
                 </Link>
 
-                <button
-                  type="button"
-                  disabled
-                  title="A procuração será ativada quando o modelo Word for configurado."
-                  className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto opacity-50"
+                <a
+                  href={`/api/contratos/procuracao/${motoCriadaId}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
                 >
                   <FileSignature size={17} />
                   Gerar Procuração
-                </button>
+                </a>
 
                 <button
                   type="button"
@@ -651,6 +679,20 @@ export default function NovaMotoPage() {
                 onChange={(valor) =>
                   atualizarCampo(
                     "data_entrada",
+                    valor
+                  )
+                }
+              />
+
+              <Campo
+                label="Hora de entrada / compra *"
+                type="time"
+                value={
+                  form.hora_entrada
+                }
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "hora_entrada",
                     valor
                   )
                 }

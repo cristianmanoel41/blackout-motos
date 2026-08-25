@@ -139,14 +139,13 @@ export default function Sidebar() {
             onClick={() => setAberto(false)}
             className="flex min-w-0 items-center gap-3"
           >
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-preto">
-              <Image
-                src="/logo-blackout.png"
-                alt="Blackout Motos"
-                fill
-                className="object-contain"
-              />
-            </div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-preto">
+  <img
+    src="/logo-blackout.png"
+    alt="Blackout Motos"
+    className="h-full w-full object-contain"
+  />
+</div>
 
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-dourado">

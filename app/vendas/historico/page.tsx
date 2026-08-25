@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 function moeda(
-  valor: number | string | null
+  valor: number | string | null | undefined
 ) {
   return new Intl.NumberFormat(
     "pt-BR",
@@ -19,54 +19,167 @@ function moeda(
 }
 
 function dataBrasil(
-  data: string | null
+  data: string | null | undefined
 ) {
-  if (!data) return "-";
+  if (!data) {
+    return "-";
+  }
 
   const [ano, mes, dia] =
     data.split("-");
 
-  if (!ano || !mes || !dia) {
+  if (
+    !ano ||
+    !mes ||
+    !dia
+  ) {
     return data;
   }
 
   return `${dia}/${mes}/${ano}`;
 }
 
+function horaBrasil(
+  hora: string | null | undefined
+) {
+  if (!hora) {
+    return "-";
+  }
+
+  return hora.slice(0, 5);
+}
+
+type MotoHistorico = {
+  id: string;
+  codigo?: string | null;
+  marca?: string | null;
+  modelo?: string | null;
+  versao?: string | null;
+  ano_modelo?:
+    | string
+    | number
+    | null;
+  placa?: string | null;
+};
+
 export default async function HistoricoVendasPage() {
   const supabase =
     await createClient();
 
+  // ==========================================
+  // 1. CARREGA AS VENDAS
+  // ==========================================
+
   const {
     data: vendas,
-    error,
+    error: vendasError,
   } = await supabase
     .from("sales")
-    .select(`
-      *,
-      motorcycles (
+    .select("*")
+    .order(
+      "data_venda",
+      {
+        ascending: false,
+      }
+    )
+    .order(
+      "hora_venda",
+      {
+        ascending: false,
+      }
+    );
+
+  if (vendasError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
+          Erro ao carregar vendas:{" "}
+          {vendasError.message}
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 2. PEGA OS IDs DAS MOTOS
+  // ==========================================
+
+  const idsMotos = Array.from(
+    new Set(
+      (vendas || [])
+        .map(
+          (venda) =>
+            venda.motorcycle_id
+        )
+        .filter(Boolean)
+        .map(String)
+    )
+  );
+
+  // ==========================================
+  // 3. CARREGA AS MOTOS SEPARADAMENTE
+  // ==========================================
+
+  let motos:
+    | MotoHistorico[]
+    = [];
+
+  if (
+    idsMotos.length > 0
+  ) {
+    const {
+      data: motosData,
+      error: motosError,
+    } = await supabase
+      .from("motorcycles")
+      .select(`
+        id,
         codigo,
         marca,
         modelo,
         versao,
         ano_modelo,
         placa
-      )
-    `)
-    .order("data_venda", {
-      ascending: false,
-    });
+      `)
+      .in(
+        "id",
+        idsMotos
+      );
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
-          Erro ao carregar vendas:{" "}
-          {error.message}
+    if (motosError) {
+      return (
+        <div className="p-6">
+          <div className="rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
+            Erro ao carregar motos:{" "}
+            {motosError.message}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+
+    motos =
+      (motosData ||
+        []) as MotoHistorico[];
   }
+
+  // ==========================================
+  // 4. CRIA MAPA DAS MOTOS
+  // ==========================================
+
+  const mapaMotos =
+    new Map<
+      string,
+      MotoHistorico
+    >();
+
+  motos.forEach(
+    (moto) => {
+      mapaMotos.set(
+        String(moto.id),
+        moto
+      );
+    }
+  );
 
   return (
     <div>
@@ -79,8 +192,7 @@ export default async function HistoricoVendasPage() {
           </h1>
 
           <p className="mt-1 text-sm text-texto-suave">
-            Consulte todas as vendas
-            registradas.
+            Consulte as vendas e gere os contratos automaticamente.
           </p>
         </div>
 
@@ -88,7 +200,10 @@ export default async function HistoricoVendasPage() {
           href="/vendas"
           className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
         >
-          <Plus size={18} />
+          <Plus
+            size={18}
+          />
+
           Nova Venda
         </Link>
       </div>
@@ -96,201 +211,221 @@ export default async function HistoricoVendasPage() {
       {/* SEM VENDAS */}
 
       {(!vendas ||
-        vendas.length === 0) && (
+        vendas.length ===
+          0) && (
         <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
-          Nenhuma venda registrada
-          ainda.
+          Nenhuma venda registrada ainda.
         </div>
       )}
 
       {/* TABELA */}
 
       {vendas &&
-        vendas.length > 0 && (
-          <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-            <table className="w-full min-w-[1050px] text-sm">
-              <thead className="border-b border-grafite-claro bg-preto">
-                <tr className="text-left text-texto-suave">
-                  <th className="px-4 py-3">
-                    Data
-                  </th>
+        vendas.length >
+          0 && (
+        <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
+          <table className="w-full min-w-[1150px] text-sm">
+            <thead className="border-b border-grafite-claro bg-preto">
+              <tr className="text-left text-texto-suave">
+                <th className="px-4 py-3">
+                  Data
+                </th>
 
-                  <th className="px-4 py-3">
-                    Moto
-                  </th>
+                <th className="px-4 py-3">
+                  Hora
+                </th>
 
-                  <th className="px-4 py-3">
-                    Cliente
-                  </th>
+                <th className="px-4 py-3">
+                  Moto
+                </th>
 
-                  <th className="px-4 py-3">
-                    Vendedor
-                  </th>
+                <th className="px-4 py-3">
+                  Cliente
+                </th>
 
-                  <th className="px-4 py-3">
-                    Venda
-                  </th>
+                <th className="px-4 py-3">
+                  Vendedor
+                </th>
 
-                  <th className="px-4 py-3">
-                    Entrada
-                  </th>
+                <th className="px-4 py-3">
+                  Venda
+                </th>
 
-                  <th className="px-4 py-3">
-                    Financiado
-                  </th>
+                <th className="px-4 py-3">
+                  Entrada
+                </th>
 
-                  <th className="px-4 py-3">
-                    Banco
-                  </th>
+                <th className="px-4 py-3">
+                  Financiado
+                </th>
 
-                  <th className="px-4 py-3 text-center">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
+                <th className="px-4 py-3">
+                  Banco
+                </th>
 
-              <tbody>
-                {vendas.map(
-                  (venda) => {
-                    const moto =
-                      venda.motorcycles;
+                <th className="px-4 py-3 text-center">
+                  Ações
+                </th>
+              </tr>
+            </thead>
 
-                    return (
-                      <tr
-                        key={venda.id}
-                        className="border-b border-grafite-claro last:border-b-0 hover:bg-preto/40"
-                      >
-                        {/* DATA */}
+            <tbody>
+              {vendas.map(
+                (venda) => {
+                  const moto =
+                    venda.motorcycle_id
+                      ? mapaMotos.get(
+                          String(
+                            venda.motorcycle_id
+                          )
+                        )
+                      : undefined;
 
-                        <td className="whitespace-nowrap px-4 py-3">
-                          {dataBrasil(
-                            venda.data_venda
-                          )}
-                        </td>
+                  return (
+                    <tr
+                      key={
+                        venda.id
+                      }
+                      className="border-b border-grafite-claro last:border-b-0 hover:bg-preto/40"
+                    >
+                      {/* DATA */}
 
-                        {/* MOTO */}
+                      <td className="whitespace-nowrap px-4 py-3">
+                        {dataBrasil(
+                          venda.data_venda
+                        )}
+                      </td>
 
-                        <td className="px-4 py-3">
-                          <div className="font-semibold text-white">
-                            {moto
-                              ? `${
-                                  moto.marca ||
-                                  ""
-                                } ${
-                                  moto.modelo ||
-                                  ""
-                                }`
-                              : "Moto não encontrada"}
-                          </div>
+                      {/* HORA */}
 
-                          <div className="text-xs text-texto-suave">
-                            {moto?.codigo ||
-                              ""}
+                      <td className="whitespace-nowrap px-4 py-3 text-texto-suave">
+                        {horaBrasil(
+                          venda.hora_venda
+                        )}
+                      </td>
 
-                            {moto?.ano_modelo
-                              ? ` · ${moto.ano_modelo}`
-                              : ""}
+                      {/* MOTO */}
 
-                            {moto?.placa
-                              ? ` · ${moto.placa}`
-                              : ""}
-                          </div>
-                        </td>
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-white">
+                          {moto
+                            ? `${
+                                moto.marca ||
+                                ""
+                              } ${
+                                moto.modelo ||
+                                ""
+                              }`
+                            : "Moto não encontrada"}
+                        </div>
 
-                        {/* CLIENTE */}
+                        <div className="text-xs text-texto-suave">
+                          {moto?.codigo ||
+                            ""}
 
-                        <td className="px-4 py-3">
-                          <div className="text-white">
-                            {venda.cliente ||
-                              "Não informado"}
-                          </div>
+                          {moto?.ano_modelo
+                            ? ` · ${moto.ano_modelo}`
+                            : ""}
 
-                          <div className="text-xs text-texto-suave">
-                            {venda.telefone ||
-                              ""}
-                          </div>
-                        </td>
+                          {moto?.placa
+                            ? ` · ${moto.placa}`
+                            : ""}
+                        </div>
+                      </td>
 
-                        {/* VENDEDOR */}
+                      {/* CLIENTE */}
 
-                        <td className="px-4 py-3 font-semibold text-dourado">
-                          {venda.vendedor ||
-                            "-"}
-                        </td>
+                      <td className="px-4 py-3">
+                        <div className="text-white">
+                          {venda.cliente ||
+                            "Não informado"}
+                        </div>
 
-                        {/* VALOR VENDA */}
+                        <div className="text-xs text-texto-suave">
+                          {venda.telefone ||
+                            ""}
+                        </div>
+                      </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 font-semibold text-white">
-                          {moeda(
-                            venda.valor_total_venda ??
-                              venda.valor_venda
-                          )}
-                        </td>
+                      {/* VENDEDOR */}
 
-                        {/* ENTRADA */}
+                      <td className="px-4 py-3 font-semibold text-dourado">
+                        {venda.vendedor ||
+                          "-"}
+                      </td>
 
-                        <td className="whitespace-nowrap px-4 py-3">
-                          {moeda(
+                      {/* VENDA */}
+
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-white">
+                        {moeda(
+                          venda.valor_total_venda ??
+                            venda.valor_venda
+                        )}
+                      </td>
+
+                      {/* ENTRADA */}
+
+                      <td className="whitespace-nowrap px-4 py-3">
+                        {moeda(
+                          venda.entrada_total ??
                             venda.entrada
-                          )}
-                        </td>
+                        )}
+                      </td>
 
-                        {/* FINANCIADO */}
+                      {/* FINANCIADO */}
 
-                        <td className="whitespace-nowrap px-4 py-3 text-dourado">
-                          {moeda(
-                            venda.valor_financiado
-                          )}
-                        </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-dourado">
+                        {moeda(
+                          venda.valor_financiado
+                        )}
+                      </td>
 
-                        {/* BANCO */}
+                      {/* BANCO */}
 
-                        <td className="px-4 py-3">
-                          {venda.banco ||
-                            "-"}
-                        </td>
+                      <td className="px-4 py-3">
+                        {venda.banco ||
+                          "-"}
+                      </td>
 
-                        {/* AÇÕES */}
+                      {/* AÇÕES */}
 
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            href={`/vendas/${venda.id}`}
+                            className="inline-flex items-center gap-2 rounded-lg border border-dourado px-3 py-2 text-xs font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
+                          >
+                            <Pencil
+                              size={
+                                14
+                              }
+                            />
 
-                            {/* EDITAR */}
+                            Editar
+                          </Link>
 
-                            <Link
-                              href={`/vendas/${venda.id}`}
-                              className="inline-flex items-center gap-2 rounded-lg border border-dourado px-3 py-2 text-xs font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
-                            >
-                              <Pencil
-                                size={14}
-                              />
-                              Editar
-                            </Link>
+                          <a
+                            href={`/api/contratos/venda/${venda.id}`}
+                            className="inline-flex items-center gap-2 rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:bg-dourado-claro"
+                          >
+                            <FileText
+                              size={
+                                14
+                              }
+                            />
 
-                            {/* CONTRATO */}
-
-                            <button
-                              type="button"
-                              disabled
-                              title="O modelo de contrato será configurado em breve"
-                              className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto opacity-50"
-                            >
-                              <FileText
-                                size={14}
-                              />
-                              Gerar Contrato
-                            </button>
-
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                            Gerar Contrato
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

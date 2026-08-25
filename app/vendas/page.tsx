@@ -64,6 +64,21 @@ function hoje() {
   return `${ano}-${mes}-${dia}`;
 }
 
+
+function horaAtual() {
+  const data = new Date();
+
+  const hora = String(
+    data.getHours()
+  ).padStart(2, "0");
+
+  const minuto = String(
+    data.getMinutes()
+  ).padStart(2, "0");
+
+  return `${hora}:${minuto}`;
+}
+
 function moeda(valor: number) {
   return new Intl.NumberFormat(
     "pt-BR",
@@ -121,6 +136,9 @@ export default function VendasPage() {
 
   const [dataVenda, setDataVenda] =
     useState(hoje());
+
+  const [horaVenda, setHoraVenda] =
+    useState(horaAtual());
 
   const [motoId, setMotoId] =
     useState("");
@@ -442,6 +460,14 @@ export default function VendasPage() {
             );
           }
 
+          if (
+            rascunho.horaVenda
+          ) {
+            setHoraVenda(
+              rascunho.horaVenda
+            );
+          }
+
           if (rascunho.motoId) {
             setMotoId(
               rascunho.motoId
@@ -576,6 +602,7 @@ export default function VendasPage() {
   function salvarRascunho() {
     const rascunho = {
       dataVenda,
+      horaVenda,
       motoId,
       vendedor,
       tipoVenda,
@@ -686,6 +713,7 @@ export default function VendasPage() {
 
   function limparFormulario() {
     setDataVenda(hoje());
+    setHoraVenda(horaAtual());
     setMotoId("");
     setClienteId("");
     setBuscaCliente("");
@@ -706,6 +734,13 @@ export default function VendasPage() {
 
     setErro("");
     setMensagem("");
+
+    if (!horaVenda) {
+      setErro(
+        "Informe a hora da venda."
+      );
+      return;
+    }
 
     if (!motoId) {
       setErro(
@@ -885,6 +920,7 @@ export default function VendasPage() {
         .from("sales")
         .insert({
           data_venda: dataVenda,
+          hora_venda: horaVenda,
           motorcycle_id:
             motoId,
           customer_id:
@@ -1227,6 +1263,23 @@ export default function VendasPage() {
                   value={dataVenda}
                   onChange={(e) =>
                     setDataVenda(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Hora da venda
+                </label>
+
+                <input
+                  type="time"
+                  value={horaVenda}
+                  onChange={(e) =>
+                    setHoraVenda(
                       e.target.value
                     )
                   }

@@ -56,6 +56,9 @@ export default function EditarVendaPage() {
   const [dataVenda, setDataVenda] =
     useState("");
 
+  const [horaVenda, setHoraVenda] =
+    useState("");
+
   const [cliente, setCliente] =
     useState("");
 
@@ -97,6 +100,9 @@ export default function EditarVendaPage() {
   const [motoNome, setMotoNome] =
     useState("");
 
+  const [motorcycleId, setMotorcycleId] =
+    useState("");
+
   const ehFinanciamento =
     formaPagamento ===
     "Financiamento";
@@ -131,28 +137,24 @@ export default function EditarVendaPage() {
     setCarregando(true);
     setErro("");
 
-    const { data, error } =
-      await supabase
-        .from("sales")
-        .select(`
-          *,
-          motorcycles (
-            codigo,
-            marca,
-            modelo,
-            versao,
-            ano_modelo,
-            placa
-          )
-        `)
-        .eq("id", id)
-        .single();
+    // 1. Carrega a venda SEM embed de motorcycles
+    const {
+      data: venda,
+      error: vendaError,
+    } = await supabase
+      .from("sales")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    if (error || !data) {
-      console.error(error);
+    if (
+      vendaError ||
+      !venda
+    ) {
+      console.error(vendaError);
 
       setErro(
-        error?.message ||
+        vendaError?.message ||
           "Não foi possível carregar os dados da venda."
       );
 
@@ -161,26 +163,33 @@ export default function EditarVendaPage() {
     }
 
     setDataVenda(
-      data.data_venda || ""
+      venda.data_venda || ""
+    );
+
+    setHoraVenda(
+      venda.hora_venda
+        ? String(
+            venda.hora_venda
+          ).slice(0, 5)
+        : ""
     );
 
     setCliente(
-      data.cliente || ""
+      venda.cliente || ""
     );
 
     setTelefone(
-      data.telefone || ""
+      venda.telefone || ""
     );
 
     setVendedor(
-      data.vendedor || ""
+      venda.vendedor || ""
     );
 
-    // Vendas antigas podem não ter forma de pagamento
     setFormaPagamento(
-      data.forma_pagamento ||
+      venda.forma_pagamento ||
         (Number(
-          data.valor_financiado
+          venda.valor_financiado
         ) > 0
           ? "Financiamento"
           : "")
@@ -188,56 +197,100 @@ export default function EditarVendaPage() {
 
     setValorVenda(
       String(
-        data.valor_total_venda ??
-          data.valor_venda ??
+        venda.valor_total_venda ??
+          venda.valor_venda ??
           ""
       )
     );
 
     setEntrada(
       String(
-        data.entrada ?? ""
+        venda.entrada_total ??
+          venda.entrada ??
+          ""
       )
     );
 
     setBanco(
-      data.banco || ""
+      venda.banco || ""
     );
 
     setTransferenciaCliente(
       String(
-        data.transferencia_cliente ??
+        venda.transferencia_cliente ??
           ""
       )
     );
 
     setTransferenciaLoja(
       String(
-        data.transferencia_loja ??
+        venda.transferencia_loja ??
           ""
       )
     );
 
     setObservacoes(
-      data.observacoes || ""
+      venda.observacoes || ""
     );
 
-    const moto =
-      data.motorcycles;
+    const idMoto =
+      venda.motorcycle_id
+        ? String(
+            venda.motorcycle_id
+          )
+        : "";
 
-    if (moto) {
-      setMotoNome(
-        [
-          moto.codigo,
-          moto.marca,
-          moto.modelo,
-          moto.versao,
-          moto.ano_modelo,
-          moto.placa,
-        ]
-          .filter(Boolean)
-          .join(" · ")
-      );
+    setMotorcycleId(
+      idMoto
+    );
+
+    // 2. Carrega a moto separadamente
+    if (idMoto) {
+      const {
+        data: moto,
+        error: motoError,
+      } = await supabase
+        .from("motorcycles")
+        .select(`
+          id,
+          codigo,
+          marca,
+          modelo,
+          versao,
+          ano_modelo,
+          placa
+        `)
+        .eq(
+          "id",
+          idMoto
+        )
+        .single();
+
+      if (
+        motoError ||
+        !moto
+      ) {
+        console.error(
+          motoError
+        );
+
+        setMotoNome(
+          "Moto não encontrada"
+        );
+      } else {
+        setMotoNome(
+          [
+            moto.codigo,
+            moto.marca,
+            moto.modelo,
+            moto.versao,
+            moto.ano_modelo,
+            moto.placa,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        );
+      }
     } else {
       setMotoNome(
         "Moto não encontrada"
@@ -254,6 +307,13 @@ export default function EditarVendaPage() {
     if (!dataVenda) {
       setErro(
         "Informe a data da venda."
+      );
+      return;
+    }
+
+    if (!horaVenda) {
+      setErro(
+        "Informe a hora da venda."
       );
       return;
     }
@@ -315,7 +375,9 @@ export default function EditarVendaPage() {
         "Deseja salvar as alterações desta venda?"
       );
 
-    if (!confirmar) return;
+    if (!confirmar) {
+      return;
+    }
 
     setSalvando(true);
 
@@ -333,6 +395,9 @@ export default function EditarVendaPage() {
         .update({
           data_venda:
             dataVenda,
+
+          hora_venda:
+            horaVenda,
 
           cliente:
             cliente.trim(),
@@ -352,6 +417,9 @@ export default function EditarVendaPage() {
             valorVendaNumero,
 
           entrada:
+            entradaFinal,
+
+          entrada_total:
             entradaFinal,
 
           valor_financiado:
@@ -481,6 +549,23 @@ export default function EditarVendaPage() {
               </div>
 
               <div>
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Hora da venda
+                </label>
+
+                <input
+                  type="time"
+                  value={horaVenda}
+                  onChange={(e) =>
+                    setHoraVenda(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
                 <label className="mb-2 block text-sm text-zinc-300">
                   Moto
                 </label>
