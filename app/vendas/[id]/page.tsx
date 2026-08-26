@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { opcoesDeBanco } from "@/lib/dados/financeiras";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 import Vistorias from "@/components/Vistorias";
@@ -34,13 +35,7 @@ const formasPagamento = [
 ];
 
 function moeda(valor: number) {
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL",
-    }
-  ).format(valor || 0);
+  return formatarMoeda(valor);
 }
 
 export default function EditarVendaPage() {

@@ -8,6 +8,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 import {
   BANCOS_FINANCIAMENTO,
   OPERADORA_CARTAO,
@@ -122,13 +123,7 @@ function horaAtual() {
 }
 
 function moeda(valor: number) {
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL",
-    }
-  ).format(valor || 0);
+  return formatarMoeda(valor);
 }
 
 function normalizarTexto(

@@ -3,14 +3,12 @@ import path from "node:path";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 export const runtime = "nodejs";
 
 function moeda(valor: unknown) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(valor) || 0);
+  return formatarMoeda(valor as number);
 }
 
 function dataAtualExtenso() {

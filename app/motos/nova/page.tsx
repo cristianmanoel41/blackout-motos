@@ -13,6 +13,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 type TipoEntrada =
   | "estoque_inicial"
@@ -107,13 +108,7 @@ const formInicial: FormMoto = {
 };
 
 function moeda(valor: number) {
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL",
-    }
-  ).format(valor || 0);
+  return formatarMoeda(valor);
 }
 
 export default function NovaMotoPage() {

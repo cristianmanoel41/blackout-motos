@@ -10,6 +10,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 import CardWhatsapp from "@/components/CardWhatsapp";
 
 type Cliente = {
@@ -61,10 +62,7 @@ type VendaCliente = {
 };
 
 function moeda(valor: number | null | undefined) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(valor) || 0);
+  return formatarMoeda(valor);
 }
 
 function dataBrasil(data: string | null | undefined) {

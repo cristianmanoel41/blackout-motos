@@ -3,14 +3,15 @@ import path from "node:path";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
+import {
+  formatarMoeda,
+  formatarNumero,
+} from "@/lib/formatadores/moeda";
 
 export const runtime = "nodejs";
 
 function moedaSemSimbolo(valor: unknown) {
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(valor) || 0);
+  return formatarNumero(valor as number);
 }
 
 const UNIDADES = [
@@ -236,14 +237,8 @@ function horaAtual() {
 function moedaComSimbolo(
   valor: unknown
 ) {
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL",
-    }
-  ).format(
-    Number(valor) || 0
+  return formatarMoeda(
+    valor as number
   );
 }
 

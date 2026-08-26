@@ -309,9 +309,9 @@ const corpo =
   divisoria() +
   paragrafo(
     'Recebemos de {cliente_nome}, CPF {cliente_cpf}, telefone {cliente_telefone}, ' +
-      'a quantia de R$ {valor_total} ({valor_extenso}), referente à compra de ' +
+      'a quantia de {valor_total} ({valor_extenso}), referente à compra de ' +
       '{quantidade} unidade(s) de {produto}, marca {marca}, modelo {modelo}, ' +
-      'cor {cor}, tamanho {tamanho}, ao valor unitário de R$ {valor_unitario}.',
+      'cor {cor}, tamanho {tamanho}, ao valor unitário de {valor_unitario}.',
     { alinhamento: 'both', tamanho: 9.5, espacoDepois: 120 }
   ) +
   paragrafo('Forma de pagamento: {forma_pagamento}.', {

@@ -4,6 +4,7 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 export const runtime = "nodejs";
 
@@ -14,12 +15,7 @@ export const runtime = "nodejs";
  * RECIBO É GERADO (fuso America/Sao_Paulo), não as da venda.
  */
 
-function numeroBr(valor: unknown) {
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(valor) || 0);
-}
+
 
 function dataAtualExtenso() {
   const partes = new Intl.DateTimeFormat("pt-BR", {
@@ -278,8 +274,8 @@ export async function GET(
         juntarCampo(listaItens, "tamanho") || "não informado",
       quantidade: String(quantidadeTotal),
 
-      valor_unitario: numeroBr(valorUnitario),
-      valor_total: numeroBr(valorTotal),
+      valor_unitario: formatarMoeda(valorUnitario),
+      valor_total: formatarMoeda(valorTotal),
       valor_extenso: valorPorExtenso(valorTotal),
 
       forma_pagamento: formaPagamento,

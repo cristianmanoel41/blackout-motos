@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 import HistoricoGeral, {
   type RegistroHistorico,
 } from "@/components/HistoricoGeral";
@@ -15,10 +16,7 @@ import { Plus, HardHat } from "lucide-react";
  */
 
 function moeda(valor: number | string | null | undefined) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(valor) || 0);
+  return formatarMoeda(valor);
 }
 
 function horaBrasil(hora: string | null | undefined) {
