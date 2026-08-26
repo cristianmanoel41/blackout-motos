@@ -22,6 +22,10 @@ const supabase = createClient();
 
 type Moto = {
   id: string | number;
+  preco_anunciado?:
+    | number
+    | string
+    | null;
   codigo?: string | null;
   marca?: string | null;
   modelo?: string | null;
@@ -280,6 +284,11 @@ export default function VendasPage() {
         String(moto.id) ===
         String(motoId)
     );
+
+  const precoAnunciado =
+    Number(
+      motoSelecionada?.preco_anunciado
+    ) || 0;
 
   const motosFiltradas =
     useMemo(() => {
@@ -870,6 +879,39 @@ export default function VendasPage() {
     iniciar();
   }, []);
 
+  /*
+   * Quando a moto já vem escolhida (link do estoque ou
+   * rascunho da venda), o preço anunciado só existe depois
+   * que a lista de motos carrega. Preenche aqui, sem
+   * apagar valor que já tenha sido digitado.
+   */
+  useEffect(() => {
+    if (
+      !motoId ||
+      valorVenda.trim() !== ""
+    ) {
+      return;
+    }
+
+    const moto = motos.find(
+      (item) =>
+        String(item.id) ===
+        String(motoId)
+    );
+
+    const preco =
+      Number(
+        moto?.preco_anunciado
+      ) || 0;
+
+    if (preco > 0) {
+      setValorVenda(
+        String(preco)
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [motos, motoId]);
+
   function salvarRascunho() {
     const rascunho = {
       dataVenda,
@@ -949,6 +991,34 @@ export default function VendasPage() {
 
     window.location.href =
       `/motos/nova?${parametros.toString()}`;
+  }
+
+  /*
+   * Ao trocar a moto, o valor da venda vem do preço
+   * anunciado no cadastro dela. Continua editável:
+   * o que foi negociado manda.
+   */
+  function selecionarMoto(
+    novoMotoId: string
+  ) {
+    setMotoId(novoMotoId);
+
+    const moto = motos.find(
+      (item) =>
+        String(item.id) ===
+        String(novoMotoId)
+    );
+
+    const preco =
+      Number(
+        moto?.preco_anunciado
+      ) || 0;
+
+    if (preco > 0) {
+      setValorVenda(
+        String(preco)
+      );
+    }
   }
 
   function adicionarPagamento(
@@ -1904,7 +1974,7 @@ export default function VendasPage() {
                 <select
                   value={motoId}
                   onChange={(e) =>
-                    setMotoId(
+                    selecionarMoto(
                       e.target.value
                     )
                   }
@@ -2162,6 +2232,45 @@ export default function VendasPage() {
                   placeholder="0,00"
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+
+                {motoSelecionada &&
+                  (precoAnunciado >
+                  0 ? (
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Preço anunciado no cadastro
+                      da moto:{" "}
+                      <strong className="text-yellow-500">
+                        {moeda(
+                          precoAnunciado
+                        )}
+                      </strong>
+                      {Math.abs(
+                        valorVendaNumero -
+                          precoAnunciado
+                      ) > 0.009 && (
+                        <>
+                          {" "}
+                          · você alterou para{" "}
+                          {moeda(
+                            valorVendaNumero
+                          )}
+                        </>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-yellow-300">
+                      Esta moto não tem preço
+                      anunciado no cadastro.{" "}
+                      <Link
+                        href={`/motos/${motoId}`}
+                        className="underline"
+                      >
+                        Cadastrar o preço
+                      </Link>{" "}
+                      para ele vir preenchido nas
+                      próximas vendas.
+                    </p>
+                  ))}
               </div>
 
               {tipoVenda ===
