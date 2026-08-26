@@ -26,12 +26,13 @@ body {
 }
 /*
  * Impressão de documentos (recibo).
- * A folha é A5 deitada, igual ao modelo em Word.
+ * A folha é um terço de A4 deitada (21 x 9,9 cm), o tamanho
+ * de talão de recibo - igual ao modelo em Word.
  */
 @media print {
   @page {
-    size: A5 landscape;
-    margin: 8mm 10mm;
+    size: 210mm 99mm;
+    margin: 6mm 10mm;
   }
 
   html,

@@ -7,9 +7,9 @@ import { ArrowLeft, FileText } from "lucide-react";
 /*
  * Recibo pronto para imprimir, direto no navegador.
  *
- * A folha é A5 paisagem, igual ao modelo Word. Ctrl+P
- * imprime ou salva em PDF sem precisar de nenhum programa
- * instalado. A barra de cima some na impressão.
+ * A folha é 21 x 9,9 cm (um terço do A4), igual ao modelo
+ * Word. Ctrl+P imprime ou salva em PDF sem precisar de
+ * nenhum programa instalado. A barra some na impressão.
  */
 
 export const dynamic = "force-dynamic";
@@ -73,9 +73,9 @@ export default async function ReciboCapacetePage({
         </div>
       </div>
 
-      {/* FOLHA A5 PAISAGEM */}
+      {/* FOLHA 21 x 9,9 CM */}
 
-      <div className="mx-auto w-[21cm] max-w-full bg-white px-[1cm] py-[0.8cm] text-black shadow-2xl print:w-auto print:px-0 print:py-0 print:shadow-none">
+      <div className="mx-auto w-[21cm] min-h-[9.9cm] max-w-full bg-white px-[1cm] py-[0.6cm] text-black shadow-2xl print:min-h-0 print:w-auto print:px-0 print:py-0 print:shadow-none">
         {/* CABEÇALHO */}
 
         <div className="text-center">
@@ -83,28 +83,28 @@ export default async function ReciboCapacetePage({
           <img
             src="/logo-blackout.png"
             alt="Blackout Motos"
-            className="mx-auto h-[1.9cm] w-[1.9cm] object-contain"
+            className="mx-auto h-[1.2cm] w-[1.2cm] object-contain"
           />
 
-          <p className="mt-1 text-[15pt] font-bold tracking-[0.15em]">
+          <p className="mt-1 text-[12pt] font-bold tracking-[0.15em]">
             BLACKOUT MOTOS
           </p>
 
-          <p className="mt-1 text-[7.5pt] text-neutral-700">
+          <p className="text-[6.5pt] text-neutral-700">
             Avenida Andrômeda, 3521 - Bosque dos Eucaliptos -
             São José dos Campos/SP - CEP 12233-000
           </p>
 
-          <p className="mt-3 text-[12pt] font-bold tracking-[0.3em]">
+          <p className="mt-1 text-[10pt] font-bold tracking-[0.3em]">
             RECIBO
           </p>
         </div>
 
-        <div className="mt-2 border-b border-neutral-300" />
+        <div className="mt-1 border-b border-neutral-300" />
 
         {/* CORPO */}
 
-        <p className="mt-4 text-justify text-[9.5pt] leading-relaxed">
+        <p className="mt-3 text-justify text-[8.5pt] leading-snug">
           Recebemos de{" "}
           <strong>{dados.cliente_nome}</strong>, CPF{" "}
           {dados.cliente_cpf}, telefone{" "}
@@ -117,22 +117,22 @@ export default async function ReciboCapacetePage({
           unitário de {dados.valor_unitario}.
         </p>
 
-        <p className="mt-3 text-[9.5pt]">
+        <p className="mt-2 text-[8.5pt]">
           Forma de pagamento: {dados.forma_pagamento}.
         </p>
 
-        <p className="mt-3 text-[9.5pt]">
+        <p className="mt-2 text-[8.5pt]">
           São José dos Campos, {dados.data_extenso}, às{" "}
           {dados.hora_documento}.
         </p>
 
         {/* ASSINATURAS */}
 
-        <div className="mt-[1.6cm] flex justify-center gap-[1cm]">
+        <div className="mt-[1.1cm] flex justify-center gap-[1cm]">
           <div className="w-[9cm] max-w-[45%]">
             <div className="border-b border-black" />
 
-            <p className="mt-1 text-center text-[8.5pt] font-bold">
+            <p className="mt-1 text-center text-[7.5pt] font-bold">
               BLACKOUT MOTOS
             </p>
           </div>
@@ -140,13 +140,13 @@ export default async function ReciboCapacetePage({
           <div className="w-[9cm] max-w-[45%]">
             <div className="border-b border-black" />
 
-            <p className="mt-1 break-words text-center text-[8.5pt] font-bold">
+            <p className="mt-1 break-words text-center text-[7.5pt] font-bold">
               {dados.cliente_nome}
             </p>
           </div>
         </div>
 
-        <p className="mt-3 text-center text-[7.5pt] text-neutral-600">
+        <p className="mt-2 text-center text-[6.5pt] text-neutral-600">
           Vendedor: {dados.vendedor}
         </p>
       </div>

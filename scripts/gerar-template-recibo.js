@@ -10,9 +10,9 @@
  * porque é neles que a rota /api/recibos/capacete/[id]
  * escreve os dados da venda.
  *
- * TAMANHO: A5 paisagem (21 x 14,8 cm) - o tamanho de talão
- * de recibo. A largura é a mesma da folha A4, então dá para
- * imprimir dois por folha e cortar ao meio.
+ * TAMANHO: 21 x 9,9 cm - um terço da folha A4, o tamanho de
+ * talão de recibo. A largura é a mesma do A4, então saem três
+ * por folha e é só cortar.
  * Para voltar ao A4 inteiro, troque PAGINA por PAGINA_A4
  * lá embaixo, no <w:sectPr>.
  *
@@ -39,12 +39,12 @@ const destino = path.join(
 /* Medidas: 1 cm = 566,93 twips (página) e 360000 EMU (imagem). */
 const cm = (valor) => Math.round(valor * 566.93)
 
-/* A5 paisagem: 21 x 14,8 cm. */
+/* Um terço de A4: 21 x 9,9 cm. */
 const PAGINA = {
   largura: cm(21),
-  altura: cm(14.8),
+  altura: cm(9.9),
   orientacao: 'landscape',
-  margemVertical: cm(0.8),
+  margemVertical: cm(0.6),
   margemHorizontal: cm(1),
 }
 
@@ -57,8 +57,8 @@ const PAGINA = {
 //   margemHorizontal: cm(2),
 // }
 
-/* Logo com 1,9 cm (360000 EMU por cm), quadrada. */
-const LOGO_EMU = Math.round(1.9 * 360000)
+/* Logo com 1,2 cm (360000 EMU por cm), quadrada. */
+const LOGO_EMU = Math.round(1.2 * 360000)
 
 /* Largura útil da página, dividida entre as duas assinaturas. */
 const LARGURA_UTIL =
@@ -196,7 +196,7 @@ function paragrafoLogo() {
 function divisoria() {
   return (
     '<w:p><w:pPr>' +
-    '<w:spacing w:before="40" w:after="140"/>' +
+    '<w:spacing w:before="20" w:after="90"/>' +
     '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="BBBBBB"/></w:pBdr>' +
     '</w:pPr></w:p>'
   )
@@ -240,7 +240,7 @@ function assinaturasLadoALado(esquerda, direita) {
     paragrafo(nome, {
       alinhamento: 'center',
       negrito: true,
-      tamanho: 8.5,
+      tamanho: 7.5,
       espacoDepois: 0,
     }) +
     '</w:tc>'
@@ -285,24 +285,24 @@ const corpo =
   paragrafo('BLACKOUT MOTOS', {
     alinhamento: 'center',
     negrito: true,
-    tamanho: 14,
-    espacoDepois: 20,
+    tamanho: 12,
+    espacoDepois: 0,
     espacamentoLetras: 30,
   }) +
   paragrafo(
     'Avenida Andrômeda, 3521 - Bosque dos Eucaliptos - São José dos Campos/SP - CEP 12233-000',
     {
       alinhamento: 'center',
-      tamanho: 7.5,
+      tamanho: 6.5,
       cor: '444444',
-      espacoDepois: 40,
+      espacoDepois: 20,
     }
   ) +
   paragrafo('RECIBO', {
     alinhamento: 'center',
     negrito: true,
-    tamanho: 12,
-    espacoAntes: 160,
+    tamanho: 10,
+    espacoAntes: 60,
     espacoDepois: 0,
     espacamentoLetras: 50,
   }) +
@@ -312,22 +312,23 @@ const corpo =
       'a quantia de {valor_total} ({valor_extenso}), referente à compra de ' +
       '{quantidade} unidade(s) de {produto}, marca {marca}, modelo {modelo}, ' +
       'cor {cor}, tamanho {tamanho}, ao valor unitário de {valor_unitario}.',
-    { alinhamento: 'both', tamanho: 9.5, espacoDepois: 120 }
+    { alinhamento: 'both', tamanho: 8.5, espacoDepois: 80 }
   ) +
   paragrafo('Forma de pagamento: {forma_pagamento}.', {
     alinhamento: 'both',
-    tamanho: 9.5,
-    espacoDepois: 120,
+    tamanho: 8.5,
+    espacoDepois: 80,
   }) +
   paragrafo(
     'São José dos Campos, {data_extenso}, às {hora_documento}.',
-    { alinhamento: 'both', tamanho: 9.5, espacoDepois: 400 }
+    { alinhamento: 'both', tamanho: 8.5, espacoDepois: 280 }
   ) +
   assinaturasLadoALado('BLACKOUT MOTOS', '{cliente_nome}') +
   paragrafo('Vendedor: {vendedor}', {
     alinhamento: 'center',
-    tamanho: 7.5,
+    tamanho: 6.5,
     cor: '666666',
+    espacoAntes: 60,
     espacoDepois: 0,
   })
 
