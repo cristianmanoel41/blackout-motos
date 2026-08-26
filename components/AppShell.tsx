@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import Sidebar from '@/components/Sidebar'
 
 export default function AppShell({
@@ -11,8 +12,8 @@ export default function AppShell({
   const pathname = usePathname()
 
   /*
-   * Telas de documento (recibo) abrem limpas, sem menu
-   * nem marca d'agua, para sair certo na impressao.
+   * Recibos e documentos ficam limpos:
+   * sem menu e sem marca-d'água.
    */
   const paginaSemMenu =
     pathname === '/' ||
@@ -28,15 +29,14 @@ export default function AppShell({
     <div className="min-h-screen bg-preto">
       <Sidebar />
 
-      {/* MARCA D'ÁGUA */}
-
+      {/* MARCA-D'ÁGUA BLACKOUT MOTOS */}
       <div
         aria-hidden="true"
         className="
           pointer-events-none
           fixed
           inset-0
-          z-0
+          z-20
           flex
           items-center
           justify-center
@@ -44,20 +44,33 @@ export default function AppShell({
           md:left-64
         "
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-blackout.png"
-          alt=""
+        <div
           className="
-            w-[min(90vw,900px)]
-            max-w-none
-            object-contain
-            opacity-[0.06]
-            mix-blend-screen
+            relative
+            h-[280px]
+            w-[min(78vw,720px)]
+            opacity-[0.18]
+            brightness-125
+            contrast-125
           "
-        />
+        >
+          <Image
+            src="/logo-blackout.png"
+            alt=""
+            fill
+            priority
+            quality={100}
+            sizes="(max-width: 768px) 78vw, 720px"
+            className="
+              select-none
+              object-contain
+              drop-shadow-[0_0_18px_rgba(212,175,55,0.22)]
+            "
+          />
+        </div>
       </div>
 
+      {/* CONTEÚDO */}
       <main
         className="
           relative
