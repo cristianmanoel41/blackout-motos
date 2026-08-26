@@ -19,6 +19,7 @@ type Cliente = {
   cpf: string | null;
   data_nascimento: string | null;
   telefone: string | null;
+  email: string | null;
   rua: string | null;
   numero: string | null;
   bairro: string | null;
@@ -349,6 +350,10 @@ export default function ClienteDetalhesPage() {
           cliente.telefone?.trim() ||
           null,
 
+        email:
+          cliente.email?.trim() ||
+          null,
+
         rua:
           cliente.rua?.trim() ||
           null,
@@ -613,6 +618,23 @@ export default function ClienteDetalhesPage() {
               onChange={(valor) =>
                 atualizarCampo(
                   "telefone",
+                  valor
+                )
+              }
+            />
+
+            <Campo
+              label="E-mail"
+              value={
+                cliente.email || ""
+              }
+              editando={
+                editando
+              }
+              type="email"
+              onChange={(valor) =>
+                atualizarCampo(
+                  "email",
                   valor
                 )
               }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Plus, UserRound, Phone, FileText } from "lucide-react";
+import { Plus, UserRound, Phone, Mail, FileText } from "lucide-react";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 
 export default async function ClientesPage() {
@@ -81,6 +81,14 @@ export default async function ClientesPage() {
 
                 <span>
                   {cliente.telefone || "Telefone não informado"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-texto-suave">
+                <Mail size={15} />
+
+                <span className="truncate">
+                  {cliente.email || "E-mail não informado"}
                 </span>
               </div>
             </div>

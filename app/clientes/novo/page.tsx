@@ -10,6 +10,7 @@ type FormCliente = {
   cpf: string;
   data_nascimento: string;
   telefone: string;
+  email: string;
   rua: string;
   numero: string;
   bairro: string;
@@ -24,6 +25,7 @@ const formInicial: FormCliente = {
   cpf: "",
   data_nascimento: "",
   telefone: "",
+  email: "",
   rua: "",
   numero: "",
   bairro: "",
@@ -80,6 +82,7 @@ export default function NovoClientePage() {
         cpf: form.cpf.trim() || null,
         data_nascimento: form.data_nascimento || null,
         telefone: form.telefone.trim() || null,
+        email: form.email.trim() || null,
         rua: form.rua.trim() || null,
         numero: form.numero.trim() || null,
         bairro: form.bairro.trim() || null,
@@ -241,6 +244,16 @@ return;
                   atualizarCampo("telefone", valor)
                 }
                 placeholder="(12) 99999-9999"
+              />
+
+              <Campo
+                label="E-mail"
+                value={form.email}
+                onChange={(valor) =>
+                  atualizarCampo("email", valor)
+                }
+                type="email"
+                placeholder="cliente@email.com"
               />
             </div>
           </section>

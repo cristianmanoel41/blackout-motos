@@ -205,46 +205,77 @@ export default async function RelatorioMensalPage({
   // FINANCIAMENTOS POR BANCO
   // =========================================================
 
+  const normalizarBanco = (
+    valor: string | null | undefined
+  ) =>
+    (valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+
+  const mapaBancosOficiais = new Map(
+    BANCOS_FINANCIAMENTO.map((banco) => [
+      normalizarBanco(banco),
+      banco,
+    ])
+  )
+
   const financiamentosMes =
     vendasMes?.filter(
       (venda) => Number(venda.valor_financiado || 0) > 0
     ) ?? []
-
-  const totalFinanciadoMes = financiamentosMes.reduce(
-    (soma, venda) =>
-      soma + Number(venda.valor_financiado || 0),
-    0
-  )
 
   const porBanco = new Map<
     string,
     { quantidade: number; valor: number }
   >()
 
-  /*
-   * Começa com os bancos que a loja trabalha, para eles
-   * aparecerem no relatório mesmo com zero no mês.
-   */
+  // Todos os bancos oficiais aparecem, mesmo com zero contratos.
   BANCOS_FINANCIAMENTO.forEach((banco) => {
-    porBanco.set(banco, { quantidade: 0, valor: 0 })
+    porBanco.set(banco, {
+      quantidade: 0,
+      valor: 0,
+    })
   })
 
+  // Só soma vendas cujo banco exista na lista oficial.
   financiamentosMes.forEach((venda) => {
-    const nome =
-      (venda.banco || '').trim() || 'Não informado'
+    const bancoOficial = mapaBancosOficiais.get(
+      normalizarBanco(venda.banco)
+    )
+
+    if (!bancoOficial) {
+      return
+    }
 
     const atual =
-      porBanco.get(nome) ?? { quantidade: 0, valor: 0 }
+      porBanco.get(bancoOficial) ?? {
+        quantidade: 0,
+        valor: 0,
+      }
 
-    porBanco.set(nome, {
+    porBanco.set(bancoOficial, {
       quantidade: atual.quantidade + 1,
       valor:
         atual.valor + Number(venda.valor_financiado || 0),
     })
   })
 
-  const bancos = Array.from(porBanco.entries())
-    .map(([nome, dados]) => ({
+  const totalFinanciadoMes =
+    Array.from(porBanco.values()).reduce(
+      (soma, banco) => soma + banco.valor,
+      0
+    )
+
+  const bancos = BANCOS_FINANCIAMENTO.map((nome) => {
+    const dados =
+      porBanco.get(nome) ?? {
+        quantidade: 0,
+        valor: 0,
+      }
+
+    return {
       nome,
       quantidade: dados.quantidade,
       valor: dados.valor,
@@ -252,8 +283,8 @@ export default async function RelatorioMensalPage({
         totalFinanciadoMes > 0
           ? (dados.valor / totalFinanciadoMes) * 100
           : 0,
-    }))
-    .sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome))
+    }
+  })
 
   // =========================================================
   // CARTÃO (OPERADORA)
@@ -796,25 +827,21 @@ export default async function RelatorioMensalPage({
                 {bancos.map((banco) => (
                   <tr
                     key={banco.nome}
-                    className={`border-b border-grafite-claro/60 last:border-0 ${
-                      banco.quantidade === 0
-                        ? 'text-texto-suave'
-                        : ''
-                    }`}
+                    className="border-b border-grafite-claro/60 text-white last:border-0"
                   >
-                    <td className="px-5 py-3 font-medium">
+                    <td className="px-5 py-3 font-medium text-white">
                       {banco.nome}
                     </td>
 
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-right text-white">
                       {banco.quantidade}
                     </td>
 
-                    <td className="px-5 py-3 text-right font-semibold text-dourado">
+                    <td className="px-5 py-3 text-right font-semibold text-white">
                       {formatarMoeda(banco.valor)}
                     </td>
 
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-right text-white">
                       {banco.participacao.toFixed(1)}%
                     </td>
                   </tr>
