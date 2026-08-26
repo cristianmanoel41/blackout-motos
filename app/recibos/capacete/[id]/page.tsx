@@ -80,10 +80,15 @@ export default async function ReciboCapacetePage({
 
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/*
+            Mais larga que alta de propósito: o arquivo da
+            logo é quadrado, então object-fill estica na
+            horizontal, igual ao modelo em Word.
+          */}
           <img
             src="/logo-blackout.png"
             alt="Blackout Motos"
-            className="mx-auto h-[1.2cm] w-[1.2cm] object-contain"
+            className="mx-auto h-[1.2cm] w-[2.4cm] object-fill"
           />
 
           <p className="mt-1 text-[12pt] font-bold tracking-[0.15em]">

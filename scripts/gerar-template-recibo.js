@@ -57,8 +57,15 @@ const PAGINA = {
 //   margemHorizontal: cm(2),
 // }
 
-/* Logo com 1,2 cm (360000 EMU por cm), quadrada. */
-const LOGO_EMU = Math.round(1.2 * 360000)
+/*
+ * Logo do cabeçalho (360000 EMU por cm).
+ * Mais larga que alta de propósito: o arquivo é quadrado,
+ * então ela sai esticada na horizontal, ocupando melhor a
+ * largura da folha. Para voltar ao formato original, use a
+ * mesma medida nos dois.
+ */
+const LOGO_LARGURA_EMU = Math.round(2.4 * 360000)
+const LOGO_ALTURA_EMU = Math.round(1.2 * 360000)
 
 /* Largura útil da página, dividida entre as duas assinaturas. */
 const LARGURA_UTIL =
@@ -172,7 +179,7 @@ function paragrafoLogo() {
     '<w:jc w:val="center"/>' +
     '</w:pPr><w:r><w:drawing>' +
     `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
-    `<wp:extent cx="${LOGO_EMU}" cy="${LOGO_EMU}"/>` +
+    `<wp:extent cx="${LOGO_LARGURA_EMU}" cy="${LOGO_ALTURA_EMU}"/>` +
     '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
     '<wp:docPr id="1" name="Logo Blackout Motos"/>' +
     '<wp:cNvGraphicFramePr/>' +
@@ -182,7 +189,7 @@ function paragrafoLogo() {
     '<pic:nvPicPr><pic:cNvPr id="1" name="logo.jpeg"/><pic:cNvPicPr/></pic:nvPicPr>' +
     '<pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
     '<pic:spPr><a:xfrm><a:off x="0" y="0"/>' +
-    `<a:ext cx="${LOGO_EMU}" cy="${LOGO_EMU}"/></a:xfrm>` +
+    `<a:ext cx="${LOGO_LARGURA_EMU}" cy="${LOGO_ALTURA_EMU}"/></a:xfrm>` +
     '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
     '</pic:pic></a:graphicData></a:graphic></wp:inline>' +
     '</w:drawing></w:r></w:p>'
