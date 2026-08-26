@@ -376,13 +376,13 @@ export default function HistoricoGeral({
                             Ver
                           </Link>
 
-                          <a
-                            href={`/api/recibos/capacete/${registro.id}`}
+                          <Link
+                            href={`/recibos/capacete/${registro.id}`}
                             className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:bg-dourado-claro"
                           >
                             <FileText size={14} />
                             Gerar Recibo
-                          </a>
+                          </Link>
                         </>
                       )}
                     </div>

@@ -721,13 +721,13 @@ export default function NovaVendaCapacetePage() {
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            <a
-              href={`/api/recibos/capacete/${vendaSalva.id}`}
+            <Link
+              href={`/recibos/capacete/${vendaSalva.id}`}
               className="flex items-center gap-2 rounded-lg bg-dourado px-5 py-3 text-sm font-semibold text-preto transition hover:bg-dourado-claro"
             >
               <FileText size={17} />
               Gerar Recibo
-            </a>
+            </Link>
 
             <button
               type="button"

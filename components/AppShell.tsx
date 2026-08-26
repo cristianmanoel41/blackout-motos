@@ -10,9 +10,14 @@ export default function AppShell({
 }) {
   const pathname = usePathname()
 
+  /*
+   * Telas de documento (recibo) abrem limpas, sem menu
+   * nem marca d'agua, para sair certo na impressao.
+   */
   const paginaSemMenu =
     pathname === '/' ||
-    pathname === '/login'
+    pathname === '/login' ||
+    pathname.startsWith('/recibos/')
 
   if (paginaSemMenu) {
     return <>{children}</>

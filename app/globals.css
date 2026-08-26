@@ -24,3 +24,19 @@ body {
   background-color: var(--color-dourado);
   border-radius: 8px;
 }
+/*
+ * Impressão de documentos (recibo).
+ * A folha é A5 deitada, igual ao modelo em Word.
+ */
+@media print {
+  @page {
+    size: A5 landscape;
+    margin: 8mm 10mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+}

@@ -212,13 +212,13 @@ export default function DetalheVendaCapacetePage() {
             Voltar ao histórico
           </Link>
 
-          <a
-            href={`/api/recibos/capacete/${venda.id}`}
+          <Link
+            href={`/recibos/capacete/${venda.id}`}
             className="flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-semibold text-preto transition hover:bg-dourado-claro"
           >
             <FileText size={17} />
             Gerar Recibo
-          </a>
+          </Link>
         </div>
       </div>
 

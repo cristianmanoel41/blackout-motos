@@ -358,13 +358,13 @@ export default function HistoricoVendasCapacetePage() {
                           Ver
                         </Link>
 
-                        <a
-                          href={`/api/recibos/capacete/${venda.id}`}
+                        <Link
+                          href={`/recibos/capacete/${venda.id}`}
                           className="flex items-center gap-1 whitespace-nowrap rounded-lg border border-dourado/50 px-3 py-2 text-xs font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
                         >
                           <FileText size={14} />
                           Gerar Recibo
-                        </a>
+                        </Link>
                       </div>
                     </td>
                   </tr>
