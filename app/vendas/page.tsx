@@ -50,9 +50,14 @@ type TipoPagamento =
   | "Cartão"
   | "Moto na troca";
 
+type DestinoPagamento =
+  | "moto"
+  | "capacete";
+
 type ComponentePagamento = {
   idLocal: string;
   tipo: TipoPagamento;
+  destino: DestinoPagamento;
   valor: string;
   parcelas: string;
   motoId?: string;
@@ -455,6 +460,61 @@ export default function VendasPage() {
     valorVendaNumero +
     totalCapacetes;
 
+  /*
+   * Cada forma de pagamento diz o que está quitando.
+   * Assim dá para passar a moto no cartão e o capacete
+   * no Pix, sem misturar as contas.
+   */
+  const pagoNaMoto =
+    useMemo(() => {
+      return componentes
+        .filter(
+          (componente) =>
+            componente.destino !==
+            "capacete"
+        )
+        .reduce(
+          (total, componente) =>
+            total +
+            (Number(
+              componente.valor
+            ) || 0),
+          0
+        );
+    }, [componentes]);
+
+  const pagoNosCapacetes =
+    useMemo(() => {
+      return componentes
+        .filter(
+          (componente) =>
+            componente.destino ===
+            "capacete"
+        )
+        .reduce(
+          (total, componente) =>
+            total +
+            (Number(
+              componente.valor
+            ) || 0),
+          0
+        );
+    }, [componentes]);
+
+  const faltaNaMoto =
+    Math.max(
+      valorVendaNumero -
+        pagoNaMoto,
+      0
+    );
+
+  const faltaNosCapacetes =
+    Math.max(
+      totalCapacetes -
+        pagoNosCapacetes,
+      0
+    );
+
   const valorFinanciado =
     useMemo(() => {
       if (
@@ -464,15 +524,20 @@ export default function VendasPage() {
         return 0;
       }
 
+      /*
+       * O banco financia o que falta DA MOTO.
+       * Capacete não entra no financiamento: é pago
+       * na hora, com forma de pagamento própria.
+       */
       return Math.max(
-        valorTotalVenda -
-          entradaTotal,
+        valorVendaNumero -
+          pagoNaMoto,
         0
       );
     }, [
       tipoVenda,
-      valorTotalVenda,
-      entradaTotal,
+      valorVendaNumero,
+      pagoNaMoto,
     ]);
 
   const parcelasNumero =
@@ -777,8 +842,24 @@ export default function VendasPage() {
               rascunho.componentes
             )
           ) {
+            /*
+             * Rascunho salvo antes da separação
+             * moto/capacete não tem destino:
+             * tudo que existia pagava a moto.
+             */
             setComponentes(
-              rascunho.componentes
+              rascunho.componentes.map(
+                (
+                  componente: ComponentePagamento
+                ) => ({
+                  ...componente,
+                  destino:
+                    componente.destino ===
+                    "capacete"
+                      ? "capacete"
+                      : "moto",
+                })
+              )
             );
           }
 
@@ -853,6 +934,8 @@ export default function VendasPage() {
                   novoIdLocal(),
                 tipo:
                   "Moto na troca",
+                destino:
+                  "moto",
                 valor:
                   trocaValor,
                 parcelas: "1",
@@ -1039,6 +1122,13 @@ export default function VendasPage() {
           idLocal:
             novoIdLocal(),
           tipo,
+          destino:
+            faltaNaMoto <=
+              0.009 &&
+            faltaNosCapacetes >
+              0.009
+              ? "capacete"
+              : "moto",
           valor: "",
           parcelas: "1",
         },
@@ -1050,7 +1140,8 @@ export default function VendasPage() {
     idLocal: string,
     campo:
       | "valor"
-      | "parcelas",
+      | "parcelas"
+      | "destino",
     valor: string
   ) {
     setComponentes(
@@ -1343,25 +1434,56 @@ export default function VendasPage() {
     }
 
     if (
-      entradaTotal >
-      valorTotalVenda
+      pagoNaMoto >
+      valorVendaNumero + 0.009
     ) {
       setErro(
-        "A soma dos pagamentos/entrada não pode ser maior que o valor da venda (moto + capacetes)."
+        `Os pagamentos marcados como "Moto" (${moeda(
+          pagoNaMoto
+        )}) passam do valor da moto (${moeda(
+          valorVendaNumero
+        )}).`
+      );
+      return;
+    }
+
+    if (
+      pagoNosCapacetes >
+      totalCapacetes + 0.009
+    ) {
+      setErro(
+        `Os pagamentos marcados como "Capacete" (${moeda(
+          pagoNosCapacetes
+        )}) passam do valor dos capacetes (${moeda(
+          totalCapacetes
+        )}).`
+      );
+      return;
+    }
+
+    /*
+     * Os capacetes são sempre pagos na hora, mesmo
+     * quando a moto é financiada.
+     */
+    if (
+      totalCapacetes > 0 &&
+      faltaNosCapacetes > 0.009
+    ) {
+      setErro(
+        `Falta ${moeda(
+          faltaNosCapacetes
+        )} para fechar o pagamento dos capacetes. Adicione uma forma de pagamento marcada como "Capacete".`
       );
       return;
     }
 
     if (
       tipoVenda === "avista" &&
-      Math.abs(
-        entradaTotal -
-          valorTotalVenda
-      ) > 0.009
+      faltaNaMoto > 0.009
     ) {
       setErro(
-        `Na venda à vista, a composição precisa fechar o valor da venda (moto + capacetes). Falta ${moeda(
-          valorFalta
+        `Na venda à vista, a composição precisa fechar o valor da moto. Falta ${moeda(
+          faltaNaMoto
         )}.`
       );
       return;
@@ -1370,11 +1492,10 @@ export default function VendasPage() {
     if (
       tipoVenda ===
         "financiamento" &&
-      entradaTotal >=
-        valorTotalVenda
+      faltaNaMoto <= 0.009
     ) {
       setErro(
-        "Se a entrada cobre todo o valor da venda, altere o tipo da venda para À vista."
+        "A entrada já cobre todo o valor da moto, então não sobra nada para financiar. Altere o tipo da venda para À vista."
       );
       return;
     }
@@ -1427,10 +1548,15 @@ export default function VendasPage() {
                 .tipo
             : "Misto";
 
+      /*
+       * Na venda financiada, a entrada é o que foi pago
+       * DA MOTO: entrada + financiado = valor da moto.
+       * O que pagou capacete fica fora dessa conta.
+       */
       const entradaCompat =
         tipoVenda ===
         "financiamento"
-          ? entradaTotal
+          ? pagoNaMoto
           : valorTotalVenda;
 
       const {
@@ -1462,7 +1588,7 @@ export default function VendasPage() {
           entrada:
             entradaCompat,
           entrada_total:
-            entradaTotal,
+            entradaCompat,
           valor_financiado:
             valorFinanciado,
           banco:
@@ -1528,6 +1654,11 @@ export default function VendasPage() {
                 vendaCriada.id,
               tipo:
                 componente.tipo,
+              destino:
+                componente.destino ===
+                "capacete"
+                  ? "capacete"
+                  : "moto",
               valor,
               parcelas,
               valor_parcela:
@@ -2657,6 +2788,8 @@ export default function VendasPage() {
 
               <p className="mt-1 text-xs text-zinc-500">
                 Você pode combinar Pix, dinheiro, transferência, cartão e moto na troca.
+                {totalCapacetes > 0 &&
+                  " Em cada pagamento, escolha se ele está quitando a moto ou os capacetes."}
               </p>
             </div>
 
@@ -2735,7 +2868,13 @@ export default function VendasPage() {
                       }
                       className="rounded-xl border border-zinc-800 bg-black p-4"
                     >
-                      <div className="grid gap-3 md:grid-cols-[1fr_180px_180px_46px] md:items-end">
+                      <div
+                        className={`grid gap-3 md:items-end ${
+                          totalCapacetes > 0
+                            ? "md:grid-cols-[1fr_140px_160px_160px_46px]"
+                            : "md:grid-cols-[1fr_180px_180px_46px]"
+                        }`}
+                      >
                         <div>
                           <p className="text-xs text-zinc-500">
                             Forma
@@ -2755,6 +2894,46 @@ export default function VendasPage() {
                             </p>
                           )}
                         </div>
+
+                        {totalCapacetes >
+                          0 && (
+                          <div>
+                            <label className="mb-2 block text-xs text-zinc-500">
+                              Pagando
+                            </label>
+
+                            {componente.tipo ===
+                            "Moto na troca" ? (
+                              <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-500">
+                                Moto
+                              </div>
+                            ) : (
+                              <select
+                                value={
+                                  componente.destino
+                                }
+                                onChange={(e) =>
+                                  alterarComponente(
+                                    componente.idLocal,
+                                    "destino",
+                                    e
+                                      .target
+                                      .value
+                                  )
+                                }
+                                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none focus:border-yellow-500"
+                              >
+                                <option value="moto">
+                                  Moto
+                                </option>
+
+                                <option value="capacete">
+                                  Capacete
+                                </option>
+                              </select>
+                            )}
+                          </div>
+                        )}
 
                         <div>
                           <label className="mb-2 block text-xs text-zinc-500">
@@ -2875,16 +3054,94 @@ export default function VendasPage() {
               )}
             </div>
 
+            {totalCapacetes > 0 && (
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-zinc-800 bg-black/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-zinc-500">
+                    Moto
+                  </p>
+
+                  <p className="mt-2 text-sm text-zinc-300">
+                    Pago{" "}
+                    <strong className="text-white">
+                      {moeda(pagoNaMoto)}
+                    </strong>{" "}
+                    de{" "}
+                    {moeda(
+                      valorVendaNumero
+                    )}
+                  </p>
+
+                  {faltaNaMoto > 0.009 && (
+                    <p className="mt-1 text-xs text-yellow-300">
+                      {tipoVenda ===
+                      "financiamento"
+                        ? `${moeda(
+                            faltaNaMoto
+                          )} vai para o financiamento`
+                        : `Falta ${moeda(
+                            faltaNaMoto
+                          )}`}
+                    </p>
+                  )}
+
+                  {faltaNaMoto <= 0.009 &&
+                    valorVendaNumero >
+                      0 && (
+                      <p className="mt-1 text-xs text-green-400">
+                        Moto quitada.
+                      </p>
+                    )}
+                </div>
+
+                <div className="rounded-xl border border-zinc-800 bg-black/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-zinc-500">
+                    Capacetes
+                  </p>
+
+                  <p className="mt-2 text-sm text-zinc-300">
+                    Pago{" "}
+                    <strong className="text-white">
+                      {moeda(
+                        pagoNosCapacetes
+                      )}
+                    </strong>{" "}
+                    de{" "}
+                    {moeda(totalCapacetes)}
+                  </p>
+
+                  {faltaNosCapacetes >
+                  0.009 ? (
+                    <p className="mt-1 text-xs text-yellow-300">
+                      Falta{" "}
+                      {moeda(
+                        faltaNosCapacetes
+                      )}
+                      . Capacete não entra no
+                      financiamento.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-green-400">
+                      Capacetes quitados.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 grid gap-4 md:grid-cols-4">
               <Resumo
                 titulo={
                   tipoVenda ===
                   "financiamento"
-                    ? "Entrada total"
+                    ? "Entrada da moto"
                     : "Pagamento total"
                 }
                 valor={
-                  entradaTotal
+                  tipoVenda ===
+                  "financiamento"
+                    ? pagoNaMoto
+                    : entradaTotal
                 }
               />
 
@@ -2933,8 +3190,7 @@ export default function VendasPage() {
               "avista" &&
               valorTotalVenda >
                 0 &&
-              entradaTotal <
-                valorTotalVenda && (
+              valorFalta > 0.009 && (
                 <p className="mt-3 text-sm text-yellow-300">
                   Falta compor{" "}
                   <strong>
