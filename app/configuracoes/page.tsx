@@ -10,6 +10,7 @@ import {
   Save,
   CheckCircle,
 } from "lucide-react";
+import MeuUsuario from "@/components/MeuUsuario";
 
 type Configuracoes = {
   nomeLoja: string;
@@ -106,6 +107,10 @@ export default function ConfiguracoesPage() {
         )}
 
         <div className="space-y-6">
+          {/* MEU USUÁRIO */}
+
+          <MeuUsuario />
+
           {/* DADOS DA LOJA */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
