@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import Vistorias from "@/components/Vistorias";
+import RegistradoPor from "@/components/RegistradoPor";
 
 const statusLabel: Record<string, string> = {
   disponivel: "Disponível",
@@ -282,6 +283,10 @@ export default function DetalheMotoPage() {
           <h1 className="text-2xl font-bold text-dourado">
             {moto.marca} {moto.modelo}
           </h1>
+
+          <div className="mt-2">
+            <RegistradoPor registro={moto as any} />
+          </div>
         </div>
 
         <span className="w-fit rounded-full border border-dourado px-3 py-1 text-sm text-dourado">

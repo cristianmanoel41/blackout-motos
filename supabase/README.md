@@ -39,3 +39,12 @@ NOTIFY pgrst, 'reload schema';
 - `tipo` é `cautelar` ou `transferencia`. A de transferência guarda também o `sale_id` da venda em que foi anexada.
 - O arquivo nunca tem URL pública: a tela gera um link assinado de 2 minutos na hora de abrir.
 - Excluir a moto apaga os registros (cascade); o arquivo no Storage é removido pela tela ao excluir a vistoria.
+
+## Autoria (quem cadastrou / quem alterou)
+
+Toda tabela principal tem `created_by`, `updated_by` e `atualizado_em`, preenchidas por gatilho (`registrar_autoria`), não pelo sistema — vale para qualquer caminho que grave no banco.
+
+- `created_by` nunca muda depois de criado, nem em UPDATE.
+- Registro criado antes da migration `0004` fica sem autor; não há como descobrir quem criou.
+- O nome exibido vem de `profiles.nome`. Todo usuário logado pode ler a lista de perfis (política criada na `0004`).
+- O campo `vendedor` das vendas continua existindo e é o que os relatórios usam: ele vem preenchido com o usuário logado, mas pode ser trocado quando um registra a venda do outro.

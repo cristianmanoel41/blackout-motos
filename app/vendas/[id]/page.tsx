@@ -23,6 +23,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { opcoesDeBanco } from "@/lib/dados/financeiras";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 import Vistorias from "@/components/Vistorias";
+import RegistradoPor from "@/components/RegistradoPor";
 
 const supabase = createClient();
 
@@ -109,6 +110,9 @@ export default function EditarVendaPage() {
     observacoes,
     setObservacoes,
   ] = useState("");
+
+  const [autoria, setAutoria] =
+    useState<any>(null);
 
   const [motoNome, setMotoNome] =
     useState("");
@@ -319,6 +323,8 @@ export default function EditarVendaPage() {
     setObservacoes(
       venda.observacoes || ""
     );
+
+    setAutoria(venda);
 
     const {
       data: capacetesVenda,
@@ -745,6 +751,10 @@ export default function EditarVendaPage() {
             <p className="mt-2 text-sm text-zinc-400">
               Corrija os dados da venda registrada.
             </p>
+
+            <div className="mt-2">
+              <RegistradoPor registro={autoria} />
+            </div>
           </div>
 
           <Link

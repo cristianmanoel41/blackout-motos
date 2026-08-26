@@ -14,6 +14,11 @@ import {
   OPERADORA_CARTAO,
 } from "@/lib/dados/financeiras";
 import {
+  opcoesDeVendedor,
+  useUsuarioAtual,
+  VENDEDORES,
+} from "@/lib/usuario/atual";
+import {
   enviarVistoria,
   tamanhoLegivel,
   TIPOS_ACEITOS,
@@ -230,6 +235,24 @@ export default function VendasPage() {
 
   const [vendedor, setVendedor] =
     useState("");
+
+  const { usuario } =
+    useUsuarioAtual();
+
+  /*
+   * O vendedor entra sozinho com o nome de quem está
+   * logado. Continua trocável, para o caso de registrar
+   * a venda de outro vendedor.
+   */
+  useEffect(() => {
+    if (
+      usuario?.nome &&
+      !vendedor
+    ) {
+      setVendedor(usuario.nome);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario]);
 
   const [tipoVenda, setTipoVenda] =
     useState<
@@ -2233,13 +2256,40 @@ export default function VendasPage() {
                   <option value="">
                     Selecione o vendedor
                   </option>
-                  <option value="Cristian">
-                    Cristian
-                  </option>
-                  <option value="Bruno">
-                    Bruno
-                  </option>
+
+                  {opcoesDeVendedor(
+                    VENDEDORES,
+                    usuario?.nome
+                  ).map((nome) => (
+                    <option
+                      key={nome}
+                      value={nome}
+                    >
+                      {nome}
+                    </option>
+                  ))}
                 </select>
+
+                {usuario && (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    {vendedor ===
+                    usuario.nome ? (
+                      <>
+                        Preenchido com o seu usuário. Troque
+                        se a venda for de outro vendedor.
+                      </>
+                    ) : (
+                      <>
+                        Você está logado como{" "}
+                        <strong className="text-zinc-300">
+                          {usuario.nome}
+                        </strong>
+                        . A venda fica registrada no seu
+                        usuário de qualquer forma.
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
 
               <div>

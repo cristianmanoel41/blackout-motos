@@ -5,6 +5,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import {
+  opcoesDeVendedor,
+  useUsuarioAtual,
+  VENDEDORES,
+} from "@/lib/usuario/atual";
+import {
   FileText,
   HardHat,
   Plus,
@@ -24,7 +29,7 @@ const formasPagamento = [
   "Cartão",
 ];
 
-const vendedores = ["Cristian", "Bruno"];
+
 
 type Modelo = {
   id: string;
@@ -130,6 +135,18 @@ export default function NovaVendaCapacetePage() {
   const [observacoes, setObservacoes] = useState("");
 
   const [itens, setItens] = useState<ItemVenda[]>([itemVazio()]);
+
+  const { usuario } = useUsuarioAtual();
+
+  /*
+   * Vendedor entra sozinho com quem está logado.
+   */
+  useEffect(() => {
+    if (usuario?.nome && !vendedor) {
+      setVendedor(usuario.nome);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario]);
 
   const [vendaSalva, setVendaSalva] = useState<{
     id: string;
@@ -797,7 +814,10 @@ export default function NovaVendaCapacetePage() {
             >
               <option value="">Selecione</option>
 
-              {vendedores.map((nome) => (
+              {opcoesDeVendedor(
+                VENDEDORES,
+                usuario?.nome
+              ).map((nome) => (
                 <option key={nome} value={nome}>
                   {nome}
                 </option>

@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { FileText, Trash2 } from "lucide-react";
+import RegistradoPor from "@/components/RegistradoPor";
 
 const supabase = createClient();
 
@@ -202,6 +203,10 @@ export default function DetalheVendaCapacetePage() {
             {formatarData(venda.data_venda)} ·{" "}
             {venda.vendedor || "vendedor não informado"}
           </p>
+
+          <div className="mt-2">
+            <RegistradoPor registro={venda as any} />
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
