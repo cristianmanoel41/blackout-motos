@@ -13,7 +13,13 @@ import {
   OPERADORA_CARTAO,
 } from "@/lib/dados/financeiras";
 import {
+  enviarVistoria,
+  tamanhoLegivel,
+  TIPOS_ACEITOS,
+} from "@/components/Vistorias";
+import {
   Bike,
+  ClipboardCheck,
   CreditCard,
   FileSignature,
   FileText,
@@ -271,6 +277,13 @@ export default function VendasPage() {
   ] = useState<
     CapaceteVenda[]
   >([]);
+
+  const [
+    vistoriaTransferencia,
+    setVistoriaTransferencia,
+  ] = useState<File | null>(
+    null
+  );
 
   const [
     transferenciaCliente,
@@ -1279,6 +1292,7 @@ export default function VendasPage() {
     setValorParcelaManual("");
     setComponentes([]);
     setCapacetes([]);
+    setVistoriaTransferencia(null);
     setTransferenciaCliente("");
     setTransferenciaLoja("");
     setObservacoes("");
@@ -1918,8 +1932,38 @@ export default function VendasPage() {
         }
       }
 
+      /*
+       * VISTORIA DE TRANSFERÊNCIA:
+       * fica guardada na moto e vinculada a esta venda.
+       * Se o envio falhar, a venda continua salva - só
+       * avisamos para anexar depois pela ficha da moto.
+       */
+      let avisoVistoria = "";
+
+      if (vistoriaTransferencia) {
+        try {
+          await enviarVistoria({
+            arquivo:
+              vistoriaTransferencia,
+            motorcycleId: motoId,
+            saleId: vendaCriada.id,
+            tipo: "transferencia",
+            data: dataVenda,
+          });
+        } catch (e: any) {
+          console.error(e);
+
+          avisoVistoria = ` A vistoria de transferência NÃO foi anexada (${
+            e?.message || "falha no envio"
+          }). Anexe pela ficha da moto.`;
+        }
+      } else {
+        avisoVistoria =
+          " Lembre-se de anexar a vistoria de transferência na ficha da moto.";
+      }
+
       setMensagem(
-        "Venda registrada com sucesso. Pagamentos, financiamento e moto de troca foram vinculados."
+        `Venda registrada com sucesso. Pagamentos, financiamento e moto de troca foram vinculados.${avisoVistoria}`
       );
 
       setDocumentos({
@@ -3332,6 +3376,52 @@ export default function VendasPage() {
                 />
               </div>
             </div>
+          </section>
+
+          <section>
+            <div className="mb-4 border-b border-zinc-800 pb-3">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-yellow-500">
+                <ClipboardCheck size={18} />
+                Vistoria de Transferência
+              </h2>
+
+              <p className="mt-1 text-xs text-zinc-500">
+                Anexe aqui a vistoria feita para a
+                transferência. Ela fica guardada na ficha da
+                moto e vinculada a esta venda, para a loja
+                sempre ter a última vistoria.
+              </p>
+            </div>
+
+            <input
+              type="file"
+              accept={TIPOS_ACEITOS}
+              onChange={(e) =>
+                setVistoriaTransferencia(
+                  e.target.files?.[0] ||
+                    null
+                )
+              }
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black"
+            />
+
+            {vistoriaTransferencia ? (
+              <p className="mt-2 text-xs text-green-400">
+                {
+                  vistoriaTransferencia.name
+                }{" "}
+                ·{" "}
+                {tamanhoLegivel(
+                  vistoriaTransferencia.size
+                )}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-yellow-300">
+                Nenhum arquivo escolhido. Dá para registrar a
+                venda assim mesmo e anexar depois pela ficha
+                da moto.
+              </p>
+            )}
           </section>
 
           <section>

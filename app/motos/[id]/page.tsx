@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
+import Vistorias from "@/components/Vistorias";
 
 const statusLabel: Record<string, string> = {
   disponivel: "Disponível",
@@ -805,6 +806,12 @@ export default function DetalheMotoPage() {
             {form.observacoes || "Nenhuma observação."}
           </p>
         )}
+      </div>
+
+      {/* VISTORIAS */}
+
+      <div className="mt-6">
+        <Vistorias motorcycleId={String(id)} />
       </div>
 
     </div>

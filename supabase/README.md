@@ -31,3 +31,11 @@ NOTIFY pgrst, 'reload schema';
 - Rota que preenche: `app/api/recibos/capacete/[id]/route.ts`
 - Campos: `{cliente_nome} {cliente_cpf} {cliente_telefone} {produto} {marca} {modelo} {cor} {tamanho} {quantidade} {valor_unitario} {valor_total} {valor_extenso} {forma_pagamento} {vendedor} {data_extenso} {hora_documento}`
 - A data e a hora impressas são as do momento da geração (fuso America/Sao_Paulo), não as da venda.
+
+## Vistorias
+
+- Arquivos ficam no bucket **privado** `vistorias` do Supabase Storage, em `motorcycle_id/tipo-timestamp-nome`.
+- A tabela `motorcycle_inspections` guarda o registro (tipo, data, caminho, nome, tamanho, observação).
+- `tipo` é `cautelar` ou `transferencia`. A de transferência guarda também o `sale_id` da venda em que foi anexada.
+- O arquivo nunca tem URL pública: a tela gera um link assinado de 2 minutos na hora de abrir.
+- Excluir a moto apaga os registros (cascade); o arquivo no Storage é removido pela tela ao excluir a vistoria.

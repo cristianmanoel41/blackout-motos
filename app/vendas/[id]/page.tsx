@@ -21,6 +21,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { opcoesDeBanco } from "@/lib/dados/financeiras";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
+import Vistorias from "@/components/Vistorias";
 
 const supabase = createClient();
 
@@ -1348,6 +1349,17 @@ export default function EditarVendaPage() {
               </div>
             </div>
           </section>
+
+          {/* VISTORIAS */}
+
+          {motorcycleId && (
+            <Vistorias
+              motorcycleId={motorcycleId}
+              saleId={id}
+              titulo="Vistorias da moto"
+              descricao="A vistoria de transferência desta venda fica aqui. Também dá para anexar a cautelar."
+            />
+          )}
 
           {/* DOCUMENTOS */}
 
