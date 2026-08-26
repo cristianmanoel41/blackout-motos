@@ -10,6 +10,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CardWhatsapp from "@/components/CardWhatsapp";
 
 type Cliente = {
   id: string;
@@ -510,6 +511,15 @@ export default function ClienteDetalhesPage() {
             {erro}
           </div>
         )}
+
+        {/* WHATSAPP */}
+
+        <div className="mb-6">
+          <CardWhatsapp
+            telefone={cliente.telefone}
+            nome={cliente.nome}
+          />
+        </div>
 
         {/* DADOS DO CLIENTE */}
 

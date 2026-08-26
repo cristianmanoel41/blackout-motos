@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 import {
   Bike,
   FileText,
@@ -20,6 +21,7 @@ export type RegistroHistorico = {
   detalhe: string;
   cliente: string;
   contato: string;
+  telefone: string | null;
   vendedor: string;
   valor: number;
   pagamento: string;
@@ -311,6 +313,15 @@ export default function HistoricoGeral({
                     {registro.contato && (
                       <div className="text-xs text-texto-suave">
                         {registro.contato}
+                      </div>
+                    )}
+
+                    {registro.telefone && (
+                      <div className="mt-1">
+                        <BotaoWhatsapp
+                          telefone={registro.telefone}
+                          nome={registro.cliente}
+                        />
                       </div>
                     )}
                   </td>

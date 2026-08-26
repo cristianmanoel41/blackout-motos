@@ -206,6 +206,7 @@ export default async function HistoricoVendasPage() {
           .join(" · "),
         cliente: venda.cliente || "Não informado",
         contato: venda.telefone || "",
+        telefone: venda.telefone || null,
         vendedor: venda.vendedor || "",
         valor:
           Number(
@@ -270,6 +271,7 @@ export default async function HistoricoVendasPage() {
       detalhe,
       cliente: venda.cliente_nome || "Não informado",
       contato: venda.cliente_telefone || venda.cliente_cpf || "",
+      telefone: venda.cliente_telefone || null,
       vendedor: venda.vendedor || "",
       valor: Number(venda.valor_total) || 0,
       pagamento: venda.forma_pagamento || "-",

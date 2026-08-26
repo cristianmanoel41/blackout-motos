@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Plus, UserRound, Phone, FileText } from "lucide-react";
+import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 
 export default async function ClientesPage() {
   const supabase = await createClient();
@@ -40,11 +41,14 @@ export default async function ClientesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {clientes?.map((cliente) => (
-          <Link
+          <div
             key={cliente.id}
-            href={`/clientes/${cliente.id}`}
-            className="bg-grafite border border-grafite-claro rounded-xl p-5 hover:border-dourado transition block"
+            className="bg-grafite border border-grafite-claro rounded-xl p-5 hover:border-dourado transition"
           >
+            <Link
+              href={`/clientes/${cliente.id}`}
+              className="block"
+            >
             <div className="flex items-start justify-between gap-3 mb-4">
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-full bg-dourado/10 text-dourado flex items-center justify-center">
@@ -80,7 +84,18 @@ export default async function ClientesPage() {
                 </span>
               </div>
             </div>
-          </Link>
+            </Link>
+
+            {cliente.telefone && (
+              <div className="mt-4 border-t border-grafite-claro pt-4">
+                <BotaoWhatsapp
+                  telefone={cliente.telefone}
+                  nome={cliente.nome}
+                  rotulo="Chamar no WhatsApp"
+                />
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>

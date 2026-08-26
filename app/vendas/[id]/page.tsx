@@ -20,6 +20,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { opcoesDeBanco } from "@/lib/dados/financeiras";
+import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 
 const supabase = createClient();
 
@@ -940,6 +941,15 @@ export default function EditarVendaPage() {
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+
+                {telefone.trim() && (
+                  <div className="mt-2">
+                    <BotaoWhatsapp
+                      telefone={telefone}
+                      nome={cliente}
+                    />
+                  </div>
+                )}
               </div>
 
             </div>
