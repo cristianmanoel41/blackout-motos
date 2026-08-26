@@ -112,37 +112,42 @@ export default async function RelatorioMensalPage({
       .trim()
       .toLowerCase()
 
-  const vendasCristian =
-    vendasMes?.filter(
-      (venda) =>
-        normalizarVendedor(venda.vendedor).includes('cristian')
-    ) ?? []
+  /*
+   * Os vendedores saem das próprias vendas do mês, e não de
+   * uma lista fixa: quem vender aparece aqui, sem precisar
+   * mexer no código quando entrar ou sair alguém.
+   */
+  const porVendedor = new Map<
+    string,
+    { nome: string; quantidade: number; faturamento: number }
+  >()
 
-  const vendasBruno =
-    vendasMes?.filter(
-      (venda) =>
-        normalizarVendedor(venda.vendedor).includes('bruno')
-    ) ?? []
+  vendasMes?.forEach((venda) => {
+    const chave = normalizarVendedor(venda.vendedor)
 
-  const qtdVendasCristian =
-    vendasCristian.length
+    if (!chave) return
 
-  const qtdVendasBruno =
-    vendasBruno.length
+    const atual =
+      porVendedor.get(chave) ?? {
+        nome: (venda.vendedor || '').trim(),
+        quantidade: 0,
+        faturamento: 0,
+      }
 
-  const faturamentoCristian =
-    vendasCristian.reduce(
-      (soma, venda) =>
-        soma + Number(venda.valor_total_venda || 0),
-      0
-    )
+    porVendedor.set(chave, {
+      nome: atual.nome,
+      quantidade: atual.quantidade + 1,
+      faturamento:
+        atual.faturamento +
+        Number(venda.valor_total_venda || 0),
+    })
+  })
 
-  const faturamentoBruno =
-    vendasBruno.reduce(
-      (soma, venda) =>
-        soma + Number(venda.valor_total_venda || 0),
-      0
-    )
+  const vendedores = Array.from(porVendedor.values()).sort(
+    (a, b) =>
+      b.faturamento - a.faturamento ||
+      a.nome.localeCompare(b.nome)
+  )
 
   const vendasSemVendedor =
     vendasMes?.filter(
@@ -954,55 +959,42 @@ export default async function RelatorioMensalPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 divide-y divide-grafite-claro md:grid-cols-2 md:divide-x md:divide-y-0">
-            <div className="p-5">
-              <p className="text-sm font-semibold text-white">
-                Cristian
-              </p>
+          {vendedores.length === 0 && (
+            <p className="px-5 py-6 text-sm text-texto-suave">
+              Nenhuma venda com vendedor informado neste mês.
+            </p>
+          )}
 
-              <p className="mt-3 text-3xl font-bold text-dourado">
-                {qtdVendasCristian}
-              </p>
+          {vendedores.length > 0 && (
+            <div className="grid grid-cols-1 divide-y divide-grafite-claro sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">
+              {vendedores.map((vendedor) => (
+                <div key={vendedor.nome} className="p-5">
+                  <p className="text-sm font-semibold text-white">
+                    {vendedor.nome}
+                  </p>
 
-              <p className="text-xs text-texto-suave">
-                vendas no mês
-              </p>
+                  <p className="mt-3 text-3xl font-bold text-dourado">
+                    {vendedor.quantidade}
+                  </p>
 
-              <div className="mt-4 border-t border-grafite-claro pt-3">
-                <p className="text-xs text-texto-suave">
-                  Faturamento
-                </p>
+                  <p className="text-xs text-texto-suave">
+                    venda{vendedor.quantidade === 1 ? '' : 's'} no
+                    mês
+                  </p>
 
-                <p className="mt-1 font-semibold text-green-400">
-                  {formatarMoeda(faturamentoCristian)}
-                </p>
-              </div>
+                  <div className="mt-4 border-t border-grafite-claro pt-3">
+                    <p className="text-xs text-texto-suave">
+                      Faturamento
+                    </p>
+
+                    <p className="mt-1 font-semibold text-green-400">
+                      {formatarMoeda(vendedor.faturamento)}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div className="p-5">
-              <p className="text-sm font-semibold text-white">
-                Bruno
-              </p>
-
-              <p className="mt-3 text-3xl font-bold text-dourado">
-                {qtdVendasBruno}
-              </p>
-
-              <p className="text-xs text-texto-suave">
-                vendas no mês
-              </p>
-
-              <div className="mt-4 border-t border-grafite-claro pt-3">
-                <p className="text-xs text-texto-suave">
-                  Faturamento
-                </p>
-
-                <p className="mt-1 font-semibold text-green-400">
-                  {formatarMoeda(faturamentoBruno)}
-                </p>
-              </div>
-            </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 border-t border-grafite-claro md:grid-cols-2">
             <div className="px-5 py-3">

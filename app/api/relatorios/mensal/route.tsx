@@ -422,22 +422,39 @@ export async function GET(request: Request) {
     const saldoCaixa =
       entradasCaixa - saidasCaixa
 
-    const vendasCristian = vendas.filter((venda) =>
-      normalizarVendedor(venda.vendedor).includes('cristian')
-    )
+    /*
+     * Vendedores saem das proprias vendas do mes, e nao de
+     * uma lista fixa: quem vender aparece no relatorio.
+     */
+    const porVendedor = new Map<
+      string,
+      { nome: string; quantidade: number; faturamento: number }
+    >()
 
-    const vendasBruno = vendas.filter((venda) =>
-      normalizarVendedor(venda.vendedor).includes('bruno')
-    )
+    for (const venda of vendas) {
+      const chave = normalizarVendedor(venda.vendedor)
 
-    const faturamentoCristian = vendasCristian.reduce(
-      (soma, venda) => soma + numero(venda.valor_total_venda),
-      0
-    )
+      if (!chave) continue
 
-    const faturamentoBruno = vendasBruno.reduce(
-      (soma, venda) => soma + numero(venda.valor_total_venda),
-      0
+      const atual =
+        porVendedor.get(chave) ?? {
+          nome: (venda.vendedor || '').trim(),
+          quantidade: 0,
+          faturamento: 0,
+        }
+
+      porVendedor.set(chave, {
+        nome: atual.nome,
+        quantidade: atual.quantidade + 1,
+        faturamento:
+          atual.faturamento + numero(venda.valor_total_venda),
+      })
+    }
+
+    const vendedores = Array.from(porVendedor.values()).sort(
+      (a, b) =>
+        b.faturamento - a.faturamento ||
+        a.nome.localeCompare(b.nome)
     )
 
     const semVendedor = vendas.filter(
@@ -496,10 +513,13 @@ export async function GET(request: Request) {
       ],
       ['', ''],
       ['VENDAS POR VENDEDOR', ''],
-      ['Cristian - quantidade', vendasCristian.length],
-      ['Cristian - faturamento', faturamentoCristian.toFixed(2)],
-      ['Bruno - quantidade', vendasBruno.length],
-      ['Bruno - faturamento', faturamentoBruno.toFixed(2)],
+      ...vendedores.flatMap((vendedor) => [
+        [`${vendedor.nome} - quantidade`, vendedor.quantidade],
+        [
+          `${vendedor.nome} - faturamento`,
+          vendedor.faturamento.toFixed(2),
+        ],
+      ]),
       ['Sem vendedor informado', semVendedor],
       ['', ''],
       ['CAIXA DO PERÍODO', ''],
