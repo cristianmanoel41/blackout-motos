@@ -64,7 +64,15 @@ const LOGO_EMU = Math.round(1.9 * 360000)
 const LARGURA_UTIL =
   PAGINA.largura - PAGINA.margemHorizontal * 2
 
-const COLUNA_ASSINATURA = Math.floor(LARGURA_UTIL / 2)
+/*
+ * A tabela das assinaturas fica um pouco mais estreita que a
+ * largura útil, para nenhuma célula encostar na margem.
+ */
+const LARGURA_TABELA = LARGURA_UTIL - cm(1)
+
+const COLUNA_ASSINATURA = Math.floor(
+  LARGURA_TABELA / 2
+)
 
 const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -124,6 +132,7 @@ function paragrafo(texto, opcoes = {}) {
     tamanho = 9.5,
     alinhamento = 'left',
     cor = '000000',
+    espacoAntes = 0,
     espacoDepois = 60,
     espacamentoLetras = 0,
     entrelinha = 240,
@@ -150,7 +159,7 @@ function paragrafo(texto, opcoes = {}) {
 
   return (
     `<w:p><w:pPr>` +
-    `<w:spacing w:after="${espacoDepois}" w:line="${entrelinha}" w:lineRule="auto"/>` +
+    `<w:spacing w:before="${espacoAntes}" w:after="${espacoDepois}" w:line="${entrelinha}" w:lineRule="auto"/>` +
     `<w:jc w:val="${alinhamento}"/>` +
     `</w:pPr>${conteudo}</w:p>`
   )
@@ -196,20 +205,38 @@ function divisoria() {
 /*
  * As duas assinaturas lado a lado, numa tabela sem bordas.
  * Em pé, uma embaixo da outra, não caberia no A5.
+ *
+ * A linha da assinatura é a borda de baixo de um parágrafo
+ * vazio, e não uma fileira de underscores: assim ela tem
+ * exatamente a largura da coluna e nunca empurra o nome
+ * para fora da célula, por mais longo que ele seja.
  */
+function linhaDeAssinatura() {
+  return (
+    '<w:p><w:pPr>' +
+    '<w:spacing w:before="0" w:after="40" w:line="240" w:lineRule="auto"/>' +
+    '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="000000"/></w:pBdr>' +
+    '</w:pPr></w:p>'
+  )
+}
+
 function assinaturasLadoALado(esquerda, direita) {
   const celula = (nome) =>
     '<w:tc>' +
     `<w:tcPr><w:tcW w:w="${COLUNA_ASSINATURA}" w:type="dxa"/>` +
+    '<w:tcBorders>' +
+    ['top', 'left', 'bottom', 'right']
+      .map(
+        (lado) =>
+          `<w:${lado} w:val="nil"/>`
+      )
+      .join('') +
+    '</w:tcBorders>' +
     '<w:tcMar>' +
-    '<w:left w:w="170" w:type="dxa"/>' +
-    '<w:right w:w="170" w:type="dxa"/>' +
+    '<w:left w:w="113" w:type="dxa"/>' +
+    '<w:right w:w="113" w:type="dxa"/>' +
     '</w:tcMar></w:tcPr>' +
-    paragrafo('____________________________________', {
-      alinhamento: 'center',
-      tamanho: 9,
-      espacoDepois: 20,
-    }) +
+    linhaDeAssinatura() +
     paragrafo(nome, {
       alinhamento: 'center',
       negrito: true,
@@ -221,16 +248,24 @@ function assinaturasLadoALado(esquerda, direita) {
   return (
     '<w:tbl>' +
     '<w:tblPr>' +
-    `<w:tblW w:w="${LARGURA_UTIL}" w:type="dxa"/>` +
+    `<w:tblW w:w="${LARGURA_TABELA}" w:type="dxa"/>` +
     '<w:jc w:val="center"/>' +
     '<w:tblBorders>' +
-    '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    [
+      'top',
+      'left',
+      'bottom',
+      'right',
+      'insideH',
+      'insideV',
+    ]
+      .map((lado) => `<w:${lado} w:val="nil"/>`)
+      .join('') +
     '</w:tblBorders>' +
+    '<w:tblCellMar>' +
+    '<w:left w:w="113" w:type="dxa"/>' +
+    '<w:right w:w="113" w:type="dxa"/>' +
+    '</w:tblCellMar>' +
     '<w:tblLayout w:type="fixed"/>' +
     '</w:tblPr>' +
     '<w:tblGrid>' +
@@ -267,6 +302,7 @@ const corpo =
     alinhamento: 'center',
     negrito: true,
     tamanho: 12,
+    espacoAntes: 160,
     espacoDepois: 0,
     espacamentoLetras: 50,
   }) +
