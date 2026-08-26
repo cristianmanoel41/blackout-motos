@@ -19,6 +19,28 @@ export type UsuarioAtual = {
 
 const supabase = createClient();
 
+/*
+ * Nome decente a partir do e-mail, para quem ainda não
+ * preencheu o perfil: cristian@admin.com -> Cristian.
+ */
+function nomeAPartirDoEmail(email?: string | null) {
+  const usuario = String(email || "")
+    .split("@")[0]
+    .replace(/[._-]+/g, " ")
+    .trim();
+
+  if (!usuario) return "";
+
+  return usuario
+    .split(/\s+/)
+    .map(
+      (parte) =>
+        parte.charAt(0).toUpperCase() +
+        parte.slice(1).toLowerCase()
+    )
+    .join(" ");
+}
+
 export function useUsuarioAtual() {
   const [usuario, setUsuario] =
     useState<UsuarioAtual | null>(null);
@@ -57,7 +79,7 @@ export function useUsuarioAtual() {
          */
         nome:
           perfil?.nome?.trim() ||
-          user.email?.split("@")[0] ||
+          nomeAPartirDoEmail(user.email) ||
           "Usuário",
         papel: perfil?.papel ?? null,
         email: perfil?.email ?? user.email ?? null,

@@ -14,6 +14,27 @@ import { UserRound, Save, CheckCircle } from "lucide-react";
 
 const supabase = createClient();
 
+/*
+ * cristian@admin.com -> Cristian
+ */
+function nomeAPartirDoEmail(email?: string | null) {
+  const usuario = String(email || "")
+    .split("@")[0]
+    .replace(/[._-]+/g, " ")
+    .trim();
+
+  if (!usuario) return "";
+
+  return usuario
+    .split(/\s+/)
+    .map(
+      (parte) =>
+        parte.charAt(0).toUpperCase() +
+        parte.slice(1).toLowerCase()
+    )
+    .join(" ");
+}
+
 export default function MeuUsuario() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -47,11 +68,16 @@ export default function MeuUsuario() {
     setId(user.id);
     setEmail(user.email || "");
 
+    /*
+     * maybeSingle: usuário criado direto no painel do
+     * Supabase pode ainda não ter linha em profiles.
+     * Nesse caso a tela cria a linha ao salvar.
+     */
     const { data: perfil, error } = await supabase
       .from("profiles")
       .select("nome, papel, email")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       setErro(
@@ -61,8 +87,16 @@ export default function MeuUsuario() {
       return;
     }
 
-    setNome(perfil?.nome || "");
-    setNomeSalvo(perfil?.nome || "");
+    /*
+     * Sem nome salvo, sugere a partir do e-mail:
+     * cristian@admin.com -> Cristian
+     */
+    const sugestao =
+      perfil?.nome?.trim() ||
+      nomeAPartirDoEmail(user.email);
+
+    setNome(sugestao);
+    setNomeSalvo(perfil?.nome?.trim() || "");
     setPapel(perfil?.papel || "");
 
     if (perfil?.email) {
@@ -83,10 +117,20 @@ export default function MeuUsuario() {
 
     setSalvando(true);
 
+    /*
+     * upsert cobre os dois casos: perfil que já existe e
+     * usuário novo que ainda não tem linha em profiles.
+     */
     const { error } = await supabase
       .from("profiles")
-      .update({ nome: nome.trim() })
-      .eq("id", id);
+      .upsert(
+        {
+          id,
+          nome: nome.trim(),
+          email: email || null,
+        },
+        { onConflict: "id" }
+      );
 
     setSalvando(false);
 

@@ -32,6 +32,20 @@ create policy "edita o proprio perfil"
   using (id = auth.uid())
   with check (id = auth.uid());
 
+/*
+ * Usuário criado direto no painel do Supabase pode não ter
+ * linha em profiles. A tela cria a linha na hora de salvar,
+ * então precisa poder inserir - só a própria, nunca a de
+ * outra pessoa.
+ */
+drop policy if exists "cria o proprio perfil"
+  on public.profiles;
+
+create policy "cria o proprio perfil"
+  on public.profiles
+  for insert to authenticated
+  with check (id = auth.uid());
+
 -- ------------------------------------------------------------
 -- OPCIONAL: já deixar o seu nome como Cristian.
 --
