@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
+import {
+  BANCOS_FINANCIAMENTO,
+  OPERADORA_CARTAO,
+} from '@/lib/dados/financeiras'
 import RelatorioFiltro from '@/components/RelatorioFiltro'
 
 const nomesMeses = [
@@ -82,7 +86,10 @@ export default async function RelatorioMensalPage({
       vendedor,
       valor_total_venda,
       valor_documentacao,
-      documentacao_entra_no_lucro
+      documentacao_entra_no_lucro,
+      banco,
+      valor_financiado,
+      parcelas_financiamento
     `)
     .eq('status', 'ativa')
     .gte('data_venda', inicioMes)
@@ -193,6 +200,106 @@ export default async function RelatorioMensalPage({
         0
       ) ?? 0
   }
+
+  // =========================================================
+  // FINANCIAMENTOS POR BANCO
+  // =========================================================
+
+  const financiamentosMes =
+    vendasMes?.filter(
+      (venda) => Number(venda.valor_financiado || 0) > 0
+    ) ?? []
+
+  const totalFinanciadoMes = financiamentosMes.reduce(
+    (soma, venda) =>
+      soma + Number(venda.valor_financiado || 0),
+    0
+  )
+
+  const porBanco = new Map<
+    string,
+    { quantidade: number; valor: number }
+  >()
+
+  /*
+   * Começa com os bancos que a loja trabalha, para eles
+   * aparecerem no relatório mesmo com zero no mês.
+   */
+  BANCOS_FINANCIAMENTO.forEach((banco) => {
+    porBanco.set(banco, { quantidade: 0, valor: 0 })
+  })
+
+  financiamentosMes.forEach((venda) => {
+    const nome =
+      (venda.banco || '').trim() || 'Não informado'
+
+    const atual =
+      porBanco.get(nome) ?? { quantidade: 0, valor: 0 }
+
+    porBanco.set(nome, {
+      quantidade: atual.quantidade + 1,
+      valor:
+        atual.valor + Number(venda.valor_financiado || 0),
+    })
+  })
+
+  const bancos = Array.from(porBanco.entries())
+    .map(([nome, dados]) => ({
+      nome,
+      quantidade: dados.quantidade,
+      valor: dados.valor,
+      participacao:
+        totalFinanciadoMes > 0
+          ? (dados.valor / totalFinanciadoMes) * 100
+          : 0,
+    }))
+    .sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome))
+
+  // =========================================================
+  // CARTÃO (OPERADORA)
+  // =========================================================
+
+  const idsVendasMes =
+    vendasMes?.map((venda) => venda.id) ?? []
+
+  let cartaoMotos = { quantidade: 0, valor: 0 }
+
+  if (idsVendasMes.length > 0) {
+    const { data: pagamentosCartao } = await supabase
+      .from('sale_payment_components')
+      .select('valor, parcelas')
+      .eq('tipo', 'Cartão')
+      .in('sale_id', idsVendasMes)
+
+    cartaoMotos = (pagamentosCartao ?? []).reduce(
+      (resumo, item) => ({
+        quantidade: resumo.quantidade + 1,
+        valor: resumo.valor + Number(item.valor || 0),
+      }),
+      { quantidade: 0, valor: 0 }
+    )
+  }
+
+  const { data: capacetesNoCartao } = await supabase
+    .from('helmet_sales')
+    .select('valor_total')
+    .eq('forma_pagamento', 'Cartão')
+    .gte('data_venda', inicioMes)
+    .lte('data_venda', fimMes)
+
+  const cartaoCapacetes = (capacetesNoCartao ?? []).reduce(
+    (resumo, venda) => ({
+      quantidade: resumo.quantidade + 1,
+      valor: resumo.valor + Number(venda.valor_total || 0),
+    }),
+    { quantidade: 0, valor: 0 }
+  )
+
+  const totalCartao =
+    cartaoMotos.valor + cartaoCapacetes.valor
+
+  const quantidadeCartao =
+    cartaoMotos.quantidade + cartaoCapacetes.quantidade
 
   // =========================================================
   // CAPACETES
@@ -647,6 +754,91 @@ export default async function RelatorioMensalPage({
             ),
             true
           )}
+        </div>
+
+        {/* FINANCIAMENTOS POR BANCO */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Financiamentos por Banco
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              {nomesMeses[mesSelecionado - 1]} de{' '}
+              {anoSelecionado} · {financiamentosMes.length}{' '}
+              venda
+              {financiamentosMes.length === 1 ? '' : 's'}{' '}
+              financiada
+              {financiamentosMes.length === 1 ? '' : 's'} ·
+              total {formatarMoeda(totalFinanciadoMes)}
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
+                <tr>
+                  <th className="px-5 py-3">Banco</th>
+                  <th className="px-5 py-3 text-right">
+                    Contratos
+                  </th>
+                  <th className="px-5 py-3 text-right">
+                    Valor financiado
+                  </th>
+                  <th className="px-5 py-3 text-right">
+                    Participação
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {bancos.map((banco) => (
+                  <tr
+                    key={banco.nome}
+                    className={`border-b border-grafite-claro/60 last:border-0 ${
+                      banco.quantidade === 0
+                        ? 'text-texto-suave'
+                        : ''
+                    }`}
+                  >
+                    <td className="px-5 py-3 font-medium">
+                      {banco.nome}
+                    </td>
+
+                    <td className="px-5 py-3 text-right">
+                      {banco.quantidade}
+                    </td>
+
+                    <td className="px-5 py-3 text-right font-semibold text-dourado">
+                      {formatarMoeda(banco.valor)}
+                    </td>
+
+                    <td className="px-5 py-3 text-right">
+                      {banco.participacao.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border-t border-grafite-claro px-5 py-4">
+            <p className="text-xs text-texto-suave">
+              Cartão · operadora {OPERADORA_CARTAO}
+            </p>
+
+            <p className="mt-1 font-semibold text-texto">
+              {formatarMoeda(totalCartao)}{' '}
+              <span className="text-xs font-normal text-texto-suave">
+                em {quantidadeCartao} pagamento
+                {quantidadeCartao === 1 ? '' : 's'} (
+                {formatarMoeda(cartaoMotos.valor)} em motos ·{' '}
+                {formatarMoeda(cartaoCapacetes.valor)} em
+                capacetes)
+              </span>
+            </p>
+          </div>
         </div>
 
         {/* CAPACETES */}

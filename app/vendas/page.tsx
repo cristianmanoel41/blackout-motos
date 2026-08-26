@@ -9,6 +9,10 @@ import {
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
+  opcoesDeBanco,
+  OPERADORA_CARTAO,
+} from "@/lib/dados/financeiras";
+import {
   Bike,
   CreditCard,
   FileSignature,
@@ -2411,17 +2415,30 @@ export default function VendasPage() {
                     Banco / Financeira *
                   </label>
 
-                  <input
-                    type="text"
+                  <select
                     value={banco}
                     onChange={(e) =>
                       setBanco(
                         e.target.value
                       )
                     }
-                    placeholder="Ex.: Banco Pan, Santander..."
                     className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                  />
+                  >
+                    <option value="">
+                      Selecione
+                    </option>
+
+                    {opcoesDeBanco(
+                      banco
+                    ).map((nome) => (
+                      <option
+                        key={nome}
+                        value={nome}
+                      >
+                        {nome}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
@@ -3021,6 +3038,13 @@ export default function VendasPage() {
                                   valor /
                                     parcelas
                                 )}
+                              </p>
+
+                              <p className="mt-1 text-xs text-zinc-500">
+                                Operadora:{" "}
+                                {
+                                  OPERADORA_CARTAO
+                                }
                               </p>
                             </>
                           ) : (

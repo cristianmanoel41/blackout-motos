@@ -1,4 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import {
+  BANCOS_FINANCIAMENTO,
+  OPERADORA_CARTAO,
+} from '@/lib/dados/financeiras'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,7 +74,9 @@ export async function GET(request: Request) {
           vendedor,
           valor_total_venda,
           valor_documentacao,
-          documentacao_entra_no_lucro
+          documentacao_entra_no_lucro,
+          banco,
+          valor_financiado
         `)
         .eq('status', 'ativa')
         .gte('data_venda', inicioMes)
@@ -223,6 +229,79 @@ export async function GET(request: Request) {
 
     const totalDespesas = despesas.reduce(
       (soma, item) => soma + numero(item.valor),
+      0
+    )
+
+    /*
+     * FINANCIAMENTOS POR BANCO
+     */
+    const financiamentos = vendas.filter(
+      (venda) => numero(venda.valor_financiado) > 0
+    )
+
+    const totalFinanciado = financiamentos.reduce(
+      (soma, venda) => soma + numero(venda.valor_financiado),
+      0
+    )
+
+    const porBanco = new Map<
+      string,
+      { quantidade: number; valor: number }
+    >()
+
+    for (const banco of BANCOS_FINANCIAMENTO) {
+      porBanco.set(banco, { quantidade: 0, valor: 0 })
+    }
+
+    for (const venda of financiamentos) {
+      const nome =
+        (venda.banco || '').trim() || 'Não informado'
+
+      const atual =
+        porBanco.get(nome) ?? { quantidade: 0, valor: 0 }
+
+      porBanco.set(nome, {
+        quantidade: atual.quantidade + 1,
+        valor: atual.valor + numero(venda.valor_financiado),
+      })
+    }
+
+    const bancos = Array.from(porBanco.entries())
+      .map(([nome, dados]) => ({ nome, ...dados }))
+      .sort(
+        (a, b) =>
+          b.valor - a.valor || a.nome.localeCompare(b.nome)
+      )
+
+    /*
+     * CARTÃO (operadora da loja)
+     */
+    const idsVendas = vendas.map((venda) => venda.id)
+
+    let cartaoMotos = 0
+
+    if (idsVendas.length > 0) {
+      const { data: pagamentosCartao } = await supabase
+        .from('sale_payment_components')
+        .select('valor')
+        .eq('tipo', 'Cartão')
+        .in('sale_id', idsVendas)
+
+      cartaoMotos = (pagamentosCartao ?? []).reduce(
+        (soma, item) => soma + numero(item.valor),
+        0
+      )
+    }
+
+    const { data: capacetesNoCartao } = await supabase
+      .from('helmet_sales')
+      .select('valor_total')
+      .eq('forma_pagamento', 'Cartão')
+      .gte('data_venda', inicioMes)
+      .lte('data_venda', fimMes)
+
+    const cartaoCapacetes = (capacetesNoCartao ?? []).reduce(
+      (soma, venda) => soma + numero(venda.valor_total),
       0
     )
 
@@ -395,6 +474,26 @@ export async function GET(request: Request) {
       ['Capacetes em estoque (atual)', estoqueCapacetes.quantidade],
       ['Mercadoria disponível a custo', estoqueCapacetes.custo.toFixed(2)],
       ['Mercadoria disponível a preço de venda', estoqueCapacetes.venda.toFixed(2)],
+      ['', ''],
+      ['FINANCIAMENTOS POR BANCO', ''],
+      ['Vendas financiadas no mês', financiamentos.length],
+      ['Total financiado', totalFinanciado.toFixed(2)],
+      ...bancos.map((banco) => [
+        `${banco.nome} - contratos`,
+        banco.quantidade,
+      ]),
+      ...bancos.map((banco) => [
+        `${banco.nome} - valor financiado`,
+        banco.valor.toFixed(2),
+      ]),
+      ['', ''],
+      [`CARTÃO - operadora ${OPERADORA_CARTAO}`, ''],
+      ['Cartão em vendas de moto', cartaoMotos.toFixed(2)],
+      ['Cartão em vendas de capacete', cartaoCapacetes.toFixed(2)],
+      [
+        'Cartão total',
+        (cartaoMotos + cartaoCapacetes).toFixed(2),
+      ],
       ['', ''],
       ['VENDAS POR VENDEDOR', ''],
       ['Cristian - quantidade', vendasCristian.length],

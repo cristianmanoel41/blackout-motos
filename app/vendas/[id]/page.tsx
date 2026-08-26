@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { opcoesDeBanco } from "@/lib/dados/financeiras";
 
 const supabase = createClient();
 
@@ -1019,8 +1020,7 @@ export default function EditarVendaPage() {
                   Banco / Financeira *
                 </label>
 
-                <input
-                  type="text"
+                <select
                   value={banco}
                   onChange={(e) =>
                     setBanco(
@@ -1028,7 +1028,22 @@ export default function EditarVendaPage() {
                     )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                />
+                >
+                  <option value="">
+                    Selecione
+                  </option>
+
+                  {opcoesDeBanco(
+                    banco
+                  ).map((nome) => (
+                    <option
+                      key={nome}
+                      value={nome}
+                    >
+                      {nome}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
