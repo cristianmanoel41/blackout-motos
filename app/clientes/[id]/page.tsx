@@ -859,7 +859,7 @@ export default function ClienteDetalhesPage() {
                         </Link>
 
                         <a
-                          href={`/api/contratos/procuracao/${moto.id}`}
+                          href={`/documentos/procuracao/${moto.id}`}
                           className="inline-flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
                         >
                           <FileSignature
@@ -869,7 +869,7 @@ export default function ClienteDetalhesPage() {
                         </a>
 
                         <a
-                          href={`/api/contratos/compra/${moto.id}`}
+                          href={`/documentos/contrato-compra/${moto.id}`}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-dourado px-4 py-2 text-sm font-bold text-dourado transition hover:bg-dourado hover:text-preto"
                         >
                           <FileText
@@ -1006,7 +1006,7 @@ export default function ClienteDetalhesPage() {
                         </Link>
 
                         <a
-                          href={`/api/contratos/venda/${venda.id}`}
+                          href={`/documentos/contrato-venda/${venda.id}`}
                           className="inline-flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
                         >
                           <FileText

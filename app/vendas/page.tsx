@@ -2049,7 +2049,7 @@ export default function VendasPage() {
 
                 <div className="flex flex-wrap gap-3">
                   <a
-                    href={`/api/contratos/venda/${documentos.vendaId}`}
+                    href={`/documentos/contrato-venda/${documentos.vendaId}`}
                     className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
                   >
                     <FileText size={16} />
@@ -2059,7 +2059,7 @@ export default function VendasPage() {
                   {documentos.motoTrocaId && (
                     <>
                       <a
-                        href={`/api/contratos/procuracao/${documentos.motoTrocaId}`}
+                        href={`/documentos/procuracao/${documentos.motoTrocaId}`}
                         className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
                       >
                         <FileSignature size={16} />
@@ -2067,7 +2067,7 @@ export default function VendasPage() {
                       </a>
 
                       <a
-                        href={`/api/contratos/compra/${documentos.motoTrocaId}`}
+                        href={`/documentos/contrato-compra/${documentos.motoTrocaId}`}
                         className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
                       >
                         <FileText size={16} />

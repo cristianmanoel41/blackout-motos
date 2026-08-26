@@ -17,7 +17,8 @@ export default function AppShell({
   const paginaSemMenu =
     pathname === '/' ||
     pathname === '/login' ||
-    pathname.startsWith('/recibos/')
+    pathname.startsWith('/recibos/') ||
+    pathname.startsWith('/documentos/')
 
   if (paginaSemMenu) {
     return <>{children}</>

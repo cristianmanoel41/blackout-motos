@@ -25,14 +25,87 @@ body {
   border-radius: 8px;
 }
 /*
- * Impressão de documentos (recibo).
- * A folha é um terço de A4 deitada (21 x 9,9 cm), o tamanho
- * de talão de recibo - igual ao modelo em Word.
+ * Texto vindo dos modelos em Word, na tela de prévia.
+ * A conversão traz só o conteúdo; a aparência de documento
+ * (fonte serifada, texto justificado) vem daqui.
  */
+.documento-word {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  text-align: justify;
+  color: #000;
+}
+
+.documento-word p {
+  margin: 0 0 0.6em;
+}
+
+.documento-word strong {
+  font-weight: 700;
+}
+
+.documento-word h1,
+.documento-word h2,
+.documento-word h3 {
+  margin: 1em 0 0.5em;
+  text-align: center;
+  font-weight: 700;
+}
+
+.documento-word h1 {
+  font-size: 14pt;
+}
+
+.documento-word h2 {
+  font-size: 12pt;
+}
+
+.documento-word img {
+  max-width: 100%;
+  height: auto;
+}
+
+.documento-word table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.documento-word td,
+.documento-word th {
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+/*
+ * Impressão dos documentos.
+ *
+ * São dois tamanhos de folha: o recibo é um terço de A4
+ * deitado (talão de recibo) e contrato/procuração são A4 em
+ * pé. Cada folha declara qual usa pela classe.
+ */
+@page recibo {
+  size: 210mm 99mm;
+  margin: 6mm 10mm;
+}
+
+@page documento {
+  size: A4 portrait;
+  margin: 15mm 18mm;
+}
+
+.folha-recibo {
+  page: recibo;
+}
+
+.folha-documento {
+  page: documento;
+}
+
 @media print {
   @page {
-    size: 210mm 99mm;
-    margin: 6mm 10mm;
+    size: A4 portrait;
+    margin: 15mm 18mm;
   }
 
   html,

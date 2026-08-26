@@ -749,7 +749,7 @@ export default function NovaMotoPage() {
                 </Link>
 
                 <a
-                  href={`/api/contratos/procuracao/${motoCriadaId}`}
+                  href={`/documentos/procuracao/${motoCriadaId}`}
                   className="inline-flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
                 >
                   <FileSignature size={17} />

@@ -359,7 +359,7 @@ export default function HistoricoGeral({
                           </Link>
 
                           <a
-                            href={`/api/contratos/venda/${registro.id}`}
+                            href={`/documentos/contrato-venda/${registro.id}`}
                             className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:bg-dourado-claro"
                           >
                             <FileText size={14} />

@@ -75,7 +75,7 @@ export default async function ReciboCapacetePage({
 
       {/* FOLHA 21 x 9,9 CM */}
 
-      <div className="mx-auto w-[21cm] min-h-[9.9cm] max-w-full bg-white px-[1cm] py-[0.6cm] text-black shadow-2xl print:min-h-0 print:w-auto print:px-0 print:py-0 print:shadow-none">
+      <div className="folha-recibo mx-auto w-[21cm] min-h-[9.9cm] max-w-full bg-white px-[1cm] py-[0.6cm] text-black shadow-2xl print:min-h-0 print:w-auto print:px-0 print:py-0 print:shadow-none">
         {/* CABEÇALHO */}
 
         <div className="text-center">

@@ -1370,7 +1370,7 @@ export default function EditarVendaPage() {
 
             <div className="flex flex-wrap gap-3">
               <a
-                href={`/api/contratos/venda/${id}`}
+                href={`/documentos/contrato-venda/${id}`}
                 className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
               >
                 <FileText size={16} />
@@ -1380,7 +1380,7 @@ export default function EditarVendaPage() {
               {motoTrocaId && (
                 <>
                   <a
-                    href={`/api/contratos/procuracao/${motoTrocaId}`}
+                    href={`/documentos/procuracao/${motoTrocaId}`}
                     className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
                   >
                     <FileSignature size={16} />
@@ -1388,7 +1388,7 @@ export default function EditarVendaPage() {
                   </a>
 
                   <a
-                    href={`/api/contratos/compra/${motoTrocaId}`}
+                    href={`/documentos/contrato-compra/${motoTrocaId}`}
                     className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
                   >
                     <FileText size={16} />

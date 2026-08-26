@@ -334,14 +334,14 @@ export default function DetalheMotoPage() {
             )}
 
             <a
-              href={`/api/contratos/procuracao/${moto.id}`}
+              href={`/documentos/procuracao/${moto.id}`}
               className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
             >
               Procuração
             </a>
 
             <a
-              href={`/api/contratos/compra/${moto.id}`}
+              href={`/documentos/contrato-compra/${moto.id}`}
               className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
             >
               Contrato de Compra
