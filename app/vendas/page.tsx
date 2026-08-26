@@ -1302,7 +1302,12 @@ export default function VendasPage() {
     setBuscaMoto("");
     setClienteId("");
     setBuscaCliente("");
-    setVendedor("");
+
+    /*
+     * Volta com o usuário logado, e não em branco:
+     * na venda seguinte o vendedor já vem preenchido.
+     */
+    setVendedor(usuario?.nome || "");
     setTipoVenda("avista");
     setValorVenda("");
     setBanco("");

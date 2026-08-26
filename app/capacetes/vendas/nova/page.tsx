@@ -394,7 +394,11 @@ export default function NovaVendaCapacetePage() {
     setVendaSalva(null);
     setErro("");
     setDataVenda(hoje());
-    setVendedor("");
+
+    /*
+     * Volta com o usuário logado, e não em branco.
+     */
+    setVendedor(usuario?.nome || "");
     setClienteId("");
     setBuscaCliente("");
     setClienteCpf("");
