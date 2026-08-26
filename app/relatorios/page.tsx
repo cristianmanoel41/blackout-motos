@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
+import RelatorioFiltro from '@/components/RelatorioFiltro'
 
 const nomesMeses = [
   'Janeiro',
@@ -405,57 +406,12 @@ export default async function RelatorioMensalPage({
 
       {/* FILTROS */}
 
-      <form
-        action="/relatorios"
-        method="GET"
-        className="mb-6 flex flex-wrap items-center gap-3"
-      >
-        <select
-          name="mes"
-          defaultValue={mesSelecionado}
-          className="rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-2 text-texto outline-none focus:border-dourado"
-        >
-          {nomesMeses.map(
-            (nome, i) => (
-              <option
-                key={i}
-                value={i + 1}
-              >
-                {nome}
-              </option>
-            )
-          )}
-        </select>
-
-        <select
-          name="ano"
-          defaultValue={anoSelecionado}
-          className="rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-2 text-texto outline-none focus:border-dourado"
-        >
-          {anos.map((ano) => (
-            <option
-              key={ano}
-              value={ano}
-            >
-              {ano}
-            </option>
-          ))}
-        </select>
-
-        <button
-          type="submit"
-          className="rounded-lg bg-dourado px-6 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
-        >
-          Gerar Relatório
-        </button>
-
-        <a
-          href={`/api/relatorios/mensal?mes=${mesSelecionado}&ano=${anoSelecionado}`}
-          className="rounded-lg border border-dourado px-6 py-2 font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
-        >
-          Baixar Arquivo
-        </a>
-      </form>
+      <RelatorioFiltro
+        mes={mesSelecionado}
+        ano={anoSelecionado}
+        meses={nomesMeses}
+        anos={anos}
+      />
 
       {/* PRIMEIRA LINHA */}
 

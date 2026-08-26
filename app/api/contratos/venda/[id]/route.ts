@@ -93,12 +93,21 @@ function descricaoPagamentos(
     Number(venda.valor_financiado) || 0;
 
   if (financiado > 0) {
+    const parcelas =
+      Number(
+        venda.parcelas_financiamento
+      ) || 0;
+
     partes.push(
       `financiamento de ${moeda(
         financiado
       )}${
         venda.banco
           ? ` pelo banco/financeira ${venda.banco}`
+          : ""
+      }${
+        parcelas > 0
+          ? `, em ${parcelas}x`
           : ""
       }`
     );
@@ -442,6 +451,36 @@ export async function GET(
           venda,
           componentes || []
         ),
+
+      financiamento_banco:
+        venda.banco || "",
+
+      financiamento_valor:
+        Number(
+          venda.valor_financiado
+        ) > 0
+          ? moeda(
+              venda.valor_financiado
+            )
+          : "",
+
+      financiamento_parcelas:
+        Number(
+          venda.parcelas_financiamento
+        ) > 0
+          ? `${Number(
+              venda.parcelas_financiamento
+            )}x`
+          : "",
+
+      financiamento_valor_parcela:
+        Number(
+          venda.valor_parcela_financiamento
+        ) > 0
+          ? moeda(
+              venda.valor_parcela_financiamento
+            )
+          : "",
 
       transferencia_descricao:
         transferenciaDescricao(

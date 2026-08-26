@@ -182,8 +182,62 @@ export default function NovaMotoPage() {
             hoje(),
         })
       );
+
+      // quem entrega a moto na troca é o
+      // cliente da venda: puxa os dados dele
+      const clienteId =
+        parametros.get("cliente");
+
+      if (clienteId) {
+        carregarFornecedorDoCliente(
+          clienteId
+        );
+      }
     }
   }, []);
+
+  async function carregarFornecedorDoCliente(
+    clienteId: string
+  ) {
+    const { data: cliente } =
+      await supabase
+        .from("customers")
+        .select("*")
+        .eq("id", clienteId)
+        .single();
+
+    if (!cliente) return;
+
+    setForm((anterior) => ({
+      ...anterior,
+      fornecedor_nome:
+        cliente.nome || "",
+      fornecedor_telefone:
+        cliente.telefone || "",
+      fornecedor_cpf:
+        cliente.cpf || "",
+      fornecedor_rg:
+        cliente.rg || "",
+      fornecedor_rua:
+        cliente.rua || "",
+      fornecedor_numero:
+        cliente.numero || "",
+      fornecedor_bairro:
+        cliente.bairro || "",
+      fornecedor_cidade:
+        cliente.cidade || "",
+      fornecedor_estado:
+        cliente.estado || "",
+      fornecedor_cep:
+        cliente.cep || "",
+    }));
+
+    setMensagem(
+      `Dados de ${
+        cliente.nome || "quem entrega a moto"
+      } preenchidos automaticamente. Confira antes de salvar — eles vão para a procuração e o contrato de compra.`
+    );
+  }
 
   function atualizarCampo(
     campo: keyof FormMoto,

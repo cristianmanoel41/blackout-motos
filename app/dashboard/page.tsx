@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import { Bike, ShoppingCart, PlusCircle, Warehouse, DollarSign, TrendingUp, TrendingDown, Receipt, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react'
+import GraficoValores from '@/components/GraficoValores'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -124,6 +125,102 @@ export default async function DashboardPage() {
 
   const nomeMes = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
+  // =========================================================
+  // GRÁFICO: ÚLTIMOS 6 MESES
+  // =========================================================
+
+  const chaveMes = (ano: number, mes: number) =>
+    `${ano}-${String(mes + 1).padStart(2, '0')}`
+
+  const mesesGrafico = Array.from({ length: 6 }, (_, i) => {
+    const data = new Date(hoje.getFullYear(), hoje.getMonth() - 5 + i, 1)
+
+    return {
+      chave: chaveMes(data.getFullYear(), data.getMonth()),
+      rotulo: `${data
+        .toLocaleDateString('pt-BR', { month: 'short' })
+        .replace('.', '')}/${String(data.getFullYear()).slice(2)}`,
+    }
+  })
+
+  const inicioJanela = `${mesesGrafico[0].chave}-01`
+
+  const fimJanela = fimMes
+
+  const { data: vendasJanela } = await supabase
+    .from('sales')
+    .select('motorcycle_id, valor_total_venda, valor_documentacao, documentacao_entra_no_lucro, data_venda')
+    .eq('status', 'ativa')
+    .gte('data_venda', inicioJanela)
+    .lte('data_venda', fimJanela)
+
+  const { data: despesasJanela } = await supabase
+    .from('store_expenses')
+    .select('valor, data')
+    .gte('data', inicioJanela)
+    .lte('data', fimJanela)
+
+  const idsVendidasJanela =
+    vendasJanela?.map((v) => v.motorcycle_id).filter(Boolean) ?? []
+
+  const custoPorMoto: Record<string, number> = {}
+
+  if (idsVendidasJanela.length > 0) {
+    const { data: motosJanela } = await supabase
+      .from('motorcycles')
+      .select('id, valor_compra')
+      .in('id', idsVendidasJanela)
+
+    const { data: gastosJanela } = await supabase
+      .from('motorcycle_expenses')
+      .select('motorcycle_id, valor')
+      .in('motorcycle_id', idsVendidasJanela)
+
+    motosJanela?.forEach((m) => {
+      custoPorMoto[m.id] = Number(m.valor_compra || 0)
+    })
+
+    gastosJanela?.forEach((g) => {
+      custoPorMoto[g.motorcycle_id] =
+        (custoPorMoto[g.motorcycle_id] || 0) + Number(g.valor || 0)
+    })
+  }
+
+  const dadosGrafico = mesesGrafico.map(({ chave, rotulo }) => {
+    const vendasDoMes =
+      vendasJanela?.filter(
+        (v) => String(v.data_venda).slice(0, 7) === chave
+      ) ?? []
+
+    const faturamento = vendasDoMes.reduce(
+      (s, v) => s + Number(v.valor_total_venda || 0),
+      0
+    )
+
+    const documentacao = vendasDoMes.reduce(
+      (s, v) =>
+        s + (v.documentacao_entra_no_lucro ? Number(v.valor_documentacao || 0) : 0),
+      0
+    )
+
+    const custo = vendasDoMes.reduce(
+      (s, v) => s + (custoPorMoto[v.motorcycle_id] || 0),
+      0
+    )
+
+    const despesas =
+      despesasJanela
+        ?.filter((d) => String(d.data).slice(0, 7) === chave)
+        .reduce((s, d) => s + Number(d.valor || 0), 0) ?? 0
+
+    return {
+      mes: rotulo,
+      faturamento,
+      despesas,
+      lucro: faturamento + documentacao - custo - despesas,
+    }
+  })
+
   const Card = ({
     titulo,
     valor,
@@ -163,6 +260,11 @@ export default async function DashboardPage() {
         <Card titulo="Lucro bruto" valor={formatarMoeda(lucroBrutoMes)} icone={TrendingUp} cor={lucroBrutoMes >= 0 ? 'text-green-400' : 'text-red-400'} />
         <Card titulo="Despesas da loja" valor={formatarMoeda(totalDespesasMes)} icone={Receipt} cor="text-red-400" />
         <Card titulo="Lucro líquido" valor={formatarMoeda(lucroLiquidoMes)} icone={TrendingDown} cor={lucroLiquidoMes >= 0 ? 'text-green-400' : 'text-red-400'} />
+      </div>
+
+      <h2 className="text-texto-suave text-sm font-semibold uppercase tracking-wide mb-3">Evolução</h2>
+      <div className="mb-8">
+        <GraficoValores dados={dadosGrafico} />
       </div>
 
       <h2 className="text-texto-suave text-sm font-semibold uppercase tracking-wide mb-3">Caixa</h2>

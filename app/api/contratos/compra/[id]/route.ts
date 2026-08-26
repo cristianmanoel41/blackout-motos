@@ -233,6 +233,104 @@ function horaAtual() {
   ).format(new Date());
 }
 
+function moedaComSimbolo(
+  valor: unknown
+) {
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL",
+    }
+  ).format(
+    Number(valor) || 0
+  );
+}
+
+/*
+ * Descreve como o cliente pagou o RESTANTE
+ * da compra, fora a moto dada na troca.
+ */
+function descricaoRestante(
+  venda: any,
+  componentes: any[]
+) {
+  const partes: string[] = [];
+
+  for (const item of componentes ||
+    []) {
+    if (
+      item.tipo ===
+      "Moto na troca"
+    ) {
+      continue;
+    }
+
+    if (item.tipo === "Cartão") {
+      const parcelas =
+        Number(item.parcelas) ||
+        1;
+
+      const valorParcela =
+        Number(
+          item.valor_parcela
+        ) ||
+        Number(item.valor) /
+          parcelas;
+
+      partes.push(
+        `cartão no valor de ${moedaComSimbolo(
+          item.valor
+        )}, em ${parcelas}x de ${moedaComSimbolo(
+          valorParcela
+        )}`
+      );
+
+      continue;
+    }
+
+    partes.push(
+      `${
+        item.tipo
+      } no valor de ${moedaComSimbolo(
+        item.valor
+      )}`
+    );
+  }
+
+  const financiado =
+    Number(
+      venda.valor_financiado
+    ) || 0;
+
+  if (financiado > 0) {
+    const parcelas =
+      Number(
+        venda.parcelas_financiamento
+      ) || 0;
+
+    partes.push(
+      `financiamento de ${moedaComSimbolo(
+        financiado
+      )}${
+        venda.banco
+          ? ` pelo banco/financeira ${venda.banco}`
+          : ""
+      }${
+        parcelas > 0
+          ? `, em ${parcelas}x`
+          : ""
+      }`
+    );
+  }
+
+  if (partes.length === 0) {
+    return "";
+  }
+
+  return partes.join("; ");
+}
+
 function nomeArquivoSeguro(
   valor: string
 ) {
@@ -306,6 +404,134 @@ export async function GET(
         }
       );
     }
+
+    // =====================================================
+    // MOTO RECEBIDA NA TROCA: descreve a negociação
+    // =====================================================
+
+    let descricaoTroca = "";
+
+    if (
+      moto.origem_troca_venda_id
+    ) {
+      const { data: venda } =
+        await supabase
+          .from("sales")
+          .select("*")
+          .eq(
+            "id",
+            moto.origem_troca_venda_id
+          )
+          .single();
+
+      if (venda) {
+        const {
+          data: componentes,
+        } = await supabase
+          .from(
+            "sale_payment_components"
+          )
+          .select("*")
+          .eq(
+            "sale_id",
+            venda.id
+          )
+          .order("criado_em", {
+            ascending: true,
+          });
+
+        let motoVendida: any =
+          null;
+
+        if (
+          venda.motorcycle_id
+        ) {
+          const { data } =
+            await supabase
+              .from(
+                "motorcycles"
+              )
+              .select("*")
+              .eq(
+                "id",
+                venda.motorcycle_id
+              )
+              .single();
+
+          motoVendida = data;
+        }
+
+        const descricaoMotoVendida =
+          motoVendida
+            ? `${[
+                motoVendida.marca,
+                motoVendida.modelo,
+                motoVendida.versao,
+              ]
+                .filter(Boolean)
+                .join(" ")}${
+                motoVendida.placa
+                  ? `, placa ${motoVendida.placa}`
+                  : ""
+              }${
+                motoVendida.ano_modelo
+                  ? `, ano ${motoVendida.ano_modelo}`
+                  : ""
+              }`
+            : "outro veículo da loja";
+
+        const valorTotalVenda =
+          Number(
+            venda.valor_total_venda ??
+              venda.valor_venda
+          ) || 0;
+
+        const valorTroca =
+          Number(
+            moto.valor_compra
+          ) || 0;
+
+        const restante =
+          descricaoRestante(
+            venda,
+            componentes || []
+          );
+
+        const frases = [
+          `Veículo entregue por ${
+            venda.cliente ||
+            moto.fornecedor_nome ||
+            "o VENDEDOR"
+          } como parte do pagamento (troca) na compra da moto ${descricaoMotoVendida}, negociada por ${moedaComSimbolo(
+            valorTotalVenda
+          )}.`,
+
+          `A moto entregue na troca foi considerada pelo valor de ${moedaComSimbolo(
+            valorTroca
+          )}.`,
+        ];
+
+        if (restante) {
+          frases.push(
+            `O restante do valor foi pago da seguinte forma: ${restante}.`
+          );
+        }
+
+        descricaoTroca =
+          frases.join(" ");
+      }
+    }
+
+    // o modelo já fecha a frase com ponto
+    const observacoesContrato = [
+      descricaoTroca,
+      moto.observacoes || "",
+    ]
+      .filter((parte) =>
+        String(parte).trim()
+      )
+      .join(" ")
+      .replace(/\s*\.\s*$/, "");
 
     const templatePath =
       path.join(
@@ -429,8 +655,10 @@ export async function GET(
         ),
 
       observacoes:
-        moto.observacoes ||
-        "",
+        observacoesContrato,
+
+      troca_descricao:
+        descricaoTroca,
 
       // DATA E HORA DO MOMENTO DA EMISSÃO
       data_extenso:

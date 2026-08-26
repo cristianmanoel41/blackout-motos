@@ -11,6 +11,8 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Bike,
   CreditCard,
+  FileSignature,
+  FileText,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -23,6 +25,7 @@ type Moto = {
   marca?: string | null;
   modelo?: string | null;
   versao?: string | null;
+  cor?: string | null;
   ano_modelo?: string | number | null;
   placa?: string | null;
   status?: string | null;
@@ -102,6 +105,33 @@ function normalizarTexto(
     .trim();
 }
 
+function apenasLetrasNumeros(
+  valor: string
+) {
+  return normalizarTexto(
+    valor
+  ).replace(/[^a-z0-9]/g, "");
+}
+
+function textoDaMoto(moto: Moto) {
+  return [
+    moto.codigo,
+    moto.marca,
+    moto.modelo,
+    moto.versao,
+    moto.cor,
+    moto.placa,
+    moto.ano_modelo,
+  ]
+    .map((parte) =>
+      apenasLetrasNumeros(
+        String(parte ?? "")
+      )
+    )
+    .filter(Boolean)
+    .join(" ");
+}
+
 function novoIdLocal() {
   return `${Date.now()}-${Math.random()
     .toString(36)
@@ -143,6 +173,19 @@ export default function VendasPage() {
   const [motoId, setMotoId] =
     useState("");
 
+  const [
+    buscaMoto,
+    setBuscaMoto,
+  ] = useState("");
+
+  const [
+    documentos,
+    setDocumentos,
+  ] = useState<{
+    vendaId: string;
+    motoTrocaId: string;
+  } | null>(null);
+
   const [clienteId, setClienteId] =
     useState("");
 
@@ -164,6 +207,16 @@ export default function VendasPage() {
 
   const [banco, setBanco] =
     useState("");
+
+  const [
+    parcelasFinanciamento,
+    setParcelasFinanciamento,
+  ] = useState("");
+
+  const [
+    valorParcelaManual,
+    setValorParcelaManual,
+  ] = useState("");
 
   const [
     componentes,
@@ -193,6 +246,49 @@ export default function VendasPage() {
         String(moto.id) ===
         String(motoId)
     );
+
+  const motosFiltradas =
+    useMemo(() => {
+      const termos = buscaMoto
+        .split(/\s+/)
+        .map((termo) =>
+          apenasLetrasNumeros(
+            termo
+          )
+        )
+        .filter(Boolean);
+
+      if (
+        termos.length === 0
+      ) {
+        return motos;
+      }
+
+      return motos.filter(
+        (moto) => {
+          if (
+            String(moto.id) ===
+            String(motoId)
+          ) {
+            return true;
+          }
+
+          const texto =
+            textoDaMoto(moto);
+
+          return termos.every(
+            (termo) =>
+              texto.includes(
+                termo
+              )
+          );
+        }
+      );
+    }, [
+      motos,
+      buscaMoto,
+      motoId,
+    ]);
 
   const clienteSelecionado =
     clientes.find(
@@ -282,6 +378,16 @@ export default function VendasPage() {
       valorVendaNumero,
       entradaTotal,
     ]);
+
+  const parcelasNumero =
+    Number(
+      parcelasFinanciamento
+    ) || 0;
+
+  const valorParcelaFinal =
+    Number(
+      valorParcelaManual
+    ) || 0;
 
   const totalPagamentosCaixa =
     useMemo(() => {
@@ -505,6 +611,38 @@ export default function VendasPage() {
           }
 
           if (
+            rascunho.clienteId
+          ) {
+            setClienteId(
+              rascunho.clienteId
+            );
+          }
+
+          if (
+            rascunho.buscaCliente
+          ) {
+            setBuscaCliente(
+              rascunho.buscaCliente
+            );
+          }
+
+          if (
+            rascunho.parcelasFinanciamento
+          ) {
+            setParcelasFinanciamento(
+              rascunho.parcelasFinanciamento
+            );
+          }
+
+          if (
+            rascunho.valorParcelaManual
+          ) {
+            setValorParcelaManual(
+              rascunho.valorParcelaManual
+            );
+          }
+
+          if (
             Array.isArray(
               rascunho.componentes
             )
@@ -608,6 +746,10 @@ export default function VendasPage() {
       tipoVenda,
       valorVenda,
       banco,
+      parcelasFinanciamento,
+      valorParcelaManual,
+      clienteId,
+      buscaCliente,
       componentes,
       transferenciaCliente,
       transferenciaLoja,
@@ -645,10 +787,34 @@ export default function VendasPage() {
   }
 
   function cadastrarMotoTroca() {
+    if (!clienteId) {
+      const seguir =
+        window.confirm(
+          "Nenhum cliente selecionado. Os dados de quem está entregando a moto não serão preenchidos automaticamente (a procuração e o contrato de compra precisam deles). Deseja continuar mesmo assim?"
+        );
+
+      if (!seguir) return;
+    }
+
     salvarRascunho();
 
+    const parametros =
+      new URLSearchParams();
+
+    parametros.set(
+      "retorno",
+      "venda-troca"
+    );
+
+    if (clienteId) {
+      parametros.set(
+        "cliente",
+        clienteId
+      );
+    }
+
     window.location.href =
-      "/motos/nova?retorno=venda-troca";
+      `/motos/nova?${parametros.toString()}`;
   }
 
   function adicionarPagamento(
@@ -715,12 +881,15 @@ export default function VendasPage() {
     setDataVenda(hoje());
     setHoraVenda(horaAtual());
     setMotoId("");
+    setBuscaMoto("");
     setClienteId("");
     setBuscaCliente("");
     setVendedor("");
     setTipoVenda("avista");
     setValorVenda("");
     setBanco("");
+    setParcelasFinanciamento("");
+    setValorParcelaManual("");
     setComponentes([]);
     setTransferenciaCliente("");
     setTransferenciaLoja("");
@@ -734,6 +903,7 @@ export default function VendasPage() {
 
     setErro("");
     setMensagem("");
+    setDocumentos(null);
 
     if (!horaVenda) {
       setErro(
@@ -881,6 +1051,17 @@ export default function VendasPage() {
       return;
     }
 
+    if (
+      tipoVenda ===
+        "financiamento" &&
+      parcelasNumero <= 0
+    ) {
+      setErro(
+        "Selecione em quantas parcelas o financiamento será pago."
+      );
+      return;
+    }
+
     const confirmar =
       window.confirm(
         `Confirmar a venda de ${
@@ -949,6 +1130,17 @@ export default function VendasPage() {
             tipoVenda ===
             "financiamento"
               ? banco.trim()
+              : null,
+          parcelas_financiamento:
+            tipoVenda ===
+            "financiamento"
+              ? parcelasNumero
+              : null,
+          valor_parcela_financiamento:
+            tipoVenda ===
+              "financiamento" &&
+            valorParcelaFinal > 0
+              ? valorParcelaFinal
               : null,
           transferencia_cliente:
             Number(
@@ -1166,6 +1358,15 @@ export default function VendasPage() {
         "Venda registrada com sucesso. Pagamentos, financiamento e moto de troca foram vinculados."
       );
 
+      setDocumentos({
+        vendaId: String(
+          vendaCriada.id
+        ),
+        motoTrocaId:
+          motosTroca[0]?.motoId ||
+          "",
+      });
+
       limparFormulario();
 
       sessionStorage.removeItem(
@@ -1234,6 +1435,53 @@ export default function VendasPage() {
         {mensagem && (
           <div className="mb-6 rounded-xl border border-green-700 bg-green-950/40 p-4 text-green-300">
             {mensagem}
+
+            {documentos && (
+              <div className="mt-4 border-t border-green-800 pt-4">
+                <p className="mb-3 text-sm text-green-200">
+                  Documentos desta venda:
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href={`/api/contratos/venda/${documentos.vendaId}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
+                  >
+                    <FileText size={16} />
+                    Contrato de Venda
+                  </a>
+
+                  {documentos.motoTrocaId && (
+                    <>
+                      <a
+                        href={`/api/contratos/procuracao/${documentos.motoTrocaId}`}
+                        className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
+                      >
+                        <FileSignature size={16} />
+                        Procuração da Moto da Troca
+                      </a>
+
+                      <a
+                        href={`/api/contratos/compra/${documentos.motoTrocaId}`}
+                        className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
+                      >
+                        <FileText size={16} />
+                        Contrato de Compra da Troca
+                      </a>
+                    </>
+                  )}
+                </div>
+
+                {documentos.motoTrocaId && (
+                  <p className="mt-3 text-xs text-green-200/70">
+                    Os documentos da troca usam os dados de
+                    quem entregou a moto (fornecedor da moto).
+                    O contrato de compra já sai descrevendo a
+                    troca e como o restante foi pago.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1292,6 +1540,18 @@ export default function VendasPage() {
                   Moto vendida *
                 </label>
 
+                <input
+                  type="text"
+                  value={buscaMoto}
+                  onChange={(e) =>
+                    setBuscaMoto(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Procurar por marca, modelo, cor, placa..."
+                  className="mb-2 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm outline-none focus:border-yellow-500"
+                />
+
                 <select
                   value={motoId}
                   onChange={(e) =>
@@ -1310,7 +1570,7 @@ export default function VendasPage() {
                       : "Selecione a moto"}
                   </option>
 
-                  {motos.map(
+                  {motosFiltradas.map(
                     (moto) => (
                       <option
                         key={moto.id}
@@ -1322,6 +1582,9 @@ export default function VendasPage() {
                         {moto.marca || ""}{" "}
                         {moto.modelo || ""}{" "}
                         {moto.versao || ""}
+                        {moto.cor
+                          ? ` - ${moto.cor}`
+                          : ""}
                         {moto.ano_modelo
                           ? ` - ${moto.ano_modelo}`
                           : ""}
@@ -1332,6 +1595,20 @@ export default function VendasPage() {
                     )
                   )}
                 </select>
+
+                {buscaMoto.trim() && (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    {motosFiltradas.length ===
+                    0
+                      ? "Nenhuma moto encontrada. Limpe a busca para ver todas."
+                      : `${motosFiltradas.length} ${
+                          motosFiltradas.length ===
+                          1
+                            ? "moto encontrada"
+                            : "motos encontradas"
+                        }.`}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -1556,6 +1833,79 @@ export default function VendasPage() {
                     placeholder="Ex.: Banco Pan, Santander..."
                     className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                   />
+                </div>
+              )}
+
+              {tipoVenda ===
+                "financiamento" && (
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Parcelas do financiamento *
+                  </label>
+
+                  <select
+                    value={
+                      parcelasFinanciamento
+                    }
+                    onChange={(e) =>
+                      setParcelasFinanciamento(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  >
+                    <option value="">
+                      Selecione
+                    </option>
+
+                    <option value="12">
+                      12x
+                    </option>
+
+                    <option value="24">
+                      24x
+                    </option>
+
+                    <option value="36">
+                      36x
+                    </option>
+
+                    <option value="48">
+                      48x
+                    </option>
+                  </select>
+                </div>
+              )}
+
+              {tipoVenda ===
+                "financiamento" && (
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Valor da parcela
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={
+                      valorParcelaManual
+                    }
+                    onChange={(e) =>
+                      setValorParcelaManual(
+                        e.target.value
+                      )
+                    }
+                    placeholder="0,00"
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Opcional. Anote aqui a parcela que ficou
+                    no banco, só para controle interno. No
+                    contrato sai apenas a quantidade de
+                    parcelas.
+                  </p>
                 </div>
               )}
             </div>
@@ -1861,6 +2211,28 @@ export default function VendasPage() {
                     valorFinanciado
                   )}
                 </p>
+
+                {parcelasNumero >
+                  0 && (
+                  <p className="mt-2 text-sm text-zinc-300">
+                    Financiamento em{" "}
+                    <strong className="text-yellow-500">
+                      {parcelasNumero}x
+                    </strong>
+
+                    {valorParcelaFinal >
+                      0 && (
+                      <span className="text-zinc-500">
+                        {" "}
+                        · parcela de{" "}
+                        {moeda(
+                          valorParcelaFinal
+                        )}{" "}
+                        (uso interno)
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
             )}
           </section>

@@ -15,6 +15,12 @@ const statusLabel: Record<string, string> = {
   arquivada: "Arquivada",
 };
 
+const tipoEntradaLabel: Record<string, string> = {
+  compra_nova: "Comprada",
+  troca: "Recebida na troca",
+  estoque_inicial: "Estoque inicial",
+};
+
 type Moto = {
   id: string;
   codigo: string | null;
@@ -26,6 +32,7 @@ type Moto = {
   ano_modelo: number | null;
   quilometragem: number | null;
   data_entrada: string | null;
+  tipo_entrada: string | null;
   placa: string | null;
   renavam: string | null;
   chassi: string | null;
@@ -33,6 +40,14 @@ type Moto = {
   preco_anunciado: number | null;
   fornecedor_nome: string | null;
   fornecedor_telefone: string | null;
+  fornecedor_cpf: string | null;
+  fornecedor_rg: string | null;
+  fornecedor_rua: string | null;
+  fornecedor_numero: string | null;
+  fornecedor_bairro: string | null;
+  fornecedor_cidade: string | null;
+  fornecedor_estado: string | null;
+  fornecedor_cep: string | null;
   observacoes: string | null;
   status: string;
 };
@@ -156,6 +171,9 @@ export default function DetalheMotoPage() {
 
         data_entrada: form.data_entrada || null,
 
+        tipo_entrada:
+          form.tipo_entrada || "compra_nova",
+
         placa: form.placa?.trim() || null,
         renavam: form.renavam?.trim() || null,
         chassi: form.chassi?.trim() || null,
@@ -175,6 +193,30 @@ export default function DetalheMotoPage() {
 
         fornecedor_telefone:
           form.fornecedor_telefone?.trim() || null,
+
+        fornecedor_cpf:
+          form.fornecedor_cpf?.trim() || null,
+
+        fornecedor_rg:
+          form.fornecedor_rg?.trim() || null,
+
+        fornecedor_rua:
+          form.fornecedor_rua?.trim() || null,
+
+        fornecedor_numero:
+          form.fornecedor_numero?.trim() || null,
+
+        fornecedor_bairro:
+          form.fornecedor_bairro?.trim() || null,
+
+        fornecedor_cidade:
+          form.fornecedor_cidade?.trim() || null,
+
+        fornecedor_estado:
+          form.fornecedor_estado?.trim() || null,
+
+        fornecedor_cep:
+          form.fornecedor_cep?.trim() || null,
 
         observacoes:
           form.observacoes?.trim() || null,
@@ -289,6 +331,20 @@ export default function DetalheMotoPage() {
                 Vender Moto
               </Link>
             )}
+
+            <a
+              href={`/api/contratos/procuracao/${moto.id}`}
+              className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+            >
+              Procuração
+            </a>
+
+            <a
+              href={`/api/contratos/compra/${moto.id}`}
+              className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+            >
+              Contrato de Compra
+            </a>
           </>
         )}
 
@@ -413,6 +469,46 @@ export default function DetalheMotoPage() {
               alterarCampo("data_entrada", v)
             }
           />
+
+          <div>
+            <p className="mb-2 text-xs text-texto-suave">
+              Forma de entrada
+            </p>
+
+            {editando ? (
+              <select
+                value={
+                  form.tipo_entrada ||
+                  "compra_nova"
+                }
+                onChange={(e) =>
+                  alterarCampo(
+                    "tipo_entrada",
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-lg border border-grafite-claro bg-preto px-3 py-2 text-texto outline-none focus:border-dourado"
+              >
+                <option value="compra_nova">
+                  Comprada
+                </option>
+
+                <option value="troca">
+                  Recebida na troca
+                </option>
+
+                <option value="estoque_inicial">
+                  Estoque inicial
+                </option>
+              </select>
+            ) : (
+              <p className="font-medium text-texto">
+                {tipoEntradaLabel[
+                  form.tipo_entrada || ""
+                ] || "—"}
+              </p>
+            )}
+          </div>
 
           <Campo
             label="Placa"
@@ -580,7 +676,108 @@ export default function DetalheMotoPage() {
             }
           />
 
+          <Campo
+            label="CPF"
+            value={form.fornecedor_cpf || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_cpf",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="RG"
+            value={form.fornecedor_rg || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_rg",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="Rua"
+            value={form.fornecedor_rua || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_rua",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="Número"
+            value={form.fornecedor_numero || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_numero",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="Bairro"
+            value={form.fornecedor_bairro || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_bairro",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="Cidade"
+            value={form.fornecedor_cidade || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_cidade",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="Estado"
+            value={form.fornecedor_estado || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_estado",
+                v
+              )
+            }
+          />
+
+          <Campo
+            label="CEP"
+            value={form.fornecedor_cep || ""}
+            editando={editando}
+            onChange={(v) =>
+              alterarCampo(
+                "fornecedor_cep",
+                v
+              )
+            }
+          />
+
         </div>
+
+        <p className="mt-4 text-xs text-texto-suave">
+          Esses dados são usados na procuração e no
+          contrato de compra desta moto.
+        </p>
       </div>
 
       {/* OBSERVAÇÕES */}

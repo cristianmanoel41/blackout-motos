@@ -22,8 +22,40 @@ export default function AppShell({
     <div className="min-h-screen bg-preto">
       <Sidebar />
 
+      {/* MARCA D'ÁGUA */}
+
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          fixed
+          inset-0
+          z-0
+          flex
+          items-center
+          justify-center
+          overflow-hidden
+          md:left-64
+        "
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-blackout.png"
+          alt=""
+          className="
+            w-[min(90vw,900px)]
+            max-w-none
+            object-contain
+            opacity-[0.06]
+            mix-blend-screen
+          "
+        />
+      </div>
+
       <main
         className="
+          relative
+          z-10
           min-h-screen
           w-full
           pt-16

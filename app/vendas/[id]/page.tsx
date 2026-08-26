@@ -13,6 +13,11 @@ import {
 
 import Link from "next/link";
 
+import {
+  FileSignature,
+  FileText,
+} from "lucide-react";
+
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -83,6 +88,16 @@ export default function EditarVendaPage() {
     useState("");
 
   const [
+    parcelasFinanciamento,
+    setParcelasFinanciamento,
+  ] = useState("");
+
+  const [
+    valorParcelaManual,
+    setValorParcelaManual,
+  ] = useState("");
+
+  const [
     transferenciaCliente,
     setTransferenciaCliente,
   ] = useState("");
@@ -102,6 +117,21 @@ export default function EditarVendaPage() {
 
   const [motorcycleId, setMotorcycleId] =
     useState("");
+
+  const [
+    motoTrocaId,
+    setMotoTrocaId,
+  ] = useState("");
+
+  const [
+    motoTrocaNome,
+    setMotoTrocaNome,
+  ] = useState("");
+
+  const [
+    faltandoProcuracao,
+    setFaltandoProcuracao,
+  ] = useState<string[]>([]);
 
   const ehFinanciamento =
     formaPagamento ===
@@ -128,6 +158,16 @@ export default function EditarVendaPage() {
       entrada,
       ehFinanciamento,
     ]);
+
+  const parcelasNumero =
+    Number(
+      parcelasFinanciamento
+    ) || 0;
+
+  const valorParcelaFinal =
+    Number(
+      valorParcelaManual
+    ) || 0;
 
   useEffect(() => {
     carregarVenda();
@@ -215,6 +255,22 @@ export default function EditarVendaPage() {
       venda.banco || ""
     );
 
+    setParcelasFinanciamento(
+      venda.parcelas_financiamento
+        ? String(
+            venda.parcelas_financiamento
+          )
+        : ""
+    );
+
+    setValorParcelaManual(
+      venda.valor_parcela_financiamento
+        ? String(
+            venda.valor_parcela_financiamento
+          )
+        : ""
+    );
+
     setTransferenciaCliente(
       String(
         venda.transferencia_cliente ??
@@ -295,6 +351,122 @@ export default function EditarVendaPage() {
       setMotoNome(
         "Moto não encontrada"
       );
+    }
+
+    // 3. Moto recebida na troca (se houver)
+    const {
+      data: componentes,
+    } = await supabase
+      .from(
+        "sale_payment_components"
+      )
+      .select(
+        "motorcycle_id, tipo"
+      )
+      .eq("sale_id", id)
+      .eq(
+        "tipo",
+        "Moto na troca"
+      );
+
+    const idTroca =
+      componentes?.find(
+        (componente) =>
+          componente.motorcycle_id
+      )?.motorcycle_id;
+
+    if (idTroca) {
+      setMotoTrocaId(
+        String(idTroca)
+      );
+
+      const { data: motoTroca } =
+        await supabase
+          .from("motorcycles")
+          .select("*")
+          .eq("id", idTroca)
+          .single();
+
+      setMotoTrocaNome(
+        motoTroca
+          ? [
+              motoTroca.codigo,
+              motoTroca.marca,
+              motoTroca.modelo,
+              motoTroca.ano_modelo,
+              motoTroca.placa,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : ""
+      );
+
+      // mesmos campos exigidos pela
+      // rota da procuração
+      const obrigatorios: [
+        string,
+        unknown,
+      ][] = [
+        [
+          "Nome de quem entregou a moto",
+          motoTroca?.fornecedor_nome,
+        ],
+        [
+          "CPF",
+          motoTroca?.fornecedor_cpf,
+        ],
+        [
+          "Rua",
+          motoTroca?.fornecedor_rua,
+        ],
+        [
+          "Número",
+          motoTroca?.fornecedor_numero,
+        ],
+        [
+          "Bairro",
+          motoTroca?.fornecedor_bairro,
+        ],
+        [
+          "Cidade",
+          motoTroca?.fornecedor_cidade,
+        ],
+        [
+          "Estado",
+          motoTroca?.fornecedor_estado,
+        ],
+        [
+          "CEP",
+          motoTroca?.fornecedor_cep,
+        ],
+        [
+          "Placa",
+          motoTroca?.placa,
+        ],
+        [
+          "Renavam",
+          motoTroca?.renavam,
+        ],
+        [
+          "Chassi",
+          motoTroca?.chassi,
+        ],
+      ];
+
+      setFaltandoProcuracao(
+        obrigatorios
+          .filter(
+            ([, valor]) =>
+              !String(
+                valor ?? ""
+              ).trim()
+          )
+          .map(([nome]) => nome)
+      );
+    } else {
+      setMotoTrocaId("");
+      setMotoTrocaNome("");
+      setFaltandoProcuracao([]);
     }
 
     setCarregando(false);
@@ -428,6 +600,18 @@ export default function EditarVendaPage() {
           banco:
             ehFinanciamento
               ? banco.trim()
+              : null,
+
+          parcelas_financiamento:
+            ehFinanciamento &&
+            parcelasNumero > 0
+              ? parcelasNumero
+              : null,
+
+          valor_parcela_financiamento:
+            ehFinanciamento &&
+            valorParcelaFinal > 0
+              ? valorParcelaFinal
               : null,
 
           transferencia_cliente:
@@ -783,6 +967,85 @@ export default function EditarVendaPage() {
               </div>
             )}
 
+            {ehFinanciamento && (
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Parcelas do financiamento
+                  </label>
+
+                  <select
+                    value={
+                      parcelasFinanciamento
+                    }
+                    onChange={(e) =>
+                      setParcelasFinanciamento(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  >
+                    <option value="">
+                      Não informado
+                    </option>
+
+                    <option value="12">
+                      12x
+                    </option>
+
+                    <option value="24">
+                      24x
+                    </option>
+
+                    <option value="36">
+                      36x
+                    </option>
+
+                    <option value="48">
+                      48x
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Valor da parcela
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={
+                      valorParcelaManual
+                    }
+                    onChange={(e) =>
+                      setValorParcelaManual(
+                        e.target.value
+                      )
+                    }
+                    placeholder="0,00"
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Só para controle interno.
+                  </p>
+                </div>
+
+                {parcelasNumero >
+                  0 && (
+                  <p className="text-sm text-zinc-300 md:col-span-2">
+                    No contrato:{" "}
+                    <strong className="text-yellow-500">
+                      financiamento em{" "}
+                      {parcelasNumero}x
+                    </strong>
+                  </p>
+                )}
+              </div>
+            )}
+
             {!ehFinanciamento &&
               formaPagamento && (
                 <div className="mt-4 rounded-xl border border-green-800 bg-green-950/20 p-4 text-sm text-green-300">
@@ -928,6 +1191,93 @@ export default function EditarVendaPage() {
                 </p>
               </div>
             </div>
+          </section>
+
+          {/* DOCUMENTOS */}
+
+          <section className="rounded-xl border border-zinc-800 bg-black p-5">
+            <h3 className="mb-1 font-semibold text-yellow-500">
+              Documentos
+            </h3>
+
+            <p className="mb-4 text-xs text-zinc-500">
+              Gerados com os dados salvos. Salve as
+              alterações antes de baixar.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={`/api/contratos/venda/${id}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
+              >
+                <FileText size={16} />
+                Contrato de Venda
+              </a>
+
+              {motoTrocaId && (
+                <>
+                  <a
+                    href={`/api/contratos/procuracao/${motoTrocaId}`}
+                    className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
+                  >
+                    <FileSignature size={16} />
+                    Procuração da Moto da Troca
+                  </a>
+
+                  <a
+                    href={`/api/contratos/compra/${motoTrocaId}`}
+                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
+                  >
+                    <FileText size={16} />
+                    Contrato de Compra da Troca
+                  </a>
+                </>
+              )}
+            </div>
+
+            {motoTrocaId ? (
+              <>
+                <p className="mt-3 text-xs text-zinc-500">
+                  Moto recebida na troca:{" "}
+                  <span className="text-zinc-300">
+                    {motoTrocaNome ||
+                      "cadastrada"}
+                  </span>
+                  . A procuração usa os dados de quem
+                  entregou a moto (cadastrados como
+                  fornecedor dela).
+                </p>
+
+                {faltandoProcuracao.length >
+                  0 && (
+                  <div className="mt-3 rounded-lg border border-yellow-800 bg-yellow-950/20 p-3 text-xs text-yellow-300">
+                    <p className="font-semibold">
+                      A procuração ainda não pode
+                      ser gerada. Faltam:
+                    </p>
+
+                    <p className="mt-1">
+                      {faltandoProcuracao.join(
+                        ", "
+                      )}
+                      .
+                    </p>
+
+                    <Link
+                      href={`/motos/${motoTrocaId}`}
+                      className="mt-2 inline-block font-semibold underline hover:text-yellow-200"
+                    >
+                      Completar o cadastro da moto
+                    </Link>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="mt-3 text-xs text-zinc-500">
+                Esta venda não tem moto recebida na
+                troca.
+              </p>
+            )}
           </section>
 
           <div className="flex flex-col gap-3 md:flex-row">
