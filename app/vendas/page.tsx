@@ -13,6 +13,7 @@ import {
   CreditCard,
   FileSignature,
   FileText,
+  HardHat,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -52,6 +53,25 @@ type ComponentePagamento = {
   parcelas: string;
   motoId?: string;
   motoDescricao?: string;
+};
+
+type ModeloCapacete = {
+  id: string;
+  produto: string;
+  marca: string;
+  modelo: string;
+  cor: string;
+  tamanho: string;
+  preco_venda_padrao: number;
+  custo_medio: number;
+  estoque_atual: number;
+};
+
+type CapaceteVenda = {
+  idLocal: string;
+  modeloId: string;
+  quantidade: string;
+  valorUnitario: string;
 };
 
 function hoje() {
@@ -226,6 +246,20 @@ export default function VendasPage() {
   >([]);
 
   const [
+    modelosCapacete,
+    setModelosCapacete,
+  ] = useState<
+    ModeloCapacete[]
+  >([]);
+
+  const [
+    capacetes,
+    setCapacetes,
+  ] = useState<
+    CapaceteVenda[]
+  >([]);
+
+  const [
     transferenciaCliente,
     setTransferenciaCliente,
   ] = useState("");
@@ -359,6 +393,59 @@ export default function VendasPage() {
       );
     }, [componentes]);
 
+  const totalCapacetes =
+    useMemo(() => {
+      return capacetes.reduce(
+        (total, item) =>
+          total +
+          (Number(
+            item.quantidade
+          ) || 0) *
+            (Number(
+              item.valorUnitario
+            ) || 0),
+        0
+      );
+    }, [capacetes]);
+
+  const custoCapacetes =
+    useMemo(() => {
+      return capacetes.reduce(
+        (total, item) => {
+          const modelo =
+            modelosCapacete.find(
+              (m) =>
+                m.id ===
+                item.modeloId
+            );
+
+          return (
+            total +
+            (Number(
+              item.quantidade
+            ) || 0) *
+              Number(
+                modelo?.custo_medio ||
+                  0
+              )
+          );
+        },
+        0
+      );
+    }, [
+      capacetes,
+      modelosCapacete,
+    ]);
+
+  /*
+   * O cliente paga a moto + os capacetes levados.
+   * Capacete com valor zerado é brinde: sai do
+   * estoque, vira custo e não soma na venda.
+   */
+  const valorTotalVenda =
+    valorVendaNumero +
+    totalCapacetes;
+
   const valorFinanciado =
     useMemo(() => {
       if (
@@ -369,13 +456,13 @@ export default function VendasPage() {
       }
 
       return Math.max(
-        valorVendaNumero -
+        valorTotalVenda -
           entradaTotal,
         0
       );
     }, [
       tipoVenda,
-      valorVendaNumero,
+      valorTotalVenda,
       entradaTotal,
     ]);
 
@@ -427,7 +514,7 @@ export default function VendasPage() {
 
   const valorFalta =
     Math.max(
-      valorVendaNumero -
+      valorTotalVenda -
         entradaTotal,
       0
     );
@@ -457,6 +544,40 @@ export default function VendasPage() {
 
     setMotos(data || []);
     setCarregandoMotos(false);
+  }
+
+  async function carregarCapacetes() {
+    const { data, error } =
+      await supabase
+        .from(
+          "helmet_models"
+        )
+        .select(
+          "id, produto, marca, modelo, cor, tamanho, preco_venda_padrao, custo_medio, estoque_atual"
+        )
+        .eq("ativo", true)
+        .order("marca", {
+          ascending: true,
+        })
+        .order("modelo", {
+          ascending: true,
+        })
+        .order("tamanho", {
+          ascending: true,
+        });
+
+    if (error) {
+      console.error(
+        "Erro ao carregar capacetes:",
+        error
+      );
+      return;
+    }
+
+    setModelosCapacete(
+      (data as ModeloCapacete[]) ||
+        []
+    );
   }
 
   async function carregarClientes(
@@ -653,6 +774,16 @@ export default function VendasPage() {
           }
 
           if (
+            Array.isArray(
+              rascunho.capacetes
+            )
+          ) {
+            setCapacetes(
+              rascunho.capacetes
+            );
+          }
+
+          if (
             rascunho.transferenciaCliente
           ) {
             setTransferenciaCliente(
@@ -729,6 +860,8 @@ export default function VendasPage() {
 
       await carregarMotos();
 
+      await carregarCapacetes();
+
       await carregarClientes(
         clienteRecebido
       );
@@ -751,6 +884,7 @@ export default function VendasPage() {
       clienteId,
       buscaCliente,
       componentes,
+      capacetes,
       transferenciaCliente,
       transferenciaLoja,
       observacoes,
@@ -877,6 +1011,82 @@ export default function VendasPage() {
     );
   }
 
+  function adicionarCapacete() {
+    setCapacetes(
+      (atuais) => [
+        ...atuais,
+        {
+          idLocal:
+            novoIdLocal(),
+          modeloId: "",
+          quantidade: "1",
+          valorUnitario: "",
+        },
+      ]
+    );
+  }
+
+  function alterarCapacete(
+    idLocal: string,
+    campo:
+      | "modeloId"
+      | "quantidade"
+      | "valorUnitario",
+    valor: string
+  ) {
+    setCapacetes((atuais) =>
+      atuais.map((item) => {
+        if (
+          item.idLocal !==
+          idLocal
+        ) {
+          return item;
+        }
+
+        const atualizado = {
+          ...item,
+          [campo]: valor,
+        };
+
+        /*
+         * Ao escolher o capacete já sugerimos
+         * o valor padrão do modelo.
+         */
+        if (
+          campo === "modeloId"
+        ) {
+          const modelo =
+            modelosCapacete.find(
+              (m) =>
+                m.id === valor
+            );
+
+          atualizado.valorUnitario =
+            modelo
+              ? String(
+                  modelo.preco_venda_padrao ??
+                    ""
+                )
+              : "";
+        }
+
+        return atualizado;
+      })
+    );
+  }
+
+  function removerCapacete(
+    idLocal: string
+  ) {
+    setCapacetes((atuais) =>
+      atuais.filter(
+        (item) =>
+          item.idLocal !==
+          idLocal
+      )
+    );
+  }
+
   function limparFormulario() {
     setDataVenda(hoje());
     setHoraVenda(horaAtual());
@@ -891,6 +1101,7 @@ export default function VendasPage() {
     setParcelasFinanciamento("");
     setValorParcelaManual("");
     setComponentes([]);
+    setCapacetes([]);
     setTransferenciaCliente("");
     setTransferenciaLoja("");
     setObservacoes("");
@@ -1003,12 +1214,70 @@ export default function VendasPage() {
       }
     }
 
+    const capacetesPorModelo:
+      Record<string, number> = {};
+
+    for (const capacete of capacetes) {
+      if (!capacete.modeloId) {
+        setErro(
+          "Escolha o capacete ou remova a linha vazia."
+        );
+        return;
+      }
+
+      const quantidade =
+        Number(
+          capacete.quantidade
+        ) || 0;
+
+      if (quantidade <= 0) {
+        setErro(
+          "A quantidade de cada capacete precisa ser maior que zero."
+        );
+        return;
+      }
+
+      capacetesPorModelo[
+        capacete.modeloId
+      ] =
+        (capacetesPorModelo[
+          capacete.modeloId
+        ] || 0) + quantidade;
+    }
+
+    for (const [
+      modeloId,
+      quantidade,
+    ] of Object.entries(
+      capacetesPorModelo
+    )) {
+      const modelo =
+        modelosCapacete.find(
+          (m) =>
+            m.id === modeloId
+        );
+
+      if (
+        modelo &&
+        quantidade >
+          Number(
+            modelo.estoque_atual ||
+              0
+          )
+      ) {
+        setErro(
+          `Estoque insuficiente de ${modelo.marca} ${modelo.modelo} (${modelo.tamanho}). Disponível: ${modelo.estoque_atual}.`
+        );
+        return;
+      }
+    }
+
     if (
       entradaTotal >
-      valorVendaNumero
+      valorTotalVenda
     ) {
       setErro(
-        "A soma dos pagamentos/entrada não pode ser maior que o valor da moto."
+        "A soma dos pagamentos/entrada não pode ser maior que o valor da venda (moto + capacetes)."
       );
       return;
     }
@@ -1017,11 +1286,11 @@ export default function VendasPage() {
       tipoVenda === "avista" &&
       Math.abs(
         entradaTotal -
-          valorVendaNumero
+          valorTotalVenda
       ) > 0.009
     ) {
       setErro(
-        `Na venda à vista, a composição precisa fechar o valor da moto. Falta ${moeda(
+        `Na venda à vista, a composição precisa fechar o valor da venda (moto + capacetes). Falta ${moeda(
           valorFalta
         )}.`
       );
@@ -1032,10 +1301,10 @@ export default function VendasPage() {
       tipoVenda ===
         "financiamento" &&
       entradaTotal >=
-        valorVendaNumero
+        valorTotalVenda
     ) {
       setErro(
-        "Se a entrada cobre todo o valor da moto, altere o tipo da venda para À vista."
+        "Se a entrada cobre todo o valor da venda, altere o tipo da venda para À vista."
       );
       return;
     }
@@ -1092,7 +1361,7 @@ export default function VendasPage() {
         tipoVenda ===
         "financiamento"
           ? entradaTotal
-          : valorVendaNumero;
+          : valorTotalVenda;
 
       const {
         data: vendaCriada,
@@ -1119,7 +1388,7 @@ export default function VendasPage() {
           valor_venda:
             valorVendaNumero,
           valor_total_venda:
-            valorVendaNumero,
+            valorTotalVenda,
           entrada:
             entradaCompat,
           entrada_total:
@@ -1227,6 +1496,84 @@ export default function VendasPage() {
           );
 
         throw componentesError;
+      }
+
+      /*
+       * CAPACETES:
+       * baixam do estoque pelo banco e guardam
+       * o custo do momento para o relatório de lucro.
+       */
+      if (capacetes.length > 0) {
+        const capacetesBanco =
+          capacetes.map(
+            (capacete) => {
+              const modelo =
+                modelosCapacete.find(
+                  (m) =>
+                    m.id ===
+                    capacete.modeloId
+                );
+
+              return {
+                sale_id:
+                  vendaCriada.id,
+                helmet_model_id:
+                  capacete.modeloId,
+                data: dataVenda,
+                produto:
+                  modelo?.produto ||
+                  "Capacete",
+                marca:
+                  modelo?.marca ||
+                  null,
+                modelo:
+                  modelo?.modelo ||
+                  null,
+                cor:
+                  modelo?.cor ||
+                  null,
+                tamanho:
+                  modelo?.tamanho ||
+                  null,
+                quantidade:
+                  Number(
+                    capacete.quantidade
+                  ) || 0,
+                valor_unitario:
+                  Number(
+                    capacete.valorUnitario
+                  ) || 0,
+                custo_unitario:
+                  Number(
+                    modelo?.custo_medio ||
+                      0
+                  ),
+              };
+            }
+          );
+
+        const {
+          error:
+            capacetesError,
+        } = await supabase
+          .from(
+            "helmet_sale_items"
+          )
+          .insert(
+            capacetesBanco
+          );
+
+        if (capacetesError) {
+          await supabase
+            .from("sales")
+            .delete()
+            .eq(
+              "id",
+              vendaCriada.id
+            );
+
+          throw capacetesError;
+        }
       }
 
       const motosTroca =
@@ -1380,6 +1727,8 @@ export default function VendasPage() {
       );
 
       await carregarMotos();
+
+      await carregarCapacetes();
     } catch (error: any) {
       console.error(error);
 
@@ -1914,6 +2263,283 @@ export default function VendasPage() {
           <section>
             <div className="mb-4 border-b border-zinc-800 pb-3">
               <h2 className="text-lg font-semibold text-yellow-500">
+                Capacetes
+              </h2>
+
+              <p className="mt-1 text-xs text-zinc-500">
+                Capacetes que o cliente está levando junto.
+                O valor entra no total da venda. Deixe o valor
+                zerado para dar de brinde (sai do estoque e
+                entra como custo).
+              </p>
+            </div>
+
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={
+                  adicionarCapacete
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-300 hover:border-yellow-500 hover:text-yellow-500"
+              >
+                <HardHat
+                  size={16}
+                />
+                Adicionar capacete
+              </button>
+
+              <Link
+                href="/capacetes"
+                className="text-xs text-zinc-500 underline hover:text-yellow-500"
+              >
+                Gerenciar estoque de capacetes
+              </Link>
+            </div>
+
+            {capacetes.length ===
+              0 && (
+              <div className="rounded-xl border border-zinc-800 bg-black/40 p-5 text-sm text-zinc-400">
+                Nenhum capacete nesta venda.
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {capacetes.map(
+                (capacete) => {
+                  const modelo =
+                    modelosCapacete.find(
+                      (m) =>
+                        m.id ===
+                        capacete.modeloId
+                    );
+
+                  const quantidade =
+                    Number(
+                      capacete.quantidade
+                    ) || 0;
+
+                  const valor =
+                    Number(
+                      capacete.valorUnitario
+                    ) || 0;
+
+                  return (
+                    <div
+                      key={
+                        capacete.idLocal
+                      }
+                      className="rounded-xl border border-zinc-800 bg-black/40 p-4"
+                    >
+                      <div className="grid gap-3 md:grid-cols-4">
+                        <div className="md:col-span-2">
+                          <label className="mb-2 block text-xs text-zinc-400">
+                            Capacete
+                          </label>
+
+                          <select
+                            value={
+                              capacete.modeloId
+                            }
+                            onChange={(
+                              e
+                            ) =>
+                              alterarCapacete(
+                                capacete.idLocal,
+                                "modeloId",
+                                e
+                                  .target
+                                  .value
+                              )
+                            }
+                            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                          >
+                            <option value="">
+                              Selecione
+                            </option>
+
+                            {modelosCapacete.map(
+                              (
+                                m
+                              ) => (
+                                <option
+                                  key={
+                                    m.id
+                                  }
+                                  value={
+                                    m.id
+                                  }
+                                >
+                                  {
+                                    m.marca
+                                  }{" "}
+                                  {
+                                    m.modelo
+                                  }{" "}
+                                  ·{" "}
+                                  {
+                                    m.cor
+                                  }{" "}
+                                  ·{" "}
+                                  {
+                                    m.tamanho
+                                  }{" "}
+                                  · estoque{" "}
+                                  {
+                                    m.estoque_atual
+                                  }
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-xs text-zinc-400">
+                            Quantidade
+                          </label>
+
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={
+                              capacete.quantidade
+                            }
+                            onChange={(
+                              e
+                            ) =>
+                              alterarCapacete(
+                                capacete.idLocal,
+                                "quantidade",
+                                e
+                                  .target
+                                  .value
+                              )
+                            }
+                            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-xs text-zinc-400">
+                            Valor unitário
+                          </label>
+
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={
+                              capacete.valorUnitario
+                            }
+                            onChange={(
+                              e
+                            ) =>
+                              alterarCapacete(
+                                capacete.idLocal,
+                                "valorUnitario",
+                                e
+                                  .target
+                                  .value
+                              )
+                            }
+                            placeholder="0,00"
+                            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs text-zinc-500">
+                          {modelo
+                            ? `Custo médio ${moeda(
+                                modelo.custo_medio
+                              )} · estoque ${
+                                modelo.estoque_atual
+                              }`
+                            : "Escolha o capacete"}
+                          {valor ===
+                            0 &&
+                          modelo
+                            ? " · será lançado como BRINDE"
+                            : ""}
+                        </p>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-yellow-500">
+                            {moeda(
+                              quantidade *
+                                valor
+                            )}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removerCapacete(
+                                capacete.idLocal
+                              )
+                            }
+                            className="rounded-lg border border-zinc-700 p-2 text-red-300 hover:border-red-700 hover:bg-red-950/30"
+                            aria-label="Remover capacete"
+                          >
+                            <Trash2
+                              size={
+                                16
+                              }
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+
+            {capacetes.length >
+              0 && (
+              <div className="mt-4 rounded-xl border border-zinc-800 bg-black/40 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm text-zinc-400">
+                    Total em capacetes
+                  </span>
+
+                  <span className="text-lg font-bold text-yellow-500">
+                    {moeda(
+                      totalCapacetes
+                    )}
+                  </span>
+                </div>
+
+                <p className="mt-2 text-xs text-zinc-500">
+                  Custo da loja{" "}
+                  {moeda(
+                    custoCapacetes
+                  )}{" "}
+                  · lucro nos capacetes{" "}
+                  <span
+                    className={
+                      totalCapacetes -
+                        custoCapacetes >=
+                      0
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }
+                  >
+                    {moeda(
+                      totalCapacetes -
+                        custoCapacetes
+                    )}
+                  </span>
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section>
+            <div className="mb-4 border-b border-zinc-800 pb-3">
+              <h2 className="text-lg font-semibold text-yellow-500">
                 {tipoVenda ===
                 "financiamento"
                   ? "Composição da Entrada"
@@ -2174,12 +2800,32 @@ export default function VendasPage() {
               />
             </div>
 
+            {totalCapacetes > 0 && (
+              <p className="mt-3 text-sm text-zinc-400">
+                Valor total da venda:{" "}
+                <strong className="text-yellow-500">
+                  {moeda(
+                    valorTotalVenda
+                  )}
+                </strong>{" "}
+                (moto{" "}
+                {moeda(
+                  valorVendaNumero
+                )}{" "}
+                + capacetes{" "}
+                {moeda(
+                  totalCapacetes
+                )}
+                )
+              </p>
+            )}
+
             {tipoVenda ===
               "avista" &&
-              valorVendaNumero >
+              valorTotalVenda >
                 0 &&
               entradaTotal <
-                valorVendaNumero && (
+                valorTotalVenda && (
                 <p className="mt-3 text-sm text-yellow-300">
                   Falta compor{" "}
                   <strong>
@@ -2200,7 +2846,7 @@ export default function VendasPage() {
 
                 <p className="mt-2 text-lg font-bold text-yellow-500">
                   {moeda(
-                    valorVendaNumero
+                    valorTotalVenda
                   )}{" "}
                   -{" "}
                   {moeda(
@@ -2335,6 +2981,20 @@ export default function VendasPage() {
                 titulo="Valor da moto"
                 valor={
                   valorVendaNumero
+                }
+              />
+
+              <Resumo
+                titulo="Capacetes"
+                valor={
+                  totalCapacetes
+                }
+              />
+
+              <Resumo
+                titulo="Total da venda"
+                valor={
+                  valorTotalVenda
                 }
               />
 

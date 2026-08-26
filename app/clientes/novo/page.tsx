@@ -121,11 +121,26 @@ router.refresh();
 return;
     }
 
+    if (retorno === "capacete") {
+      router.replace(
+        `/capacetes/vendas/nova?cliente=${encodeURIComponent(
+          String(clienteCriado.id)
+        )}`
+      );
+      router.refresh();
+      return;
+    }
+
     router.push("/clientes");
     router.refresh();
   }
 
   function cancelar() {
+    if (retorno === "capacete") {
+      router.push("/capacetes/vendas/nova");
+      return;
+    }
+
     if (retorno === "venda") {
       if (motoRetorno) {
         router.push(
@@ -154,13 +169,14 @@ return;
           </h1>
 
           <p className="mt-2 text-sm text-texto-suave">
-            {retorno === "venda"
+            {retorno === "venda" || retorno === "capacete"
               ? "Cadastre o cliente e volte automaticamente para concluir a venda."
               : "Preencha os dados completos do cliente."}
           </p>
         </div>
 
-        {retorno === "venda" && (
+        {(retorno === "venda" ||
+          retorno === "capacete") && (
           <div className="mb-6 rounded-xl border border-dourado/40 bg-dourado/5 p-4 text-sm text-texto">
             Este cliente será usado na venda que você está registrando.
           </div>
@@ -307,7 +323,7 @@ return;
             >
               {salvando
                 ? "Salvando..."
-                : retorno === "venda"
+                : retorno === "venda" || retorno === "capacete"
                   ? "Cadastrar e Voltar para Venda"
                   : "Cadastrar Cliente"}
             </button>

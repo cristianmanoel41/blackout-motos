@@ -195,13 +195,136 @@ export default async function RelatorioMensalPage({
   }
 
   // =========================================================
+  // CAPACETES
+  // =========================================================
+
+  const { data: comprasCapacetes } = await supabase
+    .from('helmet_purchases')
+    .select(`
+      valor_total,
+      helmet_purchase_items (
+        quantidade
+      )
+    `)
+    .gte('data_compra', inicioMes)
+    .lte('data_compra', fimMes)
+
+  const valorCapacetesComprados =
+    comprasCapacetes?.reduce(
+      (soma, nota) =>
+        soma + Number(nota.valor_total || 0),
+      0
+    ) ?? 0
+
+  const qtdCapacetesComprados =
+    comprasCapacetes?.reduce(
+      (soma, nota) =>
+        soma +
+        (nota.helmet_purchase_items ?? []).reduce(
+          (total, item) =>
+            total + Number(item.quantidade || 0),
+          0
+        ),
+      0
+    ) ?? 0
+
+  const { data: capacetesVendidos } = await supabase
+    .from('helmet_sale_items')
+    .select(
+      'sale_id, quantidade, valor_unitario, custo_unitario'
+    )
+    .gte('data', inicioMes)
+    .lte('data', fimMes)
+
+  const resumoCapacetes =
+    capacetesVendidos?.reduce(
+      (resumo, item) => {
+        const quantidade = Number(item.quantidade || 0)
+        const valor = Number(item.valor_unitario || 0)
+        const custo = Number(item.custo_unitario || 0)
+
+        return {
+          quantidade: resumo.quantidade + quantidade,
+
+          receitaNaMoto:
+            resumo.receitaNaMoto +
+            (item.sale_id ? quantidade * valor : 0),
+
+          receitaAvulsa:
+            resumo.receitaAvulsa +
+            (item.sale_id ? 0 : quantidade * valor),
+
+          custo: resumo.custo + quantidade * custo,
+
+          brindes:
+            resumo.brindes + (valor === 0 ? quantidade : 0),
+        }
+      },
+      {
+        quantidade: 0,
+        receitaNaMoto: 0,
+        receitaAvulsa: 0,
+        custo: 0,
+        brindes: 0,
+      }
+    ) ?? {
+      quantidade: 0,
+      receitaNaMoto: 0,
+      receitaAvulsa: 0,
+      custo: 0,
+      brindes: 0,
+    }
+
+  const receitaCapacetes =
+    resumoCapacetes.receitaNaMoto +
+    resumoCapacetes.receitaAvulsa
+
+  const lucroCapacetes =
+    receitaCapacetes - resumoCapacetes.custo
+
+  const { data: estoqueCapacetes } = await supabase
+    .from('helmet_models')
+    .select('estoque_atual, custo_medio, preco_venda_padrao')
+
+  const totaisEstoqueCapacetes =
+    estoqueCapacetes?.reduce(
+      (resumo, modelo) => {
+        const estoque = Math.max(
+          Number(modelo.estoque_atual || 0),
+          0
+        )
+
+        return {
+          quantidade: resumo.quantidade + estoque,
+
+          custo:
+            resumo.custo +
+            estoque * Number(modelo.custo_medio || 0),
+
+          venda:
+            resumo.venda +
+            estoque * Number(modelo.preco_venda_padrao || 0),
+        }
+      },
+      { quantidade: 0, custo: 0, venda: 0 }
+    ) ?? { quantidade: 0, custo: 0, venda: 0 }
+
+  // =========================================================
   // LUCRO BRUTO
   // =========================================================
 
+  /*
+   * O faturamento das vendas já inclui os capacetes
+   * que saíram junto com a moto. As vendas avulsas
+   * de capacete entram aqui, e o custo da mercadoria
+   * vendida é descontado.
+   */
   const lucroBruto =
     faturamento +
-    receitaDocNoLucro -
-    custoMotosVendidas
+    receitaDocNoLucro +
+    resumoCapacetes.receitaAvulsa -
+    custoMotosVendidas -
+    resumoCapacetes.custo
 
   // =========================================================
   // GASTOS DAS MOTOS NO MÊS
@@ -482,6 +605,20 @@ export default async function RelatorioMensalPage({
           )}
 
           {linha(
+            'Venda avulsa de capacetes',
+            formatarMoeda(
+              resumoCapacetes.receitaAvulsa
+            )
+          )}
+
+          {linha(
+            'Custo dos capacetes vendidos',
+            formatarMoeda(
+              resumoCapacetes.custo
+            )
+          )}
+
+          {linha(
             'Gastos das motos (mês)',
             formatarMoeda(
               totalGastosMotosMes
@@ -509,6 +646,79 @@ export default async function RelatorioMensalPage({
               lucroLiquido
             ),
             true
+          )}
+        </div>
+
+        {/* CAPACETES */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite divide-y divide-grafite-claro xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Capacetes
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              Compras e vendas de {nomesMeses[mesSelecionado - 1]}{' '}
+              de {anoSelecionado} · estoque é sempre o atual
+            </p>
+          </div>
+
+          {linha(
+            'Capacetes comprados no mês',
+            String(qtdCapacetesComprados)
+          )}
+
+          {linha(
+            'Gasto com capacetes no mês',
+            formatarMoeda(
+              valorCapacetesComprados
+            )
+          )}
+
+          {linha(
+            'Capacetes vendidos no mês',
+            String(resumoCapacetes.quantidade)
+          )}
+
+          {linha(
+            'Dados de brinde no mês',
+            String(resumoCapacetes.brindes)
+          )}
+
+          {linha(
+            'Recebido com capacetes',
+            formatarMoeda(receitaCapacetes)
+          )}
+
+          {linha(
+            'Custo da mercadoria vendida',
+            formatarMoeda(resumoCapacetes.custo)
+          )}
+
+          {linha(
+            'Lucro com capacetes',
+            formatarMoeda(lucroCapacetes),
+            true
+          )}
+
+          {linha(
+            'Capacetes em estoque (atual)',
+            String(totaisEstoqueCapacetes.quantidade)
+          )}
+
+          {linha(
+            'Mercadoria disponível (a custo)',
+            formatarMoeda(
+              totaisEstoqueCapacetes.custo
+            ),
+            true
+          )}
+
+          {linha(
+            'Mercadoria disponível (a preço de venda)',
+            formatarMoeda(
+              totaisEstoqueCapacetes.venda
+            )
           )}
         </div>
 

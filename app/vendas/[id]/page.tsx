@@ -133,6 +133,39 @@ export default function EditarVendaPage() {
     setFaltandoProcuracao,
   ] = useState<string[]>([]);
 
+  const [
+    capacetes,
+    setCapacetes,
+  ] = useState<
+    {
+      id: string;
+      produto: string | null;
+      marca: string | null;
+      modelo: string | null;
+      cor: string | null;
+      tamanho: string | null;
+      quantidade: number;
+      valor_unitario: number;
+      custo_unitario: number;
+    }[]
+  >([]);
+
+  const totalCapacetes =
+    useMemo(() => {
+      return capacetes.reduce(
+        (total, item) =>
+          total +
+          Number(
+            item.quantidade || 0
+          ) *
+            Number(
+              item.valor_unitario ||
+                0
+            ),
+        0
+      );
+    }, [capacetes]);
+
   const ehFinanciamento =
     formaPagamento ===
     "Financiamento";
@@ -287,6 +320,32 @@ export default function EditarVendaPage() {
 
     setObservacoes(
       venda.observacoes || ""
+    );
+
+    const {
+      data: capacetesVenda,
+    } = await supabase
+      .from(
+        "helmet_sale_items"
+      )
+      .select(
+        `
+        id,
+        produto,
+        marca,
+        modelo,
+        cor,
+        tamanho,
+        quantidade,
+        valor_unitario,
+        custo_unitario
+      `
+      )
+      .eq("sale_id", id);
+
+    setCapacetes(
+      (capacetesVenda as any) ||
+        []
     );
 
     const idMoto =
@@ -582,8 +641,14 @@ export default function EditarVendaPage() {
           forma_pagamento:
             formaPagamento,
 
+          /*
+           * O campo editado é o total da venda.
+           * O valor da moto é o total menos os
+           * capacetes que saíram nesta venda.
+           */
           valor_venda:
-            valorVendaNumero,
+            valorVendaNumero -
+            totalCapacetes,
 
           valor_total_venda:
             valorVendaNumero,
@@ -1112,6 +1177,72 @@ export default function EditarVendaPage() {
 
             </div>
           </section>
+
+          {capacetes.length > 0 && (
+            <section className="rounded-xl border border-zinc-800 bg-black/40 p-5">
+              <h3 className="mb-3 font-semibold text-yellow-500">
+                Capacetes desta venda
+              </h3>
+
+              <div className="space-y-2">
+                {capacetes.map(
+                  (item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                    >
+                      <span className="text-zinc-200">
+                        {
+                          item.quantidade
+                        }
+                        x{" "}
+                        {[
+                          item.produto,
+                          item.marca,
+                          item.modelo,
+                          item.cor,
+                          item.tamanho,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") ||
+                          "Capacete"}
+                      </span>
+
+                      <span className="text-zinc-400">
+                        {Number(
+                          item.valor_unitario
+                        ) === 0
+                          ? "brinde"
+                          : `${moeda(
+                              Number(
+                                item.valor_unitario
+                              )
+                            )} cada`}{" "}
+                        · custo{" "}
+                        {moeda(
+                          Number(
+                            item.custo_unitario
+                          )
+                        )}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <p className="mt-3 border-t border-zinc-800 pt-3 text-sm text-zinc-400">
+                Total em capacetes:{" "}
+                <strong className="text-yellow-500">
+                  {moeda(
+                    totalCapacetes
+                  )}
+                </strong>{" "}
+                · já incluso no valor da venda acima.
+                Para trocar os capacetes, exclua e
+                registre a venda novamente.
+              </p>
+            </section>
+          )}
 
           <section>
             <label className="mb-2 block text-sm text-zinc-300">

@@ -19,6 +19,8 @@ const origemLabel: Record<string, string> = {
   compra_moto: "Compra de Moto",
   gasto_moto: "Gasto de Moto",
   despesa_loja: "Despesa da Loja",
+  venda_capacete: "Venda de Capacete",
+  compra_capacete: "Compra de Capacetes",
   outro: "Outro",
 };
 

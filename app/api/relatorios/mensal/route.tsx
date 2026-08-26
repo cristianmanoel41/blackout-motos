@@ -51,6 +51,9 @@ export async function GET(request: Request) {
       resultadoDespesas,
       resultadoEntradas,
       resultadoSaidas,
+      resultadoCapacetesComprados,
+      resultadoCapacetesVendidos,
+      resultadoEstoqueCapacetes,
     ] = await Promise.all([
       supabase
         .from('motorcycles')
@@ -98,6 +101,27 @@ export async function GET(request: Request) {
         .eq('tipo', 'saida')
         .gte('data', inicioMes)
         .lte('data', fimMes),
+
+      supabase
+        .from('helmet_purchases')
+        .select(`
+          valor_total,
+          helmet_purchase_items (
+            quantidade
+          )
+        `)
+        .gte('data_compra', inicioMes)
+        .lte('data_compra', fimMes),
+
+      supabase
+        .from('helmet_sale_items')
+        .select('sale_id, quantidade, valor_unitario, custo_unitario')
+        .gte('data', inicioMes)
+        .lte('data', fimMes),
+
+      supabase
+        .from('helmet_models')
+        .select('estoque_atual, custo_medio, preco_venda_padrao'),
     ])
 
     const erros = [
@@ -107,6 +131,9 @@ export async function GET(request: Request) {
       resultadoDespesas.error,
       resultadoEntradas.error,
       resultadoSaidas.error,
+      resultadoCapacetesComprados.error,
+      resultadoCapacetesVendidos.error,
+      resultadoEstoqueCapacetes.error,
     ].filter(Boolean)
 
     if (erros.length > 0) {
@@ -199,10 +226,98 @@ export async function GET(request: Request) {
       0
     )
 
+    /*
+     * CAPACETES
+     */
+    const notasCapacetes =
+      resultadoCapacetesComprados.data || []
+
+    const itensCapacetesVendidos =
+      resultadoCapacetesVendidos.data || []
+
+    const modelosCapacete =
+      resultadoEstoqueCapacetes.data || []
+
+    const valorCapacetesComprados = notasCapacetes.reduce(
+      (soma, nota) => soma + numero(nota.valor_total),
+      0
+    )
+
+    const qtdCapacetesComprados = notasCapacetes.reduce(
+      (soma, nota) =>
+        soma +
+        (nota.helmet_purchase_items || []).reduce(
+          (total, item) => total + numero(item.quantidade),
+          0
+        ),
+      0
+    )
+
+    const resumoCapacetes = itensCapacetesVendidos.reduce(
+      (resumo, item) => {
+        const quantidade = numero(item.quantidade)
+        const valor = numero(item.valor_unitario)
+        const custo = numero(item.custo_unitario)
+
+        return {
+          quantidade: resumo.quantidade + quantidade,
+
+          receitaNaMoto:
+            resumo.receitaNaMoto +
+            (item.sale_id ? quantidade * valor : 0),
+
+          receitaAvulsa:
+            resumo.receitaAvulsa +
+            (item.sale_id ? 0 : quantidade * valor),
+
+          custo: resumo.custo + quantidade * custo,
+
+          brindes:
+            resumo.brindes + (valor === 0 ? quantidade : 0),
+        }
+      },
+      {
+        quantidade: 0,
+        receitaNaMoto: 0,
+        receitaAvulsa: 0,
+        custo: 0,
+        brindes: 0,
+      }
+    )
+
+    const receitaCapacetes =
+      resumoCapacetes.receitaNaMoto +
+      resumoCapacetes.receitaAvulsa
+
+    const lucroCapacetes =
+      receitaCapacetes - resumoCapacetes.custo
+
+    const estoqueCapacetes = modelosCapacete.reduce(
+      (resumo, modelo) => {
+        const estoque = Math.max(
+          numero(modelo.estoque_atual),
+          0
+        )
+
+        return {
+          quantidade: resumo.quantidade + estoque,
+          custo:
+            resumo.custo +
+            estoque * numero(modelo.custo_medio),
+          venda:
+            resumo.venda +
+            estoque * numero(modelo.preco_venda_padrao),
+        }
+      },
+      { quantidade: 0, custo: 0, venda: 0 }
+    )
+
     const lucroBruto =
       faturamento +
-      receitaDocumentacao -
-      custoMotosVendidas
+      receitaDocumentacao +
+      resumoCapacetes.receitaAvulsa -
+      custoMotosVendidas -
+      resumoCapacetes.custo
 
     const lucroLiquido =
       lucroBruto - totalDespesas
@@ -263,9 +378,23 @@ export async function GET(request: Request) {
       ['Faturamento', faturamento.toFixed(2)],
       ['Custo das motos vendidas', custoMotosVendidas.toFixed(2)],
       ['Gastos das motos no mês', totalGastosMotos.toFixed(2)],
+      ['Venda avulsa de capacetes', resumoCapacetes.receitaAvulsa.toFixed(2)],
+      ['Custo dos capacetes vendidos', resumoCapacetes.custo.toFixed(2)],
       ['Lucro bruto', lucroBruto.toFixed(2)],
       ['Despesas da loja', totalDespesas.toFixed(2)],
       ['Lucro líquido', lucroLiquido.toFixed(2)],
+      ['', ''],
+      ['CAPACETES', ''],
+      ['Capacetes comprados no mês', qtdCapacetesComprados],
+      ['Gasto com capacetes no mês', valorCapacetesComprados.toFixed(2)],
+      ['Capacetes vendidos no mês', resumoCapacetes.quantidade],
+      ['Dados de brinde no mês', resumoCapacetes.brindes],
+      ['Recebido com capacetes', receitaCapacetes.toFixed(2)],
+      ['Custo da mercadoria vendida', resumoCapacetes.custo.toFixed(2)],
+      ['Lucro com capacetes', lucroCapacetes.toFixed(2)],
+      ['Capacetes em estoque (atual)', estoqueCapacetes.quantidade],
+      ['Mercadoria disponível a custo', estoqueCapacetes.custo.toFixed(2)],
+      ['Mercadoria disponível a preço de venda', estoqueCapacetes.venda.toFixed(2)],
       ['', ''],
       ['VENDAS POR VENDEDOR', ''],
       ['Cristian - quantidade', vendasCristian.length],

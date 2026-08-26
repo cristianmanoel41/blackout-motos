@@ -10,6 +10,7 @@ import {
   Bike,
   ShoppingCart,
   Users,
+  HardHat,
   Wrench,
   Receipt,
   Wallet,
@@ -46,6 +47,11 @@ const itens = [
     nome: "Clientes",
     href: "/clientes",
     icone: Users,
+  },
+  {
+    nome: "Capacetes",
+    href: "/capacetes",
+    icone: HardHat,
   },
   {
     nome: "Gastos das Motos",
