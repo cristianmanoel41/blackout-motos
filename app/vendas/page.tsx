@@ -9,7 +9,7 @@ import {
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
-  opcoesDeBanco,
+  BANCOS_FINANCIAMENTO,
   OPERADORA_CARTAO,
 } from "@/lib/dados/financeiras";
 import {
@@ -803,7 +803,19 @@ export default function VendasPage() {
             );
           }
 
-          if (rascunho.banco) {
+          /*
+           * Só restaura o banco se ele for um dos que a
+           * loja trabalha. Rascunho antigo, de quando o
+           * campo era texto livre, não volta com lixo.
+           */
+          if (
+            rascunho.banco &&
+            BANCOS_FINANCIAMENTO.some(
+              (nome) =>
+                nome ===
+                rascunho.banco
+            )
+          ) {
             setBanco(
               rascunho.banco
             );
@@ -2428,9 +2440,7 @@ export default function VendasPage() {
                       Selecione
                     </option>
 
-                    {opcoesDeBanco(
-                      banco
-                    ).map((nome) => (
+                    {BANCOS_FINANCIAMENTO.map((nome) => (
                       <option
                         key={nome}
                         value={nome}
