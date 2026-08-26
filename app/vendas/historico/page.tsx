@@ -1,52 +1,30 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Plus,
-  Pencil,
-  FileText,
-} from "lucide-react";
+import HistoricoGeral, {
+  type RegistroHistorico,
+} from "@/components/HistoricoGeral";
+import { Plus, HardHat } from "lucide-react";
 
-function moeda(
-  valor: number | string | null | undefined
-) {
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL",
-    }
-  ).format(Number(valor) || 0);
+/*
+ * Histórico geral: vendas de moto e vendas de capacete
+ * de balcão na mesma tela.
+ *
+ * Capacete vendido JUNTO com uma moto não vira uma linha
+ * separada: ele já está dentro do valor da venda da moto,
+ * e aparece como um selo "+ N capacete(s)" na linha dela.
+ */
+
+function moeda(valor: number | string | null | undefined) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(valor) || 0);
 }
 
-function dataBrasil(
-  data: string | null | undefined
-) {
-  if (!data) {
-    return "-";
-  }
+function horaBrasil(hora: string | null | undefined) {
+  if (!hora) return null;
 
-  const [ano, mes, dia] =
-    data.split("-");
-
-  if (
-    !ano ||
-    !mes ||
-    !dia
-  ) {
-    return data;
-  }
-
-  return `${dia}/${mes}/${ano}`;
-}
-
-function horaBrasil(
-  hora: string | null | undefined
-) {
-  if (!hora) {
-    return "-";
-  }
-
-  return hora.slice(0, 5);
+  return String(hora).slice(0, 5);
 }
 
 type MotoHistorico = {
@@ -55,136 +33,272 @@ type MotoHistorico = {
   marca?: string | null;
   modelo?: string | null;
   versao?: string | null;
-  ano_modelo?:
-    | string
-    | number
-    | null;
+  ano_modelo?: string | number | null;
   placa?: string | null;
 };
 
+function erro(mensagem: string) {
+  return (
+    <div className="p-6">
+      <div className="rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
+        {mensagem}
+      </div>
+    </div>
+  );
+}
+
 export default async function HistoricoVendasPage() {
-  const supabase =
-    await createClient();
+  const supabase = await createClient();
 
   // ==========================================
-  // 1. CARREGA AS VENDAS
+  // 1. VENDAS DE MOTO
   // ==========================================
 
-  const {
-    data: vendas,
-    error: vendasError,
-  } = await supabase
+  const { data: vendas, error: vendasError } = await supabase
     .from("sales")
     .select("*")
-    .order(
-      "data_venda",
-      {
-        ascending: false,
-      }
-    )
-    .order(
-      "hora_venda",
-      {
-        ascending: false,
-      }
-    );
+    .order("data_venda", { ascending: false })
+    .order("hora_venda", { ascending: false });
 
   if (vendasError) {
-    return (
-      <div className="p-6">
-        <div className="rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
-          Erro ao carregar vendas:{" "}
-          {vendasError.message}
-        </div>
-      </div>
+    return erro(
+      `Erro ao carregar vendas: ${vendasError.message}`
     );
   }
 
+  const listaVendas = vendas || [];
+
   // ==========================================
-  // 2. PEGA OS IDs DAS MOTOS
+  // 2. MOTOS DESSAS VENDAS
   // ==========================================
 
   const idsMotos = Array.from(
     new Set(
-      (vendas || [])
-        .map(
-          (venda) =>
-            venda.motorcycle_id
-        )
+      listaVendas
+        .map((venda) => venda.motorcycle_id)
         .filter(Boolean)
         .map(String)
     )
   );
 
-  // ==========================================
-  // 3. CARREGA AS MOTOS SEPARADAMENTE
-  // ==========================================
+  let motos: MotoHistorico[] = [];
 
-  let motos:
-    | MotoHistorico[]
-    = [];
-
-  if (
-    idsMotos.length > 0
-  ) {
-    const {
-      data: motosData,
-      error: motosError,
-    } = await supabase
-      .from("motorcycles")
-      .select(`
-        id,
-        codigo,
-        marca,
-        modelo,
-        versao,
-        ano_modelo,
-        placa
-      `)
-      .in(
-        "id",
-        idsMotos
-      );
+  if (idsMotos.length > 0) {
+    const { data: motosData, error: motosError } =
+      await supabase
+        .from("motorcycles")
+        .select(
+          `
+          id,
+          codigo,
+          marca,
+          modelo,
+          versao,
+          ano_modelo,
+          placa
+        `
+        )
+        .in("id", idsMotos);
 
     if (motosError) {
-      return (
-        <div className="p-6">
-          <div className="rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-300">
-            Erro ao carregar motos:{" "}
-            {motosError.message}
-          </div>
-        </div>
+      return erro(
+        `Erro ao carregar motos: ${motosError.message}`
       );
     }
 
-    motos =
-      (motosData ||
-        []) as MotoHistorico[];
+    motos = (motosData || []) as MotoHistorico[];
+  }
+
+  const mapaMotos = new Map<string, MotoHistorico>();
+
+  motos.forEach((moto) => {
+    mapaMotos.set(String(moto.id), moto);
+  });
+
+  // ==========================================
+  // 3. CAPACETES QUE SAÍRAM JUNTO COM AS MOTOS
+  // ==========================================
+
+  const { data: capacetesDasMotos } = await supabase
+    .from("helmet_sale_items")
+    .select("sale_id, quantidade")
+    .not("sale_id", "is", null);
+
+  const capacetesPorVenda = new Map<string, number>();
+
+  (capacetesDasMotos || []).forEach((item) => {
+    const chave = String(item.sale_id);
+
+    capacetesPorVenda.set(
+      chave,
+      (capacetesPorVenda.get(chave) || 0) +
+        (Number(item.quantidade) || 0)
+    );
+  });
+
+  // ==========================================
+  // 4. VENDAS DE CAPACETE (BALCÃO)
+  // ==========================================
+
+  const { data: vendasCapacete, error: capaceteError } =
+    await supabase
+      .from("helmet_sales")
+      .select(
+        `
+        id,
+        data_venda,
+        cliente_nome,
+        cliente_cpf,
+        cliente_telefone,
+        vendedor,
+        forma_pagamento,
+        parcelas,
+        valor_total,
+        criado_em,
+        helmet_sale_items (
+          produto,
+          marca,
+          modelo,
+          cor,
+          tamanho,
+          quantidade
+        )
+      `
+      )
+      .order("data_venda", { ascending: false });
+
+  if (capaceteError) {
+    return erro(
+      `Erro ao carregar vendas de capacete: ${capaceteError.message}`
+    );
   }
 
   // ==========================================
-  // 4. CRIA MAPA DAS MOTOS
+  // 5. JUNTA TUDO NUMA LISTA SÓ
   // ==========================================
 
-  const mapaMotos =
-    new Map<
-      string,
-      MotoHistorico
-    >();
+  const registrosMotos: RegistroHistorico[] = listaVendas.map(
+    (venda) => {
+      const moto = venda.motorcycle_id
+        ? mapaMotos.get(String(venda.motorcycle_id))
+        : undefined;
 
-  motos.forEach(
-    (moto) => {
-      mapaMotos.set(
-        String(moto.id),
-        moto
-      );
+      const quantidadeCapacetes =
+        capacetesPorVenda.get(String(venda.id)) || 0;
+
+      const financiado = Number(venda.valor_financiado) || 0;
+
+      return {
+        id: String(venda.id),
+        tipo: "moto",
+        data: venda.data_venda || "",
+        hora: horaBrasil(venda.hora_venda),
+        titulo: moto
+          ? `${moto.marca || ""} ${moto.modelo || ""}`.trim() ||
+            "Moto"
+          : "Moto não encontrada",
+        detalhe: [
+          moto?.codigo,
+          moto?.ano_modelo,
+          moto?.placa,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        cliente: venda.cliente || "Não informado",
+        contato: venda.telefone || "",
+        vendedor: venda.vendedor || "",
+        valor:
+          Number(
+            venda.valor_total_venda ?? venda.valor_venda
+          ) || 0,
+        pagamento: venda.forma_pagamento || "-",
+        observacaoPagamento:
+          financiado > 0
+            ? `Financiado ${moeda(financiado)}${
+                venda.banco ? ` · ${venda.banco}` : ""
+              }`
+            : `Entrada ${moeda(
+                venda.entrada_total ?? venda.entrada
+              )}`,
+        extra:
+          quantidadeCapacetes > 0
+            ? `+ ${quantidadeCapacetes} capacete${
+                quantidadeCapacetes === 1 ? "" : "s"
+              }`
+            : "",
+      };
     }
   );
 
+  const registrosCapacetes: RegistroHistorico[] = (
+    vendasCapacete || []
+  ).map((venda: any) => {
+    const itens = venda.helmet_sale_items || [];
+
+    const quantidade = itens.reduce(
+      (soma: number, item: any) =>
+        soma + (Number(item.quantidade) || 0),
+      0
+    );
+
+    const primeiro = itens[0];
+
+    const titulo = primeiro
+      ? [primeiro.produto, primeiro.marca, primeiro.modelo]
+          .filter(Boolean)
+          .join(" ")
+      : "Capacete";
+
+    const detalhe = primeiro
+      ? [
+          primeiro.cor,
+          primeiro.tamanho,
+          itens.length > 1
+            ? `+ ${itens.length - 1} item(ns)`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "";
+
+    return {
+      id: String(venda.id),
+      tipo: "capacete",
+      data: venda.data_venda || "",
+      hora: null,
+      titulo,
+      detalhe,
+      cliente: venda.cliente_nome || "Não informado",
+      contato: venda.cliente_telefone || venda.cliente_cpf || "",
+      vendedor: venda.vendedor || "",
+      valor: Number(venda.valor_total) || 0,
+      pagamento: venda.forma_pagamento || "-",
+      observacaoPagamento:
+        venda.parcelas && Number(venda.parcelas) > 1
+          ? `${venda.parcelas}x`
+          : "",
+      extra:
+        quantidade > 1 ? `${quantidade} unidades` : "",
+    };
+  });
+
+  const registros = [
+    ...registrosMotos,
+    ...registrosCapacetes,
+  ].sort((a, b) => {
+    if (a.data !== b.data) {
+      return a.data < b.data ? 1 : -1;
+    }
+
+    return (b.hora || "").localeCompare(a.hora || "");
+  });
+
+  // ==========================================
+  // 6. TELA
+  // ==========================================
+
   return (
     <div>
-      {/* CABEÇALHO */}
-
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-dourado">
@@ -192,240 +306,31 @@ export default async function HistoricoVendasPage() {
           </h1>
 
           <p className="mt-1 text-sm text-texto-suave">
-            Consulte as vendas e gere os contratos automaticamente.
+            Motos e capacetes na mesma lista. Gere contratos e
+            recibos direto daqui.
           </p>
         </div>
 
-        <Link
-          href="/vendas"
-          className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
-        >
-          <Plus
-            size={18}
-          />
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/capacetes/vendas/nova"
+            className="flex items-center justify-center gap-2 rounded-lg border border-grafite-claro px-4 py-2 font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+          >
+            <HardHat size={18} />
+            Vender Capacete
+          </Link>
 
-          Nova Venda
-        </Link>
+          <Link
+            href="/vendas"
+            className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
+          >
+            <Plus size={18} />
+            Nova Venda
+          </Link>
+        </div>
       </div>
 
-      {/* SEM VENDAS */}
-
-      {(!vendas ||
-        vendas.length ===
-          0) && (
-        <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
-          Nenhuma venda registrada ainda.
-        </div>
-      )}
-
-      {/* TABELA */}
-
-      {vendas &&
-        vendas.length >
-          0 && (
-        <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[1150px] text-sm">
-            <thead className="border-b border-grafite-claro bg-preto">
-              <tr className="text-left text-texto-suave">
-                <th className="px-4 py-3">
-                  Data
-                </th>
-
-                <th className="px-4 py-3">
-                  Hora
-                </th>
-
-                <th className="px-4 py-3">
-                  Moto
-                </th>
-
-                <th className="px-4 py-3">
-                  Cliente
-                </th>
-
-                <th className="px-4 py-3">
-                  Vendedor
-                </th>
-
-                <th className="px-4 py-3">
-                  Venda
-                </th>
-
-                <th className="px-4 py-3">
-                  Entrada
-                </th>
-
-                <th className="px-4 py-3">
-                  Financiado
-                </th>
-
-                <th className="px-4 py-3">
-                  Banco
-                </th>
-
-                <th className="px-4 py-3 text-center">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {vendas.map(
-                (venda) => {
-                  const moto =
-                    venda.motorcycle_id
-                      ? mapaMotos.get(
-                          String(
-                            venda.motorcycle_id
-                          )
-                        )
-                      : undefined;
-
-                  return (
-                    <tr
-                      key={
-                        venda.id
-                      }
-                      className="border-b border-grafite-claro last:border-b-0 hover:bg-preto/40"
-                    >
-                      {/* DATA */}
-
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {dataBrasil(
-                          venda.data_venda
-                        )}
-                      </td>
-
-                      {/* HORA */}
-
-                      <td className="whitespace-nowrap px-4 py-3 text-texto-suave">
-                        {horaBrasil(
-                          venda.hora_venda
-                        )}
-                      </td>
-
-                      {/* MOTO */}
-
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-white">
-                          {moto
-                            ? `${
-                                moto.marca ||
-                                ""
-                              } ${
-                                moto.modelo ||
-                                ""
-                              }`
-                            : "Moto não encontrada"}
-                        </div>
-
-                        <div className="text-xs text-texto-suave">
-                          {moto?.codigo ||
-                            ""}
-
-                          {moto?.ano_modelo
-                            ? ` · ${moto.ano_modelo}`
-                            : ""}
-
-                          {moto?.placa
-                            ? ` · ${moto.placa}`
-                            : ""}
-                        </div>
-                      </td>
-
-                      {/* CLIENTE */}
-
-                      <td className="px-4 py-3">
-                        <div className="text-white">
-                          {venda.cliente ||
-                            "Não informado"}
-                        </div>
-
-                        <div className="text-xs text-texto-suave">
-                          {venda.telefone ||
-                            ""}
-                        </div>
-                      </td>
-
-                      {/* VENDEDOR */}
-
-                      <td className="px-4 py-3 font-semibold text-dourado">
-                        {venda.vendedor ||
-                          "-"}
-                      </td>
-
-                      {/* VENDA */}
-
-                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-white">
-                        {moeda(
-                          venda.valor_total_venda ??
-                            venda.valor_venda
-                        )}
-                      </td>
-
-                      {/* ENTRADA */}
-
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {moeda(
-                          venda.entrada_total ??
-                            venda.entrada
-                        )}
-                      </td>
-
-                      {/* FINANCIADO */}
-
-                      <td className="whitespace-nowrap px-4 py-3 text-dourado">
-                        {moeda(
-                          venda.valor_financiado
-                        )}
-                      </td>
-
-                      {/* BANCO */}
-
-                      <td className="px-4 py-3">
-                        {venda.banco ||
-                          "-"}
-                      </td>
-
-                      {/* AÇÕES */}
-
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
-                          <Link
-                            href={`/vendas/${venda.id}`}
-                            className="inline-flex items-center gap-2 rounded-lg border border-dourado px-3 py-2 text-xs font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
-                          >
-                            <Pencil
-                              size={
-                                14
-                              }
-                            />
-
-                            Editar
-                          </Link>
-
-                          <a
-                            href={`/api/contratos/venda/${venda.id}`}
-                            className="inline-flex items-center gap-2 rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:bg-dourado-claro"
-                          >
-                            <FileText
-                              size={
-                                14
-                              }
-                            />
-
-                            Gerar Contrato
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <HistoricoGeral registros={registros} />
     </div>
   );
 }

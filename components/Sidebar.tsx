@@ -10,6 +10,7 @@ import {
   Bike,
   ShoppingCart,
   Users,
+  History,
   HardHat,
   Wrench,
   Receipt,
@@ -42,6 +43,11 @@ const itens = [
     nome: "Vendas",
     href: "/vendas",
     icone: ShoppingCart,
+  },
+  {
+    nome: "Histórico de Vendas",
+    href: "/vendas/historico",
+    icone: History,
   },
   {
     nome: "Clientes",
@@ -88,7 +94,7 @@ export default function Sidebar() {
   const [aberto, setAberto] = useState(false);
   const [saindo, setSaindo] = useState(false);
 
-  function rotaAtiva(href: string) {
+  function combina(href: string) {
     if (href === "/dashboard") {
       return pathname === "/dashboard";
     }
@@ -96,6 +102,23 @@ export default function Sidebar() {
     return (
       pathname === href ||
       pathname.startsWith(`${href}/`)
+    );
+  }
+
+  /*
+   * Quando dois itens batem com a rota (ex.: /vendas e
+   * /vendas/historico), só o mais específico fica aceso.
+   */
+  function rotaAtiva(href: string) {
+    if (!combina(href)) {
+      return false;
+    }
+
+    return !itens.some(
+      (item) =>
+        item.href !== href &&
+        item.href.length > href.length &&
+        combina(item.href)
     );
   }
 
