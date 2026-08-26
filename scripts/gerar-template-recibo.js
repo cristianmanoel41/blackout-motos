@@ -10,6 +10,12 @@
  * porque é neles que a rota /api/recibos/capacete/[id]
  * escreve os dados da venda.
  *
+ * TAMANHO: A5 paisagem (21 x 14,8 cm) - o tamanho de talão
+ * de recibo. A largura é a mesma da folha A4, então dá para
+ * imprimir dois por folha e cortar ao meio.
+ * Para voltar ao A4 inteiro, troque PAGINA por PAGINA_A4
+ * lá embaixo, no <w:sectPr>.
+ *
  * A logo vem de public/logo-blackout.png (o arquivo está
  * salvo em JPEG, apesar do nome .png - por isso ele entra
  * no documento como image/jpeg).
@@ -30,8 +36,35 @@ const destino = path.join(
   'recibo-capacete.docx'
 )
 
-/* 1 cm = 360000 EMU. A logo é quadrada (150x150). */
-const LOGO_EMU = 1080000
+/* Medidas: 1 cm = 566,93 twips (página) e 360000 EMU (imagem). */
+const cm = (valor) => Math.round(valor * 566.93)
+
+/* A5 paisagem: 21 x 14,8 cm. */
+const PAGINA = {
+  largura: cm(21),
+  altura: cm(14.8),
+  orientacao: 'landscape',
+  margemVertical: cm(0.8),
+  margemHorizontal: cm(1),
+}
+
+/* Deixado pronto caso um dia queira o recibo em folha inteira. */
+// const PAGINA_A4 = {
+//   largura: cm(21),
+//   altura: cm(29.7),
+//   orientacao: 'portrait',
+//   margemVertical: cm(2),
+//   margemHorizontal: cm(2),
+// }
+
+/* Logo com 1,9 cm (360000 EMU por cm), quadrada. */
+const LOGO_EMU = Math.round(1.9 * 360000)
+
+/* Largura útil da página, dividida entre as duas assinaturas. */
+const LARGURA_UTIL =
+  PAGINA.largura - PAGINA.margemHorizontal * 2
+
+const COLUNA_ASSINATURA = Math.floor(LARGURA_UTIL / 2)
 
 const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -59,32 +92,41 @@ const estilos = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <w:rPrDefault>
       <w:rPr>
         <w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>
-        <w:sz w:val="22"/>
-        <w:szCs w:val="22"/>
+        <w:sz w:val="19"/>
+        <w:szCs w:val="19"/>
       </w:rPr>
     </w:rPrDefault>
     <w:pPrDefault>
       <w:pPr>
-        <w:spacing w:after="120" w:line="276" w:lineRule="auto"/>
+        <w:spacing w:after="60" w:line="240" w:lineRule="auto"/>
       </w:pPr>
     </w:pPrDefault>
   </w:docDefaults>
 </w:styles>`
 
+function escaparXml(texto) {
+  return String(texto)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 /*
  * Um parágrafo de texto.
  *
- * opcoes: { negrito, tamanho (em pontos), alinhamento,
- *           cor (hex sem #), espacoDepois, maiusculas }
+ * opcoes: { negrito, tamanho (pontos), alinhamento, cor (hex
+ *           sem #), espacoDepois (twips), espacamentoLetras,
+ *           entrelinha }
  */
 function paragrafo(texto, opcoes = {}) {
   const {
     negrito = false,
-    tamanho = 11,
+    tamanho = 9.5,
     alinhamento = 'left',
     cor = '000000',
-    espacoDepois = 120,
+    espacoDepois = 60,
     espacamentoLetras = 0,
+    entrelinha = 240,
   } = opcoes
 
   const meiosPontos = Math.round(tamanho * 2)
@@ -108,23 +150,16 @@ function paragrafo(texto, opcoes = {}) {
 
   return (
     `<w:p><w:pPr>` +
-    `<w:spacing w:after="${espacoDepois}" w:line="276" w:lineRule="auto"/>` +
+    `<w:spacing w:after="${espacoDepois}" w:line="${entrelinha}" w:lineRule="auto"/>` +
     `<w:jc w:val="${alinhamento}"/>` +
     `</w:pPr>${conteudo}</w:p>`
   )
 }
 
-function escaparXml(texto) {
-  return String(texto)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
 function paragrafoLogo() {
   return (
     '<w:p><w:pPr>' +
-    '<w:spacing w:after="60"/>' +
+    '<w:spacing w:after="20"/>' +
     '<w:jc w:val="center"/>' +
     '</w:pPr><w:r><w:drawing>' +
     `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
@@ -145,18 +180,68 @@ function paragrafoLogo() {
   )
 }
 
-function linhaAssinatura(nome) {
+/*
+ * Linha divisória fina, no lugar do espaço em branco que
+ * separava o cabeçalho do corpo no formato A4.
+ */
+function divisoria() {
   return (
-    paragrafo(
-      '______________________________________________',
-      { alinhamento: 'center', espacoDepois: 40 }
-    ) +
+    '<w:p><w:pPr>' +
+    '<w:spacing w:before="40" w:after="140"/>' +
+    '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="BBBBBB"/></w:pBdr>' +
+    '</w:pPr></w:p>'
+  )
+}
+
+/*
+ * As duas assinaturas lado a lado, numa tabela sem bordas.
+ * Em pé, uma embaixo da outra, não caberia no A5.
+ */
+function assinaturasLadoALado(esquerda, direita) {
+  const celula = (nome) =>
+    '<w:tc>' +
+    `<w:tcPr><w:tcW w:w="${COLUNA_ASSINATURA}" w:type="dxa"/>` +
+    '<w:tcMar>' +
+    '<w:left w:w="170" w:type="dxa"/>' +
+    '<w:right w:w="170" w:type="dxa"/>' +
+    '</w:tcMar></w:tcPr>' +
+    paragrafo('____________________________________', {
+      alinhamento: 'center',
+      tamanho: 9,
+      espacoDepois: 20,
+    }) +
     paragrafo(nome, {
       alinhamento: 'center',
       negrito: true,
-      tamanho: 10,
-      espacoDepois: 320,
-    })
+      tamanho: 8.5,
+      espacoDepois: 0,
+    }) +
+    '</w:tc>'
+
+  return (
+    '<w:tbl>' +
+    '<w:tblPr>' +
+    `<w:tblW w:w="${LARGURA_UTIL}" w:type="dxa"/>` +
+    '<w:jc w:val="center"/>' +
+    '<w:tblBorders>' +
+    '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
+    '</w:tblBorders>' +
+    '<w:tblLayout w:type="fixed"/>' +
+    '</w:tblPr>' +
+    '<w:tblGrid>' +
+    `<w:gridCol w:w="${COLUNA_ASSINATURA}"/>` +
+    `<w:gridCol w:w="${COLUNA_ASSINATURA}"/>` +
+    '</w:tblGrid>' +
+    '<w:tr>' +
+    celula(esquerda) +
+    celula(direita) +
+    '</w:tr>' +
+    '</w:tbl>'
   )
 }
 
@@ -165,49 +250,47 @@ const corpo =
   paragrafo('BLACKOUT MOTOS', {
     alinhamento: 'center',
     negrito: true,
-    tamanho: 18,
-    espacoDepois: 40,
-    espacamentoLetras: 40,
+    tamanho: 14,
+    espacoDepois: 20,
+    espacamentoLetras: 30,
   }) +
-  paragrafo('Avenida Andrômeda, 3521 - Bosque dos Eucaliptos', {
-    alinhamento: 'center',
-    tamanho: 9,
-    cor: '444444',
-    espacoDepois: 0,
-  }) +
-  paragrafo('São José dos Campos - SP - CEP 12233-000', {
-    alinhamento: 'center',
-    tamanho: 9,
-    cor: '444444',
-    espacoDepois: 360,
-  }) +
+  paragrafo(
+    'Avenida Andrômeda, 3521 - Bosque dos Eucaliptos - São José dos Campos/SP - CEP 12233-000',
+    {
+      alinhamento: 'center',
+      tamanho: 7.5,
+      cor: '444444',
+      espacoDepois: 40,
+    }
+  ) +
   paragrafo('RECIBO', {
     alinhamento: 'center',
     negrito: true,
-    tamanho: 16,
-    espacoDepois: 360,
-    espacamentoLetras: 60,
+    tamanho: 12,
+    espacoDepois: 0,
+    espacamentoLetras: 50,
   }) +
+  divisoria() +
   paragrafo(
     'Recebemos de {cliente_nome}, CPF {cliente_cpf}, telefone {cliente_telefone}, ' +
       'a quantia de R$ {valor_total} ({valor_extenso}), referente à compra de ' +
       '{quantidade} unidade(s) de {produto}, marca {marca}, modelo {modelo}, ' +
       'cor {cor}, tamanho {tamanho}, ao valor unitário de R$ {valor_unitario}.',
-    { alinhamento: 'both', tamanho: 11, espacoDepois: 240 }
+    { alinhamento: 'both', tamanho: 9.5, espacoDepois: 120 }
   ) +
   paragrafo('Forma de pagamento: {forma_pagamento}.', {
     alinhamento: 'both',
-    espacoDepois: 240,
+    tamanho: 9.5,
+    espacoDepois: 120,
   }) +
   paragrafo(
     'São José dos Campos, {data_extenso}, às {hora_documento}.',
-    { alinhamento: 'both', espacoDepois: 600 }
+    { alinhamento: 'both', tamanho: 9.5, espacoDepois: 400 }
   ) +
-  linhaAssinatura('BLACKOUT MOTOS') +
-  linhaAssinatura('{cliente_nome}') +
+  assinaturasLadoALado('BLACKOUT MOTOS', '{cliente_nome}') +
   paragrafo('Vendedor: {vendedor}', {
     alinhamento: 'center',
-    tamanho: 9,
+    tamanho: 7.5,
     cor: '666666',
     espacoDepois: 0,
   })
@@ -220,9 +303,10 @@ const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <w:body>
     ${corpo}
     <w:sectPr>
-      <w:pgSz w:w="11906" w:h="16838"/>
-      <w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418"
-               w:header="708" w:footer="708" w:gutter="0"/>
+      <w:pgSz w:w="${PAGINA.largura}" w:h="${PAGINA.altura}" w:orient="${PAGINA.orientacao}"/>
+      <w:pgMar w:top="${PAGINA.margemVertical}" w:right="${PAGINA.margemHorizontal}"
+               w:bottom="${PAGINA.margemVertical}" w:left="${PAGINA.margemHorizontal}"
+               w:header="0" w:footer="0" w:gutter="0"/>
     </w:sectPr>
   </w:body>
 </w:document>`
@@ -246,3 +330,8 @@ fs.writeFileSync(
 )
 
 console.log(`Template gerado: ${destino}`)
+console.log(
+  `Pagina: ${(PAGINA.largura / 566.93).toFixed(1)} x ${(
+    PAGINA.altura / 566.93
+  ).toFixed(1)} cm (${PAGINA.orientacao})`
+)
