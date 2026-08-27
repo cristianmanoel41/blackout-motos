@@ -50,6 +50,23 @@ type Moto = {
   ano_modelo?: string | number | null;
   placa?: string | null;
   status?: string | null;
+  valor_compra?:
+    | number
+    | string
+    | null;
+  possui_financiamento?:
+    | boolean
+    | null;
+  valor_quitacao?:
+    | number
+    | string
+    | null;
+  financeira_quitacao?:
+    | string
+    | null;
+  quitacao_lancada_no_caixa?:
+    | boolean
+    | null;
 };
 
 type Cliente = {
@@ -78,6 +95,9 @@ type ComponentePagamento = {
   parcelas: string;
   motoId?: string;
   motoDescricao?: string;
+  motoAvaliacao?: string;
+  motoQuitacao?: string;
+  motoFinanceiraQuitacao?: string;
 };
 
 type ModeloCapacete = {
@@ -776,6 +796,21 @@ export default function VendasPage() {
           "trocaValor"
         ) || "";
 
+      const trocaAvaliacao =
+        parametros.get(
+          "trocaAvaliacao"
+        ) || "";
+
+      const trocaQuitacao =
+        parametros.get(
+          "trocaQuitacao"
+        ) || "";
+
+      const trocaFinanceira =
+        parametros.get(
+          "trocaFinanceira"
+        ) || "";
+
       const rascunhoSalvo =
         sessionStorage.getItem(
           "blackout-venda-em-andamento"
@@ -959,8 +994,50 @@ export default function VendasPage() {
 
       if (
         trocaMotoId &&
-        trocaValor
+        trocaValor !== ""
       ) {
+        const avaliacaoNumero =
+          Number(
+            trocaAvaliacao
+          ) || 0;
+
+        const quitacaoNumero =
+          Number(
+            trocaQuitacao
+          ) || 0;
+
+        const creditoNumero =
+          Number(
+            trocaValor
+          ) || 0;
+
+        const descricaoBase =
+          trocaDescricao ||
+          "Moto recebida na troca";
+
+        const detalhesTroca = [
+          descricaoBase,
+          avaliacaoNumero > 0
+            ? `Avaliação: ${moeda(
+                avaliacaoNumero
+              )}`
+            : null,
+          quitacaoNumero > 0
+            ? `Quitação: ${moeda(
+                quitacaoNumero
+              )}${
+                trocaFinanceira
+                  ? ` (${trocaFinanceira})`
+                  : ""
+              }`
+            : null,
+          `Crédito líquido: ${moeda(
+            creditoNumero
+          )}`,
+        ]
+          .filter(Boolean)
+          .join(" | ");
+
         setComponentes(
           (atuais) => {
             const jaExiste =
@@ -989,8 +1066,13 @@ export default function VendasPage() {
                 motoId:
                   trocaMotoId,
                 motoDescricao:
-                  trocaDescricao ||
-                  "Moto recebida na troca",
+                  detalhesTroca,
+                motoAvaliacao:
+                  trocaAvaliacao,
+                motoQuitacao:
+                  trocaQuitacao,
+                motoFinanceiraQuitacao:
+                  trocaFinanceira,
               },
             ];
           }
@@ -1391,9 +1473,24 @@ export default function VendasPage() {
           componente.valor
         ) || 0;
 
-      if (valor <= 0) {
+      if (
+        componente.tipo !==
+          "Moto na troca" &&
+        valor <= 0
+      ) {
         setErro(
           `Informe o valor de ${componente.tipo}.`
+        );
+        return;
+      }
+
+      if (
+        componente.tipo ===
+          "Moto na troca" &&
+        valor < 0
+      ) {
+        setErro(
+          "O crédito da moto na troca não pode ser negativo."
         );
         return;
       }
@@ -1843,6 +1940,102 @@ export default function VendasPage() {
         motosTroca
       ) {
         const {
+          data: motoTrocaData,
+          error:
+            motoTrocaDataError,
+        } = await supabase
+          .from("motorcycles")
+          .select(
+            "id, codigo, marca, modelo, possui_financiamento, valor_quitacao, financeira_quitacao, quitacao_lancada_no_caixa"
+          )
+          .eq(
+            "id",
+            troca.motoId
+          )
+          .single();
+
+        if (
+          motoTrocaDataError ||
+          !motoTrocaData
+        ) {
+          throw (
+            motoTrocaDataError ||
+            new Error(
+              "Não foi possível carregar os dados da moto recebida na troca."
+            )
+          );
+        }
+
+        const valorQuitacaoTroca =
+          Number(
+            motoTrocaData.valor_quitacao
+          ) || 0;
+
+        let quitacaoLancada =
+          Boolean(
+            motoTrocaData.quitacao_lancada_no_caixa
+          );
+
+        if (
+          motoTrocaData.possui_financiamento &&
+          valorQuitacaoTroca > 0 &&
+          !quitacaoLancada
+        ) {
+          const identificacaoTroca =
+            motoTrocaData.codigo ||
+            [
+              motoTrocaData.marca,
+              motoTrocaData.modelo,
+            ]
+              .filter(Boolean)
+              .join(" ") ||
+            "Moto na troca";
+
+          const {
+            error:
+              quitacaoError,
+          } = await supabase
+            .from(
+              "cash_transactions"
+            )
+            .insert({
+              data:
+                dataVenda,
+              tipo: "saida",
+              origem:
+                "outro",
+              origem_id:
+                String(
+                  motoTrocaData.id
+                ),
+              valor:
+                valorQuitacaoTroca,
+              descricao:
+                `Quitação de financiamento - ${identificacaoTroca}${
+                  motoTrocaData.financeira_quitacao
+                    ? ` - ${motoTrocaData.financeira_quitacao}`
+                    : ""
+                }`,
+            });
+
+          if (quitacaoError) {
+            /*
+             * Se a quitação já tiver sido gravada e apenas
+             * a marcação da moto tiver falhado antes, o índice
+             * único do banco evita uma segunda saída.
+             */
+            if (
+              quitacaoError.code !==
+              "23505"
+            ) {
+              throw quitacaoError;
+            }
+          }
+
+          quitacaoLancada = true;
+        }
+
+        const {
           error: trocaError,
         } = await supabase
           .from("motorcycles")
@@ -1851,6 +2044,8 @@ export default function VendasPage() {
               vendaCriada.id,
             status:
               "disponivel",
+            quitacao_lancada_no_caixa:
+              quitacaoLancada,
           })
           .eq(
             "id",
@@ -3058,15 +3253,27 @@ export default function VendasPage() {
 
                         <div>
                           <label className="mb-2 block text-xs text-zinc-500">
-                            Valor
+                            {componente.tipo ===
+                            "Moto na troca"
+                              ? "Crédito líquido na entrada"
+                              : "Valor"}
                           </label>
 
                           <input
                             type="number"
-                            min="0.01"
+                            min={
+                              componente.tipo ===
+                              "Moto na troca"
+                                ? "0"
+                                : "0.01"
+                            }
                             step="0.01"
                             value={
                               componente.valor
+                            }
+                            readOnly={
+                              componente.tipo ===
+                              "Moto na troca"
                             }
                             onChange={(e) =>
                               alterarComponente(
@@ -3077,7 +3284,12 @@ export default function VendasPage() {
                                   .value
                               )
                             }
-                            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none focus:border-yellow-500"
+                            className={`w-full rounded-lg border px-3 py-2 outline-none ${
+                              componente.tipo ===
+                              "Moto na troca"
+                                ? "cursor-not-allowed border-yellow-900/60 bg-yellow-950/20 text-yellow-300"
+                                : "border-zinc-700 bg-zinc-900 focus:border-yellow-500"
+                            }`}
                           />
                         </div>
 
@@ -3274,7 +3486,7 @@ export default function VendasPage() {
               />
 
               <Resumo
-                titulo="Moto na troca"
+                titulo="Crédito da troca"
                 valor={totalTroca}
               />
 

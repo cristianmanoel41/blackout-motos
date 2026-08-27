@@ -48,6 +48,9 @@ type FormMoto = {
   valor_compra: string;
   preco_anunciado: string;
   forma_pagamento_compra: string;
+  possui_financiamento: boolean;
+  valor_quitacao: string;
+  financeira_quitacao: string;
 
   fornecedor_nome: string;
   fornecedor_telefone: string;
@@ -102,6 +105,9 @@ const formInicial: FormMoto = {
   valor_compra: "",
   preco_anunciado: "",
   forma_pagamento_compra: "",
+  possui_financiamento: false,
+  valor_quitacao: "",
+  financeira_quitacao: "",
 
   fornecedor_nome: "",
   fornecedor_telefone: "",
@@ -163,6 +169,34 @@ export default function NovaMotoPage() {
           form.valor_compra
         ) || 0,
       [form.valor_compra]
+    );
+
+  const valorQuitacaoNumero =
+    useMemo(
+      () =>
+        form.possui_financiamento
+          ? Number(
+              form.valor_quitacao
+            ) || 0
+          : 0,
+      [
+        form.possui_financiamento,
+        form.valor_quitacao,
+      ]
+    );
+
+  const valorLiquidoCliente =
+    useMemo(
+      () =>
+        Math.max(
+          valorCompraNumero -
+            valorQuitacaoNumero,
+          0
+        ),
+      [
+        valorCompraNumero,
+        valorQuitacaoNumero,
+      ]
     );
 
   useEffect(() => {
@@ -306,6 +340,37 @@ export default function NovaMotoPage() {
         "Informe o valor de compra da moto."
       );
       return;
+    }
+
+    if (
+      !ehEstoqueInicial &&
+      form.possui_financiamento
+    ) {
+      if (valorQuitacaoNumero <= 0) {
+        setErro(
+          "Informe o valor da quitação do financiamento."
+        );
+        return;
+      }
+
+      if (
+        valorQuitacaoNumero >
+        valorCompraNumero
+      ) {
+        setErro(
+          "O valor da quitação não pode ser maior que o valor considerado na moto. Se houver diferença a pagar pelo cliente, ajuste a negociação antes de cadastrar."
+        );
+        return;
+      }
+
+      if (
+        !form.financeira_quitacao.trim()
+      ) {
+        setErro(
+          "Informe o banco ou financeira da quitação."
+        );
+        return;
+      }
     }
 
     if (
@@ -542,6 +607,28 @@ export default function NovaMotoPage() {
             form.forma_pagamento_compra ||
             null,
 
+          possui_financiamento:
+            !ehEstoqueInicial &&
+            form.possui_financiamento,
+
+          valor_quitacao:
+            !ehEstoqueInicial &&
+            form.possui_financiamento
+              ? valorQuitacaoNumero
+              : 0,
+
+          financeira_quitacao:
+            !ehEstoqueInicial &&
+            form.possui_financiamento
+              ? form.financeira_quitacao.trim() ||
+                null
+              : null,
+
+          quitacao_lancada_no_caixa:
+            form.tipo_entrada ===
+              "compra_nova" &&
+            form.possui_financiamento,
+
           fornecedor_nome:
             form.fornecedor_nome.trim() ||
             null,
@@ -616,43 +703,91 @@ export default function NovaMotoPage() {
        * ESTOQUE INICIAL:
        * não gera saída no caixa.
        *
-       * COMPRA NOVA:
-       * registra automaticamente uma saída.
+       * COMPRA NOVA SEM FINANCIAMENTO:
+       * sai do caixa o valor integral da compra.
        *
-       * Usamos origem "outro", que já é utilizada
-       * pelo sistema, e identificamos a compra
-       * pela descrição.
+       * COMPRA NOVA COM FINANCIAMENTO:
+       * registra separadamente a quitação paga ao banco
+       * e o valor líquido repassado ao vendedor.
+       *
+       * MOTO NA TROCA:
+       * a quitação só é lançada quando a venda for
+       * concluída, porque ela faz parte daquela negociação.
        */
       if (
         form.tipo_entrada ===
         "compra_nova"
       ) {
+        const identificacaoMoto =
+          motoCriada.codigo ||
+          `${form.marca} ${form.modelo}`;
+
+        const movimentacoesCaixa:
+          Array<{
+            data: string;
+            tipo: "saida";
+            origem: string;
+            origem_id: string;
+            valor: number;
+            descricao: string;
+          }> = [];
+
+        if (
+          form.possui_financiamento
+        ) {
+          movimentacoesCaixa.push({
+            data:
+              form.data_entrada,
+            tipo: "saida",
+            origem: "outro",
+            origem_id:
+              String(motoCriada.id),
+            valor:
+              valorQuitacaoNumero,
+            descricao:
+              `Quitação de financiamento - ${identificacaoMoto} - ${form.financeira_quitacao.trim()}`,
+          });
+
+          if (
+            valorLiquidoCliente > 0
+          ) {
+            movimentacoesCaixa.push({
+              data:
+                form.data_entrada,
+              tipo: "saida",
+              origem: "outro",
+              origem_id:
+                String(motoCriada.id),
+              valor:
+                valorLiquidoCliente,
+              descricao:
+                `Repasse ao vendedor - ${identificacaoMoto}`,
+            });
+          }
+        } else {
+          movimentacoesCaixa.push({
+            data:
+              form.data_entrada,
+            tipo: "saida",
+            origem: "outro",
+            origem_id:
+              String(motoCriada.id),
+            valor:
+              valorCompraNumero,
+            descricao:
+              `Compra de moto - ${identificacaoMoto}`,
+          });
+        }
+
         const {
           error: caixaError,
         } = await supabase
           .from(
             "cash_transactions"
           )
-          .insert({
-            data:
-              form.data_entrada,
-
-            tipo: "saida",
-
-            origem: "outro",
-
-            origem_id:
-              motoCriada.id,
-
-            valor:
-              valorCompraNumero,
-
-            descricao:
-              `Compra de moto - ${
-                motoCriada.codigo ||
-                `${form.marca} ${form.modelo}`
-              }`,
-          });
+          .insert(
+            movimentacoesCaixa
+          );
 
         if (caixaError) {
           /*
@@ -696,8 +831,27 @@ export default function NovaMotoPage() {
 
         parametros.set(
           "trocaValor",
+          String(valorLiquidoCliente)
+        );
+
+        parametros.set(
+          "trocaAvaliacao",
           String(valorCompraNumero)
         );
+
+        parametros.set(
+          "trocaQuitacao",
+          String(valorQuitacaoNumero)
+        );
+
+        if (
+          form.financeira_quitacao.trim()
+        ) {
+          parametros.set(
+            "trocaFinanceira",
+            form.financeira_quitacao.trim()
+          );
+        }
 
         parametros.set(
           "trocaDescricao",
@@ -713,7 +867,13 @@ export default function NovaMotoPage() {
       setMensagem(
         ehEstoqueInicial
           ? `Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
-          : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
+          : form.possui_financiamento
+            ? `Compra cadastrada com sucesso. A quitação de ${moeda(
+                valorQuitacaoNumero
+              )} e o repasse de ${moeda(
+                valorLiquidoCliente
+              )} foram registrados separadamente no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
+            : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
       );
     } catch (error: any) {
       console.error(error);
@@ -879,8 +1039,8 @@ export default function NovaMotoPage() {
               {ehEstoqueInicial
                 ? "Estoque inicial: use para motos que já pertenciam à loja antes de você começar a usar o sistema. Pode colocar a data real, mesmo retroativa. O valor não gera saída nova no caixa."
                 : ehTroca
-                  ? "Moto na troca: o valor informado será o valor considerado na negociação. A moto entra no estoque, mas não gera saída de dinheiro no caixa."
-                  : "Compra nova: use para motos compradas pela loja. O valor de compra será lançado como saída no caixa na data informada."}
+                  ? "Moto na troca: informe o valor total considerado na moto. Se ela ainda estiver financiada, informe também a quitação. O sistema usa somente a diferença como crédito de entrada e lança a quitação no caixa quando a venda for concluída."
+                  : "Compra nova: informe o valor total combinado pela moto. Se ela estiver financiada, o sistema separa a saída do caixa entre quitação ao banco e eventual valor repassado ao vendedor."}
             </div>
           </section>
 
@@ -1234,9 +1394,130 @@ export default function NovaMotoPage() {
               />
             </div>
 
+            {!ehEstoqueInicial && (
+              <div className="mt-5 rounded-xl border border-grafite-claro bg-preto/40 p-4">
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
+                    form.possui_financiamento
+                      ? "border-dourado bg-dourado/10 text-dourado"
+                      : "border-grafite-claro bg-preto text-texto"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      form.possui_financiamento
+                    }
+                    onChange={(event) =>
+                      atualizarCampo(
+                        "possui_financiamento",
+                        event.target.checked
+                      )
+                    }
+                    className="h-4 w-4 accent-yellow-500"
+                  />
+
+                  <span className="font-semibold">
+                    Moto possui financiamento para quitar
+                  </span>
+                </label>
+
+                {form.possui_financiamento && (
+                  <div className="mt-4 grid gap-5 md:grid-cols-2">
+                    <Campo
+                      label="Valor da quitação *"
+                      type="number"
+                      step="0.01"
+                      value={
+                        form.valor_quitacao
+                      }
+                      onChange={(valor) =>
+                        atualizarCampo(
+                          "valor_quitacao",
+                          valor
+                        )
+                      }
+                      placeholder="0,00"
+                    />
+
+                    <Campo
+                      label="Banco / financeira da quitação *"
+                      value={
+                        form.financeira_quitacao
+                      }
+                      onChange={(valor) =>
+                        atualizarCampo(
+                          "financeira_quitacao",
+                          valor
+                        )
+                      }
+                      placeholder="Ex.: Banco Honda"
+                    />
+                  </div>
+                )}
+
+                {form.possui_financiamento && (
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    <div className="rounded-xl border border-grafite-claro bg-preto p-4">
+                      <p className="text-xs text-texto-suave">
+                        Valor considerado na moto
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-white">
+                        {moeda(
+                          valorCompraNumero
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-grafite-claro bg-preto p-4">
+                      <p className="text-xs text-texto-suave">
+                        Quitação
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-red-300">
+                        {moeda(
+                          valorQuitacaoNumero
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-dourado/40 bg-dourado/10 p-4">
+                      <p className="text-xs text-texto-suave">
+                        {ehTroca
+                          ? "Crédito líquido para a entrada"
+                          : "Valor a repassar ao vendedor"}
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-dourado">
+                        {moeda(
+                          valorLiquidoCliente
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {form.possui_financiamento && (
+                  <p className="mt-3 text-xs leading-5 text-texto-suave">
+                    {ehTroca
+                      ? "Na troca, o custo da moto no estoque continua sendo o valor total considerado. A quitação sai do caixa e somente a diferença vira crédito de entrada na venda."
+                      : "Na compra direta, o custo da moto no estoque continua sendo o valor total combinado. O caixa separa a quitação ao banco do valor que será repassado ao vendedor."}
+                  </p>
+                )}
+
+                {form.possui_financiamento &&
+                  valorQuitacaoNumero >
+                    valorCompraNumero && (
+                    <p className="mt-3 text-sm text-red-300">
+                      A quitação está maior que o valor considerado na moto. Ajuste os valores antes de salvar.
+                    </p>
+                  )}
+              </div>
+            )}
+
             <div className="mt-5 rounded-xl border border-grafite-claro bg-preto p-4">
               <p className="text-xs text-texto-suave">
-                Valor da compra
+                {ehTroca
+                  ? "Valor considerado na troca"
+                  : "Valor da compra"}
               </p>
               <p className="mt-1 text-xl font-bold text-dourado">
                 {moeda(
