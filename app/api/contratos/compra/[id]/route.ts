@@ -10,6 +10,30 @@ import {
 
 export const runtime = "nodejs";
 
+function formatarCPF(valor: unknown) {
+  const numeros = String(valor || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
+
+  if (numeros.length !== 11) {
+    return String(valor || "").trim();
+  }
+
+  return numeros.replace(
+    /(\d{3})(\d{3})(\d{3})(\d{2})/,
+    "$1.$2.$3-$4"
+  );
+}
+
+function complementoEndereco(valor: unknown) {
+  const complemento = String(valor || "").trim();
+
+  return complemento
+    ? `, complemento: ${complemento}`
+    : "";
+}
+
+
 function moedaSemSimbolo(valor: unknown) {
   return formatarNumero(valor as number);
 }
@@ -570,8 +594,7 @@ export async function GET(
         "",
 
       fornecedor_cpf:
-        moto.fornecedor_cpf ||
-        "",
+        formatarCPF(moto.fornecedor_cpf),
 
       fornecedor_rua:
         moto.fornecedor_rua ||
@@ -580,6 +603,9 @@ export async function GET(
       fornecedor_numero:
         moto.fornecedor_numero ||
         "",
+
+      fornecedor_complemento_texto:
+        complementoEndereco(moto.fornecedor_complemento),
 
       fornecedor_bairro:
         moto.fornecedor_bairro ||

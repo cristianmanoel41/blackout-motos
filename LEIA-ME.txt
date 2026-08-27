@@ -1,0 +1,12 @@
+BLACKOUT MOTOS - BUSCA AUTOMÁTICA DE CEP
+
+Arquivo alterado:
+app/clientes/novo/page.tsx
+
+Funcionamento:
+- Ao completar 8 dígitos do CEP, consulta automaticamente o ViaCEP.
+- Preenche Rua, Bairro, Cidade e Estado.
+- Número e Complemento continuam manuais.
+- O CEP é formatado como 00000-000 enquanto você digita.
+- Se o CEP não for encontrado ou a consulta falhar, o endereço pode ser preenchido manualmente.
+- Não precisa alterar o banco de dados.

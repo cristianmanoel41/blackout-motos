@@ -36,6 +36,18 @@ const formInicial: FormCliente = {
   cep: "",
 };
 
+function formatarCep(valor: string) {
+  const numeros = valor
+    .replace(/\D/g, "")
+    .slice(0, 8);
+
+  if (numeros.length <= 5) {
+    return numeros;
+  }
+
+  return `${numeros.slice(0, 5)}-${numeros.slice(5)}`;
+}
+
 export default function NovoClientePage() {
   const router = useRouter();
   const supabase = createClient();
@@ -43,6 +55,8 @@ export default function NovoClientePage() {
   const [form, setForm] = useState<FormCliente>(formInicial);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroCep, setErroCep] = useState("");
 
   const [retorno, setRetorno] = useState("");
   const [motoRetorno, setMotoRetorno] = useState("");
@@ -53,6 +67,62 @@ export default function NovoClientePage() {
     setRetorno(parametros.get("retorno") || "");
     setMotoRetorno(parametros.get("moto") || "");
   }, []);
+
+  useEffect(() => {
+    const cepNumeros = form.cep.replace(/\D/g, "");
+
+    if (cepNumeros.length !== 8) {
+      setErroCep("");
+      return;
+    }
+
+    const controlador = new AbortController();
+
+    const timer = window.setTimeout(async () => {
+      setBuscandoCep(true);
+      setErroCep("");
+
+      try {
+        const resposta = await fetch(
+          `https://viacep.com.br/ws/${cepNumeros}/json/`,
+          { signal: controlador.signal }
+        );
+
+        if (!resposta.ok) {
+          throw new Error("Não foi possível consultar o CEP.");
+        }
+
+        const dados = await resposta.json();
+
+        if (dados?.erro) {
+          setErroCep("CEP não encontrado.");
+          return;
+        }
+
+        setForm((anterior) => ({
+          ...anterior,
+          rua: dados.logradouro || anterior.rua,
+          bairro: dados.bairro || anterior.bairro,
+          cidade: dados.localidade || anterior.cidade,
+          estado: dados.uf || anterior.estado,
+        }));
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          console.error(error);
+          setErroCep(
+            "Não foi possível buscar o CEP agora. Você pode preencher o endereço manualmente."
+          );
+        }
+      } finally {
+        setBuscandoCep(false);
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controlador.abort();
+    };
+  }, [form.cep]);
 
   function atualizarCampo(
     campo: keyof FormCliente,
@@ -90,7 +160,7 @@ export default function NovoClientePage() {
         complemento: form.complemento.trim() || null,
         bairro: form.bairro.trim() || null,
         cidade: form.cidade.trim() || null,
-        estado: form.estado.trim() || null,
+        estado: form.estado.trim().toUpperCase() || null,
         cep: form.cep.trim() || null,
       })
       .select("id")
@@ -267,14 +337,31 @@ return;
             </h2>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <Campo
-                label="CEP"
-                value={form.cep}
-                onChange={(valor) =>
-                  atualizarCampo("cep", valor)
-                }
-                placeholder="00000-000"
-              />
+              <div>
+                <Campo
+                  label="CEP"
+                  value={form.cep}
+                  onChange={(valor) =>
+                    atualizarCampo(
+                      "cep",
+                      formatarCep(valor)
+                    )
+                  }
+                  placeholder="00000-000"
+                />
+
+                {buscandoCep && (
+                  <p className="mt-2 text-xs text-dourado">
+                    Buscando endereço...
+                  </p>
+                )}
+
+                {erroCep && (
+                  <p className="mt-2 text-xs text-red-400">
+                    {erroCep}
+                  </p>
+                )}
+              </div>
 
               <Campo
                 label="Rua"

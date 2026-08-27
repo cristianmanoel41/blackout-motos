@@ -75,29 +75,19 @@ export default async function DashboardPage() {
   const totalDespesasMes = despesasMes?.reduce((s, d) => s + Number(d.valor), 0) ?? 0
   const lucroLiquidoMes = lucroBrutoMes - totalDespesasMes
 
-  // Valor investido em estoque (motos disponíveis + reservadas)
+  // Valor em estoque = somente o valor de compra das motos disponíveis + reservadas.
+  // Gastos das motos NÃO entram neste card; eles continuam compondo o custo da moto
+  // para cálculo de lucro quando ela for vendida.
   const { data: motosEstoque } = await supabase
     .from('motorcycles')
-    .select('id, valor_compra')
+    .select('valor_compra')
     .in('status', ['disponivel', 'reservada'])
 
-  let valorInvestidoEstoque = 0
-  if (motosEstoque && motosEstoque.length > 0) {
-    const idsEstoque = motosEstoque.map((m) => m.id)
-    const { data: gastosEstoque } = await supabase
-      .from('motorcycle_expenses')
-      .select('motorcycle_id, valor')
-      .in('motorcycle_id', idsEstoque)
-
-    const gastosPorMotoEstoque: Record<string, number> = {}
-    gastosEstoque?.forEach((g) => {
-      gastosPorMotoEstoque[g.motorcycle_id] = (gastosPorMotoEstoque[g.motorcycle_id] || 0) + Number(g.valor)
-    })
-
-    valorInvestidoEstoque = motosEstoque.reduce((s, m) => {
-      return s + Number(m.valor_compra) + (gastosPorMotoEstoque[m.id] || 0)
-    }, 0)
-  }
+  const valorInvestidoEstoque =
+    motosEstoque?.reduce(
+      (s, m) => s + Number(m.valor_compra || 0),
+      0
+    ) ?? 0
 
   // Caixa do mês
   const { data: entradasMesData } = await supabase

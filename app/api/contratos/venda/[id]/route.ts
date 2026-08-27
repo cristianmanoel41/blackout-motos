@@ -7,6 +7,30 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 export const runtime = "nodejs";
 
+function formatarCPF(valor: unknown) {
+  const numeros = String(valor || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
+
+  if (numeros.length !== 11) {
+    return String(valor || "").trim();
+  }
+
+  return numeros.replace(
+    /(\d{3})(\d{3})(\d{3})(\d{2})/,
+    "$1.$2.$3-$4"
+  );
+}
+
+function complementoEndereco(valor: unknown) {
+  const complemento = String(valor || "").trim();
+
+  return complemento
+    ? `, complemento: ${complemento}`
+    : "";
+}
+
+
 function moeda(valor: unknown) {
   return formatarMoeda(valor as number);
 }
@@ -409,13 +433,16 @@ export async function GET(
         cliente?.rg || "",
 
       cliente_cpf:
-        cliente?.cpf || "",
+        formatarCPF(cliente?.cpf),
 
       cliente_rua:
         cliente?.rua || "",
 
       cliente_numero:
         cliente?.numero || "",
+
+      cliente_complemento_texto:
+        complementoEndereco(cliente?.complemento),
 
       cliente_bairro:
         cliente?.bairro || "",
