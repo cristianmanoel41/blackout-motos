@@ -23,6 +23,7 @@ type Cliente = {
   email: string | null;
   rua: string | null;
   numero: string | null;
+  complemento: string | null;
   bairro: string | null;
   cidade: string | null;
   estado: string | null;
@@ -360,6 +361,10 @@ export default function ClienteDetalhesPage() {
           cliente.numero?.trim() ||
           null,
 
+        complemento:
+          cliente.complemento?.trim() ||
+          null,
+
         bairro:
           cliente.bairro?.trim() ||
           null,
@@ -682,6 +687,23 @@ export default function ClienteDetalhesPage() {
               onChange={(valor) =>
                 atualizarCampo(
                   "numero",
+                  valor
+                )
+              }
+            />
+
+            <Campo
+              label="Complemento"
+              value={
+                cliente.complemento ||
+                ""
+              }
+              editando={
+                editando
+              }
+              onChange={(valor) =>
+                atualizarCampo(
+                  "complemento",
                   valor
                 )
               }

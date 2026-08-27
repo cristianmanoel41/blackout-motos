@@ -13,6 +13,7 @@ type FormCliente = {
   email: string;
   rua: string;
   numero: string;
+  complemento: string;
   bairro: string;
   cidade: string;
   estado: string;
@@ -28,6 +29,7 @@ const formInicial: FormCliente = {
   email: "",
   rua: "",
   numero: "",
+  complemento: "",
   bairro: "",
   cidade: "",
   estado: "",
@@ -85,6 +87,7 @@ export default function NovoClientePage() {
         email: form.email.trim() || null,
         rua: form.rua.trim() || null,
         numero: form.numero.trim() || null,
+        complemento: form.complemento.trim() || null,
         bairro: form.bairro.trim() || null,
         cidade: form.cidade.trim() || null,
         estado: form.estado.trim() || null,
@@ -289,6 +292,15 @@ return;
                   atualizarCampo("numero", valor)
                 }
                 placeholder="Número"
+              />
+
+              <Campo
+                label="Complemento"
+                value={form.complemento}
+                onChange={(valor) =>
+                  atualizarCampo("complemento", valor)
+                }
+                placeholder="Apto, bloco, fundos, casa..."
               />
 
               <Campo

@@ -55,6 +55,7 @@ type FormMoto = {
   fornecedor_rg: string;
   fornecedor_rua: string;
   fornecedor_numero: string;
+  fornecedor_complemento: string;
   fornecedor_bairro: string;
   fornecedor_cidade: string;
   fornecedor_estado: string;
@@ -108,6 +109,7 @@ const formInicial: FormMoto = {
   fornecedor_rg: "",
   fornecedor_rua: "",
   fornecedor_numero: "",
+  fornecedor_complemento: "",
   fornecedor_bairro: "",
   fornecedor_cidade: "",
   fornecedor_estado: "",
@@ -227,6 +229,8 @@ export default function NovaMotoPage() {
         cliente.rua || "",
       fornecedor_numero:
         cliente.numero || "",
+      fornecedor_complemento:
+        cliente.complemento || "",
       fornecedor_bairro:
         cliente.bairro || "",
       fornecedor_cidade:
@@ -375,6 +379,11 @@ export default function NovaMotoPage() {
         if (form.fornecedor_numero.trim()) {
           dadosCliente.numero =
             form.fornecedor_numero.trim();
+        }
+
+        if (form.fornecedor_complemento.trim()) {
+          dadosCliente.complemento =
+            form.fornecedor_complemento.trim();
         }
 
         if (form.fornecedor_bairro.trim()) {
@@ -555,6 +564,10 @@ export default function NovaMotoPage() {
 
           fornecedor_numero:
             form.fornecedor_numero.trim() ||
+            null,
+
+          fornecedor_complemento:
+            form.fornecedor_complemento.trim() ||
             null,
 
           fornecedor_bairro:
@@ -1347,6 +1360,20 @@ export default function NovaMotoPage() {
                   )
                 }
                 placeholder="Número"
+              />
+
+              <Campo
+                label="Complemento"
+                value={
+                  form.fornecedor_complemento
+                }
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "fornecedor_complemento",
+                    valor
+                  )
+                }
+                placeholder="Apto, bloco, fundos, casa..."
               />
 
               <Campo
