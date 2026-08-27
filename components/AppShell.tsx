@@ -36,7 +36,7 @@ export default function AppShell({
           pointer-events-none
           fixed
           inset-0
-          z-20
+          z-0
           flex
           items-center
           justify-center
@@ -50,8 +50,6 @@ export default function AppShell({
             h-[280px]
             w-[min(78vw,720px)]
             opacity-[0.18]
-            brightness-125
-            contrast-125
           "
         >
           <Image
