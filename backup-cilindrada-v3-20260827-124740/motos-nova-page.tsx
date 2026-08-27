@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   FormEvent,
@@ -39,13 +39,12 @@ type FormMoto = {
   renavam: string;
   chassi: string;
   quilometragem: string;
-  cilindrada: string;
 
+  
   possui_manual: boolean;
   possui_chave_reserva: boolean;
   unico_dono: boolean;
-
-  valor_compra: string;
+valor_compra: string;
   preco_anunciado: string;
   forma_pagamento_compra: string;
 
@@ -92,13 +91,12 @@ const formInicial: FormMoto = {
   renavam: "",
   chassi: "",
   quilometragem: "",
-  cilindrada: "",
 
+  
   possui_manual: false,
   possui_chave_reserva: false,
   unico_dono: false,
-
-  valor_compra: "",
+valor_compra: "",
   preco_anunciado: "",
   forma_pagamento_compra: "",
 
@@ -503,13 +501,7 @@ export default function NovaMotoPage() {
                 )
               : 0,
 
-          cilindrada:
-            form.cilindrada
-              ? Number(
-                  form.cilindrada
-                )
-              : null,
-
+         
           possui_manual:
             form.possui_manual,
 
@@ -518,8 +510,7 @@ export default function NovaMotoPage() {
 
           unico_dono:
             form.unico_dono,
-
-          valor_compra:
+ valor_compra:
             valorCompraNumero,
 
           preco_anunciado:
@@ -1008,19 +999,6 @@ export default function NovaMotoPage() {
                 placeholder="15000"
               />
 
-              <Campo
-                label="Cilindrada (cc)"
-                type="number"
-                value={form.cilindrada}
-                onChange={(valor) =>
-                  atualizarCampo(
-                    "cilindrada",
-                    valor
-                  )
-                }
-                placeholder="160"
-              />
-
               <CampoSelect
                 label="Status"
                 value={form.status}
@@ -1055,12 +1033,12 @@ export default function NovaMotoPage() {
           </section>
 
 
-          {/* ITENS / PROCEDÊNCIA */}
+          {/* ITENS / PROCEDÃŠNCIA */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
             <div className="mb-5 border-b border-grafite-claro pb-3">
               <h2 className="text-lg font-semibold text-dourado">
-                Itens e Procedência
+                Itens e ProcedÃªncia
               </h2>
 
               <p className="mt-1 text-xs text-texto-suave">

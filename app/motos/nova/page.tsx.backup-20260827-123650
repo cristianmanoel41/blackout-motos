@@ -39,11 +39,6 @@ type FormMoto = {
   renavam: string;
   chassi: string;
   quilometragem: string;
-  cilindrada: string;
-
-  possui_manual: boolean;
-  possui_chave_reserva: boolean;
-  unico_dono: boolean;
 
   valor_compra: string;
   preco_anunciado: string;
@@ -92,11 +87,6 @@ const formInicial: FormMoto = {
   renavam: "",
   chassi: "",
   quilometragem: "",
-  cilindrada: "",
-
-  possui_manual: false,
-  possui_chave_reserva: false,
-  unico_dono: false,
 
   valor_compra: "",
   preco_anunciado: "",
@@ -246,7 +236,7 @@ export default function NovaMotoPage() {
 
   function atualizarCampo(
     campo: keyof FormMoto,
-    valor: string | boolean
+    valor: string
   ) {
     setForm((anterior) => ({
       ...anterior,
@@ -502,22 +492,6 @@ export default function NovaMotoPage() {
                   form.quilometragem
                 )
               : 0,
-
-          cilindrada:
-            form.cilindrada
-              ? Number(
-                  form.cilindrada
-                )
-              : null,
-
-          possui_manual:
-            form.possui_manual,
-
-          possui_chave_reserva:
-            form.possui_chave_reserva,
-
-          unico_dono:
-            form.unico_dono,
 
           valor_compra:
             valorCompraNumero,
@@ -1008,19 +982,6 @@ export default function NovaMotoPage() {
                 placeholder="15000"
               />
 
-              <Campo
-                label="Cilindrada (cc)"
-                type="number"
-                value={form.cilindrada}
-                onChange={(valor) =>
-                  atualizarCampo(
-                    "cilindrada",
-                    valor
-                  )
-                }
-                placeholder="160"
-              />
-
               <CampoSelect
                 label="Status"
                 value={form.status}
@@ -1054,79 +1015,6 @@ export default function NovaMotoPage() {
             </div>
           </section>
 
-
-          {/* ITENS / PROCEDÊNCIA */}
-
-          <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
-            <div className="mb-5 border-b border-grafite-claro pb-3">
-              <h2 className="text-lg font-semibold text-dourado">
-                Itens e Procedência
-              </h2>
-
-              <p className="mt-1 text-xs text-texto-suave">
-                Marque somente o que acompanha ou corresponde a esta moto.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
-                form.possui_manual
-                  ? "border-dourado bg-dourado/10 text-dourado"
-                  : "border-grafite-claro bg-preto/30 text-texto"
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={form.possui_manual}
-                  onChange={(event) =>
-                    atualizarCampo(
-                      "possui_manual",
-                      event.target.checked
-                    )
-                  }
-                  className="h-4 w-4 accent-yellow-500"
-                />
-                <span className="font-semibold">Possui manual</span>
-              </label>
-
-              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
-                form.possui_chave_reserva
-                  ? "border-dourado bg-dourado/10 text-dourado"
-                  : "border-grafite-claro bg-preto/30 text-texto"
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={form.possui_chave_reserva}
-                  onChange={(event) =>
-                    atualizarCampo(
-                      "possui_chave_reserva",
-                      event.target.checked
-                    )
-                  }
-                  className="h-4 w-4 accent-yellow-500"
-                />
-                <span className="font-semibold">Chave reserva</span>
-              </label>
-
-              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
-                form.unico_dono
-                  ? "border-dourado bg-dourado/10 text-dourado"
-                  : "border-grafite-claro bg-preto/30 text-texto"
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={form.unico_dono}
-                  onChange={(event) =>
-                    atualizarCampo(
-                      "unico_dono",
-                      event.target.checked
-                    )
-                  }
-                  className="h-4 w-4 accent-yellow-500"
-                />
-                <span className="font-semibold">Ãšnico dono</span>
-              </label>
-            </div>
-          </section>
           {/* VALORES */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">

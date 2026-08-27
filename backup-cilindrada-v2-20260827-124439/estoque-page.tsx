@@ -29,7 +29,6 @@ type Moto = {
   cor?: string | null;
   placa?: string | null;
   quilometragem?: number | string | null;
-  cilindrada?: number | string | null;
   preco_anunciado?: number | string | null;
   status?: string | null;
   data_entrada?: string | null;
@@ -138,7 +137,6 @@ export default function EstoquePage() {
           "cor",
           "placa",
           "quilometragem",
-          "cilindrada",
           "preco_anunciado",
           "status",
           "data_entrada",
@@ -190,47 +188,6 @@ export default function EstoquePage() {
     );
   }, [motos]);
 
-  const estoquePorCilindrada = useMemo(() => {
-    const contagem = new Map<number, number>();
-    let semInformada = 0;
-    let total = 0;
-
-    for (const moto of motos) {
-      if (normalizarTexto(moto.status) === "vendida") {
-        continue;
-      }
-
-      total += 1;
-
-      const cc = Number(moto.cilindrada || 0);
-
-      if (!Number.isFinite(cc) || cc <= 0) {
-        semInformada += 1;
-        continue;
-      }
-
-      const cilindrada = Math.round(cc);
-
-      contagem.set(
-        cilindrada,
-        (contagem.get(cilindrada) || 0) + 1
-      );
-    }
-
-    const itens = Array.from(contagem.entries())
-      .map(([cilindrada, quantidade]) => ({
-        cilindrada,
-        quantidade,
-      }))
-      .sort((a, b) => a.cilindrada - b.cilindrada);
-
-    return {
-      itens,
-      semInformada,
-      total,
-    };
-  }, [motos]);
-
   const motosFiltradas = useMemo(() => {
     const termos = normalizarTexto(busca)
       .split(/\s+/)
@@ -245,7 +202,6 @@ export default function EstoquePage() {
           moto.versao,
           moto.cor,
           moto.placa,
-          moto.cilindrada,
           moto.ano_fabricacao,
           moto.ano_modelo,
         ]
@@ -330,65 +286,6 @@ export default function EstoquePage() {
           </Link>
         </div>
 
-        <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="font-semibold text-dourado">
-                Estoque por cilindrada
-              </h2>
-              <p className="mt-1 text-xs text-texto-suave">
-                Quantidade atual de motos por cc. Motos vendidas não entram nesta contagem.
-              </p>
-            </div>
-
-            <p className="text-sm font-semibold text-texto">
-              Total no estoque: {estoquePorCilindrada.total}
-            </p>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {estoquePorCilindrada.itens.length === 0 &&
-            estoquePorCilindrada.semInformada === 0 ? (
-              <div className="rounded-xl border border-grafite-claro bg-preto/40 px-4 py-3 text-sm text-texto-suave">
-                Nenhuma moto no estoque atual.
-              </div>
-            ) : (
-              <>
-                {estoquePorCilindrada.itens.map((item) => (
-                  <div
-                    key={item.cilindrada}
-                    className="min-w-[105px] rounded-xl border border-grafite-claro bg-preto/50 px-4 py-3"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-texto-suave">
-                      {item.cilindrada}cc
-                    </p>
-                    <p className="mt-1 text-2xl font-bold text-dourado">
-                      {item.quantidade}
-                    </p>
-                    <p className="text-[11px] text-texto-suave">
-                      {item.quantidade === 1 ? "moto" : "motos"}
-                    </p>
-                  </div>
-                ))}
-
-                {estoquePorCilindrada.semInformada > 0 && (
-                  <div className="min-w-[125px] rounded-xl border border-grafite-claro bg-preto/50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-texto-suave">
-                      Sem informar
-                    </p>
-                    <p className="mt-1 text-2xl font-bold text-dourado">
-                      {estoquePorCilindrada.semInformada}
-                    </p>
-                    <p className="text-[11px] text-texto-suave">
-                      {estoquePorCilindrada.semInformada === 1 ? "moto" : "motos"}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-
         <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-3 md:p-4">
           <div className="grid gap-3 xl:grid-cols-[minmax(280px,1.6fr)_180px_200px_150px_auto]">
             <label className="relative block">
@@ -463,7 +360,7 @@ export default function EstoquePage() {
 
         <section className="overflow-hidden rounded-2xl border border-grafite-claro bg-grafite">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1320px] border-collapse">
+            <table className="w-full min-w-[1250px] border-collapse">
               <thead>
                 <tr className="border-b border-grafite-claro bg-preto/60 text-left text-[11px] uppercase tracking-wide text-texto-suave">
                   <th className="px-4 py-3 font-semibold">ID</th>
@@ -472,7 +369,6 @@ export default function EstoquePage() {
                   <th className="px-4 py-3 font-semibold">Ano</th>
                   <th className="px-4 py-3 font-semibold">Cor</th>
                   <th className="px-4 py-3 font-semibold">Placa</th>
-                  <th className="px-4 py-3 text-right font-semibold">CC</th>
                   <th className="px-4 py-3 text-right font-semibold">KM</th>
                   <th className="px-4 py-3 text-right font-semibold">
                     Valor anunciado
@@ -487,7 +383,7 @@ export default function EstoquePage() {
                 {carregando ? (
                   <tr>
                     <td
-                      colSpan={12}
+                      colSpan={11}
                       className="px-4 py-16 text-center text-sm text-texto-suave"
                     >
                       Carregando estoque...
@@ -495,7 +391,7 @@ export default function EstoquePage() {
                   </tr>
                 ) : motosDaPagina.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="px-4 py-16 text-center">
+                    <td colSpan={11} className="px-4 py-16 text-center">
                       <p className="font-semibold text-texto">
                         Nenhuma moto encontrada.
                       </p>
@@ -549,12 +445,6 @@ export default function EstoquePage() {
 
                         <td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-zinc-200">
                           {moto.placa || "—"}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
-                          {moto.cilindrada
-                            ? `${moto.cilindrada}cc`
-                            : "—"}
                         </td>
 
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
