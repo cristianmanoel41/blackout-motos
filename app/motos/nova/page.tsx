@@ -1123,7 +1123,7 @@ export default function NovaMotoPage() {
                   }
                   className="h-4 w-4 accent-yellow-500"
                 />
-                <span className="font-semibold">Ãšnico dono</span>
+                <span className="font-semibold">Único dono</span>
               </label>
             </div>
           </section>
