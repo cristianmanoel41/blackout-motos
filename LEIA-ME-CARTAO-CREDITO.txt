@@ -1,0 +1,42 @@
+BLACKOUT MOTOS — CARTÃO DE CRÉDITO NA VENDA
+
+O que mudou
+-----------
+Na tela Registrar Venda, em "Tipo da venda", agora aparecem:
+
+- À vista / pagamento completo
+- Cartão de crédito
+- Financiamento
+
+Ao escolher "Cartão de crédito":
+- o sistema cria automaticamente uma linha "Cartão" vinculada à moto;
+- você informa o valor;
+- escolhe de 1x a 24x;
+- o valor da parcela é calculado pela composição já existente;
+- a venda fica identificada como "Cartão de crédito";
+- os dados de parcelas continuam gravados em sale_payment_components;
+- contrato/documentos conseguem descrever cartão e parcelas pela estrutura já existente.
+
+Também continua possível combinar pagamentos, por exemplo:
+- R$ 5.000 via Pix + R$ 15.000 no cartão;
+- moto na troca + saldo no cartão.
+
+IMPORTANTE SOBRE CAIXA
+----------------------
+Esta atualização mantém o comportamento financeiro que o sistema já possui:
+pagamentos em cartão são considerados recebimento da venda na data lançada.
+
+Se a loja quiser controlar a data real em que a operadora deposita o cartão,
+taxa da maquininha e valores a receber, isso deve ser uma etapa separada de
+"Contas a Receber do Cartão", para o caixa bancário ficar conciliado pela data
+real do crédito.
+
+SQL
+---
+Não precisa executar SQL novo para esta alteração.
+O campo sales.tipo_venda é texto e o parcelamento do cartão já usa
+sale_payment_components.
+
+Arquivo alterado
+----------------
+app/vendas/page.tsx

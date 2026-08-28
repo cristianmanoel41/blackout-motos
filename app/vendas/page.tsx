@@ -50,23 +50,6 @@ type Moto = {
   ano_modelo?: string | number | null;
   placa?: string | null;
   status?: string | null;
-  valor_compra?:
-    | number
-    | string
-    | null;
-  possui_financiamento?:
-    | boolean
-    | null;
-  valor_quitacao?:
-    | number
-    | string
-    | null;
-  financeira_quitacao?:
-    | string
-    | null;
-  quitacao_lancada_no_caixa?:
-    | boolean
-    | null;
 };
 
 type Cliente = {
@@ -95,9 +78,6 @@ type ComponentePagamento = {
   parcelas: string;
   motoId?: string;
   motoDescricao?: string;
-  motoAvaliacao?: string;
-  motoQuitacao?: string;
-  motoFinanceiraQuitacao?: string;
 };
 
 type ModeloCapacete = {
@@ -276,7 +256,9 @@ export default function VendasPage() {
 
   const [tipoVenda, setTipoVenda] =
     useState<
-      "avista" | "financiamento"
+      | "avista"
+      | "financiamento"
+      | "cartao"
     >("avista");
 
   const [valorVenda, setValorVenda] =
@@ -796,21 +778,6 @@ export default function VendasPage() {
           "trocaValor"
         ) || "";
 
-      const trocaAvaliacao =
-        parametros.get(
-          "trocaAvaliacao"
-        ) || "";
-
-      const trocaQuitacao =
-        parametros.get(
-          "trocaQuitacao"
-        ) || "";
-
-      const trocaFinanceira =
-        parametros.get(
-          "trocaFinanceira"
-        ) || "";
-
       const rascunhoSalvo =
         sessionStorage.getItem(
           "blackout-venda-em-andamento"
@@ -994,50 +961,8 @@ export default function VendasPage() {
 
       if (
         trocaMotoId &&
-        trocaValor !== ""
+        trocaValor
       ) {
-        const avaliacaoNumero =
-          Number(
-            trocaAvaliacao
-          ) || 0;
-
-        const quitacaoNumero =
-          Number(
-            trocaQuitacao
-          ) || 0;
-
-        const creditoNumero =
-          Number(
-            trocaValor
-          ) || 0;
-
-        const descricaoBase =
-          trocaDescricao ||
-          "Moto recebida na troca";
-
-        const detalhesTroca = [
-          descricaoBase,
-          avaliacaoNumero > 0
-            ? `Avaliação: ${moeda(
-                avaliacaoNumero
-              )}`
-            : null,
-          quitacaoNumero > 0
-            ? `Quitação: ${moeda(
-                quitacaoNumero
-              )}${
-                trocaFinanceira
-                  ? ` (${trocaFinanceira})`
-                  : ""
-              }`
-            : null,
-          `Crédito líquido: ${moeda(
-            creditoNumero
-          )}`,
-        ]
-          .filter(Boolean)
-          .join(" | ");
-
         setComponentes(
           (atuais) => {
             const jaExiste =
@@ -1066,13 +991,8 @@ export default function VendasPage() {
                 motoId:
                   trocaMotoId,
                 motoDescricao:
-                  detalhesTroca,
-                motoAvaliacao:
-                  trocaAvaliacao,
-                motoQuitacao:
-                  trocaQuitacao,
-                motoFinanceiraQuitacao:
-                  trocaFinanceira,
+                  trocaDescricao ||
+                  "Moto recebida na troca",
               },
             ];
           }
@@ -1473,24 +1393,9 @@ export default function VendasPage() {
           componente.valor
         ) || 0;
 
-      if (
-        componente.tipo !==
-          "Moto na troca" &&
-        valor <= 0
-      ) {
+      if (valor <= 0) {
         setErro(
           `Informe o valor de ${componente.tipo}.`
-        );
-        return;
-      }
-
-      if (
-        componente.tipo ===
-          "Moto na troca" &&
-        valor < 0
-      ) {
-        setErro(
-          "O crédito da moto na troca não pode ser negativo."
         );
         return;
       }
@@ -1628,13 +1533,36 @@ export default function VendasPage() {
     }
 
     if (
-      tipoVenda === "avista" &&
+      (
+        tipoVenda === "avista" ||
+        tipoVenda === "cartao"
+      ) &&
       faltaNaMoto > 0.009
     ) {
       setErro(
-        `Na venda à vista, a composição precisa fechar o valor da moto. Falta ${moeda(
+        `${
+          tipoVenda === "cartao"
+            ? "Na venda no cartão de crédito"
+            : "Na venda à vista"
+        }, a composição precisa fechar o valor da moto. Falta ${moeda(
           faltaNaMoto
         )}.`
+      );
+      return;
+    }
+
+    if (
+      tipoVenda === "cartao" &&
+      !componentes.some(
+        (componente) =>
+          componente.tipo ===
+            "Cartão" &&
+          componente.destino ===
+            "moto"
+      )
+    ) {
+      setErro(
+        'Na venda em cartão de crédito, adicione pelo menos um pagamento "Cartão" marcado para a Moto.'
       );
       return;
     }
@@ -1692,11 +1620,14 @@ export default function VendasPage() {
         tipoVenda ===
         "financiamento"
           ? "Financiamento"
-          : componentes.length ===
-              1
-            ? componentes[0]
-                .tipo
-            : "Misto";
+          : tipoVenda ===
+              "cartao"
+            ? "Cartão de crédito"
+            : componentes.length ===
+                1
+              ? componentes[0]
+                  .tipo
+              : "Misto";
 
       /*
        * Na venda financiada, a entrada é o que foi pago
@@ -1940,102 +1871,6 @@ export default function VendasPage() {
         motosTroca
       ) {
         const {
-          data: motoTrocaData,
-          error:
-            motoTrocaDataError,
-        } = await supabase
-          .from("motorcycles")
-          .select(
-            "id, codigo, marca, modelo, possui_financiamento, valor_quitacao, financeira_quitacao, quitacao_lancada_no_caixa"
-          )
-          .eq(
-            "id",
-            troca.motoId
-          )
-          .single();
-
-        if (
-          motoTrocaDataError ||
-          !motoTrocaData
-        ) {
-          throw (
-            motoTrocaDataError ||
-            new Error(
-              "Não foi possível carregar os dados da moto recebida na troca."
-            )
-          );
-        }
-
-        const valorQuitacaoTroca =
-          Number(
-            motoTrocaData.valor_quitacao
-          ) || 0;
-
-        let quitacaoLancada =
-          Boolean(
-            motoTrocaData.quitacao_lancada_no_caixa
-          );
-
-        if (
-          motoTrocaData.possui_financiamento &&
-          valorQuitacaoTroca > 0 &&
-          !quitacaoLancada
-        ) {
-          const identificacaoTroca =
-            motoTrocaData.codigo ||
-            [
-              motoTrocaData.marca,
-              motoTrocaData.modelo,
-            ]
-              .filter(Boolean)
-              .join(" ") ||
-            "Moto na troca";
-
-          const {
-            error:
-              quitacaoError,
-          } = await supabase
-            .from(
-              "cash_transactions"
-            )
-            .insert({
-              data:
-                dataVenda,
-              tipo: "saida",
-              origem:
-                "outro",
-              origem_id:
-                String(
-                  motoTrocaData.id
-                ),
-              valor:
-                valorQuitacaoTroca,
-              descricao:
-                `Quitação de financiamento - ${identificacaoTroca}${
-                  motoTrocaData.financeira_quitacao
-                    ? ` - ${motoTrocaData.financeira_quitacao}`
-                    : ""
-                }`,
-            });
-
-          if (quitacaoError) {
-            /*
-             * Se a quitação já tiver sido gravada e apenas
-             * a marcação da moto tiver falhado antes, o índice
-             * único do banco evita uma segunda saída.
-             */
-            if (
-              quitacaoError.code !==
-              "23505"
-            ) {
-              throw quitacaoError;
-            }
-          }
-
-          quitacaoLancada = true;
-        }
-
-        const {
           error: trocaError,
         } = await supabase
           .from("motorcycles")
@@ -2044,8 +1879,6 @@ export default function VendasPage() {
               vendaCriada.id,
             status:
               "disponivel",
-            quitacao_lancada_no_caixa:
-              quitacaoLancada,
           })
           .eq(
             "id",
@@ -2181,7 +2014,7 @@ export default function VendasPage() {
       }
 
       setMensagem(
-        `Venda registrada com sucesso. Pagamentos, financiamento e moto de troca foram vinculados.${avisoVistoria}`
+        `Venda registrada com sucesso. Forma de pagamento, parcelas e eventuais itens da negociação foram vinculados.${avisoVistoria}`
       );
 
       setDocumentos({
@@ -2503,23 +2336,69 @@ export default function VendasPage() {
                     const valor =
                       e.target.value as
                         | "avista"
-                        | "financiamento";
+                        | "financiamento"
+                        | "cartao";
 
                     setTipoVenda(
                       valor
                     );
 
                     if (
-                      valor ===
-                      "avista"
+                      valor !==
+                      "financiamento"
                     ) {
                       setBanco("");
+                      setParcelasFinanciamento(
+                        ""
+                      );
+                      setValorParcelaManual(
+                        ""
+                      );
+                    }
+
+                    /*
+                     * Ao escolher Cartão de crédito como tipo
+                     * principal, já abre uma linha de cartão
+                     * vinculada à moto. O usuário só informa
+                     * o valor e as parcelas.
+                     */
+                    if (
+                      valor ===
+                        "cartao" &&
+                      !componentes.some(
+                        (componente) =>
+                          componente.tipo ===
+                            "Cartão" &&
+                          componente.destino ===
+                            "moto"
+                      )
+                    ) {
+                      setComponentes(
+                        (atuais) => [
+                          ...atuais,
+                          {
+                            idLocal:
+                              novoIdLocal(),
+                            tipo:
+                              "Cartão",
+                            destino:
+                              "moto",
+                            valor: "",
+                            parcelas:
+                              "1",
+                          },
+                        ]
+                      );
                     }
                   }}
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 >
                   <option value="avista">
                     À vista / pagamento completo
+                  </option>
+
+                  <option value="cartao">
+                    Cartão de crédito
                   </option>
 
                   <option value="financiamento">
@@ -3104,6 +2983,9 @@ export default function VendasPage() {
 
               <p className="mt-1 text-xs text-zinc-500">
                 Você pode combinar Pix, dinheiro, transferência, cartão e moto na troca.
+                {tipoVenda ===
+                  "cartao" &&
+                  " A linha Cartão já é criada para você informar o valor e as parcelas."}
                 {totalCapacetes > 0 &&
                   " Em cada pagamento, escolha se ele está quitando a moto ou os capacetes."}
               </p>
@@ -3253,27 +3135,15 @@ export default function VendasPage() {
 
                         <div>
                           <label className="mb-2 block text-xs text-zinc-500">
-                            {componente.tipo ===
-                            "Moto na troca"
-                              ? "Crédito líquido na entrada"
-                              : "Valor"}
+                            Valor
                           </label>
 
                           <input
                             type="number"
-                            min={
-                              componente.tipo ===
-                              "Moto na troca"
-                                ? "0"
-                                : "0.01"
-                            }
+                            min="0.01"
                             step="0.01"
                             value={
                               componente.valor
-                            }
-                            readOnly={
-                              componente.tipo ===
-                              "Moto na troca"
                             }
                             onChange={(e) =>
                               alterarComponente(
@@ -3284,12 +3154,7 @@ export default function VendasPage() {
                                   .value
                               )
                             }
-                            className={`w-full rounded-lg border px-3 py-2 outline-none ${
-                              componente.tipo ===
-                              "Moto na troca"
-                                ? "cursor-not-allowed border-yellow-900/60 bg-yellow-950/20 text-yellow-300"
-                                : "border-zinc-700 bg-zinc-900 focus:border-yellow-500"
-                            }`}
+                            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none focus:border-yellow-500"
                           />
                         </div>
 
@@ -3486,7 +3351,7 @@ export default function VendasPage() {
               />
 
               <Resumo
-                titulo="Crédito da troca"
+                titulo="Moto na troca"
                 valor={totalTroca}
               />
 
@@ -3526,8 +3391,10 @@ export default function VendasPage() {
               </p>
             )}
 
-            {tipoVenda ===
-              "avista" &&
+            {(tipoVenda ===
+              "avista" ||
+              tipoVenda ===
+                "cartao") &&
               valorTotalVenda >
                 0 &&
               valorFalta > 0.009 && (
@@ -3724,7 +3591,10 @@ export default function VendasPage() {
                   tipoVenda ===
                   "financiamento"
                     ? "Financiamento"
-                    : "À vista"
+                    : tipoVenda ===
+                        "cartao"
+                      ? "Cartão de crédito"
+                      : "À vista"
                 }
               />
 
