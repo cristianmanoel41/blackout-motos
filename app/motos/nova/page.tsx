@@ -44,6 +44,7 @@ type FormMoto = {
   possui_manual: boolean;
   possui_chave_reserva: boolean;
   unico_dono: boolean;
+  lavagem_padrao: boolean;
 
   valor_compra: string;
   preco_anunciado: string;
@@ -101,6 +102,7 @@ const formInicial: FormMoto = {
   possui_manual: false,
   possui_chave_reserva: false,
   unico_dono: false,
+  lavagem_padrao: true,
 
   valor_compra: "",
   preco_anunciado: "",
@@ -806,6 +808,94 @@ export default function NovaMotoPage() {
         }
       }
 
+      let lavagemRegistrada = false;
+      let lavagemLancadaNoCaixa = false;
+
+      if (form.lavagem_padrao) {
+        const {
+          data: gastoLavagem,
+          error: lavagemError,
+        } = await supabase
+          .from("motorcycle_expenses")
+          .insert({
+            motorcycle_id:
+              motoCriada.id,
+            data:
+              form.data_entrada,
+            categoria:
+              "Lavagem",
+            descricao:
+              "Lavagem padrão da moto",
+            forma_pagamento:
+              "Automático na compra",
+            valor: 35,
+          })
+          .select("id")
+          .single();
+
+        if (
+          lavagemError ||
+          !gastoLavagem
+        ) {
+          console.error(
+            "Erro ao lançar lavagem padrão:",
+            lavagemError
+          );
+        } else {
+          lavagemRegistrada = true;
+
+          /*
+           * A lavagem é um custo real pago pela loja.
+           * Para entradas atuais, também sai do caixa
+           * automaticamente na mesma data da entrada.
+           *
+           * Estoque inicial não gera nova saída no caixa,
+           * pois representa motos que já estavam na loja.
+           */
+          if (!ehEstoqueInicial) {
+            const {
+              error: caixaLavagemError,
+            } = await supabase
+              .from("cash_transactions")
+              .insert({
+                data:
+                  form.data_entrada,
+                tipo:
+                  "saida",
+                origem:
+                  "outro",
+                origem_id:
+                  gastoLavagem.id,
+                valor: 35,
+                descricao:
+                  `Lavagem da moto - ${
+                    motoCriada.codigo ||
+                    `${form.marca} ${form.modelo}`
+                  }`,
+              });
+
+            if (caixaLavagemError) {
+              console.error(
+                "Erro ao lançar lavagem no caixa:",
+                caixaLavagemError
+              );
+
+              await supabase
+                .from("motorcycle_expenses")
+                .delete()
+                .eq(
+                  "id",
+                  gastoLavagem.id
+                );
+
+              lavagemRegistrada = false;
+            } else {
+              lavagemLancadaNoCaixa = true;
+            }
+          }
+        }
+      }
+
       setMotoCriadaId(
         String(motoCriada.id)
       );
@@ -864,16 +954,27 @@ export default function NovaMotoPage() {
         return;
       }
 
+      const mensagemLavagem =
+        form.lavagem_padrao
+          ? lavagemRegistrada
+            ? ehEstoqueInicial
+              ? " Lavagem padrão de R$ 35,00 adicionada ao custo da moto, sem gerar nova saída no caixa por ser estoque inicial."
+              : lavagemLancadaNoCaixa
+                ? " Lavagem padrão de R$ 35,00 lançada automaticamente no custo da moto e como saída do caixa na data da compra."
+                : " Lavagem padrão de R$ 35,00 adicionada ao custo da moto."
+            : " Atenção: a lavagem padrão de R$ 35,00 não pôde ser lançada automaticamente."
+          : "";
+
       setMensagem(
         ehEstoqueInicial
-          ? `Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
+          ? `Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}`
           : form.possui_financiamento
             ? `Compra cadastrada com sucesso. A quitação de ${moeda(
                 valorQuitacaoNumero
               )} e o repasse de ${moeda(
                 valorLiquidoCliente
-              )} foram registrados separadamente no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
-            : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}`
+              )} foram registrados separadamente no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}`
+            : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}`
       );
     } catch (error: any) {
       console.error(error);
@@ -1300,6 +1401,55 @@ export default function NovaMotoPage() {
               </label>
             </div>
           </section>
+          {/* CUSTO PADRÃO */}
+
+          <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
+            <h2 className="mb-5 border-b border-grafite-claro pb-3 text-lg font-semibold text-dourado">
+              Custo Padrão
+            </h2>
+
+            <label
+              className={`flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition ${
+                form.lavagem_padrao
+                  ? "border-dourado bg-dourado/10"
+                  : "border-grafite-claro bg-preto/30"
+              }`}
+            >
+              <div>
+                <p className="font-semibold text-white">
+                  Lavagem padrão
+                </p>
+                <p className="mt-1 text-sm text-texto-suave">
+                  Ao salvar a compra, lança automaticamente R$ 35,00 no custo da moto e no caixa na mesma data.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="whitespace-nowrap font-bold text-dourado">
+                  R$ 35,00
+                </span>
+
+                <input
+                  type="checkbox"
+                  checked={
+                    form.lavagem_padrao
+                  }
+                  onChange={(event) =>
+                    atualizarCampo(
+                      "lavagem_padrao",
+                      event.target.checked
+                    )
+                  }
+                  className="h-5 w-5 accent-yellow-500"
+                />
+              </div>
+            </label>
+
+            <p className="mt-3 text-xs leading-5 text-texto-suave">
+              Esta opção já vem marcada. Desmarque somente quando a moto não tiver o custo da lavagem.
+            </p>
+          </section>
+
           {/* VALORES */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">

@@ -1,12 +1,14 @@
-BLACKOUT MOTOS - BUSCA AUTOMÁTICA DE CEP
+BLACKOUT MOTOS — Resumo mensal dinâmico dos gastos
 
-Arquivo alterado:
-app/clientes/novo/page.tsx
+Alterado em app/gastos/page.tsx:
 
-Funcionamento:
-- Ao completar 8 dígitos do CEP, consulta automaticamente o ViaCEP.
-- Preenche Rua, Bairro, Cidade e Estado.
-- Número e Complemento continuam manuais.
-- O CEP é formatado como 00000-000 enquanto você digita.
-- Se o CEP não for encontrado ou a consulta falhar, o endereço pode ser preenchido manualmente.
-- Não precisa alterar o banco de dados.
+- adicionada área "Gasto mensal";
+- o valor muda conforme o mês selecionado;
+- mostra o nome do mês selecionado;
+- mostra o total de gastos daquele mês;
+- mostra quantas motos tiveram gastos;
+- mostra quantos lançamentos existem no período;
+- mantém cada moto recolhida, abrindo os detalhes somente ao clicar;
+- mantém a separação por mês.
+
+Não exige SQL novo.
