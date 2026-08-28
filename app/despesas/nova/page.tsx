@@ -49,6 +49,7 @@ const categoriasMoto = [
   "Vistoria",
   "Mecânica",
   "Peças",
+  "Mão de obra",
   "Pneu",
   "Óleo",
   "Revisão",
@@ -134,6 +135,33 @@ export default function NovaDespesaPage() {
   const [salvando, setSalvando] =
     useState(false);
 
+  const [
+    dataInicioCaixa,
+    setDataInicioCaixa,
+  ] = useState("");
+
+  const [
+    modoGastoMoto,
+    setModoGastoMoto,
+  ] = useState<
+    "simples" | "mecanica"
+  >("simples");
+
+  const [
+    valorPecas,
+    setValorPecas,
+  ] = useState("");
+
+  const [
+    valorMaoObra,
+    setValorMaoObra,
+  ] = useState("");
+
+  const [
+    mecanicoOficina,
+    setMecanicoOficina,
+  ] = useState("");
+
   const [form, setForm] =
     useState({
       data: hoje(),
@@ -146,6 +174,36 @@ export default function NovaDespesaPage() {
       data_pagamento: hoje(),
       observacoes: "",
     });
+
+  useEffect(() => {
+    async function carregarControleCaixa() {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from(
+          "cash_control_settings"
+        )
+        .select("data_inicio")
+        .eq("id", "principal")
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Não foi possível carregar a data de início do caixa:",
+          error
+        );
+        return;
+      }
+
+      setDataInicioCaixa(
+        data?.data_inicio || ""
+      );
+    }
+
+    carregarControleCaixa();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     async function carregarMotos() {
@@ -240,6 +298,12 @@ export default function NovaDespesaPage() {
     setErro("");
     setMotoId("");
     setBuscaMoto("");
+    setModoGastoMoto(
+      "simples"
+    );
+    setValorPecas("");
+    setValorMaoObra("");
+    setMecanicoOficina("");
 
     setForm(
       (anterior) => ({
@@ -276,6 +340,23 @@ export default function NovaDespesaPage() {
           : value,
     }));
   }
+
+  const totalMecanica =
+    (Number(valorPecas) || 0) +
+    (Number(valorMaoObra) || 0);
+
+  const dataEfetivaPagamento =
+    form.data_pagamento ||
+    form.data;
+
+  const pagamentoAntesDoControle =
+    Boolean(
+      form.pago &&
+        dataInicioCaixa &&
+        dataEfetivaPagamento &&
+        dataEfetivaPagamento <
+          dataInicioCaixa
+    );
 
   async function salvarDespesaLoja() {
     const {
@@ -316,7 +397,10 @@ export default function NovaDespesaPage() {
       );
     }
 
-    if (form.pago) {
+    if (
+      form.pago &&
+      !pagamentoAntesDoControle
+    ) {
       const {
         error: caixaError,
       } = await supabase
@@ -366,6 +450,179 @@ export default function NovaDespesaPage() {
       );
     }
 
+    if (
+      modoGastoMoto ===
+      "mecanica"
+    ) {
+      const pecas =
+        Number(valorPecas) || 0;
+
+      const maoObra =
+        Number(valorMaoObra) || 0;
+
+      if (
+        pecas <= 0 &&
+        maoObra <= 0
+      ) {
+        throw new Error(
+          "Informe o valor das peças ou da mão de obra."
+        );
+      }
+
+      const descricaoServico =
+        form.descricao.trim() ||
+        "Serviço de mecânica";
+
+      const observacao =
+        form.observacoes.trim();
+
+      const mecanico =
+        mecanicoOficina.trim();
+
+      const lancamentos: {
+        motorcycle_id: string;
+        data: string;
+        categoria: string;
+        descricao: string;
+        forma_pagamento: string;
+        valor: number;
+      }[] = [];
+
+      if (pecas > 0) {
+        lancamentos.push({
+          motorcycle_id:
+            motoId,
+          data: form.data,
+          categoria: "Peças",
+          descricao: [
+            descricaoServico,
+            "Peças",
+            observacao
+              ? `Obs.: ${observacao}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" | "),
+          forma_pagamento:
+            form.forma_pagamento,
+          valor: pecas,
+        });
+      }
+
+      if (maoObra > 0) {
+        lancamentos.push({
+          motorcycle_id:
+            motoId,
+          data: form.data,
+          categoria:
+            "Mão de obra",
+          descricao: [
+            descricaoServico,
+            mecanico
+              ? `Mecânico/Oficina: ${mecanico}`
+              : "Mão de obra",
+            observacao
+              ? `Obs.: ${observacao}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" | "),
+          forma_pagamento:
+            form.forma_pagamento,
+          valor: maoObra,
+        });
+      }
+
+      const {
+        data: gastos,
+        error,
+      } = await supabase
+        .from(
+          "motorcycle_expenses"
+        )
+        .insert(lancamentos)
+        .select(
+          "id, categoria, valor"
+        );
+
+      if (
+        error ||
+        !gastos ||
+        gastos.length === 0
+      ) {
+        throw (
+          error ||
+          new Error(
+            "Não foi possível registrar o serviço de mecânica."
+          )
+        );
+      }
+
+      if (
+        form.pago &&
+        !pagamentoAntesDoControle
+      ) {
+        const saidasCaixa =
+          gastos.map(
+            (gasto: any) => ({
+              data:
+                form.data_pagamento ||
+                form.data,
+              tipo: "saida",
+              origem: "outro",
+              origem_id:
+                gasto.id,
+              valor: Number(
+                gasto.valor
+              ),
+              descricao:
+                `Gasto da moto - ${
+                  descricaoMoto(
+                    motoSelecionada
+                  ) || "Moto"
+                } - ${
+                  gasto.categoria
+                }${
+                  gasto.categoria ===
+                    "Mão de obra" &&
+                  mecanico
+                    ? ` - ${mecanico}`
+                    : ""
+                }`,
+            })
+          );
+
+        const {
+          error: caixaError,
+        } = await supabase
+          .from(
+            "cash_transactions"
+          )
+          .insert(
+            saidasCaixa
+          );
+
+        if (caixaError) {
+          const ids =
+            gastos.map(
+              (gasto: any) =>
+                gasto.id
+            );
+
+          await supabase
+            .from(
+              "motorcycle_expenses"
+            )
+            .delete()
+            .in("id", ids);
+
+          throw caixaError;
+        }
+      }
+
+      return;
+    }
+
     const descricaoBase =
       form.descricao.trim() ||
       form.categoria;
@@ -375,11 +632,6 @@ export default function NovaDespesaPage() {
         ? `${descricaoBase} | Obs.: ${form.observacoes.trim()}`
         : descricaoBase;
 
-    /*
-     * A tabela motorcycle_expenses já é usada
-     * pelo sistema para compor o custo real
-     * da moto e o lucro da venda.
-     */
     const {
       data: gasto,
       error,
@@ -413,15 +665,10 @@ export default function NovaDespesaPage() {
       );
     }
 
-    /*
-     * Se já foi pago, também registra
-     * a saída de dinheiro no caixa.
-     *
-     * "outro" já é uma origem utilizada
-     * pelo sistema para saídas operacionais
-     * que não são venda/despesa da loja.
-     */
-    if (form.pago) {
+    if (
+      form.pago &&
+      !pagamentoAntesDoControle
+    ) {
       const {
         error: caixaError,
       } = await supabase
@@ -482,11 +729,32 @@ export default function NovaDespesaPage() {
     }
 
     if (
-      !form.valor ||
-      Number(form.valor) <= 0
+      !(
+        tipoLancamento ===
+          "moto" &&
+        modoGastoMoto ===
+          "mecanica"
+      ) &&
+      (
+        !form.valor ||
+        Number(form.valor) <= 0
+      )
     ) {
       setErro(
         "Informe um valor válido."
+      );
+      return;
+    }
+
+    if (
+      tipoLancamento ===
+        "moto" &&
+      modoGastoMoto ===
+        "mecanica" &&
+      totalMecanica <= 0
+    ) {
+      setErro(
+        "Informe o valor das peças ou da mão de obra."
       );
       return;
     }
@@ -583,6 +851,32 @@ export default function NovaDespesaPage() {
           Registre uma despesa da loja ou um gasto vinculado a uma moto.
         </p>
       </div>
+
+      {dataInicioCaixa && (
+        <div className="mb-5 rounded-xl border border-dourado/30 bg-dourado/5 p-4 text-sm text-texto">
+          <p className="font-semibold text-dourado">
+            Controle financeiro iniciado em{" "}
+            {new Date(
+              `${dataInicioCaixa}T12:00:00`
+            ).toLocaleDateString(
+              "pt-BR"
+            )}
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-texto-suave">
+            Gastos pagos antes dessa data continuam entrando no custo da moto ou no histórico da loja, mas não criam uma nova saída no caixa atual.
+          </p>
+        </div>
+      )}
+
+      {pagamentoAntesDoControle && (
+        <div className="mb-5 rounded-xl border border-blue-800 bg-blue-950/20 p-4 text-sm text-blue-200">
+          <strong>
+            Gasto histórico:
+          </strong>{" "}
+          este lançamento será salvo normalmente, porém não reduzirá o saldo atual do caixa.
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
@@ -729,6 +1023,72 @@ export default function NovaDespesaPage() {
           </div>
         )}
 
+        {tipoLancamento ===
+          "moto" && (
+          <div className="rounded-xl border border-grafite-claro bg-preto/20 p-4">
+            <p className="mb-3 font-semibold text-dourado">
+              Como deseja lançar o gasto?
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setModoGastoMoto(
+                    "simples"
+                  );
+                  setErro("");
+                }}
+                className={`rounded-xl border p-4 text-left transition ${
+                  modoGastoMoto ===
+                  "simples"
+                    ? "border-dourado bg-dourado/10"
+                    : "border-grafite-claro bg-grafite"
+                }`}
+              >
+                <p className="font-semibold text-white">
+                  Gasto simples
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-texto-suave">
+                  Pneu, óleo, documentação, lavagem, peça avulsa e outros gastos com um único valor.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setModoGastoMoto(
+                    "mecanica"
+                  );
+                  setForm(
+                    (anterior) => ({
+                      ...anterior,
+                      categoria:
+                        "Mecânica",
+                    })
+                  );
+                  setErro("");
+                }}
+                className={`rounded-xl border p-4 text-left transition ${
+                  modoGastoMoto ===
+                  "mecanica"
+                    ? "border-dourado bg-dourado/10"
+                    : "border-grafite-claro bg-grafite"
+                }`}
+              >
+                <p className="font-semibold text-white">
+                  Peças + mão de obra
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-texto-suave">
+                  Separa automaticamente o valor das peças e o pagamento do mecânico sem duplicar a despesa.
+                </p>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label
@@ -752,43 +1112,64 @@ export default function NovaDespesaPage() {
             />
           </div>
 
-          <div>
-            <label
-              className={
-                labelClass
-              }
-            >
-              Categoria
-            </label>
+          {!(
+            tipoLancamento ===
+              "moto" &&
+            modoGastoMoto ===
+              "mecanica"
+          ) ? (
+            <div>
+              <label
+                className={
+                  labelClass
+                }
+              >
+                Categoria
+              </label>
 
-            <select
-              name="categoria"
-              value={
-                form.categoria
-              }
-              onChange={
-                handleChange
-              }
-              className={
-                inputClass
-              }
-            >
-              {categorias.map(
-                (categoria) => (
-                  <option
-                    key={
-                      categoria
-                    }
-                    value={
-                      categoria
-                    }
-                  >
-                    {categoria}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
+              <select
+                name="categoria"
+                value={
+                  form.categoria
+                }
+                onChange={
+                  handleChange
+                }
+                className={
+                  inputClass
+                }
+              >
+                {categorias.map(
+                  (categoria) => (
+                    <option
+                      key={
+                        categoria
+                      }
+                      value={
+                        categoria
+                      }
+                    >
+                      {categoria}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label
+                className={
+                  labelClass
+                }
+              >
+                Tipo
+              </label>
+
+              <div className="flex min-h-[50px] items-center rounded-lg border border-dourado/30 bg-dourado/5 px-4 py-3 font-semibold text-dourado">
+                Serviço de mecânica
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
@@ -813,14 +1194,185 @@ export default function NovaDespesaPage() {
             }
             placeholder={
               tipoLancamento ===
-              "moto"
+                "moto" &&
+              modoGastoMoto ===
+                "mecanica"
+                ? "Ex.: Revisão, troca de relação, serviço no motor..."
+                : tipoLancamento ===
+                  "moto"
                 ? "Ex.: Troca do pneu traseiro"
                 : "Ex.: Conta de energia de agosto"
             }
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {tipoLancamento ===
+          "moto" &&
+        modoGastoMoto ===
+          "mecanica" ? (
+          <div className="rounded-xl border border-dourado/30 bg-dourado/5 p-4">
+            <div className="mb-4">
+              <p className="font-semibold text-dourado">
+                Separação do serviço
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-texto-suave">
+                Preencha separado. O sistema salvará as peças e a mão de obra como dois custos da mesma moto.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  className={
+                    labelClass
+                  }
+                >
+                  Valor das peças (R$)
+                </label>
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={
+                    valorPecas
+                  }
+                  onChange={(e) =>
+                    setValorPecas(
+                      e.target.value
+                    )
+                  }
+                  className={
+                    inputClass
+                  }
+                  placeholder="0,00"
+                />
+              </div>
+
+              <div>
+                <label
+                  className={
+                    labelClass
+                  }
+                >
+                  Mão de obra (R$)
+                </label>
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={
+                    valorMaoObra
+                  }
+                  onChange={(e) =>
+                    setValorMaoObra(
+                      e.target.value
+                    )
+                  }
+                  className={
+                    inputClass
+                  }
+                  placeholder="0,00"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label
+                className={
+                  labelClass
+                }
+              >
+                Mecânico / Oficina
+              </label>
+
+              <input
+                type="text"
+                value={
+                  mecanicoOficina
+                }
+                onChange={(e) =>
+                  setMecanicoOficina(
+                    e.target.value
+                  )
+                }
+                className={
+                  inputClass
+                }
+                placeholder="Ex.: João Mecânico, Oficina Silva..."
+              />
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-grafite-claro bg-preto/40 p-3">
+                <p className="text-xs text-texto-suave">
+                  Peças
+                </p>
+                <p className="mt-1 font-bold text-white">
+                  {new Intl.NumberFormat(
+                    "pt-BR",
+                    {
+                      style:
+                        "currency",
+                      currency:
+                        "BRL",
+                    }
+                  ).format(
+                    Number(
+                      valorPecas
+                    ) || 0
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-grafite-claro bg-preto/40 p-3">
+                <p className="text-xs text-texto-suave">
+                  Mão de obra
+                </p>
+                <p className="mt-1 font-bold text-white">
+                  {new Intl.NumberFormat(
+                    "pt-BR",
+                    {
+                      style:
+                        "currency",
+                      currency:
+                        "BRL",
+                    }
+                  ).format(
+                    Number(
+                      valorMaoObra
+                    ) || 0
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-dourado/40 bg-preto/40 p-3">
+                <p className="text-xs text-texto-suave">
+                  Total do serviço
+                </p>
+                <p className="mt-1 font-bold text-dourado">
+                  {new Intl.NumberFormat(
+                    "pt-BR",
+                    {
+                      style:
+                        "currency",
+                      currency:
+                        "BRL",
+                    }
+                  ).format(
+                    totalMecanica
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-green-900 bg-green-950/20 p-3 text-xs leading-5 text-green-300">
+              A mão de obra ficará registrada como custo desta moto. Não lance o mesmo valor novamente em “Despesa da loja”.
+            </div>
+          </div>
+        ) : (
           <div>
             <label
               className={
@@ -846,45 +1398,45 @@ export default function NovaDespesaPage() {
               }
             />
           </div>
+        )}
 
-          <div>
-            <label
-              className={
-                labelClass
-              }
-            >
-              Forma de pagamento
-            </label>
+        <div>
+          <label
+            className={
+              labelClass
+            }
+          >
+            Forma de pagamento
+          </label>
 
-            <select
-              name="forma_pagamento"
-              value={
-                form.forma_pagamento
-              }
-              onChange={
-                handleChange
-              }
-              className={
-                inputClass
-              }
-            >
-              <option>
-                Dinheiro
-              </option>
-              <option>
-                Pix
-              </option>
-              <option>
-                Cartão
-              </option>
-              <option>
-                Transferência
-              </option>
-              <option>
-                Boleto
-              </option>
-            </select>
-          </div>
+          <select
+            name="forma_pagamento"
+            value={
+              form.forma_pagamento
+            }
+            onChange={
+              handleChange
+            }
+            className={
+              inputClass
+            }
+          >
+            <option>
+              Dinheiro
+            </option>
+            <option>
+              Pix
+            </option>
+            <option>
+              Cartão
+            </option>
+            <option>
+              Transferência
+            </option>
+            <option>
+              Boleto
+            </option>
+          </select>
         </div>
 
         <div className="flex items-center gap-2">

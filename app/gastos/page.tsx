@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
+import ExcluirGastoButton from "./ExcluirGastoButton";
 
 const NOMES_MESES = [
   "Janeiro",
@@ -538,12 +539,23 @@ export default async function GastosMotosPage({
                                     </td>
 
                                     <td className="px-4 py-3 text-right">
-                                      <Link
-                                        href={`/gastos/${gasto.id}`}
-                                        className="font-semibold text-dourado hover:underline"
-                                      >
-                                        Editar
-                                      </Link>
+                                      <div className="flex items-center justify-end gap-3">
+                                        <Link
+                                          href={`/gastos/${gasto.id}`}
+                                          className="font-semibold text-dourado hover:underline"
+                                        >
+                                          Editar
+                                        </Link>
+
+                                        <ExcluirGastoButton
+                                          gastoId={String(gasto.id)}
+                                          descricao={
+                                            gasto.descricao ||
+                                            gasto.categoria ||
+                                            "este lançamento"
+                                          }
+                                        />
+                                      </div>
                                     </td>
                                   </tr>
                                 ))}

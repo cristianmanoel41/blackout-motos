@@ -13,17 +13,7 @@ import {
 
 import Link from "next/link";
 
-import {
-  FileSignature,
-  FileText,
-} from "lucide-react";
-
 import { createClient } from "@/lib/supabase/client";
-import { formatarMoeda } from "@/lib/formatadores/moeda";
-import { opcoesDeBanco } from "@/lib/dados/financeiras";
-import { BotaoWhatsapp } from "@/components/CardWhatsapp";
-import Vistorias from "@/components/Vistorias";
-import RegistradoPor from "@/components/RegistradoPor";
 
 const supabase = createClient();
 
@@ -36,7 +26,13 @@ const formasPagamento = [
 ];
 
 function moeda(valor: number) {
-  return formatarMoeda(valor);
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL",
+    }
+  ).format(valor || 0);
 }
 
 export default function EditarVendaPage() {
@@ -87,16 +83,6 @@ export default function EditarVendaPage() {
     useState("");
 
   const [
-    parcelasFinanciamento,
-    setParcelasFinanciamento,
-  ] = useState("");
-
-  const [
-    valorParcelaManual,
-    setValorParcelaManual,
-  ] = useState("");
-
-  const [
     transferenciaCliente,
     setTransferenciaCliente,
   ] = useState("");
@@ -111,9 +97,6 @@ export default function EditarVendaPage() {
     setObservacoes,
   ] = useState("");
 
-  const [autoria, setAutoria] =
-    useState<any>(null);
-
   const [motoNome, setMotoNome] =
     useState("");
 
@@ -121,52 +104,9 @@ export default function EditarVendaPage() {
     useState("");
 
   const [
-    motoTrocaId,
-    setMotoTrocaId,
-  ] = useState("");
-
-  const [
-    motoTrocaNome,
-    setMotoTrocaNome,
-  ] = useState("");
-
-  const [
-    faltandoProcuracao,
-    setFaltandoProcuracao,
-  ] = useState<string[]>([]);
-
-  const [
-    capacetes,
-    setCapacetes,
-  ] = useState<
-    {
-      id: string;
-      produto: string | null;
-      marca: string | null;
-      modelo: string | null;
-      cor: string | null;
-      tamanho: string | null;
-      quantidade: number;
-      valor_unitario: number;
-      custo_unitario: number;
-    }[]
-  >([]);
-
-  const totalCapacetes =
-    useMemo(() => {
-      return capacetes.reduce(
-        (total, item) =>
-          total +
-          Number(
-            item.quantidade || 0
-          ) *
-            Number(
-              item.valor_unitario ||
-                0
-            ),
-        0
-      );
-    }, [capacetes]);
+    capacetesVinculados,
+    setCapacetesVinculados,
+  ] = useState<any[]>([]);
 
   const ehFinanciamento =
     formaPagamento ===
@@ -194,15 +134,58 @@ export default function EditarVendaPage() {
       ehFinanciamento,
     ]);
 
-  const parcelasNumero =
-    Number(
-      parcelasFinanciamento
-    ) || 0;
 
-  const valorParcelaFinal =
-    Number(
-      valorParcelaManual
-    ) || 0;
+  const totalCapacetesVinculados =
+    useMemo(() => {
+      return capacetesVinculados.reduce(
+        (total, item) =>
+          total +
+          Number(
+            item.valor_recebido || 0
+          ),
+        0
+      );
+    }, [capacetesVinculados]);
+
+  const totalCapacetesJaIncluidos =
+    useMemo(() => {
+      return capacetesVinculados
+        .filter(
+          (item) =>
+            item.ja_incluido_na_venda
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            Number(
+              item.valor_recebido ||
+                0
+            ),
+          0
+        );
+    }, [capacetesVinculados]);
+
+  const totalCapacetesRecebidosDepois =
+    useMemo(() => {
+      return capacetesVinculados
+        .filter(
+          (item) =>
+            !item.ja_incluido_na_venda
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            Number(
+              item.valor_recebido ||
+                0
+            ),
+          0
+        );
+    }, [capacetesVinculados]);
+
+  const totalFinanceiroOperacao =
+    (Number(valorVenda) || 0) +
+    totalCapacetesRecebidosDepois;
 
   useEffect(() => {
     carregarVenda();
@@ -290,22 +273,6 @@ export default function EditarVendaPage() {
       venda.banco || ""
     );
 
-    setParcelasFinanciamento(
-      venda.parcelas_financiamento
-        ? String(
-            venda.parcelas_financiamento
-          )
-        : ""
-    );
-
-    setValorParcelaManual(
-      venda.valor_parcela_financiamento
-        ? String(
-            venda.valor_parcela_financiamento
-          )
-        : ""
-    );
-
     setTransferenciaCliente(
       String(
         venda.transferencia_cliente ??
@@ -322,34 +289,6 @@ export default function EditarVendaPage() {
 
     setObservacoes(
       venda.observacoes || ""
-    );
-
-    setAutoria(venda);
-
-    const {
-      data: capacetesVenda,
-    } = await supabase
-      .from(
-        "helmet_sale_items"
-      )
-      .select(
-        `
-        id,
-        produto,
-        marca,
-        modelo,
-        cor,
-        tamanho,
-        quantidade,
-        valor_unitario,
-        custo_unitario
-      `
-      )
-      .eq("sale_id", id);
-
-    setCapacetes(
-      (capacetesVenda as any) ||
-        []
     );
 
     const idMoto =
@@ -416,120 +355,50 @@ export default function EditarVendaPage() {
       );
     }
 
-    // 3. Moto recebida na troca (se houver)
-    const {
-      data: componentes,
-    } = await supabase
-      .from(
-        "sale_payment_components"
-      )
-      .select(
-        "motorcycle_id, tipo"
-      )
-      .eq("sale_id", id)
-      .eq(
-        "tipo",
-        "Moto na troca"
-      );
+    try {
+      const respostaCapacetes =
+        await fetch(
+          `/api/vendas/${encodeURIComponent(
+            id
+          )}/capacetes`,
+          {
+            cache: "no-store",
+          }
+        );
 
-    const idTroca =
-      componentes?.find(
-        (componente) =>
-          componente.motorcycle_id
-      )?.motorcycle_id;
+      if (respostaCapacetes.ok) {
+        const dadosCapacetes =
+          await respostaCapacetes.json();
 
-    if (idTroca) {
-      setMotoTrocaId(
-        String(idTroca)
-      );
-
-      const { data: motoTroca } =
-        await supabase
-          .from("motorcycles")
-          .select("*")
-          .eq("id", idTroca)
-          .single();
-
-      setMotoTrocaNome(
-        motoTroca
-          ? [
-              motoTroca.codigo,
-              motoTroca.marca,
-              motoTroca.modelo,
-              motoTroca.ano_modelo,
-              motoTroca.placa,
-            ]
-              .filter(Boolean)
-              .join(" · ")
-          : ""
-      );
-
-      // mesmos campos exigidos pela
-      // rota da procuração
-      const obrigatorios: [
-        string,
-        unknown,
-      ][] = [
-        [
-          "Nome de quem entregou a moto",
-          motoTroca?.fornecedor_nome,
-        ],
-        [
-          "CPF",
-          motoTroca?.fornecedor_cpf,
-        ],
-        [
-          "Rua",
-          motoTroca?.fornecedor_rua,
-        ],
-        [
-          "Número",
-          motoTroca?.fornecedor_numero,
-        ],
-        [
-          "Bairro",
-          motoTroca?.fornecedor_bairro,
-        ],
-        [
-          "Cidade",
-          motoTroca?.fornecedor_cidade,
-        ],
-        [
-          "Estado",
-          motoTroca?.fornecedor_estado,
-        ],
-        [
-          "CEP",
-          motoTroca?.fornecedor_cep,
-        ],
-        [
-          "Placa",
-          motoTroca?.placa,
-        ],
-        [
-          "Renavam",
-          motoTroca?.renavam,
-        ],
-        [
-          "Chassi",
-          motoTroca?.chassi,
-        ],
-      ];
-
-      setFaltandoProcuracao(
-        obrigatorios
-          .filter(
-            ([, valor]) =>
-              !String(
-                valor ?? ""
-              ).trim()
+        setCapacetesVinculados(
+          Array.isArray(
+            dadosCapacetes?.lancamentos
           )
-          .map(([nome]) => nome)
+            ? dadosCapacetes.lancamentos
+            : []
+        );
+      } else {
+        const dadosErro =
+          await respostaCapacetes
+            .json()
+            .catch(() => null);
+
+        console.error(
+          "Não foi possível carregar os capacetes vinculados:",
+          dadosErro
+        );
+
+        setCapacetesVinculados(
+          []
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao carregar capacetes vinculados:",
+        error
       );
-    } else {
-      setMotoTrocaId("");
-      setMotoTrocaNome("");
-      setFaltandoProcuracao([]);
+
+      setCapacetesVinculados([]);
     }
 
     setCarregando(false);
@@ -645,14 +514,8 @@ export default function EditarVendaPage() {
           forma_pagamento:
             formaPagamento,
 
-          /*
-           * O campo editado é o total da venda.
-           * O valor da moto é o total menos os
-           * capacetes que saíram nesta venda.
-           */
           valor_venda:
-            valorVendaNumero -
-            totalCapacetes,
+            valorVendaNumero,
 
           valor_total_venda:
             valorVendaNumero,
@@ -669,18 +532,6 @@ export default function EditarVendaPage() {
           banco:
             ehFinanciamento
               ? banco.trim()
-              : null,
-
-          parcelas_financiamento:
-            ehFinanciamento &&
-            parcelasNumero > 0
-              ? parcelasNumero
-              : null,
-
-          valor_parcela_financiamento:
-            ehFinanciamento &&
-            valorParcelaFinal > 0
-              ? valorParcelaFinal
               : null,
 
           transferencia_cliente:
@@ -751,10 +602,6 @@ export default function EditarVendaPage() {
             <p className="mt-2 text-sm text-zinc-400">
               Corrija os dados da venda registrada.
             </p>
-
-            <div className="mt-2">
-              <RegistradoPor registro={autoria} />
-            </div>
           </div>
 
           <Link
@@ -947,15 +794,6 @@ export default function EditarVendaPage() {
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
-
-                {telefone.trim() && (
-                  <div className="mt-2">
-                    <BotaoWhatsapp
-                      telefone={telefone}
-                      nome={cliente}
-                    />
-                  </div>
-                )}
               </div>
 
             </div>
@@ -1036,7 +874,8 @@ export default function EditarVendaPage() {
                   Banco / Financeira *
                 </label>
 
-                <select
+                <input
+                  type="text"
                   value={banco}
                   onChange={(e) =>
                     setBanco(
@@ -1044,101 +883,7 @@ export default function EditarVendaPage() {
                     )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                >
-                  <option value="">
-                    Selecione
-                  </option>
-
-                  {opcoesDeBanco(
-                    banco
-                  ).map((nome) => (
-                    <option
-                      key={nome}
-                      value={nome}
-                    >
-                      {nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {ehFinanciamento && (
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-300">
-                    Parcelas do financiamento
-                  </label>
-
-                  <select
-                    value={
-                      parcelasFinanciamento
-                    }
-                    onChange={(e) =>
-                      setParcelasFinanciamento(
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                  >
-                    <option value="">
-                      Não informado
-                    </option>
-
-                    <option value="12">
-                      12x
-                    </option>
-
-                    <option value="24">
-                      24x
-                    </option>
-
-                    <option value="36">
-                      36x
-                    </option>
-
-                    <option value="48">
-                      48x
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-300">
-                    Valor da parcela
-                  </label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={
-                      valorParcelaManual
-                    }
-                    onChange={(e) =>
-                      setValorParcelaManual(
-                        e.target.value
-                      )
-                    }
-                    placeholder="0,00"
-                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                  />
-
-                  <p className="mt-2 text-xs text-zinc-500">
-                    Só para controle interno.
-                  </p>
-                </div>
-
-                {parcelasNumero >
-                  0 && (
-                  <p className="text-sm text-zinc-300 md:col-span-2">
-                    No contrato:{" "}
-                    <strong className="text-yellow-500">
-                      financiamento em{" "}
-                      {parcelasNumero}x
-                    </strong>
-                  </p>
-                )}
+                />
               </div>
             )}
 
@@ -1153,6 +898,161 @@ export default function EditarVendaPage() {
                   R$ 0,00.
                 </div>
               )}
+          </section>
+
+          {/* CAPACETES VINCULADOS À VENDA */}
+
+          <section>
+            <div className="mb-4 flex flex-col gap-3 border-b border-zinc-800 pb-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-yellow-500">
+                  Capacetes vinculados à venda
+                </h2>
+
+                <p className="mt-1 text-xs text-zinc-500">
+                  Aqui aparece separado o que é valor da moto e o que é valor de capacete.
+                </p>
+              </div>
+
+              <Link
+                href={`/vendas/${id}/capacete`}
+                className="inline-flex items-center justify-center rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-500 transition hover:bg-yellow-500 hover:text-black"
+              >
+                Adicionar capacete
+              </Link>
+            </div>
+
+            {capacetesVinculados.length === 0 ? (
+              <div className="rounded-xl border border-zinc-800 bg-black/40 p-4 text-sm text-zinc-400">
+                Nenhum capacete foi vinculado a esta venda.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {capacetesVinculados.map(
+                  (item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-zinc-800 bg-black/40 p-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="font-semibold text-white">
+                            Capacete / acessório
+                          </p>
+
+                          <p className="mt-1 text-sm text-zinc-400">
+                            {item.observacoes ||
+                              "Capacete antigo sem cadastro de estoque"}
+                          </p>
+
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                            <span className="rounded-full bg-zinc-800 px-2 py-1 text-zinc-300">
+                              {item.forma_pagamento ||
+                                "Pagamento não informado"}
+                            </span>
+
+                            {item.ja_incluido_na_venda ? (
+                              <span className="rounded-full bg-green-950 px-2 py-1 font-semibold text-green-300">
+                                Já incluído no valor da venda
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-yellow-950 px-2 py-1 font-semibold text-yellow-300">
+                                Recebido depois da venda
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-left sm:text-right">
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">
+                            Valor do capacete
+                          </p>
+
+                          <p className="mt-1 text-xl font-bold text-yellow-500">
+                            {moeda(
+                              Number(
+                                item.valor_recebido ||
+                                  0
+                              )
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <p className="text-xs text-zinc-500">
+                      Valor registrado da venda
+                    </p>
+
+                    <p className="mt-1 font-bold text-white">
+                      {moeda(
+                        Number(valorVenda)
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-zinc-500">
+                      Capacetes vinculados
+                    </p>
+
+                    <p className="mt-1 font-bold text-yellow-500">
+                      {moeda(
+                        totalCapacetesVinculados
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-zinc-500">
+                      Deste total, já estava na venda
+                    </p>
+
+                    <p className="mt-1 font-bold text-green-400">
+                      {moeda(
+                        totalCapacetesJaIncluidos
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-zinc-500">
+                      Total financeiro da operação
+                    </p>
+
+                    <p className="mt-1 font-bold text-yellow-500">
+                      {moeda(
+                        totalFinanceiroOperacao
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {totalCapacetesRecebidosDepois >
+                  0 && (
+                  <div className="rounded-xl border border-yellow-800/60 bg-yellow-950/20 p-4 text-sm text-yellow-200">
+                    Recebido depois da venda:{" "}
+                    <strong>
+                      {moeda(
+                        totalCapacetesRecebidosDepois
+                      )}
+                    </strong>
+                    . Esse valor é somado ao total financeiro da operação porque foi uma entrada nova no caixa.
+                  </div>
+                )}
+
+                {totalCapacetesJaIncluidos >
+                  0 && (
+                  <p className="text-xs leading-5 text-zinc-500">
+                    Os capacetes marcados como “já incluído no valor da venda” aparecem separados para conferência, mas não são somados novamente ao total para não duplicar o dinheiro.
+                  </p>
+                )}
+              </div>
+            )}
           </section>
 
           {/* TRANSFERÊNCIA */}
@@ -1208,72 +1108,6 @@ export default function EditarVendaPage() {
 
             </div>
           </section>
-
-          {capacetes.length > 0 && (
-            <section className="rounded-xl border border-zinc-800 bg-black/40 p-5">
-              <h3 className="mb-3 font-semibold text-yellow-500">
-                Capacetes desta venda
-              </h3>
-
-              <div className="space-y-2">
-                {capacetes.map(
-                  (item) => (
-                    <div
-                      key={item.id}
-                      className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                    >
-                      <span className="text-zinc-200">
-                        {
-                          item.quantidade
-                        }
-                        x{" "}
-                        {[
-                          item.produto,
-                          item.marca,
-                          item.modelo,
-                          item.cor,
-                          item.tamanho,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ") ||
-                          "Capacete"}
-                      </span>
-
-                      <span className="text-zinc-400">
-                        {Number(
-                          item.valor_unitario
-                        ) === 0
-                          ? "brinde"
-                          : `${moeda(
-                              Number(
-                                item.valor_unitario
-                              )
-                            )} cada`}{" "}
-                        · custo{" "}
-                        {moeda(
-                          Number(
-                            item.custo_unitario
-                          )
-                        )}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
-
-              <p className="mt-3 border-t border-zinc-800 pt-3 text-sm text-zinc-400">
-                Total em capacetes:{" "}
-                <strong className="text-yellow-500">
-                  {moeda(
-                    totalCapacetes
-                  )}
-                </strong>{" "}
-                · já incluso no valor da venda acima.
-                Para trocar os capacetes, exclua e
-                registre a venda novamente.
-              </p>
-            </section>
-          )}
 
           <section>
             <label className="mb-2 block text-sm text-zinc-300">
@@ -1353,104 +1187,6 @@ export default function EditarVendaPage() {
                 </p>
               </div>
             </div>
-          </section>
-
-          {/* VISTORIAS */}
-
-          {motorcycleId && (
-            <Vistorias
-              motorcycleId={motorcycleId}
-              saleId={id}
-              titulo="Vistorias da moto"
-              descricao="A vistoria de transferência desta venda fica aqui. Também dá para anexar a cautelar."
-            />
-          )}
-
-          {/* DOCUMENTOS */}
-
-          <section className="rounded-xl border border-zinc-800 bg-black p-5">
-            <h3 className="mb-1 font-semibold text-yellow-500">
-              Documentos
-            </h3>
-
-            <p className="mb-4 text-xs text-zinc-500">
-              Gerados com os dados salvos. Salve as
-              alterações antes de baixar.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <a
-                href={`/documentos/contrato-venda/${id}`}
-                className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
-              >
-                <FileText size={16} />
-                Contrato de Venda
-              </a>
-
-              {motoTrocaId && (
-                <>
-                  <a
-                    href={`/documentos/procuracao/${motoTrocaId}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-yellow-500 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500 hover:text-black"
-                  >
-                    <FileSignature size={16} />
-                    Procuração da Moto da Troca
-                  </a>
-
-                  <a
-                    href={`/documentos/contrato-compra/${motoTrocaId}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
-                  >
-                    <FileText size={16} />
-                    Contrato de Compra da Troca
-                  </a>
-                </>
-              )}
-            </div>
-
-            {motoTrocaId ? (
-              <>
-                <p className="mt-3 text-xs text-zinc-500">
-                  Moto recebida na troca:{" "}
-                  <span className="text-zinc-300">
-                    {motoTrocaNome ||
-                      "cadastrada"}
-                  </span>
-                  . A procuração usa os dados de quem
-                  entregou a moto (cadastrados como
-                  fornecedor dela).
-                </p>
-
-                {faltandoProcuracao.length >
-                  0 && (
-                  <div className="mt-3 rounded-lg border border-yellow-800 bg-yellow-950/20 p-3 text-xs text-yellow-300">
-                    <p className="font-semibold">
-                      A procuração ainda não pode
-                      ser gerada. Faltam:
-                    </p>
-
-                    <p className="mt-1">
-                      {faltandoProcuracao.join(
-                        ", "
-                      )}
-                      .
-                    </p>
-
-                    <Link
-                      href={`/motos/${motoTrocaId}`}
-                      className="mt-2 inline-block font-semibold underline hover:text-yellow-200"
-                    >
-                      Completar o cadastro da moto
-                    </Link>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="mt-3 text-xs text-zinc-500">
-                Esta venda não tem moto recebida na
-                troca.
-              </p>
-            )}
           </section>
 
           <div className="flex flex-col gap-3 md:flex-row">

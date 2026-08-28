@@ -1,0 +1,51 @@
+BLACKOUT MOTOS
+VENDA DE CAPACETE SEM CADASTRO
+
+Objetivo
+--------
+Registrar somente o dinheiro recebido por capacetes antigos
+que ainda não foram cadastrados no estoque.
+
+O que acontece ao salvar
+-------------------------
+1. Guarda data, valor, forma de pagamento e observação.
+2. Cria uma ENTRADA no caixa.
+3. NÃO cadastra capacete no estoque.
+4. NÃO baixa quantidade de helmet_models.
+5. NÃO cria helmet_sale_items.
+6. NÃO considera o recebimento como lucro de capacete enquanto
+   o custo não estiver conhecido.
+
+Correção de lançamento
+----------------------
+A tela tem botão EXCLUIR.
+Ao excluir um lançamento errado, a entrada correspondente
+também é removida do caixa.
+
+Antes de testar
+---------------
+Execute no SQL Editor do Supabase:
+supabase/helmet_unregistered_sales.sql
+
+Arquivos adicionados
+--------------------
+app/capacetes/vendas/sem-cadastro/page.tsx
+app/api/capacetes/vendas/sem-cadastro/route.ts
+supabase/helmet_unregistered_sales.sql
+
+Rota da tela
+------------
+/capacetes/vendas/sem-cadastro
+
+Instalação PowerShell
+---------------------
+Expand-Archive "$env:USERPROFILE\Downloads\capacete_sem_cadastro_blackout_pronto.zip" -DestinationPath "." -Force
+
+Depois:
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm.cmd run build
+
+Observação
+----------
+Este pacote só ADICIONA arquivos novos. Ele não substitui
+as telas atuais de estoque/vendas de capacetes.

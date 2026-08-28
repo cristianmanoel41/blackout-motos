@@ -1,25 +1,21 @@
-BLACKOUT MOTOS — Pesquisa completa em Gastos das Motos
+BLACKOUT MOTOS — Excluir lançamento errado em Gastos das Motos
 
-Agora a busca permite localizar uma moto específica digitando:
-- modelo;
-- placa;
-- marca;
-- versão;
-- ano do modelo;
-- cor;
-- ID/código da moto.
+O que foi adicionado:
+- botão "Excluir" em cada lançamento de gasto;
+- confirmação antes de excluir;
+- se o gasto tiver uma saída de caixa vinculada, essa saída também é removida;
+- o sistema atualiza a tela depois da exclusão;
+- mantém o botão "Editar";
+- mantém busca por modelo, placa, marca, versão, ano, cor e ID;
+- mantém filtro por mês e resumo mensal.
 
-A busca funciona junto com o filtro de mês.
-Ao localizar a moto, você pode clicar na linha para abrir e conferir todos os gastos detalhados dela.
-
-Mantido:
-- gasto mensal dinâmico;
-- motos em lista;
-- detalhes recolhidos;
-- total de custo por moto;
-- filtro por mês.
-
-Não precisa de SQL novo.
-
-Arquivo alterado:
+Arquivos:
 app/gastos/page.tsx
+app/gastos/ExcluirGastoButton.tsx
+app/api/gastos/[id]/route.ts
+
+Não precisa executar SQL novo.
+
+IMPORTANTE:
+Use Excluir somente para corrigir lançamento realmente errado.
+Se o gasto foi real, o ideal é manter o histórico.
