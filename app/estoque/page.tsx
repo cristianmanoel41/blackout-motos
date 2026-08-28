@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
+  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Eye,
+  Pencil,
   Plus,
+  Save,
   Search,
   ShoppingCart,
   SlidersHorizontal,
@@ -34,6 +38,9 @@ type Moto = {
   status?: string | null;
   data_entrada?: string | null;
   tipo_entrada?: string | null;
+  possui_manual?: boolean | null;
+  possui_chave_reserva?: boolean | null;
+  unico_dono?: boolean | null;
 };
 
 function normalizarTexto(valor: unknown) {
@@ -120,6 +127,124 @@ export default function EstoquePage() {
   const [ano, setAno] = useState("todos");
   const [pagina, setPagina] = useState(1);
 
+  const [motoAbertaId, setMotoAbertaId] =
+    useState<string | null>(null);
+
+  const [motoEditandoId, setMotoEditandoId] =
+    useState<string | null>(null);
+
+  const [salvandoItensId, setSalvandoItensId] =
+    useState<string | null>(null);
+
+  const [mensagemItens, setMensagemItens] =
+    useState("");
+
+  const [erroItens, setErroItens] =
+    useState("");
+
+  const [itensEdicao, setItensEdicao] =
+    useState({
+      possui_manual: false,
+      possui_chave_reserva: false,
+      unico_dono: false,
+    });
+
+  function alternarDetalhesMoto(moto: Moto) {
+    const id = String(moto.id);
+
+    setMensagemItens("");
+    setErroItens("");
+
+    if (motoAbertaId === id) {
+      setMotoAbertaId(null);
+      setMotoEditandoId(null);
+      return;
+    }
+
+    setMotoAbertaId(id);
+    setMotoEditandoId(null);
+  }
+
+  function iniciarEdicaoItens(moto: Moto) {
+    const id = String(moto.id);
+
+    setMotoAbertaId(id);
+    setMotoEditandoId(id);
+    setMensagemItens("");
+    setErroItens("");
+
+    setItensEdicao({
+      possui_manual: Boolean(
+        moto.possui_manual
+      ),
+      possui_chave_reserva: Boolean(
+        moto.possui_chave_reserva
+      ),
+      unico_dono: Boolean(
+        moto.unico_dono
+      ),
+    });
+  }
+
+  function cancelarEdicaoItens() {
+    setMotoEditandoId(null);
+    setMensagemItens("");
+    setErroItens("");
+  }
+
+  async function salvarItensMoto(
+    moto: Moto
+  ) {
+    const id = String(moto.id);
+
+    setSalvandoItensId(id);
+    setMensagemItens("");
+    setErroItens("");
+
+    const { error } = await supabase
+      .from("motorcycles")
+      .update({
+        possui_manual:
+          itensEdicao.possui_manual,
+        possui_chave_reserva:
+          itensEdicao.possui_chave_reserva,
+        unico_dono:
+          itensEdicao.unico_dono,
+      })
+      .eq("id", moto.id);
+
+    if (error) {
+      console.error(error);
+      setErroItens(
+        "Não foi possível salvar essas informações."
+      );
+      setSalvandoItensId(null);
+      return;
+    }
+
+    setMotos((atuais) =>
+      atuais.map((item) =>
+        String(item.id) === id
+          ? {
+              ...item,
+              possui_manual:
+                itensEdicao.possui_manual,
+              possui_chave_reserva:
+                itensEdicao.possui_chave_reserva,
+              unico_dono:
+                itensEdicao.unico_dono,
+            }
+          : item
+      )
+    );
+
+    setMotoEditandoId(null);
+    setSalvandoItensId(null);
+    setMensagemItens(
+      "Informações atualizadas com sucesso."
+    );
+  }
+
   async function carregarEstoque() {
     setCarregando(true);
     setErro("");
@@ -143,6 +268,9 @@ export default function EstoquePage() {
           "status",
           "data_entrada",
           "tipo_entrada",
+          "possui_manual",
+          "possui_chave_reserva",
+          "unico_dono",
         ].join(",")
       )
       .order("data_entrada", {
@@ -463,7 +591,7 @@ export default function EstoquePage() {
 
         <section className="overflow-hidden rounded-2xl border border-grafite-claro bg-grafite">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1320px] border-collapse">
+            <table className="w-full min-w-[1290px] border-collapse">
               <thead>
                 <tr className="border-b border-grafite-claro bg-preto/60 text-left text-[11px] uppercase tracking-wide text-texto-suave">
                   <th className="px-4 py-3 font-semibold">ID</th>
@@ -511,10 +639,29 @@ export default function EstoquePage() {
                     const anoFab = moto.ano_fabricacao || "—";
                     const anoMod = moto.ano_modelo || "—";
 
+                    const idMoto =
+                      String(moto.id);
+                    const aberta =
+                      motoAbertaId === idMoto;
+                    const editando =
+                      motoEditandoId === idMoto;
+
                     return (
+                      <Fragment
+                        key={idMoto}
+                      >
                       <tr
-                        key={String(moto.id)}
-                        className="border-b border-grafite-claro/70 transition last:border-b-0 hover:bg-white/[0.025]"
+                        onClick={() =>
+                          alternarDetalhesMoto(
+                            moto
+                          )
+                        }
+                        className={`cursor-pointer border-b border-grafite-claro/70 transition hover:bg-white/[0.035] ${
+                          aberta
+                            ? "bg-dourado/[0.035]"
+                            : ""
+                        }`}
+                        title="Clique para ver detalhes da moto"
                       >
                         <td className="whitespace-nowrap px-4 py-3">
                           <span className="font-mono text-xs font-semibold text-dourado">
@@ -579,11 +726,40 @@ export default function EstoquePage() {
                           {formatarData(moto.data_entrada)}
                         </td>
 
-                        <td className="px-4 py-3">
+                        <td
+                          className="px-4 py-3"
+                          onClick={(event) =>
+                            event.stopPropagation()
+                          }
+                        >
                           <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                alternarDetalhesMoto(
+                                  moto
+                                )
+                              }
+                              title={
+                                aberta
+                                  ? "Fechar detalhes"
+                                  : "Ver detalhes"
+                              }
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-grafite-claro bg-preto text-zinc-300 transition hover:border-dourado hover:text-dourado"
+                            >
+                              <ChevronDown
+                                size={17}
+                                className={`transition-transform ${
+                                  aberta
+                                    ? "rotate-180"
+                                    : ""
+                                }`}
+                              />
+                            </button>
+
                             <Link
                               href={`/motos/${moto.id}`}
-                              title="Ver moto"
+                              title="Abrir cadastro completo"
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-grafite-claro bg-preto text-zinc-300 transition hover:border-dourado hover:text-dourado"
                             >
                               <Eye size={16} />
@@ -603,6 +779,259 @@ export default function EstoquePage() {
                           </div>
                         </td>
                       </tr>
+
+                      {aberta && (
+                        <tr className="border-b border-dourado/20 bg-preto/55">
+                          <td
+                            colSpan={12}
+                            className="px-5 py-5"
+                          >
+                            <div className="rounded-xl border border-dourado/20 bg-grafite p-5">
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-dourado">
+                                    Informações da moto
+                                  </p>
+                                  <h3 className="mt-1 text-lg font-bold text-white">
+                                    {[
+                                      moto.marca,
+                                      moto.modelo,
+                                      moto.versao,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" ") ||
+                                      "Moto"}
+                                  </h3>
+                                  <p className="mt-1 text-xs text-texto-suave">
+                                    {moto.codigo ||
+                                      `#${moto.id}`}
+                                    {moto.placa
+                                      ? ` · ${moto.placa}`
+                                      : ""}
+                                  </p>
+                                </div>
+
+                                {!editando && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      iniciarEdicaoItens(
+                                        moto
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-dourado/50 px-4 py-2 text-sm font-semibold text-dourado transition hover:bg-dourado/10"
+                                  >
+                                    <Pencil
+                                      size={15}
+                                    />
+                                    Editar informações
+                                  </button>
+                                )}
+                              </div>
+
+                              {!editando ? (
+                                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                                  {[
+                                    {
+                                      label:
+                                        "Manual",
+                                      ativo:
+                                        Boolean(
+                                          moto.possui_manual
+                                        ),
+                                    },
+                                    {
+                                      label:
+                                        "Chave reserva",
+                                      ativo:
+                                        Boolean(
+                                          moto.possui_chave_reserva
+                                        ),
+                                    },
+                                    {
+                                      label:
+                                        "Único dono",
+                                      ativo:
+                                        Boolean(
+                                          moto.unico_dono
+                                        ),
+                                    },
+                                  ].map(
+                                    (item) => (
+                                      <div
+                                        key={
+                                          item.label
+                                        }
+                                        className={`rounded-xl border p-4 ${
+                                          item.ativo
+                                            ? "border-green-800/70 bg-green-950/20"
+                                            : "border-zinc-800 bg-preto/40"
+                                        }`}
+                                      >
+                                        <p className="text-xs text-texto-suave">
+                                          {
+                                            item.label
+                                          }
+                                        </p>
+                                        <p
+                                          className={`mt-1 flex items-center gap-2 font-bold ${
+                                            item.ativo
+                                              ? "text-green-300"
+                                              : "text-zinc-500"
+                                          }`}
+                                        >
+                                          {item.ativo && (
+                                            <Check
+                                              size={
+                                                16
+                                              }
+                                            />
+                                          )}
+                                          {item.ativo
+                                            ? "Sim"
+                                            : "Não"}
+                                        </p>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="mt-5">
+                                  <p className="mb-3 text-sm text-texto-suave">
+                                    Marque somente o que esta moto possui.
+                                  </p>
+
+                                  <div className="grid gap-3 sm:grid-cols-3">
+                                    {[
+                                      {
+                                        campo:
+                                          "possui_manual" as const,
+                                        label:
+                                          "Manual",
+                                      },
+                                      {
+                                        campo:
+                                          "possui_chave_reserva" as const,
+                                        label:
+                                          "Chave reserva",
+                                      },
+                                      {
+                                        campo:
+                                          "unico_dono" as const,
+                                        label:
+                                          "Único dono",
+                                      },
+                                    ].map(
+                                      (item) => (
+                                        <label
+                                          key={
+                                            item.campo
+                                          }
+                                          className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
+                                            itensEdicao[
+                                              item
+                                                .campo
+                                            ]
+                                              ? "border-dourado/60 bg-dourado/10"
+                                              : "border-zinc-800 bg-preto/40"
+                                          }`}
+                                        >
+                                          <span className="font-semibold text-white">
+                                            {
+                                              item.label
+                                            }
+                                          </span>
+
+                                          <input
+                                            type="checkbox"
+                                            checked={
+                                              itensEdicao[
+                                                item
+                                                  .campo
+                                              ]
+                                            }
+                                            onChange={(
+                                              event
+                                            ) =>
+                                              setItensEdicao(
+                                                (
+                                                  atual
+                                                ) => ({
+                                                  ...atual,
+                                                  [item.campo]:
+                                                    event
+                                                      .target
+                                                      .checked,
+                                                })
+                                              )
+                                            }
+                                            className="h-5 w-5 accent-[#d4af37]"
+                                          />
+                                        </label>
+                                      )
+                                    )}
+                                  </div>
+
+                                  <div className="mt-4 flex flex-wrap gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        salvarItensMoto(
+                                          moto
+                                        )
+                                      }
+                                      disabled={
+                                        salvandoItensId ===
+                                        idMoto
+                                      }
+                                      className="inline-flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      <Save
+                                        size={
+                                          16
+                                        }
+                                      />
+                                      {salvandoItensId ===
+                                      idMoto
+                                        ? "Salvando..."
+                                        : "Salvar alterações"}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={
+                                        cancelarEdicaoItens
+                                      }
+                                      disabled={
+                                        salvandoItensId ===
+                                        idMoto
+                                      }
+                                      className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 hover:border-zinc-500"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {mensagemItens && (
+                                <p className="mt-4 text-sm font-semibold text-green-400">
+                                  {
+                                    mensagemItens
+                                  }
+                                </p>
+                              )}
+
+                              {erroItens && (
+                                <p className="mt-4 text-sm font-semibold text-red-400">
+                                  {erroItens}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     );
                   })
                 )}

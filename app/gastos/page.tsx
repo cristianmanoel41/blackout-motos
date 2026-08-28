@@ -2,125 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
-function hojeSaoPaulo() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-async function adicionarLavagemPadrao(
-  formData: FormData
-) {
-  "use server";
-
-  const motoId =
-    String(
-      formData.get("motorcycle_id") || ""
-    ).trim();
-
-  const data =
-    String(
-      formData.get("data") || ""
-    ).trim();
-
-  const mes =
-    String(
-      formData.get("mes") || "todos"
-    ).trim();
-
-  const baseUrl =
-    `/gastos?mes=${encodeURIComponent(
-      mes || "todos"
-    )}`;
-
-  if (!motoId || !data) {
-    redirect(
-      `${baseUrl}&lavagem=erro`
-    );
-  }
-
-  const supabase =
-    await createClient();
-
-  const {
-    data: lavagemExistente,
-    error: buscaError,
-  } = await supabase
-    .from("motorcycle_expenses")
-    .select("id")
-    .eq(
-      "motorcycle_id",
-      motoId
-    )
-    .ilike(
-      "categoria",
-      "lavagem"
-    )
-    .limit(1);
-
-  if (buscaError) {
-    console.error(
-      "Erro ao verificar lavagem:",
-      buscaError
-    );
-
-    redirect(
-      `${baseUrl}&lavagem=erro`
-    );
-  }
-
-  if (
-    lavagemExistente &&
-    lavagemExistente.length > 0
-  ) {
-    redirect(
-      `${baseUrl}&lavagem=existente`
-    );
-  }
-
-  const { error } =
-    await supabase
-      .from(
-        "motorcycle_expenses"
-      )
-      .insert({
-        motorcycle_id:
-          motoId,
-        data,
-        categoria:
-          "Lavagem",
-        descricao:
-          "Lavagem padrão da moto",
-        forma_pagamento:
-          "Automático",
-        valor: 35,
-      });
-
-  if (error) {
-    console.error(
-      "Erro ao adicionar lavagem padrão:",
-      error
-    );
-
-    redirect(
-      `${baseUrl}&lavagem=erro`
-    );
-  }
-
-  revalidatePath(
-    "/gastos"
-  );
-
-  redirect(
-    `${baseUrl}&lavagem=adicionada`
-  );
-}
 
 const NOMES_MESES = [
   "Janeiro",
@@ -136,6 +17,14 @@ const NOMES_MESES = [
   "Novembro",
   "Dezembro",
 ];
+
+function normalizarBusca(valor: string | null | undefined) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
 
 function obterMesAno(data: string | null | undefined) {
   const valor = String(data || "").slice(0, 10);
@@ -169,71 +58,17 @@ export default async function GastosMotosPage({
 }: {
   searchParams: Promise<{
     mes?: string;
-    lavagem?: string;
+    q?: string;
   }>;
 }) {
   const {
     mes: mesSelecionado = "todos",
-    lavagem: statusLavagem,
+    q: busca = "",
   } = await searchParams;
+
+  const termoBusca = normalizarBusca(busca);
   const supabase = await createClient();
 
-  const [
-    gastosResult,
-    motosResult,
-  ] = await Promise.all([
-    supabase
-      .from("motorcycle_expenses")
-      .select(`
-        *,
-        motorcycles (
-          id,
-          codigo,
-          marca,
-          modelo,
-          placa
-        )
-      `)
-      .order("data", { ascending: false }),
-    supabase
-      .from("motorcycles")
-      .select(
-        "id, codigo, marca, modelo, placa, status"
-      )
-      .in(
-        "status",
-        [
-          "disponivel",
-          "reservada",
-          "manutencao",
-        ]
-      )
-      .order("codigo", { ascending: true }),
-  ]);
-
-  const {
-    data: gastos,
-    error,
-  } = gastosResult;
-
-  const motosDisponiveis =
-    motosResult.data ?? [];
-
-  const erroMotos =
-    motosResult.error;
-
-  if (erroMotos) {
-    console.error(
-      "Erro ao carregar motos para lavagem:",
-      erroMotos
-    );
-  }
-
-  /*
-   * Consulta original substituída acima para carregar,
-   * em paralelo, os gastos e as motos disponíveis.
-   */
-  /*
   const { data: gastos, error } = await supabase
     .from("motorcycle_expenses")
     .select(`
@@ -243,11 +78,13 @@ export default async function GastosMotosPage({
         codigo,
         marca,
         modelo,
-        placa
+        versao,
+        placa,
+        ano_modelo,
+        cor
       )
     `)
     .order("data", { ascending: false });
-  */
 
   if (error) {
     return (
@@ -286,6 +123,26 @@ export default async function GastosMotosPage({
     (soma, gasto) => soma + Number(gasto.valor || 0),
     0
   );
+
+  const motosComGastoNoPeriodo = new Set(
+    gastosFiltrados
+      .map((gasto) => gasto.motorcycles?.id)
+      .filter(Boolean)
+      .map(String)
+  ).size;
+
+  const quantidadeLancamentos =
+    gastosFiltrados.length;
+
+  const tituloMesSelecionado =
+    mesSelecionado === "todos"
+      ? "Todos os meses"
+      : mesesDisponiveis.find(
+          (mes) =>
+            mes.chave ===
+            mesSelecionado
+        )?.titulo ||
+        "Mês selecionado";
 
   const meses = new Map<
     string,
@@ -351,11 +208,6 @@ export default async function GastosMotosPage({
     b.ordem.localeCompare(a.ordem)
   );
 
-  const tituloTotal =
-    mesSelecionado === "todos"
-      ? "Total geral de gastos"
-      : "Total de gastos no mês";
-
   return (
     <div>
       <div className="mb-6">
@@ -368,154 +220,191 @@ export default async function GastosMotosPage({
         </p>
       </div>
 
-      {statusLavagem === "adicionada" && (
-        <div className="mb-4 rounded-xl border border-green-700 bg-green-950/30 p-4 text-sm text-green-300">
-          Lavagem padrão de R$ 35,00 adicionada à moto.
-        </div>
-      )}
-
-      {statusLavagem === "existente" && (
-        <div className="mb-4 rounded-xl border border-yellow-700 bg-yellow-950/30 p-4 text-sm text-yellow-300">
-          Esta moto já possui um lançamento de lavagem. Nenhum valor duplicado foi criado.
-        </div>
-      )}
-
-      {statusLavagem === "erro" && (
-        <div className="mb-4 rounded-xl border border-red-700 bg-red-950/30 p-4 text-sm text-red-300">
-          Não foi possível adicionar a lavagem padrão. Tente novamente.
-        </div>
-      )}
-
-      <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(280px,420px)_1fr]">
+      <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(520px,1fr)_minmax(360px,0.8fr)]">
         <form
           method="get"
           className="rounded-xl border border-grafite-claro bg-grafite p-5"
         >
-          <label
-            htmlFor="mes"
-            className="mb-2 block text-sm font-semibold text-white"
-          >
-            Selecionar mês
-          </label>
+          <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
+            <div>
+              <label
+                htmlFor="mes"
+                className="mb-2 block text-sm font-semibold text-white"
+              >
+                Selecionar mês
+              </label>
 
-          <div className="flex gap-3">
-            <select
-              id="mes"
-              name="mes"
-              defaultValue={mesSelecionado}
-              className="min-w-0 flex-1 rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none focus:border-dourado"
-            >
-              <option value="todos">Todos os meses</option>
+              <select
+                id="mes"
+                name="mes"
+                defaultValue={mesSelecionado}
+                className="w-full rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none focus:border-dourado"
+              >
+                <option value="todos">Todos os meses</option>
 
-              {mesesDisponiveis.map((mes) => (
-                <option key={mes.chave} value={mes.chave}>
-                  {mes.titulo}
-                </option>
-              ))}
-            </select>
+                {mesesDisponiveis.map((mes) => (
+                  <option
+                    key={mes.chave}
+                    value={mes.chave}
+                  >
+                    {mes.titulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="q"
+                className="mb-2 block text-sm font-semibold text-white"
+              >
+                Pesquisar moto
+              </label>
+
+              <input
+                id="q"
+                name="q"
+                type="search"
+                defaultValue={busca}
+                placeholder="Modelo, placa, marca, versão, ano, cor ou ID"
+                className="w-full rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none placeholder:text-texto-suave focus:border-dourado"
+              />
+            </div>
 
             <button
               type="submit"
-              className="rounded-lg bg-dourado px-4 py-2.5 text-sm font-bold text-preto hover:opacity-90"
+              className="rounded-lg bg-dourado px-5 py-2.5 text-sm font-bold text-preto hover:opacity-90"
             >
-              Aplicar
+              Buscar
             </button>
           </div>
+
+          {termoBusca && (
+            <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+              <span className="text-texto-suave">
+                Pesquisa ativa: <strong className="text-white">{busca}</strong>
+              </span>
+
+              <Link
+                href={`/gastos?mes=${encodeURIComponent(mesSelecionado)}`}
+                className="font-semibold text-dourado hover:underline"
+              >
+                Limpar pesquisa
+              </Link>
+            </div>
+          )}
         </form>
 
-        <div className="rounded-xl border border-grafite-claro bg-grafite p-5">
-          <p className="text-sm text-texto-suave">
-            {tituloTotal}
-          </p>
+        <div className="rounded-xl border border-dourado/30 bg-grafite p-5">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <p className="text-sm font-semibold text-white">
+                Gasto mensal
+              </p>
 
-          <p className="mt-1 text-2xl font-bold text-dourado">
-            {formatarMoeda(totalGeral)}
-          </p>
+              <p className="mt-1 text-xs text-texto-suave">
+                {tituloMesSelecionado}
+              </p>
+
+              <p className="mt-2 text-3xl font-bold text-dourado">
+                {formatarMoeda(totalGeral)}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-right">
+              <div className="rounded-lg border border-grafite-claro bg-preto/40 px-4 py-3">
+                <p className="text-xs text-texto-suave">
+                  Motos
+                </p>
+                <p className="mt-1 text-lg font-bold text-white">
+                  {motosComGastoNoPeriodo}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-grafite-claro bg-preto/40 px-4 py-3">
+                <p className="text-xs text-texto-suave">
+                  Lançamentos
+                </p>
+                <p className="mt-1 text-lg font-bold text-white">
+                  {quantidadeLancamentos}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <form
-        action={adicionarLavagemPadrao}
-        className="mb-6 rounded-xl border border-dourado/30 bg-grafite p-5"
-      >
-        <div className="mb-4">
-          <h2 className="font-semibold text-dourado">
-            + Lavagem padrão R$ 35
-          </h2>
-          <p className="mt-1 text-xs text-texto-suave">
-            Use para motos antigas que ainda não possuem o custo da lavagem.
-          </p>
-        </div>
-
-        <input
-          type="hidden"
-          name="mes"
-          value={
-            mesSelecionado
-          }
-        />
-
-        <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
-          <select
-            name="motorcycle_id"
-            required
-            defaultValue=""
-            className="rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none focus:border-dourado"
-          >
-            <option value="" disabled>
-              Selecione a moto
-            </option>
-
-            {motosDisponiveis.map(
-              (moto) => (
-                <option
-                  key={moto.id}
-                  value={moto.id}
-                >
-                  {[
-                    moto.codigo,
-                    moto.marca,
-                    moto.modelo,
-                    moto.placa,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </option>
-              )
-            )}
-          </select>
-
-          <input
-            type="date"
-            name="data"
-            required
-            defaultValue={
-              hojeSaoPaulo()
-            }
-            className="rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none focus:border-dourado"
-          />
-
-          <button
-            type="submit"
-            className="rounded-lg bg-dourado px-5 py-2.5 text-sm font-bold text-preto hover:opacity-90"
-          >
-            Adicionar R$ 35
-          </button>
-        </div>
-      </form>
 
       {gastosFiltrados.length === 0 ? (
         <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
           Nenhum gasto registrado para o mês selecionado.
+        </div>
+      ) : termoBusca &&
+        !mesesOrdenados.some((grupoMes) =>
+          Array.from(grupoMes.motos.values()).some((grupoMoto) => {
+            const moto = grupoMoto.moto;
+            const textoMoto = normalizarBusca(
+              [
+                moto?.codigo,
+                moto?.marca,
+                moto?.modelo,
+                moto?.versao,
+                moto?.placa,
+                moto?.ano_modelo,
+                moto?.cor,
+              ]
+                .filter(Boolean)
+                .join(" ")
+            );
+
+            return textoMoto.includes(termoBusca);
+          })
+        ) ? (
+        <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center">
+          <p className="font-semibold text-white">
+            Nenhuma moto encontrada.
+          </p>
+          <p className="mt-1 text-sm text-texto-suave">
+            Tente pesquisar por modelo, placa, marca, versão, ano, cor ou ID da moto.
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
           {mesesOrdenados.map((grupoMes) => {
             const motosDoMes = Array.from(
               grupoMes.motos.values()
-            ).sort((a, b) =>
-              b.ultimaData.localeCompare(a.ultimaData)
+            )
+              .filter((grupoMoto) => {
+                if (!termoBusca) return true;
+
+                const moto = grupoMoto.moto;
+                const textoMoto = normalizarBusca(
+                  [
+                    moto?.codigo,
+                    moto?.marca,
+                    moto?.modelo,
+                    moto?.versao,
+                    moto?.placa,
+                    moto?.ano_modelo,
+                    moto?.cor,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")
+                );
+
+                return textoMoto.includes(termoBusca);
+              })
+              .sort((a, b) =>
+                b.ultimaData.localeCompare(a.ultimaData)
+              );
+
+            const totalExibido = motosDoMes.reduce(
+              (soma, grupoMoto) => soma + grupoMoto.total,
+              0
             );
+
+            if (termoBusca && motosDoMes.length === 0) {
+              return null;
+            }
 
             return (
               <section key={grupoMes.chave}>
@@ -532,128 +421,148 @@ export default async function GastosMotosPage({
 
                   <div className="text-right">
                     <p className="text-xs text-texto-suave">
-                      Total do mês
+                      {termoBusca ? "Total exibido" : "Total do mês"}
                     </p>
                     <p className="text-xl font-bold text-dourado">
-                      {formatarMoeda(grupoMes.total)}
+                      {formatarMoeda(termoBusca ? totalExibido : grupoMes.total)}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="overflow-hidden rounded-xl border border-grafite-claro bg-grafite">
+                  <div className="hidden grid-cols-[minmax(0,1.5fr)_160px_180px_44px] items-center gap-4 border-b border-grafite-claro bg-preto/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-texto-suave md:grid">
+                    <span>Moto</span>
+                    <span>Placa / ID</span>
+                    <span className="text-right">Custo total</span>
+                    <span />
+                  </div>
+
                   {motosDoMes.map((grupoMoto, indiceMoto) => {
                     const moto = grupoMoto.moto;
 
                     return (
-                      <div
+                      <details
                         key={
                           moto?.id
                             ? `${grupoMes.chave}-${moto.id}`
                             : `${grupoMes.chave}-sem-moto-${indiceMoto}`
                         }
-                        className="overflow-hidden rounded-xl border border-grafite-claro bg-grafite"
+                        className="group border-b border-grafite-claro last:border-b-0"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-grafite-claro bg-preto/70 px-5 py-4">
-                          <div>
-                            <div className="text-base font-bold text-white">
+                        <summary className="grid cursor-pointer list-none gap-3 bg-grafite px-5 py-4 transition hover:bg-preto/50 [&::-webkit-details-marker]:hidden md:grid-cols-[minmax(0,1.5fr)_160px_180px_44px] md:items-center md:gap-4">
+                          <div className="min-w-0">
+                            <div className="truncate text-base font-bold text-white">
                               {moto
                                 ? `${moto.marca || ""} ${moto.modelo || ""}`.trim()
                                 : "Moto não encontrada"}
                             </div>
-
-                            <div className="mt-1 text-xs text-texto-suave">
-                              {moto?.codigo || ""}
-                              {moto?.placa
-                                ? ` · ${moto.placa}`
-                                : ""}
-                            </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-5">
-                            <div className="text-right">
-                              <p className="text-xs text-texto-suave">
-                                Lançamentos
-                              </p>
-                              <p className="font-bold text-white">
-                                {grupoMoto.gastos.length}
-                              </p>
-                            </div>
+                          <div className="text-sm text-texto-suave">
+                            <span className="md:hidden">Placa / ID: </span>
+                            {moto?.placa || moto?.codigo || "—"}
+                            {moto?.placa && moto?.codigo
+                              ? ` · ${moto.codigo}`
+                              : ""}
+                          </div>
 
-                            <div className="text-right">
-                              <p className="text-xs text-texto-suave">
-                                Total da moto
-                              </p>
-                              <p className="text-lg font-bold text-dourado">
-                                {formatarMoeda(grupoMoto.total)}
-                              </p>
-                            </div>
+                          <div className="flex items-center justify-between gap-3 md:block md:text-right">
+                            <span className="text-xs text-texto-suave md:hidden">
+                              Custo total
+                            </span>
+                            <span className="text-lg font-bold text-dourado">
+                              {formatarMoeda(grupoMoto.total)}
+                            </span>
+                          </div>
+
+                          <span className="hidden text-center text-lg font-bold text-dourado transition-transform group-open:rotate-180 md:block">
+                            ▼
+                          </span>
+                        </summary>
+
+                        <div className="border-t border-grafite-claro">
+                          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                            <p className="text-xs text-texto-suave">
+                              Detalhamento dos gastos desta moto
+                            </p>
 
                             {moto?.id && (
                               <Link
                                 href={`/motos/${moto.id}`}
-                                className="rounded-lg border border-dourado/40 px-3 py-2 text-sm font-semibold text-dourado hover:bg-dourado/10"
+                                className="rounded-lg border border-dourado/40 px-3 py-2 text-xs font-semibold text-dourado hover:bg-dourado/10"
                               >
                                 Ver Moto
                               </Link>
                             )}
                           </div>
-                        </div>
 
-                        <div className="overflow-x-auto">
-                          <table className="w-full min-w-[850px] text-sm">
-                            <thead className="border-b border-grafite-claro bg-preto/30">
-                              <tr className="text-left text-xs uppercase tracking-wide text-texto-suave">
-                                <th className="px-4 py-3">Data</th>
-                                <th className="px-4 py-3">Categoria</th>
-                                <th className="px-4 py-3">Descrição</th>
-                                <th className="px-4 py-3">Pagamento</th>
-                                <th className="px-4 py-3 text-right">Valor</th>
-                                <th className="px-4 py-3 text-right">Ação</th>
-                              </tr>
-                            </thead>
-
-                            <tbody>
-                              {grupoMoto.gastos.map((gasto) => (
-                                <tr
-                                  key={gasto.id}
-                                  className="border-b border-grafite-claro last:border-b-0"
-                                >
-                                  <td className="whitespace-nowrap px-4 py-3">
-                                    {gasto.data
-                                      ? formatarData(gasto.data)
-                                      : "—"}
-                                  </td>
-
-                                  <td className="px-4 py-3">
-                                    {gasto.categoria || "—"}
-                                  </td>
-
-                                  <td className="px-4 py-3">
-                                    {gasto.descricao || "—"}
-                                  </td>
-
-                                  <td className="px-4 py-3">
-                                    {gasto.forma_pagamento || "—"}
-                                  </td>
-
-                                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
-                                    {formatarMoeda(gasto.valor)}
-                                  </td>
-
-                                  <td className="px-4 py-3 text-right">
-                                    <Link
-                                      href={`/gastos/${gasto.id}`}
-                                      className="font-semibold text-dourado hover:underline"
-                                    >
-                                      Editar
-                                    </Link>
-                                  </td>
+                          <div className="overflow-x-auto">
+                            <table className="w-full min-w-[850px] text-sm">
+                              <thead className="border-y border-grafite-claro bg-preto/30">
+                                <tr className="text-left text-xs uppercase tracking-wide text-texto-suave">
+                                  <th className="px-4 py-3">Data</th>
+                                  <th className="px-4 py-3">Categoria</th>
+                                  <th className="px-4 py-3">Descrição</th>
+                                  <th className="px-4 py-3">Pagamento</th>
+                                  <th className="px-4 py-3 text-right">Valor</th>
+                                  <th className="px-4 py-3 text-right">Ação</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+
+                              <tbody>
+                                {grupoMoto.gastos.map((gasto) => (
+                                  <tr
+                                    key={gasto.id}
+                                    className="border-b border-grafite-claro last:border-b-0"
+                                  >
+                                    <td className="whitespace-nowrap px-4 py-3">
+                                      {gasto.data
+                                        ? formatarData(gasto.data)
+                                        : "—"}
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                      {gasto.categoria || "—"}
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                      {gasto.descricao || "—"}
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                      {gasto.forma_pagamento || "—"}
+                                    </td>
+
+                                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
+                                      {formatarMoeda(gasto.valor)}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right">
+                                      <Link
+                                        href={`/gastos/${gasto.id}`}
+                                        className="font-semibold text-dourado hover:underline"
+                                      >
+                                        Editar
+                                      </Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="flex justify-end border-t border-grafite-claro bg-preto/30 px-5 py-4">
+                            <div className="text-right">
+                              <p className="text-xs text-texto-suave">
+                                Custo total desta moto no mês
+                              </p>
+                              <p className="text-xl font-bold text-dourado">
+                                {formatarMoeda(grupoMoto.total)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </details>
                     );
                   })}
                 </div>
