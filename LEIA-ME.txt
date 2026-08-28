@@ -1,14 +1,15 @@
-BLACKOUT MOTOS — Resumo mensal dinâmico dos gastos
+BLACKOUT MOTOS — Lavagem padrão de R$ 35 na compra
 
-Alterado em app/gastos/page.tsx:
+Ao salvar a compra/entrada atual de uma moto com "Lavagem padrão" marcada:
+1. cria automaticamente um gasto da moto de R$ 35 em motorcycle_expenses;
+2. cria automaticamente uma saída de R$ 35 em cash_transactions;
+3. usa a mesma data de entrada/compra;
+4. mantém a lavagem somada ao custo real da moto.
 
-- adicionada área "Gasto mensal";
-- o valor muda conforme o mês selecionado;
-- mostra o nome do mês selecionado;
-- mostra o total de gastos daquele mês;
-- mostra quantas motos tiveram gastos;
-- mostra quantos lançamentos existem no período;
-- mantém cada moto recolhida, abrindo os detalhes somente ao clicar;
-- mantém a separação por mês.
+Para ESTOQUE INICIAL:
+- a lavagem pode compor o custo da moto;
+- não cria uma nova saída no caixa, para não alterar o caixa atual com gasto histórico.
+
+A opção vem marcada por padrão e pode ser desmarcada quando a moto não tiver lavagem.
 
 Não exige SQL novo.

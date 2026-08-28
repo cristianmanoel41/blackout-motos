@@ -1,0 +1,10 @@
+# Coloque no arquivo .env.local (NÃO envie o .env.local para o GitHub)
+
+REGCHECK_USERNAME=SEU_USUARIO_REGCHECK
+
+# Opcional. O sistema já usa este endereço como padrão:
+REGCHECK_ENDPOINT=https://www.placaapi.com/api/reg.asmx/CheckBrazil
+
+# No Vercel, cadastre REGCHECK_USERNAME em:
+# Project > Settings > Environment Variables
+# Depois faça um novo deploy.

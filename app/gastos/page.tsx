@@ -2,6 +2,125 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+function hojeSaoPaulo() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+async function adicionarLavagemPadrao(
+  formData: FormData
+) {
+  "use server";
+
+  const motoId =
+    String(
+      formData.get("motorcycle_id") || ""
+    ).trim();
+
+  const data =
+    String(
+      formData.get("data") || ""
+    ).trim();
+
+  const mes =
+    String(
+      formData.get("mes") || "todos"
+    ).trim();
+
+  const baseUrl =
+    `/gastos?mes=${encodeURIComponent(
+      mes || "todos"
+    )}`;
+
+  if (!motoId || !data) {
+    redirect(
+      `${baseUrl}&lavagem=erro`
+    );
+  }
+
+  const supabase =
+    await createClient();
+
+  const {
+    data: lavagemExistente,
+    error: buscaError,
+  } = await supabase
+    .from("motorcycle_expenses")
+    .select("id")
+    .eq(
+      "motorcycle_id",
+      motoId
+    )
+    .ilike(
+      "categoria",
+      "lavagem"
+    )
+    .limit(1);
+
+  if (buscaError) {
+    console.error(
+      "Erro ao verificar lavagem:",
+      buscaError
+    );
+
+    redirect(
+      `${baseUrl}&lavagem=erro`
+    );
+  }
+
+  if (
+    lavagemExistente &&
+    lavagemExistente.length > 0
+  ) {
+    redirect(
+      `${baseUrl}&lavagem=existente`
+    );
+  }
+
+  const { error } =
+    await supabase
+      .from(
+        "motorcycle_expenses"
+      )
+      .insert({
+        motorcycle_id:
+          motoId,
+        data,
+        categoria:
+          "Lavagem",
+        descricao:
+          "Lavagem padrão da moto",
+        forma_pagamento:
+          "Automático",
+        valor: 35,
+      });
+
+  if (error) {
+    console.error(
+      "Erro ao adicionar lavagem padrão:",
+      error
+    );
+
+    redirect(
+      `${baseUrl}&lavagem=erro`
+    );
+  }
+
+  revalidatePath(
+    "/gastos"
+  );
+
+  redirect(
+    `${baseUrl}&lavagem=adicionada`
+  );
+}
 
 const NOMES_MESES = [
   "Janeiro",
@@ -50,13 +169,71 @@ export default async function GastosMotosPage({
 }: {
   searchParams: Promise<{
     mes?: string;
+    lavagem?: string;
   }>;
 }) {
   const {
     mes: mesSelecionado = "todos",
+    lavagem: statusLavagem,
   } = await searchParams;
   const supabase = await createClient();
 
+  const [
+    gastosResult,
+    motosResult,
+  ] = await Promise.all([
+    supabase
+      .from("motorcycle_expenses")
+      .select(`
+        *,
+        motorcycles (
+          id,
+          codigo,
+          marca,
+          modelo,
+          placa
+        )
+      `)
+      .order("data", { ascending: false }),
+    supabase
+      .from("motorcycles")
+      .select(
+        "id, codigo, marca, modelo, placa, status"
+      )
+      .in(
+        "status",
+        [
+          "disponivel",
+          "reservada",
+          "manutencao",
+        ]
+      )
+      .order("codigo", { ascending: true }),
+  ]);
+
+  const {
+    data: gastos,
+    error,
+  } = gastosResult;
+
+  const motosDisponiveis =
+    motosResult.data ?? [];
+
+  const erroMotos =
+    motosResult.error;
+
+  if (erroMotos) {
+    console.error(
+      "Erro ao carregar motos para lavagem:",
+      erroMotos
+    );
+  }
+
+  /*
+   * Consulta original substituída acima para carregar,
+   * em paralelo, os gastos e as motos disponíveis.
+   */
+  /*
   const { data: gastos, error } = await supabase
     .from("motorcycle_expenses")
     .select(`
@@ -70,6 +247,7 @@ export default async function GastosMotosPage({
       )
     `)
     .order("data", { ascending: false });
+  */
 
   if (error) {
     return (
@@ -108,26 +286,6 @@ export default async function GastosMotosPage({
     (soma, gasto) => soma + Number(gasto.valor || 0),
     0
   );
-
-  const motosComGastoNoPeriodo = new Set(
-    gastosFiltrados
-      .map((gasto) => gasto.motorcycles?.id)
-      .filter(Boolean)
-      .map(String)
-  ).size;
-
-  const quantidadeLancamentos =
-    gastosFiltrados.length;
-
-  const tituloMesSelecionado =
-    mesSelecionado === "todos"
-      ? "Todos os meses"
-      : mesesDisponiveis.find(
-          (mes) =>
-            mes.chave ===
-            mesSelecionado
-        )?.titulo ||
-        "Mês selecionado";
 
   const meses = new Map<
     string,
@@ -193,6 +351,11 @@ export default async function GastosMotosPage({
     b.ordem.localeCompare(a.ordem)
   );
 
+  const tituloTotal =
+    mesSelecionado === "todos"
+      ? "Total geral de gastos"
+      : "Total de gastos no mês";
+
   return (
     <div>
       <div className="mb-6">
@@ -205,7 +368,25 @@ export default async function GastosMotosPage({
         </p>
       </div>
 
-      <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(300px,420px)_1fr]">
+      {statusLavagem === "adicionada" && (
+        <div className="mb-4 rounded-xl border border-green-700 bg-green-950/30 p-4 text-sm text-green-300">
+          Lavagem padrão de R$ 35,00 adicionada à moto.
+        </div>
+      )}
+
+      {statusLavagem === "existente" && (
+        <div className="mb-4 rounded-xl border border-yellow-700 bg-yellow-950/30 p-4 text-sm text-yellow-300">
+          Esta moto já possui um lançamento de lavagem. Nenhum valor duplicado foi criado.
+        </div>
+      )}
+
+      {statusLavagem === "erro" && (
+        <div className="mb-4 rounded-xl border border-red-700 bg-red-950/30 p-4 text-sm text-red-300">
+          Não foi possível adicionar a lavagem padrão. Tente novamente.
+        </div>
+      )}
+
+      <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(280px,420px)_1fr]">
         <form
           method="get"
           className="rounded-xl border border-grafite-claro bg-grafite p-5"
@@ -227,10 +408,7 @@ export default async function GastosMotosPage({
               <option value="todos">Todos os meses</option>
 
               {mesesDisponiveis.map((mes) => (
-                <option
-                  key={mes.chave}
-                  value={mes.chave}
-                >
+                <option key={mes.chave} value={mes.chave}>
                   {mes.titulo}
                 </option>
               ))}
@@ -245,44 +423,86 @@ export default async function GastosMotosPage({
           </div>
         </form>
 
-        <div className="rounded-xl border border-dourado/30 bg-grafite p-5">
-          <div className="flex flex-wrap items-end justify-between gap-5">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Gasto mensal
-              </p>
+        <div className="rounded-xl border border-grafite-claro bg-grafite p-5">
+          <p className="text-sm text-texto-suave">
+            {tituloTotal}
+          </p>
 
-              <p className="mt-1 text-xs text-texto-suave">
-                {tituloMesSelecionado}
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-dourado">
-                {formatarMoeda(totalGeral)}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-right">
-              <div className="rounded-lg border border-grafite-claro bg-preto/40 px-4 py-3">
-                <p className="text-xs text-texto-suave">
-                  Motos
-                </p>
-                <p className="mt-1 text-lg font-bold text-white">
-                  {motosComGastoNoPeriodo}
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-grafite-claro bg-preto/40 px-4 py-3">
-                <p className="text-xs text-texto-suave">
-                  Lançamentos
-                </p>
-                <p className="mt-1 text-lg font-bold text-white">
-                  {quantidadeLancamentos}
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="mt-1 text-2xl font-bold text-dourado">
+            {formatarMoeda(totalGeral)}
+          </p>
         </div>
       </div>
+
+      <form
+        action={adicionarLavagemPadrao}
+        className="mb-6 rounded-xl border border-dourado/30 bg-grafite p-5"
+      >
+        <div className="mb-4">
+          <h2 className="font-semibold text-dourado">
+            + Lavagem padrão R$ 35
+          </h2>
+          <p className="mt-1 text-xs text-texto-suave">
+            Use para motos antigas que ainda não possuem o custo da lavagem.
+          </p>
+        </div>
+
+        <input
+          type="hidden"
+          name="mes"
+          value={
+            mesSelecionado
+          }
+        />
+
+        <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
+          <select
+            name="motorcycle_id"
+            required
+            defaultValue=""
+            className="rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none focus:border-dourado"
+          >
+            <option value="" disabled>
+              Selecione a moto
+            </option>
+
+            {motosDisponiveis.map(
+              (moto) => (
+                <option
+                  key={moto.id}
+                  value={moto.id}
+                >
+                  {[
+                    moto.codigo,
+                    moto.marca,
+                    moto.modelo,
+                    moto.placa,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </option>
+              )
+            )}
+          </select>
+
+          <input
+            type="date"
+            name="data"
+            required
+            defaultValue={
+              hojeSaoPaulo()
+            }
+            className="rounded-lg border border-grafite-claro bg-preto px-3 py-2.5 text-sm text-white outline-none focus:border-dourado"
+          />
+
+          <button
+            type="submit"
+            className="rounded-lg bg-dourado px-5 py-2.5 text-sm font-bold text-preto hover:opacity-90"
+          >
+            Adicionar R$ 35
+          </button>
+        </div>
+      </form>
 
       {gastosFiltrados.length === 0 ? (
         <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
@@ -320,22 +540,22 @@ export default async function GastosMotosPage({
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {motosDoMes.map((grupoMoto, indiceMoto) => {
                     const moto = grupoMoto.moto;
 
                     return (
-                      <details
+                      <div
                         key={
                           moto?.id
                             ? `${grupoMes.chave}-${moto.id}`
                             : `${grupoMes.chave}-sem-moto-${indiceMoto}`
                         }
-                        className="group overflow-hidden rounded-xl border border-grafite-claro bg-grafite"
+                        className="overflow-hidden rounded-xl border border-grafite-claro bg-grafite"
                       >
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-preto/70 px-5 py-4 transition hover:bg-preto [&::-webkit-details-marker]:hidden">
-                          <div className="min-w-0">
-                            <div className="truncate text-base font-bold text-white">
+                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-grafite-claro bg-preto/70 px-5 py-4">
+                          <div>
+                            <div className="text-base font-bold text-white">
                               {moto
                                 ? `${moto.marca || ""} ${moto.modelo || ""}`.trim()
                                 : "Moto não encontrada"}
@@ -349,105 +569,91 @@ export default async function GastosMotosPage({
                             </div>
                           </div>
 
-                          <div className="flex shrink-0 items-center gap-4">
+                          <div className="flex flex-wrap items-center gap-5">
                             <div className="text-right">
                               <p className="text-xs text-texto-suave">
-                                Custo total
+                                Lançamentos
                               </p>
-                              <p className="text-xl font-bold text-dourado">
+                              <p className="font-bold text-white">
+                                {grupoMoto.gastos.length}
+                              </p>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-xs text-texto-suave">
+                                Total da moto
+                              </p>
+                              <p className="text-lg font-bold text-dourado">
                                 {formatarMoeda(grupoMoto.total)}
                               </p>
                             </div>
 
-                            <span className="text-lg font-bold text-dourado transition-transform group-open:rotate-180">
-                              ▼
-                            </span>
-                          </div>
-                        </summary>
-
-                        <div className="border-t border-grafite-claro">
-                          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-                            <p className="text-xs text-texto-suave">
-                              Detalhamento dos gastos desta moto
-                            </p>
-
                             {moto?.id && (
                               <Link
                                 href={`/motos/${moto.id}`}
-                                className="rounded-lg border border-dourado/40 px-3 py-2 text-xs font-semibold text-dourado hover:bg-dourado/10"
+                                className="rounded-lg border border-dourado/40 px-3 py-2 text-sm font-semibold text-dourado hover:bg-dourado/10"
                               >
                                 Ver Moto
                               </Link>
                             )}
                           </div>
-
-                          <div className="overflow-x-auto">
-                            <table className="w-full min-w-[850px] text-sm">
-                              <thead className="border-y border-grafite-claro bg-preto/30">
-                                <tr className="text-left text-xs uppercase tracking-wide text-texto-suave">
-                                  <th className="px-4 py-3">Data</th>
-                                  <th className="px-4 py-3">Categoria</th>
-                                  <th className="px-4 py-3">Descrição</th>
-                                  <th className="px-4 py-3">Pagamento</th>
-                                  <th className="px-4 py-3 text-right">Valor</th>
-                                  <th className="px-4 py-3 text-right">Ação</th>
-                                </tr>
-                              </thead>
-
-                              <tbody>
-                                {grupoMoto.gastos.map((gasto) => (
-                                  <tr
-                                    key={gasto.id}
-                                    className="border-b border-grafite-claro last:border-b-0"
-                                  >
-                                    <td className="whitespace-nowrap px-4 py-3">
-                                      {gasto.data
-                                        ? formatarData(gasto.data)
-                                        : "—"}
-                                    </td>
-
-                                    <td className="px-4 py-3">
-                                      {gasto.categoria || "—"}
-                                    </td>
-
-                                    <td className="px-4 py-3">
-                                      {gasto.descricao || "—"}
-                                    </td>
-
-                                    <td className="px-4 py-3">
-                                      {gasto.forma_pagamento || "—"}
-                                    </td>
-
-                                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
-                                      {formatarMoeda(gasto.valor)}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-right">
-                                      <Link
-                                        href={`/gastos/${gasto.id}`}
-                                        className="font-semibold text-dourado hover:underline"
-                                      >
-                                        Editar
-                                      </Link>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="flex justify-end border-t border-grafite-claro bg-preto/30 px-5 py-4">
-                            <div className="text-right">
-                              <p className="text-xs text-texto-suave">
-                                Custo total desta moto no mês
-                              </p>
-                              <p className="text-xl font-bold text-dourado">
-                                {formatarMoeda(grupoMoto.total)}
-                              </p>
-                            </div>
-                          </div>
                         </div>
-                      </details>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[850px] text-sm">
+                            <thead className="border-b border-grafite-claro bg-preto/30">
+                              <tr className="text-left text-xs uppercase tracking-wide text-texto-suave">
+                                <th className="px-4 py-3">Data</th>
+                                <th className="px-4 py-3">Categoria</th>
+                                <th className="px-4 py-3">Descrição</th>
+                                <th className="px-4 py-3">Pagamento</th>
+                                <th className="px-4 py-3 text-right">Valor</th>
+                                <th className="px-4 py-3 text-right">Ação</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {grupoMoto.gastos.map((gasto) => (
+                                <tr
+                                  key={gasto.id}
+                                  className="border-b border-grafite-claro last:border-b-0"
+                                >
+                                  <td className="whitespace-nowrap px-4 py-3">
+                                    {gasto.data
+                                      ? formatarData(gasto.data)
+                                      : "—"}
+                                  </td>
+
+                                  <td className="px-4 py-3">
+                                    {gasto.categoria || "—"}
+                                  </td>
+
+                                  <td className="px-4 py-3">
+                                    {gasto.descricao || "—"}
+                                  </td>
+
+                                  <td className="px-4 py-3">
+                                    {gasto.forma_pagamento || "—"}
+                                  </td>
+
+                                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
+                                    {formatarMoeda(gasto.valor)}
+                                  </td>
+
+                                  <td className="px-4 py-3 text-right">
+                                    <Link
+                                      href={`/gastos/${gasto.id}`}
+                                      className="font-semibold text-dourado hover:underline"
+                                    >
+                                      Editar
+                                    </Link>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

@@ -10,6 +10,7 @@ import Link from "next/link";
 import {
   FileSignature,
   Save,
+  Search,
   Warehouse,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -68,6 +69,21 @@ type FormMoto = {
   status: StatusMoto;
   observacoes: string;
 };
+
+function formatarCep(valor: string) {
+  const numeros = valor
+    .replace(/\D/g, "")
+    .slice(0, 8);
+
+  if (numeros.length <= 5) {
+    return numeros;
+  }
+
+  return `${numeros.slice(
+    0,
+    5
+  )}-${numeros.slice(5)}`;
+}
 
 function hoje() {
   const data = new Date();
@@ -145,6 +161,36 @@ export default function NovaMotoPage() {
 
   const [mensagem, setMensagem] =
     useState("");
+
+  const [
+    buscandoPlaca,
+    setBuscandoPlaca,
+  ] = useState(false);
+
+  const [
+    mensagemBuscaPlaca,
+    setMensagemBuscaPlaca,
+  ] = useState("");
+
+  const [
+    erroBuscaPlaca,
+    setErroBuscaPlaca,
+  ] = useState("");
+
+  const [
+    buscandoCepFornecedor,
+    setBuscandoCepFornecedor,
+  ] = useState(false);
+
+  const [
+    erroCepFornecedor,
+    setErroCepFornecedor,
+  ] = useState("");
+
+  const [
+    cepFornecedorEncontrado,
+    setCepFornecedorEncontrado,
+  ] = useState(false);
 
   const [
     motoCriadaId,
@@ -239,6 +285,116 @@ export default function NovaMotoPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const cepNumeros =
+      form.fornecedor_cep.replace(
+        /\D/g,
+        ""
+      );
+
+    if (cepNumeros.length !== 8) {
+      setErroCepFornecedor("");
+      setCepFornecedorEncontrado(
+        false
+      );
+      setBuscandoCepFornecedor(
+        false
+      );
+      return;
+    }
+
+    const controlador =
+      new AbortController();
+
+    const timer =
+      window.setTimeout(
+        async () => {
+          setBuscandoCepFornecedor(
+            true
+          );
+          setErroCepFornecedor("");
+          setCepFornecedorEncontrado(
+            false
+          );
+
+          try {
+            const resposta =
+              await fetch(
+                `https://viacep.com.br/ws/${cepNumeros}/json/`,
+                {
+                  signal:
+                    controlador.signal,
+                }
+              );
+
+            if (!resposta.ok) {
+              throw new Error(
+                "Não foi possível consultar o CEP."
+              );
+            }
+
+            const dados =
+              await resposta.json();
+
+            if (dados?.erro) {
+              throw new Error(
+                "CEP não encontrado."
+              );
+            }
+
+            setForm((anterior) => ({
+              ...anterior,
+              fornecedor_cep:
+                dados.cep ||
+                formatarCep(
+                  cepNumeros
+                ),
+              fornecedor_rua:
+                dados.logradouro ||
+                anterior.fornecedor_rua,
+              fornecedor_bairro:
+                dados.bairro ||
+                anterior.fornecedor_bairro,
+              fornecedor_cidade:
+                dados.localidade ||
+                anterior.fornecedor_cidade,
+              fornecedor_estado:
+                dados.uf ||
+                anterior.fornecedor_estado,
+            }));
+
+            setCepFornecedorEncontrado(
+              true
+            );
+          } catch (error) {
+            if (
+              error instanceof DOMException &&
+              error.name ===
+                "AbortError"
+            ) {
+              return;
+            }
+
+            setErroCepFornecedor(
+              error instanceof Error
+                ? error.message
+                : "Não foi possível consultar o CEP."
+            );
+          } finally {
+            setBuscandoCepFornecedor(
+              false
+            );
+          }
+        },
+        450
+      );
+
+    return () => {
+      window.clearTimeout(timer);
+      controlador.abort();
+    };
+  }, [form.fornecedor_cep]);
+
   async function carregarFornecedorDoCliente(
     clienteId: string
   ) {
@@ -294,6 +450,87 @@ export default function NovaMotoPage() {
     }));
   }
 
+  async function buscarPlaca() {
+    const placa = form.placa
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+    setMensagemBuscaPlaca("");
+    setErroBuscaPlaca("");
+
+    if (placa.length !== 7) {
+      setErroBuscaPlaca(
+        "Informe uma placa válida com 7 caracteres."
+      );
+      return;
+    }
+
+    setBuscandoPlaca(true);
+
+    try {
+      const resposta = await fetch(
+        `/api/veiculos/buscar-placa?placa=${encodeURIComponent(
+          placa
+        )}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.error ||
+            "Não foi possível consultar a placa."
+        );
+      }
+
+      setForm((anterior) => ({
+        ...anterior,
+        placa:
+          resultado.placa ||
+          placa,
+        marca:
+          resultado.marca ||
+          anterior.marca,
+        modelo:
+          resultado.modelo ||
+          anterior.modelo,
+        ano_fabricacao:
+          resultado.ano_fabricacao ||
+          anterior.ano_fabricacao,
+        ano_modelo:
+          resultado.ano_modelo ||
+          anterior.ano_modelo,
+        cor:
+          resultado.cor ||
+          anterior.cor,
+        chassi:
+          resultado.chassi ||
+          anterior.chassi,
+        cilindrada:
+          resultado.cilindrada ||
+          anterior.cilindrada,
+      }));
+
+      setMensagemBuscaPlaca(
+        resultado.renavam
+          ? "Dados encontrados e preenchidos. Confira as informações antes de salvar."
+          : "Dados encontrados e preenchidos. O RENAVAM não é fornecido por esta consulta e deve ser informado manualmente."
+      );
+    } catch (error) {
+      setErroBuscaPlaca(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível consultar a placa."
+      );
+    } finally {
+      setBuscandoPlaca(false);
+    }
+  }
+
   function limpar() {
     setForm({
       ...formInicial,
@@ -303,6 +540,15 @@ export default function NovaMotoPage() {
     setMotoCriadaId("");
     setErro("");
     setMensagem("");
+    setMensagemBuscaPlaca("");
+    setErroBuscaPlaca("");
+    setErroCepFornecedor("");
+    setCepFornecedorEncontrado(
+      false
+    );
+    setBuscandoCepFornecedor(
+      false
+    );
   }
 
   async function salvarMoto(
@@ -1231,17 +1477,74 @@ export default function NovaMotoPage() {
                 placeholder="Preta"
               />
 
-              <Campo
-                label="Placa"
-                value={form.placa}
-                onChange={(valor) =>
-                  atualizarCampo(
-                    "placa",
-                    valor
-                  )
-                }
-                placeholder="ABC1D23"
-              />
+              <div>
+                <label className="mb-2 block text-sm font-medium text-texto-suave">
+                  Placa
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    value={form.placa}
+                    onChange={(event) => {
+                      const valor =
+                        event.target.value
+                          .toUpperCase()
+                          .replace(
+                            /[^A-Z0-9]/g,
+                            ""
+                          )
+                          .slice(0, 7);
+
+                      atualizarCampo(
+                        "placa",
+                        valor
+                      );
+
+                      setMensagemBuscaPlaca(
+                        ""
+                      );
+                      setErroBuscaPlaca("");
+                    }}
+                    placeholder="ABC1D23"
+                    className="min-w-0 flex-1 rounded-xl border border-grafite-claro bg-preto px-4 py-3 uppercase text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={buscarPlaca}
+                    disabled={
+                      buscandoPlaca ||
+                      form.placa
+                        .replace(
+                          /[^A-Za-z0-9]/g,
+                          ""
+                        )
+                        .length !== 7
+                    }
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-dourado px-4 py-3 font-bold text-preto transition hover:bg-dourado-claro disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Consultar dados do veículo pela placa"
+                  >
+                    <Search size={18} />
+                    <span className="hidden sm:inline">
+                      {buscandoPlaca
+                        ? "Buscando..."
+                        : "Buscar placa"}
+                    </span>
+                  </button>
+                </div>
+
+                {mensagemBuscaPlaca && (
+                  <p className="mt-2 text-xs leading-5 text-green-400">
+                    {mensagemBuscaPlaca}
+                  </p>
+                )}
+
+                {erroBuscaPlaca && (
+                  <p className="mt-2 text-xs leading-5 text-red-400">
+                    {erroBuscaPlaca}
+                  </p>
+                )}
+              </div>
 
               <Campo
                 label="Renavam"
@@ -1751,19 +2054,62 @@ export default function NovaMotoPage() {
                 placeholder="RG"
               />
 
-              <Campo
-                label="CEP"
-                value={
-                  form.fornecedor_cep
-                }
-                onChange={(valor) =>
-                  atualizarCampo(
-                    "fornecedor_cep",
-                    valor
-                  )
-                }
-                placeholder="00000-000"
-              />
+              <div>
+                <label className="mb-2 block text-sm font-medium text-texto-suave">
+                  CEP
+                </label>
+
+                <div className="relative">
+                  <input
+                    value={
+                      form.fornecedor_cep
+                    }
+                    inputMode="numeric"
+                    maxLength={9}
+                    onChange={(event) => {
+                      atualizarCampo(
+                        "fornecedor_cep",
+                        formatarCep(
+                          event.target.value
+                        )
+                      );
+
+                      setErroCepFornecedor(
+                        ""
+                      );
+                      setCepFornecedorEncontrado(
+                        false
+                      );
+                    }}
+                    placeholder="00000-000"
+                    className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 pr-28 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
+                  />
+
+                  <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
+                    {buscandoCepFornecedor ? (
+                      <span className="text-xs font-semibold text-dourado">
+                        Buscando...
+                      </span>
+                    ) : cepFornecedorEncontrado ? (
+                      <span className="text-xs font-semibold text-green-400">
+                        Encontrado
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {erroCepFornecedor && (
+                  <p className="mt-2 text-xs leading-5 text-red-400">
+                    {erroCepFornecedor}
+                  </p>
+                )}
+
+                <p className="mt-2 text-xs leading-5 text-texto-suave">
+                  Ao informar os 8 números,
+                  Rua, Bairro, Cidade e Estado
+                  são preenchidos automaticamente.
+                </p>
+              </div>
 
               <Campo
                 label="Rua"
