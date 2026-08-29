@@ -72,19 +72,28 @@ export default function Sidebar() {
           aberto ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className="relative flex h-28 shrink-0 items-center justify-start border-b border-black/[.07] px-4">
-          <Link href="/dashboard" onClick={() => setAberto(false)} className="flex items-center">
+        <div className="relative flex h-32 shrink-0 items-center justify-center border-b border-black/[.07] px-4">
+          <Link
+            href="/dashboard"
+            onClick={() => setAberto(false)}
+            className="flex w-full items-center justify-center"
+          >
             {/*
-              Versão da logo para fundo claro. A logo-blackout.png
-              tem fundo preto e virava um quadrado escuro no menu
-              branco.
+              logo-blackout-menu.png sai do timbre dos contratos,
+              onde a logo está em 1278x475 - dez vezes mais
+              resolução que o arquivo antigo.
+              A arte é branca sobre preto, então foi invertida
+              para o fundo claro: capacete e BLACKOUT em preto,
+              MOTOS no dourado original. O ruído do JPEG foi
+              tratado antes da inversão, senão cada sujeirinha
+              do fundo virava um ponto cinza no branco.
             */}
-            <span className="relative block h-[76px] w-[168px]">
+            <span className="relative block h-[88px] w-[214px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-blackout-clara.png"
+                src="/logo-blackout-menu.png"
                 alt="Blackout Motos"
-                className="h-full w-full object-contain object-left"
+                className="h-full w-full object-contain"
               />
             </span>
           </Link>
@@ -102,7 +111,8 @@ export default function Sidebar() {
         <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
           {menuItems.map((item) => {
             const Icone = item.icon
-            const ativo = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            const ativo =
+              pathname === item.href || pathname.startsWith(`${item.href}/`)
 
             return (
               <Link
@@ -115,18 +125,35 @@ export default function Sidebar() {
                     : 'border-transparent bg-white text-black/65 hover:-translate-y-px hover:border-black/[.07] hover:bg-[#fafafa] hover:text-black hover:shadow-[0_7px_18px_rgba(15,23,42,.06)]'
                 }`}
               >
-                {ativo && <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-[#d3a516] shadow-[0_0_12px_rgba(211,165,22,.55)]" />}
-                <Icone size={18} className={ativo ? 'text-[#e2b72d]' : 'text-black/45 group-hover:text-[#a97800]'} />
-                <span className={ativo ? '!text-white' : ''}>{item.label}</span>
+                {ativo && (
+                  <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-[#d3a516] shadow-[0_0_12px_rgba(211,165,22,.55)]" />
+                )}
+
+                <Icone
+                  size={18}
+                  className={
+                    ativo
+                      ? '!text-[#e2b72d]'
+                      : 'text-black/45 group-hover:text-[#a97800]'
+                  }
+                />
+
+                <span className={ativo ? '!text-white' : ''}>
+                  {item.label}
+                </span>
               </Link>
             )
           })}
         </nav>
 
         <div className="border-t border-black/[.07] p-3">
-          <div className="cartao-marca-menu mb-3 rounded-2xl border border-[#d7b447]/30 p-3">
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#8a6400]">Blackout Motos</p>
-            <p className="mt-1 text-xs font-bold text-black/50">Sistema de gestão</p>
+          <div className="mb-3 rounded-2xl border border-[#d7b447]/30 bg-[linear-gradient(145deg,#fffdf7,#f7edcf)] p-3 shadow-[inset_0_1px_0_#fff,0_8px_20px_rgba(169,120,0,.07)]">
+            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#8a6400]">
+              Blackout Motos
+            </p>
+            <p className="mt-1 text-xs font-bold text-black/50">
+              Sistema de gestão
+            </p>
           </div>
 
           <button
