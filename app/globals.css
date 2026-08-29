@@ -79,12 +79,24 @@ body {
 
 /*
  * Cabeçalho timbrado do modelo da loja.
+ * As três linhas (endereço, telefone, CNPJ) ficam juntas,
+ * com um respiro pequeno entre elas.
  */
 .documento-word .cabecalho-loja {
-  margin: 0;
+  margin: 0 0 0.3em;
   text-align: center;
   font-size: 9pt;
-  line-height: 1.35;
+  line-height: 1.4;
+}
+
+/*
+ * A primeira linha do endereço desce cerca de duas linhas
+ * em relação à logo, para o timbre não ficar grudado nela.
+ * O seletor pega só a primeira do bloco: a que vem logo
+ * depois de um parágrafo que não é do cabeçalho (a logo).
+ */
+.documento-word p:not(.cabecalho-loja) + .cabecalho-loja {
+  margin-top: 2.2em;
 }
 
 .documento-word .data-documento {
