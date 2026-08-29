@@ -176,7 +176,7 @@ function transferenciaDescricao(
     loja > 0
   ) {
     /*
-     * Rachada meio a meio: a redação fica mais clara
+     * Divisão meio a meio: a redação fica mais clara
      * dizendo o valor de cada parte e o total.
      */
     if (

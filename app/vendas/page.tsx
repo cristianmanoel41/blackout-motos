@@ -296,13 +296,13 @@ export default function VendasPage() {
 
   /*
    * Quem paga a transferência do documento.
-   * "rachada" divide o valor meio a meio entre cliente e loja.
+   * "divisao" parte o valor meio a meio entre cliente e loja.
    */
   function definirTransferencia(
     quem:
       | "cliente"
       | "loja"
-      | "rachada"
+      | "divisao"
       | "nenhum"
   ) {
     const total =
@@ -324,7 +324,7 @@ export default function VendasPage() {
       return;
     }
 
-    if (quem === "rachada") {
+    if (quem === "divisao") {
       /*
        * Em valor ímpar a diferença de um centavo fica
        * com o cliente, para a soma fechar exatamente.
@@ -3605,7 +3605,7 @@ export default function VendasPage() {
                       nome: "Loja paga",
                     },
                     {
-                      chave: "rachada",
+                      chave: "divisao",
                       nome: "Divisão",
                     },
                     {
