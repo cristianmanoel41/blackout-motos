@@ -72,11 +72,20 @@ export default function Sidebar() {
           aberto ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className="relative flex h-32 shrink-0 items-center justify-center border-b border-black/[.07] px-4">
-          <Link href="/dashboard" onClick={() => setAberto(false)} className="flex w-full items-center justify-center">
-            <span className="relative block h-[92px] w-[190px]">
+        <div className="relative flex h-28 shrink-0 items-center justify-start border-b border-black/[.07] px-4">
+          <Link href="/dashboard" onClick={() => setAberto(false)} className="flex items-center">
+            {/*
+              Versão da logo para fundo claro. A logo-blackout.png
+              tem fundo preto e virava um quadrado escuro no menu
+              branco.
+            */}
+            <span className="relative block h-[76px] w-[168px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-blackout.png" alt="Blackout Motos" className="h-full w-full object-contain" />
+              <img
+                src="/logo-blackout-clara.png"
+                alt="Blackout Motos"
+                className="h-full w-full object-contain object-left"
+              />
             </span>
           </Link>
 
