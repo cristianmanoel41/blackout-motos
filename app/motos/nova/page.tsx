@@ -14,6 +14,11 @@ import {
   Warehouse,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CampoComBusca from "@/components/CampoComBusca";
+import {
+  MARCAS,
+  modelosDaMarca,
+} from "@/lib/dados/motos";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 type TipoEntrada =
@@ -1399,19 +1404,33 @@ export default function NovaMotoPage() {
             </h2>
 
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              <Campo
+              <CampoComBusca
                 label="Marca *"
                 value={form.marca}
-                onChange={(valor) =>
+                onChange={(valor) => {
                   atualizarCampo(
                     "marca",
                     valor
-                  )
-                }
+                  );
+
+                  /*
+                   * Trocou de marca: o modelo antigo não vale
+                   * mais, senão fica Honda com modelo Yamaha.
+                   */
+                  if (
+                    valor !== form.marca
+                  ) {
+                    atualizarCampo(
+                      "modelo",
+                      ""
+                    );
+                  }
+                }}
+                opcoes={MARCAS}
                 placeholder="Honda"
               />
 
-              <Campo
+              <CampoComBusca
                 label="Modelo *"
                 value={form.modelo}
                 onChange={(valor) =>
@@ -1420,7 +1439,18 @@ export default function NovaMotoPage() {
                     valor
                   )
                 }
+                opcoes={modelosDaMarca(
+                  form.marca
+                )}
                 placeholder="Fan 160"
+                aviso={
+                  form.marca &&
+                  modelosDaMarca(
+                    form.marca
+                  ).length === 0
+                    ? "Marca sem modelos no catálogo. Digite o modelo na busca."
+                    : undefined
+                }
               />
 
               <Campo
