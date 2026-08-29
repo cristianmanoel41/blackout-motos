@@ -7,6 +7,7 @@ import {
   formatarMoeda,
   formatarNumero,
 } from "@/lib/formatadores/moeda";
+import { valorPorExtenso } from "@/lib/formatadores/extenso";
 
 export const runtime = "nodejs";
 
@@ -38,176 +39,6 @@ function moedaSemSimbolo(valor: unknown) {
   return formatarNumero(valor as number);
 }
 
-const UNIDADES = [
-  "",
-  "UM",
-  "DOIS",
-  "TRÊS",
-  "QUATRO",
-  "CINCO",
-  "SEIS",
-  "SETE",
-  "OITO",
-  "NOVE",
-];
-
-const DEZ_A_DEZENOVE = [
-  "DEZ",
-  "ONZE",
-  "DOZE",
-  "TREZE",
-  "QUATORZE",
-  "QUINZE",
-  "DEZESSEIS",
-  "DEZESSETE",
-  "DEZOITO",
-  "DEZENOVE",
-];
-
-const DEZENAS = [
-  "",
-  "",
-  "VINTE",
-  "TRINTA",
-  "QUARENTA",
-  "CINQUENTA",
-  "SESSENTA",
-  "SETENTA",
-  "OITENTA",
-  "NOVENTA",
-];
-
-const CENTENAS = [
-  "",
-  "CENTO",
-  "DUZENTOS",
-  "TREZENTOS",
-  "QUATROCENTOS",
-  "QUINHENTOS",
-  "SEISCENTOS",
-  "SETECENTOS",
-  "OITOCENTOS",
-  "NOVECENTOS",
-];
-
-function ate999(n: number): string {
-  if (n === 0) return "";
-  if (n === 100) return "CEM";
-
-  const partes: string[] = [];
-
-  const centena = Math.floor(n / 100);
-  const resto100 = n % 100;
-
-  if (centena > 0) {
-    partes.push(CENTENAS[centena]);
-  }
-
-  if (resto100 > 0) {
-    if (partes.length) partes.push("E");
-
-    if (resto100 < 10) {
-      partes.push(UNIDADES[resto100]);
-    } else if (resto100 < 20) {
-      partes.push(
-        DEZ_A_DEZENOVE[
-          resto100 - 10
-        ]
-      );
-    } else {
-      const dezena =
-        Math.floor(
-          resto100 / 10
-        );
-
-      const unidade =
-        resto100 % 10;
-
-      partes.push(
-        DEZENAS[dezena]
-      );
-
-      if (unidade > 0) {
-        partes.push("E");
-
-        partes.push(
-          UNIDADES[unidade]
-        );
-      }
-    }
-  }
-
-  return partes.join(" ");
-}
-
-function numeroExtenso(
-  valor: number
-): string {
-  const inteiro =
-    Math.floor(valor);
-
-  if (inteiro === 0) {
-    return "ZERO REAIS";
-  }
-
-  const partes: string[] = [];
-
-  const milhoes =
-    Math.floor(
-      inteiro / 1_000_000
-    );
-
-  const milhares =
-    Math.floor(
-      (inteiro % 1_000_000) /
-        1_000
-    );
-
-  const resto =
-    inteiro % 1_000;
-
-  if (milhoes > 0) {
-    partes.push(
-      milhoes === 1
-        ? "UM MILHÃO"
-        : `${ate999(
-            milhoes
-          )} MILHÕES`
-    );
-  }
-
-  if (milhares > 0) {
-    if (partes.length) {
-      partes.push("E");
-    }
-
-    partes.push(
-      milhares === 1
-        ? "MIL"
-        : `${ate999(
-            milhares
-          )} MIL`
-    );
-  }
-
-  if (resto > 0) {
-    if (partes.length) {
-      partes.push("E");
-    }
-
-    partes.push(
-      ate999(resto)
-    );
-  }
-
-  partes.push(
-    inteiro === 1
-      ? "REAL"
-      : "REAIS"
-  );
-
-  return partes.join(" ");
-}
 
 function dataAtualExtenso() {
   const agora = new Date();
@@ -633,7 +464,7 @@ export async function GET(
         ),
 
       valor_compra_extenso:
-        numeroExtenso(
+        valorPorExtenso(
           valorCompra
         ),
 

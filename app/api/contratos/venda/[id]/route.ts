@@ -4,6 +4,7 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import { valorPorExtenso } from "@/lib/formatadores/extenso";
 
 export const runtime = "nodejs";
 
@@ -479,9 +480,9 @@ export async function GET(
         ),
 
       valor_venda_extenso:
-        `valor total de ${moeda(
+        valorPorExtenso(
           valorVenda
-        )}`,
+        ),
 
       forma_pagamento_descricao:
         descricaoPagamentos(
