@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type CSSProperties,
 } from "react";
 import {
   Check,
@@ -23,7 +24,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
-import styles from "./estoque.module.css";
 
 const supabase = createClient();
 const ITENS_POR_PAGINA = 12;
@@ -57,33 +57,46 @@ function normalizarTexto(valor: unknown) {
     .trim();
 }
 
-function classeDaCorDaMoto(valor?: string | null) {
+function estiloDaCorDaMoto(valor?: string | null): CSSProperties {
   const cor = normalizarTexto(valor);
 
   const cores: Array<[string, string]> = [
-    ["vermelh", styles.vermelha],
-    ["azul", styles.azul],
-    ["pret", styles.preta],
-    ["prata", styles.prata],
-    ["cinza", styles.cinza],
-    ["branc", styles.branca],
-    ["amarel", styles.amarela],
-    ["dourad", styles.dourada],
-    ["verde", styles.verde],
-    ["laranja", styles.laranja],
-    ["rox", styles.roxa],
-    ["violeta", styles.roxa],
-    ["rosa", styles.rosa],
-    ["vinho", styles.vinho],
-    ["marrom", styles.marrom],
-    ["bege", styles.bege],
-    ["grafite", styles.grafite],
-    ["chumbo", styles.chumbo],
+    ["vermelh", "#dc2626"],
+    ["azul", "#2563eb"],
+    ["pret", "#111111"],
+    ["prata", "#64748b"],
+    ["cinza", "#4b5563"],
+    ["branc", "#ffffff"],
+    ["amarel", "#eab308"],
+    ["dourad", "#b8860b"],
+    ["verde", "#15803d"],
+    ["laranja", "#ea580c"],
+    ["rox", "#7e22ce"],
+    ["violeta", "#7c3aed"],
+    ["rosa", "#db2777"],
+    ["vinho", "#881337"],
+    ["marrom", "#78350f"],
+    ["bege", "#a16207"],
+    ["grafite", "#374151"],
+    ["chumbo", "#475569"],
   ];
 
   const encontrada = cores.find(([nome]) => cor.includes(nome));
+  const corAplicada = encontrada?.[1] || "#111111";
+  const corClara =
+    cor.includes("branc") ||
+    cor.includes("amarel") ||
+    cor.includes("dourad") ||
+    cor.includes("bege");
 
-  return `${styles.corMoto} ${encontrada?.[1] || styles.padrao}`;
+  return {
+    color: corAplicada,
+    WebkitTextFillColor: corAplicada,
+    fontWeight: 900,
+    textShadow: corClara
+      ? "-1px -1px 0 #374151, 1px -1px 0 #374151, -1px 1px 0 #374151, 1px 1px 0 #374151"
+      : "none",
+  };
 }
 
 function formatarKm(valor: unknown) {
@@ -787,12 +800,12 @@ export default function EstoquePage() {
                         </td>
 
                         <td className="whitespace-nowrap px-4 py-3 text-sm">
-                          <span className={classeDaCorDaMoto(moto.cor)}>
+                          <strong style={estiloDaCorDaMoto(moto.cor)}>
                             {moto.cor || "—"}
-                          </span>
+                          </strong>
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-zinc-200">
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-base font-bold text-zinc-200">
                           {moto.placa || "—"}
                         </td>
 
