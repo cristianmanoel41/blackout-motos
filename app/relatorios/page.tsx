@@ -542,7 +542,7 @@ export default async function RelatorioMensalPage({
           <div className="grid grid-cols-1 divide-y divide-grafite-claro md:grid-cols-2 md:divide-x md:divide-y-0">
             <div className="p-5">
               <p className="text-sm font-semibold text-white">
-                Cristian
+                Vendedor Cristian
               </p>
 
               <p className="mt-3 text-3xl font-bold text-dourado">
@@ -566,7 +566,7 @@ export default async function RelatorioMensalPage({
 
             <div className="p-5">
               <p className="text-sm font-semibold text-white">
-                Bruno
+                Vendedor Bruno
               </p>
 
               <p className="mt-3 text-3xl font-bold text-dourado">
