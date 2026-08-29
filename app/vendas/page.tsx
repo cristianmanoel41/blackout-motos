@@ -14,8 +14,8 @@ import {
   OPERADORA_CARTAO,
 } from "@/lib/dados/financeiras";
 import {
-  opcoesDeVendedor,
   useUsuarioAtual,
+  vendedorDoUsuario,
   VENDEDORES,
 } from "@/lib/usuario/atual";
 import {
@@ -272,16 +272,17 @@ export default function VendasPage() {
     useUsuarioAtual();
 
   /*
-   * O vendedor entra sozinho com o nome de quem está
-   * logado. Continua trocável, para o caso de registrar
-   * a venda de outro vendedor.
+   * O vendedor entra sozinho quando o usuário logado é um
+   * dos vendedores da loja. Continua trocável por qualquer
+   * um, para registrar a venda que o outro fechou.
    */
   useEffect(() => {
-    if (
-      usuario?.nome &&
-      !vendedor
-    ) {
-      setVendedor(usuario.nome);
+    const doUsuario = vendedorDoUsuario(
+      usuario?.nome
+    );
+
+    if (doUsuario && !vendedor) {
+      setVendedor(doUsuario);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario]);
@@ -1414,7 +1415,9 @@ export default function VendasPage() {
      * Volta com o usuário logado, e não em branco:
      * na venda seguinte o vendedor já vem preenchido.
      */
-    setVendedor(usuario?.nome || "");
+    setVendedor(
+      vendedorDoUsuario(usuario?.nome)
+    );
     setTipoVenda("avista");
     setValorVenda("");
     setBanco("");
@@ -2395,10 +2398,7 @@ export default function VendasPage() {
                     Selecione o vendedor
                   </option>
 
-                  {opcoesDeVendedor(
-                    VENDEDORES,
-                    usuario?.nome
-                  ).map((nome) => (
+                  {VENDEDORES.map((nome) => (
                     <option
                       key={nome}
                       value={nome}
@@ -2411,19 +2411,20 @@ export default function VendasPage() {
                 {usuario && (
                   <p className="mt-2 text-xs text-zinc-500">
                     {vendedor ===
-                    usuario.nome ? (
+                    vendedorDoUsuario(
+                      usuario.nome
+                    ) ? (
                       <>
                         Preenchido com o seu usuário. Troque
-                        se a venda for de outro vendedor.
+                        se a venda for do outro vendedor.
                       </>
                     ) : (
                       <>
-                        Você está logado como{" "}
+                        Quem digitou fica registrado como{" "}
                         <strong className="text-zinc-300">
                           {usuario.nome}
                         </strong>
-                        . A venda fica registrada no seu
-                        usuário de qualquer forma.
+                        , independente do vendedor escolhido.
                       </>
                     )}
                   </p>

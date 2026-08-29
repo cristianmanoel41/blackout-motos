@@ -5,8 +5,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import {
-  opcoesDeVendedor,
   useUsuarioAtual,
+  vendedorDoUsuario,
   VENDEDORES,
 } from "@/lib/usuario/atual";
 import {
@@ -142,8 +142,12 @@ export default function NovaVendaCapacetePage() {
    * Vendedor entra sozinho com quem está logado.
    */
   useEffect(() => {
-    if (usuario?.nome && !vendedor) {
-      setVendedor(usuario.nome);
+    const doUsuario = vendedorDoUsuario(
+      usuario?.nome
+    );
+
+    if (doUsuario && !vendedor) {
+      setVendedor(doUsuario);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario]);
@@ -398,7 +402,9 @@ export default function NovaVendaCapacetePage() {
     /*
      * Volta com o usuário logado, e não em branco.
      */
-    setVendedor(usuario?.nome || "");
+    setVendedor(
+      vendedorDoUsuario(usuario?.nome)
+    );
     setClienteId("");
     setBuscaCliente("");
     setClienteCpf("");
@@ -818,10 +824,7 @@ export default function NovaVendaCapacetePage() {
             >
               <option value="">Selecione</option>
 
-              {opcoesDeVendedor(
-                VENDEDORES,
-                usuario?.nome
-              ).map((nome) => (
+              {VENDEDORES.map((nome) => (
                 <option key={nome} value={nome}>
                   {nome}
                 </option>

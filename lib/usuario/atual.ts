@@ -99,31 +99,44 @@ export function useUsuarioAtual() {
 }
 
 /*
- * Lista de nomes para o campo de vendedor: os vendedores da
- * loja mais o nome de quem está logado, se for outro.
+ * Vendedores da loja. É a lista fechada que aparece no campo
+ * de vendedor: qualquer um pode escolher entre os dois, tanto
+ * ao registrar quanto ao editar uma venda depois.
  */
-export function opcoesDeVendedor(
-  vendedores: readonly string[],
-  nomeAtual?: string | null
-): string[] {
-  const lista = [...vendedores];
-
-  const atual = (nomeAtual || "").trim();
-
-  if (
-    atual &&
-    !lista.some(
-      (nome) =>
-        nome.toLowerCase() === atual.toLowerCase()
-    )
-  ) {
-    lista.unshift(atual);
-  }
-
-  return lista;
-}
-
 export const VENDEDORES = [
   "Cristian",
   "Bruno",
 ] as const;
+
+function semAcento(valor?: string | null) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/*
+ * Descobre qual vendedor corresponde ao usuário logado, para
+ * o campo já vir preenchido. Usuário que não é vendedor (um
+ * administrativo, por exemplo) devolve vazio: aí a venda é
+ * lançada escolhendo o vendedor na mão.
+ */
+export function vendedorDoUsuario(
+  nome?: string | null
+): string {
+  const alvo = semAcento(nome);
+
+  if (!alvo) return "";
+
+  return (
+    VENDEDORES.find((vendedor) => {
+      const referencia = semAcento(vendedor);
+
+      return (
+        alvo === referencia ||
+        alvo.startsWith(`${referencia} `)
+      );
+    }) || ""
+  );
+}
