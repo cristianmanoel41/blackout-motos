@@ -326,3 +326,84 @@ export function modelosDaMarca(marca?: string | null) {
 
   return encontrada ? encontrada.modelos : []
 }
+
+/*
+ * VERSÕES
+ *
+ * Versão é o acabamento do modelo: ABS, ESDi, Flex, Rally...
+ * A lista abaixo é o que aparece com mais frequência nas notas
+ * e nos documentos. Assim como os modelos, NÃO é oficial: o
+ * campo aceita texto livre e o que for digitado vale.
+ */
+
+export const VERSOES_COMUNS = [
+  'ABS',
+  'CBS',
+  'UBS',
+  'Std',
+  'ESD',
+  'ESDi',
+  'EX',
+  'Flex',
+  'BlueFlex',
+  'Sport',
+  'Touring',
+  'Adventure',
+  'Rally',
+  'Special Edition',
+  'Limited',
+] as const
+
+/*
+ * Versões próprias de alguns modelos, pela chave "Marca|Modelo".
+ * O que não estiver aqui usa a lista comum acima.
+ */
+export const VERSOES_POR_MODELO: Record<string, string[]> = {
+  'Honda|Biz 125': ['ES', 'EX'],
+  'Honda|CG 160 Fan': ['ESDi', 'Flex'],
+  'Honda|CG 160 Titan': ['S', 'EX', 'Flex'],
+  'Honda|PCX 160': ['DLX', 'Sport', 'Touring'],
+  'Honda|XRE 300': ['ABS', 'Rally', 'Sahara'],
+  'Honda|CB 500X': ['ABS'],
+  'Yamaha|Factor 150': ['ED', 'UBS', 'BlueFlex'],
+  'Yamaha|Fazer 250': ['ABS', 'BlueFlex', 'Limited'],
+  'Yamaha|NMAX 160': ['ABS', 'Connected'],
+  'Yamaha|Crosser 150': ['S', 'Z', 'ABS'],
+  'Yamaha|Lander 250': ['ABS', 'BlueFlex'],
+}
+
+/*
+ * Versões sugeridas para a marca e o modelo escolhidos.
+ */
+export function versoesDoModelo(
+  marca?: string | null,
+  modelo?: string | null
+): string[] {
+  const nomeMarca = String(marca || '').trim()
+  const nomeModelo = String(modelo || '').trim()
+
+  if (!nomeModelo) return [...VERSOES_COMUNS]
+
+  const chave = Object.keys(VERSOES_POR_MODELO).find(
+    (item) =>
+      semAcento(item) ===
+      semAcento(`${nomeMarca}|${nomeModelo}`)
+  )
+
+  if (!chave) return [...VERSOES_COMUNS]
+
+  /*
+   * As específicas primeiro, e as comuns na sequência sem
+   * repetir - ABS e Flex servem para quase tudo.
+   */
+  const especificas = VERSOES_POR_MODELO[chave]
+
+  const restantes = VERSOES_COMUNS.filter(
+    (versao) =>
+      !especificas.some(
+        (item) => semAcento(item) === semAcento(versao)
+      )
+  )
+
+  return [...especificas, ...restantes]
+}

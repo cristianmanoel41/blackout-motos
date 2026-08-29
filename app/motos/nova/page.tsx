@@ -18,6 +18,7 @@ import CampoComBusca from "@/components/CampoComBusca";
 import {
   MARCAS,
   modelosDaMarca,
+  versoesDoModelo,
 } from "@/lib/dados/motos";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 
@@ -1453,7 +1454,7 @@ export default function NovaMotoPage() {
                 }
               />
 
-              <Campo
+              <CampoComBusca
                 label="Versão"
                 value={form.versao}
                 onChange={(valor) =>
@@ -1462,6 +1463,10 @@ export default function NovaMotoPage() {
                     valor
                   )
                 }
+                opcoes={versoesDoModelo(
+                  form.marca,
+                  form.modelo
+                )}
                 placeholder="ABS, DLX..."
               />
 
