@@ -22,12 +22,17 @@ ARQUIVOS DO PACOTE
 - components/AppShell.module.css
 - components/MarcaDaguaBlackout.tsx
 - public/logo-blackout-clara.png
+- public/login-moto-fundo.png
 
 OBSERVAÇÕES
 
 - Não há SQL para executar.
 - A alteração é apenas visual; nenhuma regra do Supabase foi modificada.
 - Recibos, documentos e login continuam sem sidebar e sem marca d'água.
+- A tela de login usa a nova logo clara com símbolo e BLACKOUT pretos,
+  mantendo MOTOS e as linhas em dourado.
+- A foto da moto aparece no fundo da tela de login com uma camada suave
+  para preservar a leitura do formulário.
 - As telas do sistema e o login usam textos pretos e em negrito; botões
   escuros preservam a cor necessária para manter o contraste.
 - A opção ativa do menu considera também as subpáginas.
