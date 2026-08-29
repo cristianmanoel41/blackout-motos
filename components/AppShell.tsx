@@ -17,6 +17,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (pathname === '/' || pathname === '/login') {
     return (
       <div className={`${styles.legibilidade} ${styles.loginComLogo}`}>
+        <div className={styles.fundoLogin} aria-hidden="true" />
+
         <div className={styles.logoLogin} aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -26,7 +28,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           />
         </div>
 
-        {children}
+        <div className={styles.conteudoLogin}>{children}</div>
       </div>
     )
   }

@@ -49,7 +49,35 @@
 }
 
 .loginComLogo {
+  position: relative;
   min-height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.fundoLogin {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.36)),
+    url('/login-moto-fundo.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.conteudoLogin {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+}
+
+/* Remove somente o fundo geral antigo; o card do formulário permanece branco. */
+.conteudoLogin > :global(*) {
+  background-color: transparent !important;
+  background-image: none !important;
 }
 
 /* Evita duas marcas caso a tela antiga já tenha uma logo Blackout. */
@@ -76,6 +104,10 @@
 }
 
 @media (max-width: 640px) {
+  .fundoLogin {
+    background-position: 58% center;
+  }
+
   .logoLogin {
     top: 1rem;
     width: min(68vw, 230px);
