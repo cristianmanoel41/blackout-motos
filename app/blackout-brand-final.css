@@ -1,0 +1,338 @@
+
+:root {
+  --bo-bg: #f5f6f8;
+  --bo-panel: #ffffff;
+  --bo-soft: #f8f9fb;
+  --bo-border: #e4e6ea;
+  --bo-text: #111214;
+  --bo-muted: #686d75;
+  --bo-black: #0c0d0f;
+  --bo-gold: #d4a514;
+}
+
+html,
+body {
+  background: var(--bo-bg) !important;
+  color: var(--bo-text) !important;
+  color-scheme: light !important;
+}
+
+.bg-preto { background-color: var(--bo-bg) !important; }
+.bg-grafite { background-color: var(--bo-panel) !important; }
+.bg-grafite-claro { background-color: var(--bo-soft) !important; }
+
+.text-texto,
+.text-white { color: var(--bo-text) !important; }
+
+.text-texto-suave { color: var(--bo-muted) !important; }
+.text-dourado { color: var(--bo-text) !important; }
+
+.border-grafite-claro { border-color: var(--bo-border) !important; }
+.border-dourado { border-color: #1a1b1e !important; }
+
+.text-green-300,
+.text-green-400,
+.text-green-500 { color: #00a75a !important; }
+
+.text-red-300,
+.text-red-400,
+.text-red-500 { color: #ef4444 !important; }
+
+.text-blue-300,
+.text-blue-400,
+.text-blue-500 { color: #2563eb !important; }
+
+.text-purple-300,
+.text-purple-400,
+.text-purple-500,
+.text-indigo-300,
+.text-indigo-400,
+.text-indigo-500 { color: #7c3aed !important; }
+
+main {
+  position: relative !important;
+  isolation: isolate;
+  background: var(--bo-bg) !important;
+  color: var(--bo-text) !important;
+}
+
+main::before {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  left: 16rem;
+  right: 0;
+  top: 70px;
+  bottom: 0;
+  background-image: url("/logo-blackout-clara.png");
+  background-repeat: no-repeat;
+  background-position: center 38%;
+  background-size: min(58vw, 820px) auto;
+  filter:
+    grayscale(1)
+    brightness(.75)
+    drop-shadow(4px 5px 4px rgba(0,0,0,.10))
+    drop-shadow(-2px -2px 2px rgba(255,255,255,.95));
+  opacity: .045;
+}
+
+main > * {
+  position: relative;
+  z-index: 1;
+}
+
+aside {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%) !important;
+  border-right: 1px solid var(--bo-border) !important;
+  box-shadow:
+    8px 0 30px rgba(0,0,0,.045),
+    inset -1px 0 0 rgba(0,0,0,.02) !important;
+}
+
+aside > div:first-child {
+  min-height: 112px !important;
+  height: 112px !important;
+  padding: 8px 16px !important;
+  background: #ffffff !important;
+}
+
+aside a[href="/dashboard"] {
+  width: 100% !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+aside a[href="/dashboard"] > div:first-child {
+  width: 188px !important;
+  height: 84px !important;
+  flex: 0 0 188px !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+aside a[href="/dashboard"] > div:first-child img {
+  object-fit: contain !important;
+}
+
+aside a[href="/dashboard"] > div:nth-child(2) {
+  display: none !important;
+}
+
+aside nav a {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f8f9 100%) !important;
+  color: #24262a !important;
+  border: 1px solid #e7e8eb !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 2px 4px rgba(0,0,0,.035),
+    0 7px 16px rgba(0,0,0,.025) !important;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease !important;
+}
+
+aside nav a svg {
+  color: #52575f !important;
+}
+
+/*
+ * Item selecionado do menu.
+ *
+ * A regra "aside nav a" acima pinta TODO item de branco com
+ * !important. Sem citar a classe do item ativo aqui, ele
+ * herdava o fundo claro e o texto branco sumia.
+ *
+ * .menu-item-ativo e a classe do menu atual; .bg-dourado
+ * continua na lista por causa do menu antigo.
+ */
+aside nav a.menu-item-ativo,
+aside nav a.bg-dourado,
+aside nav a[class*="bg-dourado"] {
+  background: linear-gradient(180deg, #2b2c2f 0%, #0b0c0e 100%) !important;
+  color: #ffffff !important;
+  border-color: #050506 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -2px 0 rgba(0,0,0,.32),
+    0 3px 6px rgba(0,0,0,.14),
+    0 10px 22px rgba(0,0,0,.11) !important;
+}
+
+aside nav a.bg-dourado svg,
+aside nav a[class*="bg-dourado"] svg {
+  color: #ffffff !important;
+}
+
+/* No menu atual o ícone do item ativo é dourado. */
+aside nav a.menu-item-ativo svg {
+  color: #e2b72d !important;
+}
+
+aside nav a.menu-item-ativo span {
+  color: #ffffff !important;
+}
+
+main .bg-grafite,
+main section.rounded-xl,
+main section.rounded-2xl,
+main div.rounded-xl.border,
+main div.rounded-2xl.border,
+main form.rounded-xl,
+main form.rounded-2xl {
+  background: rgba(255,255,255,.97) !important;
+  border-color: var(--bo-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 2px 5px rgba(0,0,0,.035),
+    0 14px 30px rgba(0,0,0,.055) !important;
+}
+
+main .bg-grafite-claro {
+  background: #f7f8fa !important;
+}
+
+input,
+select,
+textarea {
+  background: #ffffff !important;
+  color: #111214 !important;
+  border-color: #d7d9de !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,.035),
+    0 1px 0 rgba(255,255,255,.95) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #969ba4 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #111214 !important;
+  box-shadow:
+    0 0 0 3px rgba(17,18,20,.06),
+    inset 0 1px 2px rgba(0,0,0,.025) !important;
+}
+
+table,
+thead,
+tbody,
+tr,
+td,
+th {
+  color: var(--bo-text) !important;
+}
+
+thead { background: #f6f7f9 !important; }
+
+tbody tr {
+  background: rgba(255,255,255,.96) !important;
+  border-color: #eceef1 !important;
+}
+
+button.bg-dourado,
+a.bg-dourado {
+  background: linear-gradient(180deg, #2b2c2f 0%, #0b0c0e 100%) !important;
+  color: #ffffff !important;
+  border-color: #050506 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 3px 6px rgba(0,0,0,.14),
+    0 10px 22px rgba(0,0,0,.11) !important;
+}
+
+button.bg-yellow-500,
+a.bg-yellow-500,
+button.bg-yellow-400,
+a.bg-yellow-400 {
+  background: var(--bo-gold) !important;
+  color: #111214 !important;
+}
+
+.bg-red-950\/30,
+.bg-red-900\/30 { background: #fff1f2 !important; }
+
+.bg-green-950\/30,
+.bg-green-900\/30 { background: #f0fdf4 !important; }
+
+.bg-yellow-950\/30,
+.bg-yellow-900\/30 { background: #fffbeb !important; }
+
+@media (hover: hover) {
+  aside nav a:hover {
+    transform: translateX(3px) translateY(-1px);
+    border-color: #d7d9dd !important;
+  }
+
+  main section.rounded-xl:hover,
+  main section.rounded-2xl:hover,
+  main div.rounded-xl.border:hover,
+  main div.rounded-2xl.border:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,1),
+      0 4px 8px rgba(0,0,0,.04),
+      0 18px 38px rgba(0,0,0,.07) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  main::before {
+    left: 0;
+    top: 70px;
+    background-size: 90vw auto;
+    background-position: center 28%;
+    opacity: .025;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  aside nav a,
+  button,
+  a {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+
+/* CORRECAO LOGO ORIGINAL BLACKOUT */
+aside > div:first-child {
+  min-height: 112px !important;
+  height: 112px !important;
+  padding: 10px 18px !important;
+  background: #ffffff !important;
+}
+
+aside a[href="/dashboard"] {
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+aside a[href="/dashboard"] > div:first-child {
+  position: relative !important;
+  width: 190px !important;
+  height: 86px !important;
+  flex: 0 0 190px !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+aside a[href="/dashboard"] > div:first-child img {
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+aside a[href="/dashboard"] > div:nth-child(2) {
+  display: none !important;
+}
