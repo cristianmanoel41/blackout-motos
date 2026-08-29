@@ -1,0 +1,15 @@
+BLACKOUT MOTOS — AJUSTE DE CORES NO ESTOQUE
+
+Alterações:
+- "Estoque por cilindrada" em preto.
+- Subtexto da seção em preto/cinza escuro.
+- 125cc, 150cc, 160cc, 250cc, 300cc etc. em preto.
+- Quantidades das cilindradas em preto.
+- "moto/motos" em preto/cinza escuro.
+- Status "Disponível", "Vendida", "Reservada" e "Em manutenção" com texto preto.
+- Fundos dos status continuam coloridos, mas claros, combinando com o white label.
+
+Arquivo completo:
+app/estoque/page.tsx
+
+Não precisa executar SQL.

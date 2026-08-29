@@ -1,0 +1,262 @@
+/*
+ * BLACKOUT MOTOS — WHITE LABEL 3D
+ * Complemento visual para app/white-label.css
+ * Não altera regras de negócio.
+ */
+
+:root {
+  --wl-3d-shadow:
+    0 1px 1px rgba(0,0,0,.04),
+    0 4px 10px rgba(0,0,0,.055),
+    0 16px 32px rgba(0,0,0,.075);
+  --wl-3d-shadow-hover:
+    0 2px 2px rgba(0,0,0,.04),
+    0 8px 18px rgba(0,0,0,.08),
+    0 24px 48px rgba(0,0,0,.11);
+  --wl-3d-inset:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(0,0,0,.035);
+}
+
+/* =========================================================
+   CARDS / PAINÉIS
+   Efeito de profundidade elegante e discreto.
+   ========================================================= */
+
+section.rounded-xl.border,
+section.rounded-2xl.border,
+div.rounded-xl.border,
+div.rounded-2xl.border,
+form.rounded-xl.border,
+form.rounded-2xl.border {
+  position: relative;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #fdfdfd 100%) !important;
+  border-color: #e5e7eb !important;
+  box-shadow:
+    var(--wl-3d-inset),
+    var(--wl-3d-shadow) !important;
+  transform: translateZ(0);
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease,
+    border-color .22s ease;
+}
+
+section.rounded-xl.border::before,
+section.rounded-2xl.border::before,
+div.rounded-xl.border::before,
+div.rounded-2xl.border::before,
+form.rounded-xl.border::before,
+form.rounded-2xl.border::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.72),
+      rgba(255,255,255,0) 35%,
+      rgba(0,0,0,.018) 100%
+    );
+}
+
+@media (hover: hover) {
+  section.rounded-xl.border:hover,
+  section.rounded-2xl.border:hover,
+  div.rounded-xl.border:hover,
+  div.rounded-2xl.border:hover {
+    transform: translateY(-3px);
+    border-color: #d7d9dd !important;
+    box-shadow:
+      var(--wl-3d-inset),
+      var(--wl-3d-shadow-hover) !important;
+  }
+}
+
+/* Mantém tabelas e blocos internos estáveis */
+table div.rounded-xl.border,
+table div.rounded-2xl.border {
+  transform: none !important;
+}
+
+/* =========================================================
+   SIDEBAR — OPÇÕES COM EFEITO 3D
+   ========================================================= */
+
+aside.bg-grafite {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #fafafa 100%) !important;
+  box-shadow:
+    10px 0 34px rgba(0,0,0,.055),
+    inset -1px 0 0 rgba(0,0,0,.035) !important;
+}
+
+aside nav a {
+  position: relative;
+  border: 1px solid transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background-color .18s ease,
+    border-color .18s ease;
+}
+
+aside nav a:not(.bg-dourado) {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%) !important;
+  border-color: #eeeeef !important;
+  color: #252525 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 1px 2px rgba(0,0,0,.035),
+    0 4px 10px rgba(0,0,0,.03);
+}
+
+@media (hover: hover) {
+  aside nav a:not(.bg-dourado):hover {
+    transform: translateX(4px) translateY(-1px);
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f2f2f3 100%) !important;
+    border-color: #d9dadd !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,1),
+      0 3px 8px rgba(0,0,0,.055),
+      0 10px 22px rgba(0,0,0,.05);
+  }
+}
+
+aside nav a.bg-dourado {
+  color: #ffffff !important;
+  border-color: #050505 !important;
+  background:
+    linear-gradient(180deg, #252525 0%, #0f0f10 58%, #050505 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -2px 0 rgba(0,0,0,.35),
+    0 2px 3px rgba(0,0,0,.18),
+    0 8px 18px rgba(0,0,0,.14) !important;
+  transform: translateY(-1px);
+}
+
+aside nav a.bg-dourado::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 1px;
+  height: 1px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.25);
+  pointer-events: none;
+}
+
+/* =========================================================
+   BOTÕES PRINCIPAIS
+   Pequena sensação de botão físico.
+   ========================================================= */
+
+button.bg-dourado,
+a.bg-dourado,
+button.bg-yellow-500,
+a.bg-yellow-500,
+button.bg-yellow-400,
+a.bg-yellow-400 {
+  border: 1px solid #050505 !important;
+  background:
+    linear-gradient(180deg, #2b2b2c 0%, #111112 60%, #050505 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -2px 0 rgba(0,0,0,.32),
+    0 2px 3px rgba(0,0,0,.18),
+    0 8px 18px rgba(0,0,0,.14) !important;
+  transform: translateY(0);
+  transition:
+    transform .16s ease,
+    box-shadow .16s ease;
+}
+
+@media (hover: hover) {
+  button.bg-dourado:hover,
+  a.bg-dourado:hover,
+  button.bg-yellow-500:hover,
+  a.bg-yellow-500:hover,
+  button.bg-yellow-400:hover,
+  a.bg-yellow-400:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.2),
+      inset 0 -2px 0 rgba(0,0,0,.34),
+      0 4px 7px rgba(0,0,0,.16),
+      0 12px 26px rgba(0,0,0,.16) !important;
+  }
+}
+
+button.bg-dourado:active,
+a.bg-dourado:active,
+button.bg-yellow-500:active,
+a.bg-yellow-500:active,
+button.bg-yellow-400:active,
+a.bg-yellow-400:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.28),
+    0 1px 2px rgba(0,0,0,.12) !important;
+}
+
+/* =========================================================
+   INPUTS — leve profundidade interna
+   ========================================================= */
+
+input,
+select,
+textarea {
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,.035),
+    0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,.025),
+    0 0 0 3px rgba(17,17,17,.065),
+    0 5px 14px rgba(0,0,0,.045) !important;
+}
+
+/* =========================================================
+   LOGIN — card com profundidade maior
+   ========================================================= */
+
+.min-h-screen form.rounded-xl,
+.min-h-screen form.rounded-2xl {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 2px 4px rgba(0,0,0,.04),
+    0 16px 40px rgba(0,0,0,.09),
+    0 40px 90px rgba(0,0,0,.055) !important;
+}
+
+/* =========================================================
+   ACESSIBILIDADE
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  section.rounded-xl.border,
+  section.rounded-2xl.border,
+  div.rounded-xl.border,
+  div.rounded-2xl.border,
+  form.rounded-xl.border,
+  form.rounded-2xl.border,
+  aside nav a,
+  button,
+  a {
+    transition: none !important;
+    transform: none !important;
+  }
+}

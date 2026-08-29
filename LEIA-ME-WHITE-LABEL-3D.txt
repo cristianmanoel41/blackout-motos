@@ -1,0 +1,40 @@
+BLACKOUT MOTOS — EFEITO 3D NO WHITE LABEL
+
+Este pacote adiciona profundidade ao tema branco já criado.
+
+O que muda:
+- cards com sombra em camadas e leve elevação;
+- cards sobem discretamente ao passar o mouse;
+- opções do menu lateral ficam em formato de botão 3D;
+- opção ativa do menu ganha acabamento preto em relevo;
+- botões principais ganham sensação de botão físico;
+- campos têm leve profundidade interna;
+- card do login fica mais sofisticado.
+
+O efeito foi feito para ser discreto, não exagerado.
+
+Não altera:
+- banco de dados;
+- vendas;
+- caixa;
+- estoque;
+- relatórios;
+- contratos;
+- regras de negócio.
+
+INSTALAÇÃO
+
+Na raiz do projeto:
+
+1) Extraia o ZIP.
+2) Rode:
+
+node .\scripts\aplicar-white-label-3d.mjs
+
+3) Depois:
+
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm.cmd run build
+npm.cmd run dev
+
+Não precisa executar SQL.

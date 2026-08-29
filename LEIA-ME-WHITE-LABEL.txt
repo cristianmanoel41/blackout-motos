@@ -1,0 +1,54 @@
+BLACKOUT MOTOS — WHITE LABEL MODERNO
+
+OBJETIVO
+Transformar a interface para o padrão branco, preto e cinza claro:
+- fundo branco/cinza muito claro;
+- tipografia preta;
+- cards brancos;
+- bordas discretas;
+- botões principais pretos;
+- menu lateral branco;
+- login claro;
+- sombras suaves;
+- mantém alertas/status em cores discretas.
+
+IMPORTANTE
+Esta atualização é propositalmente uma CAMADA VISUAL.
+Ela não substitui as páginas do sistema e não mexe em:
+- Supabase;
+- vendas;
+- caixa;
+- estoque;
+- capacetes;
+- relatórios;
+- contratos;
+- regras financeiras.
+
+Assim evitamos perder as funcionalidades que já foram construídas.
+
+COMO INSTALAR
+1. Extraia o ZIP na raiz do projeto.
+2. Na raiz do projeto rode:
+
+   node .\scripts\aplicar-white-label.mjs
+
+3. Depois:
+
+   Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+   npm.cmd run build
+   npm.cmd run dev
+
+NÃO PRECISA EXECUTAR SQL.
+
+ARQUIVOS
+- app/white-label.css
+- scripts/aplicar-white-label.mjs
+- LEIA-ME-WHITE-LABEL.txt
+
+BACKUP
+O instalador cria automaticamente:
+app/layout.tsx.backup-white-label
+
+A camada pode ser removida futuramente apagando o import:
+import "./white-label.css";
+do app/layout.tsx.

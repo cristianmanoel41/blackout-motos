@@ -1,0 +1,405 @@
+/*
+ * BLACKOUT MOTOS — WHITE LABEL MODERNO
+ * Camada visual global. Não altera regras de negócio nem banco de dados.
+ * Importar DEPOIS de app/globals.css.
+ */
+
+:root {
+  color-scheme: light;
+  --wl-bg: #f7f8fa;
+  --wl-card: #ffffff;
+  --wl-card-soft: #f3f4f6;
+  --wl-border: #e5e7eb;
+  --wl-border-strong: #d1d5db;
+  --wl-text: #111111;
+  --wl-muted: #6b7280;
+  --wl-black: #111111;
+  --wl-hover: #f3f4f6;
+  --wl-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 28px rgb(0 0 0 / 0.045);
+}
+
+html,
+body {
+  background: var(--wl-bg) !important;
+  color: var(--wl-text) !important;
+  color-scheme: light;
+  font-family:
+    Inter,
+    Manrope,
+    "Plus Jakarta Sans",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* =========================================================
+   TOKENS EXISTENTES DO PROJETO -> WHITE LABEL
+   ========================================================= */
+
+.bg-preto {
+  background-color: var(--wl-bg) !important;
+}
+
+.bg-grafite {
+  background-color: var(--wl-card) !important;
+}
+
+.bg-grafite-claro {
+  background-color: var(--wl-card-soft) !important;
+}
+
+.border-grafite-claro {
+  border-color: var(--wl-border) !important;
+}
+
+.text-texto,
+.text-white,
+.text-dourado,
+.text-dourado-claro {
+  color: var(--wl-text) !important;
+}
+
+.text-texto-suave {
+  color: var(--wl-muted) !important;
+}
+
+.border-dourado {
+  border-color: var(--wl-black) !important;
+}
+
+.bg-dourado {
+  background-color: var(--wl-black) !important;
+}
+
+.bg-dourado.text-preto,
+.bg-dourado .text-preto {
+  color: #ffffff !important;
+}
+
+.text-preto {
+  color: var(--wl-text) !important;
+}
+
+.hover\:bg-preto:hover,
+.hover\:bg-grafite-claro:hover {
+  background-color: var(--wl-hover) !important;
+}
+
+.hover\:text-dourado:hover {
+  color: var(--wl-black) !important;
+}
+
+.hover\:border-dourado:hover {
+  border-color: var(--wl-black) !important;
+}
+
+.hover\:bg-dourado:hover,
+.hover\:bg-dourado-claro:hover {
+  background-color: #000000 !important;
+}
+
+.hover\:bg-dourado:hover.text-preto,
+.hover\:bg-dourado-claro:hover.text-preto {
+  color: #ffffff !important;
+}
+
+/* =========================================================
+   TELAS QUE AINDA USAM ZINC / CORES LITERAIS ESCURAS
+   ========================================================= */
+
+.bg-\[\#070707\],
+.bg-zinc-950,
+.bg-zinc-900,
+.bg-black {
+  background-color: var(--wl-card) !important;
+}
+
+.bg-zinc-800 {
+  background-color: var(--wl-card-soft) !important;
+}
+
+.border-zinc-900,
+.border-zinc-800,
+.border-zinc-700,
+.border-zinc-600 {
+  border-color: var(--wl-border) !important;
+}
+
+.text-zinc-100,
+.text-zinc-200,
+.text-zinc-300 {
+  color: var(--wl-text) !important;
+}
+
+.text-zinc-400,
+.text-zinc-500 {
+  color: var(--wl-muted) !important;
+}
+
+/* Dourado/amarelo usado como destaque antigo -> preto elegante */
+.text-yellow-500,
+.text-yellow-400 {
+  color: var(--wl-black) !important;
+}
+
+.border-yellow-500,
+.border-yellow-400 {
+  border-color: var(--wl-black) !important;
+}
+
+.bg-yellow-500,
+.bg-yellow-400 {
+  background-color: var(--wl-black) !important;
+  color: #ffffff !important;
+}
+
+.hover\:bg-yellow-500:hover,
+.hover\:bg-yellow-400:hover {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.hover\:text-yellow-500:hover,
+.hover\:text-yellow-400:hover {
+  color: var(--wl-black) !important;
+}
+
+.hover\:border-yellow-500:hover,
+.hover\:border-yellow-400:hover {
+  border-color: var(--wl-black) !important;
+}
+
+/* =========================================================
+   ALERTAS — continuam coloridos, mas claros e modernos
+   ========================================================= */
+
+.bg-red-950\/30,
+.bg-red-950\/40 {
+  background-color: #fef2f2 !important;
+}
+.border-red-700,
+.border-red-800 {
+  border-color: #fecaca !important;
+}
+.text-red-300,
+.text-red-400 {
+  color: #b91c1c !important;
+}
+
+.bg-green-950\/30,
+.bg-green-950\/40,
+.bg-green-900\/30 {
+  background-color: #f0fdf4 !important;
+}
+.border-green-700,
+.border-green-800 {
+  border-color: #bbf7d0 !important;
+}
+.text-green-300,
+.text-green-400 {
+  color: #15803d !important;
+}
+
+.bg-blue-950\/20,
+.bg-blue-950\/30 {
+  background-color: #eff6ff !important;
+}
+.border-blue-700,
+.border-blue-800 {
+  border-color: #bfdbfe !important;
+}
+.text-blue-300,
+.text-blue-400 {
+  color: #1d4ed8 !important;
+}
+
+.bg-yellow-950\/20,
+.bg-yellow-950\/30 {
+  background-color: #fffbeb !important;
+}
+.border-yellow-700,
+.border-yellow-800 {
+  border-color: #fde68a !important;
+}
+.text-yellow-300 {
+  color: #92400e !important;
+}
+
+.bg-orange-950\/20,
+.bg-orange-950\/30 {
+  background-color: #fff7ed !important;
+}
+.border-orange-700,
+.border-orange-800 {
+  border-color: #fed7aa !important;
+}
+.text-orange-300,
+.text-orange-400 {
+  color: #c2410c !important;
+}
+
+/* =========================================================
+   CARDS, PAINÉIS, TABELAS E FORMULÁRIOS
+   ========================================================= */
+
+.rounded-xl.border,
+.rounded-2xl.border {
+  box-shadow: var(--wl-shadow);
+}
+
+table {
+  color: var(--wl-text);
+}
+
+thead {
+  color: var(--wl-muted) !important;
+}
+
+tbody tr {
+  background-color: transparent;
+}
+
+tbody tr:hover {
+  background-color: #fafafa;
+}
+
+input,
+select,
+textarea {
+  background-color: #ffffff !important;
+  color: var(--wl-text) !important;
+  border-color: var(--wl-border-strong) !important;
+  color-scheme: light;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--wl-black) !important;
+  box-shadow: 0 0 0 3px rgb(17 17 17 / 0.06);
+  outline: none;
+}
+
+select option {
+  background: #ffffff;
+  color: var(--wl-text);
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Botões pretos */
+.bg-dourado,
+.bg-yellow-500,
+.bg-yellow-400 {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+/* =========================================================
+   SIDEBAR
+   Mantém a estrutura atual e apenas transforma o visual.
+   ========================================================= */
+
+aside.bg-grafite {
+  background: #ffffff !important;
+  border-right-color: var(--wl-border) !important;
+  box-shadow: 8px 0 30px rgb(0 0 0 / 0.035) !important;
+}
+
+aside nav a.bg-dourado {
+  background: var(--wl-black) !important;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+aside nav a.bg-dourado svg {
+  color: #ffffff !important;
+}
+
+aside nav a:not(.bg-dourado):hover {
+  background: #f4f4f5 !important;
+  color: var(--wl-black) !important;
+}
+
+/* Logo pode continuar com a identidade original */
+aside img {
+  filter: none;
+}
+
+/* =========================================================
+   LOGIN E ÁREAS SEM SIDEBAR
+   Dá aparência premium mesmo sem alterar o código funcional.
+   ========================================================= */
+
+body > div,
+main {
+  color: var(--wl-text);
+}
+
+main.min-h-screen {
+  background-color: var(--wl-bg) !important;
+}
+
+/* Cards centrais comuns de autenticação */
+main.min-h-screen form.rounded-xl,
+main.min-h-screen form.rounded-2xl,
+.min-h-screen form.rounded-xl,
+.min-h-screen form.rounded-2xl {
+  background: #ffffff !important;
+  border-color: var(--wl-border) !important;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.08) !important;
+}
+
+/* =========================================================
+   ACABAMENTO
+   ========================================================= */
+
+.shadow-2xl,
+.shadow-xl,
+.shadow-lg {
+  box-shadow: var(--wl-shadow) !important;
+}
+
+hr,
+.divide-y > :not([hidden]) ~ :not([hidden]),
+.divide-x > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--wl-border) !important;
+}
+
+::selection {
+  background: #111111;
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border: 2px solid #f3f4f6;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

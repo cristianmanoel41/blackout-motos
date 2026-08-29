@@ -1,0 +1,35 @@
+BLACKOUT MOTOS - LOGO CLARA E MARCA D'AGUA 3D
+
+1. Faça uma cópia de segurança ou confirme que o Git está limpo.
+2. Extraia este ZIP na raiz do projeto blackout-motos.
+3. Confirme a substituição dos arquivos quando o Windows perguntar.
+4. No PowerShell, dentro da raiz do projeto, execute:
+
+   Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+   npm.cmd run build
+
+5. Se o build terminar sem erros, execute:
+
+   npm.cmd run dev
+
+6. Abra http://localhost:3000 e confira Dashboard, Estoque, Vendas,
+   Capacetes, Caixa, um recibo e um documento.
+
+ARQUIVOS DO PACOTE
+
+- components/Sidebar.tsx
+- components/AppShell.tsx
+- components/AppShell.module.css
+- components/MarcaDaguaBlackout.tsx
+- public/logo-blackout-clara.png
+
+OBSERVAÇÕES
+
+- Não há SQL para executar.
+- A alteração é apenas visual; nenhuma regra do Supabase foi modificada.
+- Recibos, documentos e login continuam sem sidebar e sem marca d'água.
+- As telas do sistema e o login usam textos pretos e em negrito; botões
+  escuros preservam a cor necessária para manter o contraste.
+- A opção ativa do menu considera também as subpáginas.
+- Se o seu menu local tiver recebido uma opção nova depois da versão desta
+  conversa, copie apenas esse item para o array menuItems antes de substituir.

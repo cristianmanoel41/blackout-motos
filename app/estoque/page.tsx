@@ -86,15 +86,15 @@ function rotuloStatus(status?: string | null) {
 function classeStatus(status?: string | null) {
   switch (normalizarTexto(status)) {
     case "disponivel":
-      return "border-green-700/60 bg-green-950/45 text-green-300";
+      return "border-green-300 bg-green-100 text-black";
     case "reservada":
-      return "border-blue-700/60 bg-blue-950/45 text-blue-300";
+      return "border-blue-300 bg-blue-100 text-black";
     case "manutencao":
-      return "border-orange-700/60 bg-orange-950/45 text-orange-300";
+      return "border-orange-300 bg-orange-100 text-black";
     case "vendida":
-      return "border-indigo-700/60 bg-indigo-950/45 text-indigo-300";
+      return "border-indigo-300 bg-indigo-100 text-black";
     default:
-      return "border-zinc-700 bg-zinc-900 text-zinc-300";
+      return "border-zinc-300 bg-zinc-100 text-black";
   }
 }
 
@@ -461,15 +461,15 @@ export default function EstoquePage() {
         <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="font-semibold text-dourado">
+              <h2 className="font-semibold text-black">
                 Estoque por cilindrada
               </h2>
-              <p className="mt-1 text-xs text-texto-suave">
+              <p className="mt-1 text-xs text-black/70">
                 Quantidade atual de motos por cc. Motos vendidas não entram nesta contagem.
               </p>
             </div>
 
-            <p className="text-sm font-semibold text-texto">
+            <p className="text-sm font-semibold text-black">
               Total no estoque: {estoquePorCilindrada.total}
             </p>
           </div>
@@ -487,13 +487,13 @@ export default function EstoquePage() {
                     key={item.cilindrada}
                     className="min-w-[105px] rounded-xl border border-grafite-claro bg-preto/50 px-4 py-3"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-black">
                       {item.cilindrada}cc
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-dourado">
+                    <p className="mt-1 text-2xl font-bold text-black">
                       {item.quantidade}
                     </p>
-                    <p className="text-[11px] text-texto-suave">
+                    <p className="text-[11px] text-black/70">
                       {item.quantidade === 1 ? "moto" : "motos"}
                     </p>
                   </div>
@@ -501,13 +501,13 @@ export default function EstoquePage() {
 
                 {estoquePorCilindrada.semInformada > 0 && (
                   <div className="min-w-[125px] rounded-xl border border-grafite-claro bg-preto/50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-black">
                       Sem informar
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-dourado">
+                    <p className="mt-1 text-2xl font-bold text-black">
                       {estoquePorCilindrada.semInformada}
                     </p>
-                    <p className="text-[11px] text-texto-suave">
+                    <p className="text-[11px] text-black/70">
                       {estoquePorCilindrada.semInformada === 1 ? "moto" : "motos"}
                     </p>
                   </div>
