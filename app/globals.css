@@ -209,3 +209,49 @@ body {
     color: #000 !important;
   }
 }
+
+/*
+ * MENU LATERAL - ITEM SELECIONADO
+ *
+ * O fundo escuro estava escrito como classe utilitária
+ * arbitrária, no formato bg-[linear-gradient(...)]. O Tailwind
+ * não gera regra para gradiente escrito assim, então o item
+ * ativo ficava SEM fundo: o texto branco caía no branco do
+ * menu e o nome sumia.
+ *
+ * Aqui o estilo é CSS comum, então sempre existe.
+ */
+.menu-item-ativo {
+  border-color: #000;
+  background-image: linear-gradient(
+    180deg,
+    #292b2f 0%,
+    #101113 62%,
+    #050607 100%
+  );
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 7px rgba(0, 0, 0, 0.16),
+    0 12px 22px rgba(0, 0, 0, 0.12);
+}
+
+/* Garante o contraste do nome mesmo com utilitário concorrente. */
+.menu-item-ativo span {
+  color: #fff;
+}
+
+/*
+ * Cartão da marca no rodapé do menu: mesmo caso de gradiente
+ * escrito como classe arbitrária.
+ */
+.cartao-marca-menu {
+  background-image: linear-gradient(
+    145deg,
+    #fffdf7,
+    #f7edcf
+  );
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 8px 20px rgba(169, 120, 0, 0.07);
+}
