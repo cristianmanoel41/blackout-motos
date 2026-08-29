@@ -3567,8 +3567,9 @@ export default function VendasPage() {
               </h2>
 
               <p className="mt-1 text-xs text-zinc-500">
-                Escolha quem paga. Na rachada o valor é dividido
-                meio a meio, e isso sai escrito no contrato.
+                Escolha quem paga. Na divisão o valor é
+                partido meio a meio, e isso sai escrito no
+                contrato.
               </p>
             </div>
 
@@ -3605,7 +3606,7 @@ export default function VendasPage() {
                     },
                     {
                       chave: "rachada",
-                      nome: "Rachada (metade cada)",
+                      nome: "Divisão",
                     },
                     {
                       chave: "nenhum",
