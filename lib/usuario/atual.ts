@@ -99,44 +99,14 @@ export function useUsuarioAtual() {
 }
 
 /*
- * Vendedores da loja. É a lista fechada que aparece no campo
- * de vendedor: qualquer um pode escolher entre os dois, tanto
- * ao registrar quanto ao editar uma venda depois.
+ * Vendedores da loja: a lista e as funções ficam em
+ * lib/dados/vendedores.ts, que não tem "use client" e por
+ * isso serve também para os relatórios, que rodam no
+ * servidor. Reexportados aqui para as telas que já os
+ * importavam deste arquivo.
  */
-export const VENDEDORES = [
-  "Cristian",
-  "Bruno",
-] as const;
-
-function semAcento(valor?: string | null) {
-  return String(valor || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-/*
- * Descobre qual vendedor corresponde ao usuário logado, para
- * o campo já vir preenchido. Usuário que não é vendedor (um
- * administrativo, por exemplo) devolve vazio: aí a venda é
- * lançada escolhendo o vendedor na mão.
- */
-export function vendedorDoUsuario(
-  nome?: string | null
-): string {
-  const alvo = semAcento(nome);
-
-  if (!alvo) return "";
-
-  return (
-    VENDEDORES.find((vendedor) => {
-      const referencia = semAcento(vendedor);
-
-      return (
-        alvo === referencia ||
-        alvo.startsWith(`${referencia} `)
-      );
-    }) || ""
-  );
-}
+export {
+  VENDEDORES,
+  vendedorDoUsuario,
+  nomeCurtoVendedor,
+} from "@/lib/dados/vendedores";
