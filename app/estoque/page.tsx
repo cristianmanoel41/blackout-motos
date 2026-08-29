@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   Check,
   ChevronDown,
@@ -49,6 +55,46 @@ function normalizarTexto(valor: unknown) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+}
+
+function estiloDaCorDaMoto(valor?: string | null): CSSProperties {
+  const cor = normalizarTexto(valor);
+
+  const cores: Array<[string, string]> = [
+    ["vermelh", "#dc2626"],
+    ["azul", "#2563eb"],
+    ["pret", "#111111"],
+    ["prata", "#64748b"],
+    ["cinza", "#6b7280"],
+    ["branc", "#ffffff"],
+    ["amarel", "#ca8a04"],
+    ["dourad", "#b8860b"],
+    ["verde", "#15803d"],
+    ["laranja", "#ea580c"],
+    ["rox", "#7e22ce"],
+    ["violeta", "#7c3aed"],
+    ["rosa", "#db2777"],
+    ["vinho", "#881337"],
+    ["marrom", "#78350f"],
+    ["bege", "#a16207"],
+    ["grafite", "#374151"],
+    ["chumbo", "#475569"],
+  ];
+
+  const encontrada = cores.find(([nome]) => cor.includes(nome));
+  const corClara =
+    cor.includes("branc") ||
+    cor.includes("amarel") ||
+    cor.includes("dourad") ||
+    cor.includes("bege");
+
+  return {
+    color: encontrada?.[1] || "#111111",
+    fontWeight: 800,
+    textShadow: corClara
+      ? "-1px -1px 0 #374151, 1px -1px 0 #374151, -1px 1px 0 #374151, 1px 1px 0 #374151"
+      : undefined,
+  };
 }
 
 function formatarKm(valor: unknown) {
@@ -751,8 +797,10 @@ export default function EstoquePage() {
                           {anoFab}/{anoMod}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
-                          {moto.cor || "—"}
+                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <span style={estiloDaCorDaMoto(moto.cor)}>
+                            {moto.cor || "—"}
+                          </span>
                         </td>
 
                         <td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-zinc-200">
