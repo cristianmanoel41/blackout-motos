@@ -175,10 +175,27 @@ function transferenciaDescricao(
     cliente > 0 &&
     loja > 0
   ) {
+    /*
+     * Rachada meio a meio: a redação fica mais clara
+     * dizendo o valor de cada parte e o total.
+     */
+    if (
+      Math.abs(cliente - loja) <=
+      0.01
+    ) {
+      return `cliente e da loja, em partes iguais de ${moeda(
+        cliente
+      )} para cada, totalizando ${moeda(
+        cliente + loja
+      )}`;
+    }
+
     return `cliente no valor de ${moeda(
       cliente
-    )} e loja no valor de ${moeda(
+    )} e da loja no valor de ${moeda(
       loja
+    )}, totalizando ${moeda(
+      cliente + loja
     )}`;
   }
 

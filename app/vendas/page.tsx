@@ -171,6 +171,38 @@ function textoDaMoto(moto: Moto) {
     .join(" ");
 }
 
+/*
+ * Valor da transferência do documento. Vem das Configurações
+ * da loja; 690 é o padrão que já estava lá.
+ */
+const VALOR_TRANSFERENCIA_PADRAO = 690;
+
+function valorTransferenciaConfigurado() {
+  if (typeof window === "undefined") {
+    return VALOR_TRANSFERENCIA_PADRAO;
+  }
+
+  try {
+    const salvo = localStorage.getItem(
+      "blackout-motos-configuracoes"
+    );
+
+    if (!salvo) {
+      return VALOR_TRANSFERENCIA_PADRAO;
+    }
+
+    const configuracao = JSON.parse(salvo);
+
+    return (
+      Number(
+        configuracao?.valorTransferencia
+      ) || VALOR_TRANSFERENCIA_PADRAO
+    );
+  } catch {
+    return VALOR_TRANSFERENCIA_PADRAO;
+  }
+}
+
 function novoIdLocal() {
   return `${Date.now()}-${Math.random()
     .toString(36)
@@ -254,6 +286,70 @@ export default function VendasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario]);
 
+  useEffect(() => {
+    setValorTransferencia(
+      String(
+        valorTransferenciaConfigurado()
+      )
+    );
+  }, []);
+
+  /*
+   * Quem paga a transferência do documento.
+   * "rachada" divide o valor meio a meio entre cliente e loja.
+   */
+  function definirTransferencia(
+    quem:
+      | "cliente"
+      | "loja"
+      | "rachada"
+      | "nenhum"
+  ) {
+    const total =
+      Number(valorTransferencia) || 0;
+
+    if (quem === "cliente") {
+      setTransferenciaCliente(
+        String(total)
+      );
+      setTransferenciaLoja("");
+      return;
+    }
+
+    if (quem === "loja") {
+      setTransferenciaCliente("");
+      setTransferenciaLoja(
+        String(total)
+      );
+      return;
+    }
+
+    if (quem === "rachada") {
+      /*
+       * Em valor ímpar a diferença de um centavo fica
+       * com o cliente, para a soma fechar exatamente.
+       */
+      const metadeLoja =
+        Math.floor(total * 50) / 100;
+
+      const metadeCliente =
+        Math.round(
+          (total - metadeLoja) * 100
+        ) / 100;
+
+      setTransferenciaCliente(
+        String(metadeCliente)
+      );
+      setTransferenciaLoja(
+        String(metadeLoja)
+      );
+      return;
+    }
+
+    setTransferenciaCliente("");
+    setTransferenciaLoja("");
+  }
+
   const [tipoVenda, setTipoVenda] =
     useState<
       | "avista"
@@ -303,6 +399,15 @@ export default function VendasPage() {
     setVistoriaTransferencia,
   ] = useState<File | null>(
     null
+  );
+
+  const [
+    valorTransferencia,
+    setValorTransferencia,
+  ] = useState(
+    String(
+      VALOR_TRANSFERENCIA_PADRAO
+    )
   );
 
   const [
@@ -3456,9 +3561,73 @@ export default function VendasPage() {
           </section>
 
           <section>
-            <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
-              Transferência do Documento
-            </h2>
+            <div className="mb-4 border-b border-zinc-800 pb-3">
+              <h2 className="text-lg font-semibold text-yellow-500">
+                Transferência do Documento
+              </h2>
+
+              <p className="mt-1 text-xs text-zinc-500">
+                Escolha quem paga. Na rachada o valor é dividido
+                meio a meio, e isso sai escrito no contrato.
+              </p>
+            </div>
+
+            <div className="mb-4 grid gap-4 md:grid-cols-[200px_1fr] md:items-end">
+              <div>
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Valor da transferência
+                </label>
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={valorTransferencia}
+                  onChange={(e) =>
+                    setValorTransferencia(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    {
+                      chave: "cliente",
+                      nome: "Cliente paga",
+                    },
+                    {
+                      chave: "loja",
+                      nome: "Loja paga",
+                    },
+                    {
+                      chave: "rachada",
+                      nome: "Rachada (metade cada)",
+                    },
+                    {
+                      chave: "nenhum",
+                      nome: "Limpar",
+                    },
+                  ] as const
+                ).map((opcao) => (
+                  <button
+                    key={opcao.chave}
+                    type="button"
+                    onClick={() =>
+                      definirTransferencia(
+                        opcao.chave
+                      )
+                    }
+                    className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
+                  >
+                    {opcao.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
