@@ -122,9 +122,11 @@ export default function EstoquePage() {
   const [erro, setErro] = useState("");
 
   const [busca, setBusca] = useState("");
-  const [status, setStatus] = useState("todos");
+  const [status, setStatus] = useState("disponivel");
   const [marca, setMarca] = useState("todas");
   const [ano, setAno] = useState("todos");
+  const [cilindradaSelecionada, setCilindradaSelecionada] =
+    useState("todas");
   const [pagina, setPagina] = useState(1);
 
   const [motoAbertaId, setMotoAbertaId] =
@@ -318,48 +320,7 @@ export default function EstoquePage() {
     );
   }, [motos]);
 
-  const estoquePorCilindrada = useMemo(() => {
-    const contagem = new Map<number, number>();
-    let semInformada = 0;
-    let total = 0;
-
-    for (const moto of motos) {
-      if (normalizarTexto(moto.status) === "vendida") {
-        continue;
-      }
-
-      total += 1;
-
-      const cc = Number(moto.cilindrada || 0);
-
-      if (!Number.isFinite(cc) || cc <= 0) {
-        semInformada += 1;
-        continue;
-      }
-
-      const cilindrada = Math.round(cc);
-
-      contagem.set(
-        cilindrada,
-        (contagem.get(cilindrada) || 0) + 1
-      );
-    }
-
-    const itens = Array.from(contagem.entries())
-      .map(([cilindrada, quantidade]) => ({
-        cilindrada,
-        quantidade,
-      }))
-      .sort((a, b) => a.cilindrada - b.cilindrada);
-
-    return {
-      itens,
-      semInformada,
-      total,
-    };
-  }, [motos]);
-
-  const motosFiltradas = useMemo(() => {
+  const motosBaseFiltradas = useMemo(() => {
     const termos = normalizarTexto(busca)
       .split(/\s+/)
       .filter(Boolean);
@@ -402,6 +363,59 @@ export default function EstoquePage() {
     });
   }, [motos, busca, status, marca, ano]);
 
+  const estoquePorCilindrada = useMemo(() => {
+    const contagem = new Map<number, number>();
+    let semInformada = 0;
+
+    for (const moto of motosBaseFiltradas) {
+      const cc = Number(moto.cilindrada || 0);
+
+      if (!Number.isFinite(cc) || cc <= 0) {
+        semInformada += 1;
+        continue;
+      }
+
+      const cilindrada = Math.round(cc);
+
+      contagem.set(
+        cilindrada,
+        (contagem.get(cilindrada) || 0) + 1
+      );
+    }
+
+    const itens = Array.from(contagem.entries())
+      .map(([cilindrada, quantidade]) => ({
+        cilindrada,
+        quantidade,
+      }))
+      .sort((a, b) => a.cilindrada - b.cilindrada);
+
+    return {
+      itens,
+      semInformada,
+      total: motosBaseFiltradas.length,
+    };
+  }, [motosBaseFiltradas]);
+
+  const motosFiltradas = useMemo(() => {
+    return motosBaseFiltradas.filter((moto) => {
+
+      const cilindradaMoto = Number(moto.cilindrada || 0);
+      const cilindradaValida =
+        Number.isFinite(cilindradaMoto) && cilindradaMoto > 0;
+
+      const passouCilindrada =
+        cilindradaSelecionada === "todas" ||
+        (cilindradaSelecionada === "sem-informar"
+          ? !cilindradaValida
+          : cilindradaValida &&
+            Math.round(cilindradaMoto) ===
+              Number(cilindradaSelecionada));
+
+      return passouCilindrada;
+    });
+  }, [motosBaseFiltradas, cilindradaSelecionada]);
+
   const totalPaginas = Math.max(
     1,
     Math.ceil(motosFiltradas.length / ITENS_POR_PAGINA)
@@ -409,7 +423,7 @@ export default function EstoquePage() {
 
   useEffect(() => {
     setPagina(1);
-  }, [busca, status, marca, ano]);
+  }, [busca, status, marca, ano, cilindradaSelecionada]);
 
   useEffect(() => {
     if (pagina > totalPaginas) setPagina(totalPaginas);
@@ -424,15 +438,17 @@ export default function EstoquePage() {
 
   const temFiltros =
     busca.trim() !== "" ||
-    status !== "todos" ||
+    status !== "disponivel" ||
     marca !== "todas" ||
-    ano !== "todos";
+    ano !== "todos" ||
+    cilindradaSelecionada !== "todas";
 
   function limparFiltros() {
     setBusca("");
-    setStatus("todos");
+    setStatus("disponivel");
     setMarca("todas");
     setAno("todos");
+    setCilindradaSelecionada("todas");
     setPagina(1);
   }
 
@@ -465,12 +481,12 @@ export default function EstoquePage() {
                 Estoque por cilindrada
               </h2>
               <p className="mt-1 text-xs text-black/70">
-                Quantidade atual de motos por cc. Motos vendidas não entram nesta contagem.
+                Clique em uma cilindrada para mostrar somente aquelas motos. As quantidades acompanham os filtros da lista.
               </p>
             </div>
 
             <p className="text-sm font-semibold text-black">
-              Total no estoque: {estoquePorCilindrada.total}
+              Total nesta seleção: {estoquePorCilindrada.total}
             </p>
           </div>
 
@@ -482,35 +498,80 @@ export default function EstoquePage() {
               </div>
             ) : (
               <>
+                <button
+                  type="button"
+                  onClick={() => setCilindradaSelecionada("todas")}
+                  aria-pressed={cilindradaSelecionada === "todas"}
+                  className={`min-w-[105px] rounded-xl border px-4 py-3 text-left transition-all ${
+                    cilindradaSelecionada === "todas"
+                      ? "border-[#b68b20] bg-[#d4af37] text-black shadow-[0_4px_0_#8b6918,0_8px_16px_rgba(0,0,0,0.14)] -translate-y-0.5"
+                      : "border-grafite-claro bg-preto/50 hover:-translate-y-0.5 hover:border-dourado/60"
+                  }`}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide">
+                    Todas
+                  </p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {estoquePorCilindrada.total}
+                  </p>
+                  <p className="text-[11px]">
+                    {estoquePorCilindrada.total === 1 ? "moto" : "motos"}
+                  </p>
+                </button>
+
                 {estoquePorCilindrada.itens.map((item) => (
-                  <div
+                  <button
+                    type="button"
                     key={item.cilindrada}
-                    className="min-w-[105px] rounded-xl border border-grafite-claro bg-preto/50 px-4 py-3"
+                    onClick={() =>
+                      setCilindradaSelecionada(String(item.cilindrada))
+                    }
+                    aria-pressed={
+                      cilindradaSelecionada === String(item.cilindrada)
+                    }
+                    className={`min-w-[105px] rounded-xl border px-4 py-3 text-left transition-all ${
+                      cilindradaSelecionada === String(item.cilindrada)
+                        ? "border-[#b68b20] bg-[#d4af37] text-black shadow-[0_4px_0_#8b6918,0_8px_16px_rgba(0,0,0,0.14)] -translate-y-0.5"
+                        : "border-grafite-claro bg-preto/50 hover:-translate-y-0.5 hover:border-dourado/60"
+                    }`}
                   >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-black">
+                    <p className="text-xs font-semibold uppercase tracking-wide">
                       {item.cilindrada}cc
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-black">
+                    <p className="mt-1 text-2xl font-bold">
                       {item.quantidade}
                     </p>
-                    <p className="text-[11px] text-black/70">
+                    <p className="text-[11px]">
                       {item.quantidade === 1 ? "moto" : "motos"}
                     </p>
-                  </div>
+                  </button>
                 ))}
 
                 {estoquePorCilindrada.semInformada > 0 && (
-                  <div className="min-w-[125px] rounded-xl border border-grafite-claro bg-preto/50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-black">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCilindradaSelecionada("sem-informar")
+                    }
+                    aria-pressed={
+                      cilindradaSelecionada === "sem-informar"
+                    }
+                    className={`min-w-[125px] rounded-xl border px-4 py-3 text-left transition-all ${
+                      cilindradaSelecionada === "sem-informar"
+                        ? "border-[#b68b20] bg-[#d4af37] text-black shadow-[0_4px_0_#8b6918,0_8px_16px_rgba(0,0,0,0.14)] -translate-y-0.5"
+                        : "border-grafite-claro bg-preto/50 hover:-translate-y-0.5 hover:border-dourado/60"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide">
                       Sem informar
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-black">
+                    <p className="mt-1 text-2xl font-bold">
                       {estoquePorCilindrada.semInformada}
                     </p>
-                    <p className="text-[11px] text-black/70">
+                    <p className="text-[11px]">
                       {estoquePorCilindrada.semInformada === 1 ? "moto" : "motos"}
                     </p>
-                  </div>
+                  </button>
                 )}
               </>
             )}

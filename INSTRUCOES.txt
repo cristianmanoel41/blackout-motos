@@ -1,40 +1,30 @@
-BLACKOUT MOTOS - LOGO CLARA E MARCA D'AGUA 3D
+CORRECAO DO TOTAL DO ESTOQUE - BLACKOUT MOTOS
 
-1. Faça uma cópia de segurança ou confirme que o Git está limpo.
-2. Extraia este ZIP na raiz do projeto blackout-motos.
-3. Confirme a substituição dos arquivos quando o Windows perguntar.
-4. No PowerShell, dentro da raiz do projeto, execute:
+O QUE FOI CORRIGIDO
+
+- A tela de Estoque agora abre com o filtro "Disponivel" selecionado.
+- O total e os botoes por cilindrada contam somente as motos disponiveis por padrao.
+- O total inicial do Estoque passa a acompanhar o numero "Motos disponiveis" do Dashboard.
+- As motos vendidas continuam cadastradas e podem ser consultadas escolhendo "Status: Todos" ou "Vendida".
+- O botao "Limpar filtros" volta para a visualizacao de motos disponiveis.
+
+COMO INSTALAR
+
+1. Extraia este ZIP na raiz do projeto:
+
+   C:\Users\zlYoungthug\orca\blackout-motos
+
+2. Confirme a substituicao do arquivo quando o Windows perguntar.
+
+3. No PowerShell, dentro da pasta do projeto, execute:
 
    Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
    npm.cmd run build
 
-5. Se o build terminar sem erros, execute:
+4. Se o build terminar corretamente, salve e envie:
 
-   npm.cmd run dev
+   git add app/estoque/page.tsx
+   git commit -m "Alinha total do estoque com motos disponiveis"
+   git push origin main
 
-6. Abra http://localhost:3000 e confira Dashboard, Estoque, Vendas,
-   Capacetes, Caixa, um recibo e um documento.
-
-ARQUIVOS DO PACOTE
-
-- components/Sidebar.tsx
-- components/AppShell.tsx
-- components/AppShell.module.css
-- components/MarcaDaguaBlackout.tsx
-- public/logo-blackout-clara.png
-- public/login-moto-fundo.png
-
-OBSERVAÇÕES
-
-- Não há SQL para executar.
-- A alteração é apenas visual; nenhuma regra do Supabase foi modificada.
-- Recibos, documentos e login continuam sem sidebar e sem marca d'água.
-- A tela de login usa a nova logo clara com símbolo e BLACKOUT pretos,
-  mantendo MOTOS e as linhas em dourado.
-- A foto da moto aparece no fundo da tela de login com uma camada suave
-  para preservar a leitura do formulário.
-- As telas do sistema e o login usam textos pretos e em negrito; botões
-  escuros preservam a cor necessária para manter o contraste.
-- A opção ativa do menu considera também as subpáginas.
-- Se o seu menu local tiver recebido uma opção nova depois da versão desta
-  conversa, copie apenas esse item para o array menuItems antes de substituir.
+Nenhuma alteracao no banco de dados e necessaria.

@@ -49,18 +49,8 @@ div.rounded-xl.border::before,
 div.rounded-2xl.border::before,
 form.rounded-xl.border::before,
 form.rounded-2xl.border::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255,255,255,.72),
-      rgba(255,255,255,0) 35%,
-      rgba(0,0,0,.018) 100%
-    );
+  content: none !important;
+  display: none !important;
 }
 
 @media (hover: hover) {
