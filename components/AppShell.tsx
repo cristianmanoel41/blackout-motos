@@ -15,7 +15,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (paginaDocumento) return <>{children}</>
 
   if (pathname === '/' || pathname === '/login') {
-    return <div className={styles.legibilidade}>{children}</div>
+    return (
+      <div className={`${styles.legibilidade} ${styles.loginComLogo}`}>
+        <div className={styles.logoLogin} aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            data-logo-login-atual="true"
+            src="/logo-blackout-clara.png"
+            alt=""
+          />
+        </div>
+
+        {children}
+      </div>
+    )
   }
 
   return (

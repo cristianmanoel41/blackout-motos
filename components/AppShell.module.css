@@ -47,3 +47,38 @@
 .legibilidade :global(a span) {
   color: inherit !important;
 }
+
+.loginComLogo {
+  min-height: 100vh;
+}
+
+/* Evita duas marcas caso a tela antiga já tenha uma logo Blackout. */
+.loginComLogo :global(img[src*='logo-blackout']:not([data-logo-login-atual])) {
+  display: none !important;
+}
+
+.logoLogin {
+  pointer-events: none;
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  z-index: 30;
+  width: min(72vw, 280px);
+  height: 130px;
+  transform: translateX(-50%);
+}
+
+.logoLogin img {
+  display: block !important;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .logoLogin {
+    top: 1rem;
+    width: min(68vw, 230px);
+    height: 105px;
+  }
+}
