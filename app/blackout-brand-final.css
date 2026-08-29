@@ -49,6 +49,37 @@ body {
 .text-indigo-400,
 .text-indigo-500 { color: #7c3aed !important; }
 
+/*
+ * AMARELOS
+ *
+ * O tema virou claro, mas os amarelos ficaram como estavam:
+ * texto amarelo em fundo branco praticamente some. Aqui eles
+ * viram tons legíveis, com o mesmo papel de antes.
+ *
+ * 500/600 são títulos de seção - mesmo peso do .text-dourado,
+ * então recebem a cor de texto normal.
+ * 200/300/400 são avisos - viram âmbar escuro, que continua
+ * lido como "atenção" e tem contraste no branco.
+ */
+.text-yellow-500,
+.text-yellow-600 { color: var(--bo-text) !important; }
+
+.text-yellow-200,
+.text-yellow-300,
+.text-yellow-400 { color: #9a6206 !important; }
+
+/*
+ * Caixas de aviso em amarelo: no tema escuro o fundo era
+ * quase preto. No claro vira um creme com borda suave.
+ */
+.bg-yellow-950\/10,
+.bg-yellow-950\/20 { background-color: #fdf7e7 !important; }
+
+.border-yellow-700,
+.border-yellow-800,
+.border-yellow-800\/50,
+.border-yellow-800\/60 { border-color: #e6d3a3 !important; }
+
 main {
   position: relative !important;
   isolation: isolate;
