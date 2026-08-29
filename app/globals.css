@@ -78,6 +78,71 @@ body {
 }
 
 /*
+ * Cabeçalho timbrado do modelo da loja.
+ */
+.documento-word .cabecalho-loja {
+  margin: 0;
+  text-align: center;
+  font-size: 9pt;
+  line-height: 1.35;
+}
+
+.documento-word .data-documento {
+  margin-top: 1.8em;
+}
+
+/*
+ * Bloco de assinaturas.
+ *
+ * No Word as duas assinaturas ficam lado a lado numa tabela.
+ * table-layout fixed divide a largura por igual: sem isso as
+ * colunas se ajustam ao conteúdo e a linha de assinatura, que
+ * e um bloco unico de underscores sem espaco para quebrar,
+ * estoura a folha e sai cortada.
+ */
+.documento-word .assinaturas-documento {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: 2.4em;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.documento-word .assinaturas-documento td {
+  padding: 0 10px;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+/*
+ * A linha em si é desenhada com borda, e não com os
+ * underscores: assim ela acompanha a largura da coluna,
+ * por mais estreita que seja.
+ */
+.documento-word .linha-assinatura-doc {
+  margin: 0 0 6px;
+  border-bottom: 1px solid #000;
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+}
+
+.documento-word .rotulo-assinatura-doc {
+  margin-top: 0;
+  text-align: center;
+  font-size: 9pt;
+}
+
+/*
+ * Nenhum parágrafo do documento deve ser partido ao meio
+ * pela quebra de página.
+ */
+.documento-word p {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/*
  * Impressão dos documentos.
  *
  * São dois tamanhos de folha: o recibo é um terço de A4
