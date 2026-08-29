@@ -1,0 +1,49 @@
+.legibilidade {
+  color: #09090b;
+  font-weight: 700;
+}
+
+.legibilidade :global(h1),
+.legibilidade :global(h2),
+.legibilidade :global(h3),
+.legibilidade :global(h4),
+.legibilidade :global(h5),
+.legibilidade :global(h6),
+.legibilidade :global(p),
+.legibilidade :global(label),
+.legibilidade :global(legend),
+.legibilidade :global(dt),
+.legibilidade :global(dd),
+.legibilidade :global(li),
+.legibilidade :global(th),
+.legibilidade :global(td),
+.legibilidade :global(caption),
+.legibilidade :global(span) {
+  color: #09090b !important;
+  font-weight: 700 !important;
+}
+
+.legibilidade :global(input),
+.legibilidade :global(select),
+.legibilidade :global(textarea) {
+  color: #09090b !important;
+  font-weight: 700 !important;
+}
+
+.legibilidade :global(input::placeholder),
+.legibilidade :global(textarea::placeholder) {
+  color: rgba(9, 9, 11, 0.62) !important;
+  font-weight: 700 !important;
+  opacity: 1;
+}
+
+.legibilidade :global(button),
+.legibilidade :global(a) {
+  font-weight: 700 !important;
+}
+
+/* Mantém legíveis os textos internos de botões e links com fundo escuro. */
+.legibilidade :global(button span),
+.legibilidade :global(a span) {
+  color: inherit !important;
+}
