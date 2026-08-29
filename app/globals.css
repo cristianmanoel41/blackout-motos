@@ -29,16 +29,23 @@ body {
  * A conversão traz só o conteúdo; a aparência de documento
  * (fonte serifada, texto justificado) vem daqui.
  */
+/*
+ * Corpo do documento.
+ *
+ * O tamanho é calibrado para o contrato caber em UMA folha A4
+ * com o bloco de assinaturas junto: com 10,5 pt ele passava
+ * alguns milímetros e a assinatura ia sozinha para a página 2.
+ */
 .documento-word {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 11pt;
-  line-height: 1.5;
+  font-size: 10pt;
+  line-height: 1.38;
   text-align: justify;
   color: #000;
 }
 
 .documento-word p {
-  margin: 0 0 0.6em;
+  margin: 0 0 0.45em;
 }
 
 .documento-word strong {
@@ -61,9 +68,20 @@ body {
   font-size: 12pt;
 }
 
+/*
+ * A conversão do Word não traz o tamanho da imagem, então o
+ * navegador usaria o tamanho natural do arquivo (1278 x 475
+ * px = 34 cm de largura). O timbre ocupava 6,4 cm de altura e
+ * empurrava a assinatura para a segunda folha. No modelo do
+ * Word ele tem 5,0 x 1,9 cm.
+ */
 .documento-word img {
+  display: block;
   max-width: 100%;
+  max-height: 2cm;
+  width: auto;
   height: auto;
+  margin: 0 auto;
 }
 
 .documento-word table {
@@ -115,7 +133,7 @@ body {
 .documento-word .assinaturas-documento {
   table-layout: fixed;
   width: 100%;
-  margin-top: 2.4em;
+  margin-top: 1.8em;
   break-inside: avoid;
   page-break-inside: avoid;
 }
@@ -168,7 +186,7 @@ body {
 
 @page documento {
   size: A4 portrait;
-  margin: 15mm 18mm;
+  margin: 12mm 15mm;
 }
 
 .folha-recibo {
@@ -182,7 +200,7 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 15mm 18mm;
+    margin: 12mm 15mm;
   }
 
   html,
