@@ -120,6 +120,14 @@ function descricaoPagamentos(
         venda.parcelas_financiamento
       ) || 0;
 
+    const valorParcela =
+      Number(
+        venda.valor_parcela_financiamento
+      ) ||
+      (parcelas > 0
+        ? financiado / parcelas
+        : 0);
+
     partes.push(
       `financiamento de ${moeda(
         financiado
@@ -129,7 +137,11 @@ function descricaoPagamentos(
           : ""
       }${
         parcelas > 0
-          ? `, em ${parcelas}x`
+          ? `, em ${parcelas}x${
+              valorParcela > 0
+                ? ` de ${moeda(valorParcela)}`
+                : ""
+            }`
           : ""
       }`
     );
