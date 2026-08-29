@@ -1,0 +1,80 @@
+.corMoto {
+  font-weight: 800 !important;
+}
+
+.vermelha {
+  color: #dc2626 !important;
+}
+
+.azul {
+  color: #2563eb !important;
+}
+
+.preta,
+.padrao {
+  color: #111111 !important;
+}
+
+.prata {
+  color: #64748b !important;
+}
+
+.cinza {
+  color: #4b5563 !important;
+}
+
+.branca {
+  color: #ffffff !important;
+  text-shadow:
+    -1px -1px 0 #374151,
+    1px -1px 0 #374151,
+    -1px 1px 0 #374151,
+    1px 1px 0 #374151 !important;
+}
+
+.amarela {
+  color: #eab308 !important;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 45%) !important;
+}
+
+.dourada {
+  color: #b8860b !important;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 25%) !important;
+}
+
+.verde {
+  color: #15803d !important;
+}
+
+.laranja {
+  color: #ea580c !important;
+}
+
+.roxa {
+  color: #7e22ce !important;
+}
+
+.rosa {
+  color: #db2777 !important;
+}
+
+.vinho {
+  color: #881337 !important;
+}
+
+.marrom {
+  color: #78350f !important;
+}
+
+.bege {
+  color: #a16207 !important;
+  text-shadow: 0 1px 1px rgb(255 255 255 / 75%) !important;
+}
+
+.grafite {
+  color: #374151 !important;
+}
+
+.chumbo {
+  color: #475569 !important;
+}
