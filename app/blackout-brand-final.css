@@ -69,6 +69,24 @@ body {
 .text-yellow-400 { color: #9a6206 !important; }
 
 /*
+ * CINZAS DO TEMA ESCURO
+ *
+ * text-zinc-200/300 era texto e icone claros sobre fundo
+ * preto. No tema claro eles ficam cinza-clarinho em cima de
+ * branco - foi o que apagou o olho de visualizar e a seta de
+ * abrir os detalhes da moto.
+ *
+ * 200/300 sao conteudo: viram a cor de texto normal.
+ * 400/500/600 sao apoio: viram o cinza de apoio do tema.
+ */
+.text-zinc-200,
+.text-zinc-300 { color: var(--bo-text) !important; }
+
+.text-zinc-400,
+.text-zinc-500,
+.text-zinc-600 { color: var(--bo-muted) !important; }
+
+/*
  * Caixas de aviso em amarelo: no tema escuro o fundo era
  * quase preto. No claro vira um creme com borda suave.
  */
