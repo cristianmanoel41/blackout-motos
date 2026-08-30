@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import CampoPagamentoFeito from '@/components/CampoPagamentoFeito'
 
 const categorias = [
   'Mecânica',
@@ -27,6 +28,17 @@ export default function RegistrarGastoPage() {
 
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
+
+  /*
+   * Peça encomendada, pintura, kit completo: o serviço é
+   * registrado hoje e pago quando fica pronto. Enquanto isso o
+   * lançamento espera baixa no caixa.
+   */
+  const [pago, setPago] = useState(true)
+
+  const [previsao, setPrevisao] = useState(
+    new Date().toISOString().slice(0, 10)
+  )
 
   const [form, setForm] = useState({
     data: new Date().toISOString().slice(0, 10),
@@ -89,7 +101,7 @@ export default function RegistrarGastoPage() {
     const { error: caixaError } = await supabase
       .from('cash_transactions')
       .insert({
-        data: form.data,
+        data: pago ? form.data : previsao,
         tipo: 'saida',
         origem: 'gasto_moto',
         origem_id: gasto.id,
@@ -97,6 +109,8 @@ export default function RegistrarGastoPage() {
         descricao: `${form.categoria} - ${
           form.descricao || 'Gasto de moto'
         }`,
+        confirmado: pago,
+        data_confirmacao: pago ? form.data : null,
       })
 
     if (caixaError) {
@@ -236,6 +250,15 @@ export default function RegistrarGastoPage() {
             rows={2}
           />
         </div>
+
+        <CampoPagamentoFeito
+          titulo="Este gasto já foi pago?"
+          pago={pago}
+          aoMudarPago={setPago}
+          dataPrevista={previsao}
+          aoMudarDataPrevista={setPrevisao}
+          ajudaPendente="Fica pendente no caixa até você dar baixa, no dia em que pagar de verdade."
+        />
 
         {erro && (
           <div className="rounded-lg border border-red-700 bg-red-950 px-4 py-3 text-sm text-red-300">

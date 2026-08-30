@@ -14,6 +14,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import CampoComBusca from "@/components/CampoComBusca";
 import {
   MARCAS,
@@ -155,6 +156,18 @@ function moeda(valor: number) {
 
 export default function NovaMotoPage() {
   const supabase = createClient();
+
+  /*
+   * A moto às vezes entra no estoque antes do acerto com o
+   * dono. Enquanto não paga, a saída fica pendente no caixa.
+   */
+  const [pagoCompra, setPagoCompra] =
+    useState(true);
+
+  const [
+    previsaoCompra,
+    setPrevisaoCompra,
+  ] = useState(hoje());
 
   const [form, setForm] =
     useState<FormMoto>(formInicial);
@@ -984,14 +997,32 @@ export default function NovaMotoPage() {
             origem_id: string;
             valor: number;
             descricao: string;
+            confirmado: boolean;
+            data_confirmacao:
+              | string
+              | null;
           }> = [];
+
+        /*
+         * Data em que o dinheiro sai: hoje, se já foi pago;
+         * a previsão combinada, se ficou para depois.
+         */
+        const dataCaixaCompra =
+          pagoCompra
+            ? form.data_entrada
+            : previsaoCompra;
+
+        const confirmacaoCompra =
+          pagoCompra
+            ? form.data_entrada
+            : null;
 
         if (
           form.possui_financiamento
         ) {
           movimentacoesCaixa.push({
             data:
-              form.data_entrada,
+              dataCaixaCompra,
             tipo: "saida",
             origem: "outro",
             origem_id:
@@ -1000,6 +1031,9 @@ export default function NovaMotoPage() {
               valorQuitacaoNumero,
             descricao:
               `Quitação de financiamento - ${identificacaoMoto} - ${form.financeira_quitacao.trim()}`,
+            confirmado: pagoCompra,
+            data_confirmacao:
+              confirmacaoCompra,
           });
 
           if (
@@ -1007,7 +1041,7 @@ export default function NovaMotoPage() {
           ) {
             movimentacoesCaixa.push({
               data:
-                form.data_entrada,
+                dataCaixaCompra,
               tipo: "saida",
               origem: "outro",
               origem_id:
@@ -1016,12 +1050,15 @@ export default function NovaMotoPage() {
                 valorLiquidoCliente,
               descricao:
                 `Repasse ao vendedor - ${identificacaoMoto}`,
+              confirmado: pagoCompra,
+              data_confirmacao:
+                confirmacaoCompra,
             });
           }
         } else {
           movimentacoesCaixa.push({
             data:
-              form.data_entrada,
+              dataCaixaCompra,
             tipo: "saida",
             origem: "outro",
             origem_id:
@@ -1030,6 +1067,9 @@ export default function NovaMotoPage() {
               valorCompraNumero,
             descricao:
               `Compra de moto - ${identificacaoMoto}`,
+            confirmado: pagoCompra,
+            data_confirmacao:
+              confirmacaoCompra,
           });
         }
 
@@ -1881,6 +1921,28 @@ export default function NovaMotoPage() {
                 ]}
               />
             </div>
+
+            {form.tipo_entrada ===
+              "compra_nova" && (
+              <div className="mt-5">
+                <CampoPagamentoFeito
+                  titulo="Você já pagou esta moto?"
+                  pago={pagoCompra}
+                  aoMudarPago={
+                    setPagoCompra
+                  }
+                  dataPrevista={
+                    previsaoCompra
+                  }
+                  aoMudarDataPrevista={
+                    setPrevisaoCompra
+                  }
+                  rotuloPago="Já paguei"
+                  rotuloPendente="Ainda vou pagar"
+                  ajudaPendente="A saída fica pendente no caixa até você dar baixa, no dia do acerto."
+                />
+              </div>
+            )}
 
             {!ehEstoqueInicial && (
               <div className="mt-5 rounded-xl border border-grafite-claro bg-preto/40 p-4">

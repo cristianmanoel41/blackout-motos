@@ -41,7 +41,8 @@ async function calcularSaldoAtual(
     .from("cash_transactions")
     .select(
       "tipo, valor, descricao, origem, criado_em"
-    );
+    )
+    .eq("confirmado", true);
 
   if (error) {
     throw error;

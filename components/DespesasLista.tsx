@@ -198,21 +198,42 @@ export default function DespesasLista({
     }
 
     /*
-     * A despesa só entra no caixa quando é paga - é assim que
-     * o cadastro faz, e aqui segue igual.
+     * A despesa em aberto já entra no caixa como pendente, então
+     * aqui é só dar baixa nela. Despesa cadastrada antes disso
+     * não tem lançamento nenhum - nesse caso, cria agora.
      */
-    const { error: erroCaixa } = await supabase
+    const { data: pendente } = await supabase
       .from("cash_transactions")
-      .insert({
-        data: dataPagamento,
-        tipo: "saida",
-        origem: "despesa_loja",
-        origem_id: despesa.id,
-        valor: Number(despesa.valor || 0),
-        descricao: `${despesa.categoria || "Despesa"} - ${
-          despesa.descricao || "Despesa da loja"
-        }`,
-      });
+      .select("id")
+      .eq("origem", "despesa_loja")
+      .eq("origem_id", despesa.id)
+      .limit(1);
+
+    const lancamento = (pendente || [])[0];
+
+    const { error: erroCaixa } = lancamento
+      ? await supabase
+          .from("cash_transactions")
+          .update({
+            confirmado: true,
+            data_confirmacao: dataPagamento,
+            data: dataPagamento,
+          })
+          .eq("id", lancamento.id)
+      : await supabase
+          .from("cash_transactions")
+          .insert({
+            data: dataPagamento,
+            tipo: "saida",
+            origem: "despesa_loja",
+            origem_id: despesa.id,
+            valor: Number(despesa.valor || 0),
+            descricao: `${despesa.categoria || "Despesa"} - ${
+              despesa.descricao || "Despesa da loja"
+            }`,
+            confirmado: true,
+            data_confirmacao: dataPagamento,
+          });
 
     setOcupado("");
 

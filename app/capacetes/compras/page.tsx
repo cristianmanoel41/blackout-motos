@@ -209,8 +209,8 @@ export default function ComprasCapacetesPage() {
                 <p className="text-sm text-texto-suave">
                   {formatarData(nota.data_compra)}
                   {nota.lancar_caixa
-                    ? " · saiu do caixa"
-                    : " · não lançado no caixa"}
+                    ? " · paga"
+                    : " · aguardando baixa no caixa"}
                 </p>
               </div>
 

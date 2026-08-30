@@ -8,6 +8,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import {
   BANCOS_FINANCIAMENTO,
@@ -237,6 +238,31 @@ export default function VendasPage() {
 
   const [dataVenda, setDataVenda] =
     useState(hoje());
+
+  /*
+   * O que o cliente entrega na hora normalmente já é dinheiro
+   * no caixa. O financiamento não: o banco deposita depois, e
+   * até lá o valor fica pendente esperando baixa.
+   */
+  const [
+    recebidoDoCliente,
+    setRecebidoDoCliente,
+  ] = useState(true);
+
+  const [
+    previsaoCliente,
+    setPrevisaoCliente,
+  ] = useState(hoje());
+
+  const [
+    depositoBancoFeito,
+    setDepositoBancoFeito,
+  ] = useState(false);
+
+  const [
+    previsaoBanco,
+    setPrevisaoBanco,
+  ] = useState(hoje());
 
   const [horaVenda, setHoraVenda] =
     useState(horaAtual());
@@ -2020,15 +2046,72 @@ export default function VendasPage() {
        * - Moto na troca NÃO entra no caixa.
        * - Financiamento entra como recebimento do banco.
        */
-      const valorCaixaVenda =
+      const identificacaoVenda =
+        motoSelecionada
+          ? `${motoSelecionada.marca || ""} ${motoSelecionada.modelo || ""}`
+          : "Moto";
+
+      /*
+       * Dois lançamentos separados, porque o dinheiro chega em
+       * momentos diferentes: o que o cliente paga e o que o
+       * banco deposita. Assim dá para dar baixa em cada um no
+       * dia certo.
+       */
+      const valorDoCliente =
         totalPagamentosCaixa +
-        valorFinanciado +
         (Number(
           transferenciaCliente
         ) || 0);
 
+      const lancamentosVenda: any[] =
+        [];
+
+      if (valorDoCliente > 0) {
+        lancamentosVenda.push({
+          data: recebidoDoCliente
+            ? dataVenda
+            : previsaoCliente,
+          tipo: "entrada",
+          origem: "venda",
+          origem_id:
+            vendaCriada.id,
+          valor: valorDoCliente,
+          descricao:
+            `Venda - ${identificacaoVenda}`,
+          confirmado:
+            recebidoDoCliente,
+          data_confirmacao:
+            recebidoDoCliente
+              ? dataVenda
+              : null,
+        });
+      }
+
+      if (valorFinanciado > 0) {
+        lancamentosVenda.push({
+          data: depositoBancoFeito
+            ? dataVenda
+            : previsaoBanco,
+          tipo: "entrada",
+          origem: "venda",
+          origem_id:
+            vendaCriada.id,
+          valor: valorFinanciado,
+          descricao:
+            `Financiamento - ${identificacaoVenda}${
+              banco ? ` - ${banco}` : ""
+            }`,
+          confirmado:
+            depositoBancoFeito,
+          data_confirmacao:
+            depositoBancoFeito
+              ? dataVenda
+              : null,
+        });
+      }
+
       if (
-        valorCaixaVenda > 0
+        lancamentosVenda.length > 0
       ) {
         const {
           error: caixaError,
@@ -2036,21 +2119,7 @@ export default function VendasPage() {
           .from(
             "cash_transactions"
           )
-          .insert({
-            data: dataVenda,
-            tipo: "entrada",
-            origem: "venda",
-            origem_id:
-              vendaCriada.id,
-            valor:
-              valorCaixaVenda,
-            descricao:
-              `Venda - ${
-                motoSelecionada
-                  ? `${motoSelecionada.marca || ""} ${motoSelecionada.modelo || ""}`
-                  : "Moto"
-              }`,
-          });
+          .insert(lancamentosVenda);
 
         if (caixaError) {
           throw caixaError;
@@ -3496,6 +3565,56 @@ export default function VendasPage() {
                 )
               </p>
             )}
+
+            {/* BAIXA NO CAIXA */}
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {totalPagamentosCaixa +
+                (Number(
+                  transferenciaCliente
+                ) || 0) >
+                0 && (
+                <CampoPagamentoFeito
+                  titulo="Você já recebeu o valor do cliente?"
+                  pago={
+                    recebidoDoCliente
+                  }
+                  aoMudarPago={
+                    setRecebidoDoCliente
+                  }
+                  dataPrevista={
+                    previsaoCliente
+                  }
+                  aoMudarDataPrevista={
+                    setPrevisaoCliente
+                  }
+                  rotuloPago="Já recebi"
+                  rotuloPendente="Ainda vou receber"
+                  ajudaPendente="Fica pendente no caixa até você dar baixa."
+                />
+              )}
+
+              {valorFinanciado > 0 && (
+                <CampoPagamentoFeito
+                  titulo="O banco já depositou o financiamento?"
+                  pago={
+                    depositoBancoFeito
+                  }
+                  aoMudarPago={
+                    setDepositoBancoFeito
+                  }
+                  dataPrevista={
+                    previsaoBanco
+                  }
+                  aoMudarDataPrevista={
+                    setPrevisaoBanco
+                  }
+                  rotuloPago="Já caiu"
+                  rotuloPendente="Ainda vai cair"
+                  ajudaPendente="Fica pendente no caixa até o dinheiro do banco entrar."
+                />
+              )}
+            </div>
 
             {(tipoVenda ===
               "avista" ||

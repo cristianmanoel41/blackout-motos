@@ -81,9 +81,9 @@ export async function DELETE(
   } = await supabase
     .from("cash_transactions")
     .select(
-      "id, data, tipo, origem, origem_id, valor, descricao, criado_em"
+      "id, data, tipo, origem, origem_id, valor, descricao, criado_em, confirmado, data_confirmacao"
     )
-    .eq("origem", "outro")
+    .in("origem", ["outro", "gasto_moto"])
     .eq("origem_id", id);
 
   if (caixaBuscaError) {
@@ -106,7 +106,7 @@ export async function DELETE(
     } = await supabase
       .from("cash_transactions")
       .delete()
-      .eq("origem", "outro")
+      .in("origem", ["outro", "gasto_moto"])
       .eq("origem_id", id);
 
     if (caixaDeleteError) {

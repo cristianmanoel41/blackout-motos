@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { Plus, Receipt, Trash2 } from "lucide-react";
 
@@ -74,6 +75,12 @@ export default function NovaNotaCapacetesPage() {
   const [numeroNota, setNumeroNota] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [lancarCaixa, setLancarCaixa] = useState(true);
+
+  /*
+   * Nota de capacete costuma ser paga depois. Quando ainda não
+   * foi, a saída entra pendente no caixa em vez de sumir.
+   */
+  const [previsaoNota, setPrevisaoNota] = useState(hoje());
   const [observacoes, setObservacoes] = useState("");
 
   const [itens, setItens] = useState<ItemNota[]>([itemVazio()]);
@@ -275,11 +282,13 @@ export default function NovaNotaCapacetesPage() {
       /*
        * 4. Saída no caixa.
        */
-      if (lancarCaixa && total > 0) {
+      if (total > 0) {
         const { error: erroCaixa } = await supabase
           .from("cash_transactions")
           .insert({
-            data: dataCompra,
+            data: lancarCaixa
+              ? dataCompra
+              : previsaoNota,
             tipo: "saida",
             origem: "compra_capacete",
             origem_id: nota.id,
@@ -287,6 +296,10 @@ export default function NovaNotaCapacetesPage() {
             descricao: `Compra de capacetes${
               numeroNota.trim() ? ` - NF ${numeroNota.trim()}` : ""
             }${fornecedor.trim() ? ` - ${fornecedor.trim()}` : ""}`,
+            confirmado: lancarCaixa,
+            data_confirmacao: lancarCaixa
+              ? dataCompra
+              : null,
           });
 
         if (erroCaixa) throw erroCaixa;
@@ -676,15 +689,16 @@ export default function NovaNotaCapacetesPage() {
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-texto">
-          <input
-            type="checkbox"
-            checked={lancarCaixa}
-            onChange={(e) => setLancarCaixa(e.target.checked)}
-          />
-          Lançar saída no caixa (desmarque se a nota ainda não
-          foi paga)
-        </label>
+        <CampoPagamentoFeito
+          titulo="Esta nota já foi paga?"
+          pago={lancarCaixa}
+          aoMudarPago={setLancarCaixa}
+          dataPrevista={previsaoNota}
+          aoMudarDataPrevista={setPrevisaoNota}
+          rotuloPago="Já paguei"
+          rotuloPendente="Ainda vou pagar"
+          ajudaPendente="A saída fica pendente no caixa até você dar baixa."
+        />
 
         <div>
           <label className={labelClass}>Observações</label>

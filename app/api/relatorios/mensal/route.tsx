@@ -98,6 +98,7 @@ export async function GET(request: Request) {
         .from('cash_transactions')
         .select('valor, origem, descricao')
         .eq('tipo', 'entrada')
+        .eq('confirmado', true)
         .gte('data', inicioMes)
         .lte('data', fimMes),
 
@@ -105,6 +106,7 @@ export async function GET(request: Request) {
         .from('cash_transactions')
         .select('valor')
         .eq('tipo', 'saida')
+        .eq('confirmado', true)
         .gte('data', inicioMes)
         .lte('data', fimMes),
 

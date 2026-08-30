@@ -141,6 +141,7 @@ export default async function DashboardPage() {
     .from('cash_transactions')
     .select('valor')
     .eq('tipo', 'entrada')
+    .eq('confirmado', true)
     .gte('data', inicioMes)
     .lte('data', fimMes)
 
@@ -148,13 +149,17 @@ export default async function DashboardPage() {
     .from('cash_transactions')
     .select('valor')
     .eq('tipo', 'saida')
+    .eq('confirmado', true)
     .gte('data', inicioMes)
     .lte('data', fimMes)
 
   const entradasMes = entradasMesData?.reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
   const saidasMes = saidasMesData?.reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
 
-  const { data: todasTransacoes } = await supabase.from('cash_transactions').select('tipo, valor')
+  const { data: todasTransacoes } = await supabase
+    .from('cash_transactions')
+    .select('tipo, valor')
+    .eq('confirmado', true)
   const totalEntradasGeral =
     todasTransacoes?.filter((t) => t.tipo === 'entrada').reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
   const totalSaidasGeral =

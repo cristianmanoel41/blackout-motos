@@ -349,6 +349,19 @@ export default function NovaDespesaPage() {
     form.data_pagamento ||
     form.data;
 
+  /* Dia em que a saída deve aparecer no caixa. */
+  const dataCaixaLancamento = () =>
+    form.pago
+      ? form.data_pagamento ||
+        form.data
+      : form.data;
+
+  const confirmacaoLancamento = () =>
+    form.pago
+      ? form.data_pagamento ||
+        form.data
+      : null;
+
   const pagamentoAntesDoControle =
     Boolean(
       form.pago &&
@@ -397,10 +410,7 @@ export default function NovaDespesaPage() {
       );
     }
 
-    if (
-      form.pago &&
-      !pagamentoAntesDoControle
-    ) {
+    if (!pagamentoAntesDoControle) {
       const {
         error: caixaError,
       } = await supabase
@@ -409,8 +419,7 @@ export default function NovaDespesaPage() {
         )
         .insert({
           data:
-            form.data_pagamento ||
-            form.data,
+            dataCaixaLancamento(),
           tipo: "saida",
           origem:
             "despesa_loja",
@@ -425,6 +434,9 @@ export default function NovaDespesaPage() {
             form.descricao.trim() ||
             "Despesa da loja"
           }`,
+          confirmado: form.pago,
+          data_confirmacao:
+            confirmacaoLancamento(),
         });
 
       if (caixaError) {
@@ -558,18 +570,17 @@ export default function NovaDespesaPage() {
         );
       }
 
-      if (
-        form.pago &&
-        !pagamentoAntesDoControle
-      ) {
+      if (!pagamentoAntesDoControle) {
         const saidasCaixa =
           gastos.map(
             (gasto: any) => ({
               data:
-                form.data_pagamento ||
-                form.data,
+                dataCaixaLancamento(),
               tipo: "saida",
               origem: "outro",
+              confirmado: form.pago,
+              data_confirmacao:
+                confirmacaoLancamento(),
               origem_id:
                 gasto.id,
               valor: Number(
@@ -665,10 +676,7 @@ export default function NovaDespesaPage() {
       );
     }
 
-    if (
-      form.pago &&
-      !pagamentoAntesDoControle
-    ) {
+    if (!pagamentoAntesDoControle) {
       const {
         error: caixaError,
       } = await supabase
@@ -677,10 +685,12 @@ export default function NovaDespesaPage() {
         )
         .insert({
           data:
-            form.data_pagamento ||
-            form.data,
+            dataCaixaLancamento(),
           tipo: "saida",
           origem: "outro",
+          confirmado: form.pago,
+          data_confirmacao:
+            confirmacaoLancamento(),
           origem_id:
             gasto.id,
           valor: Number(
