@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-
-import "./white-label.css";
-import "./white-label-3d.css";
+import "./blackout-brand-final.css";
 import GlobalBackButton from '@/components/GlobalBackButton'
 import AppShell from '@/components/AppShell'
 

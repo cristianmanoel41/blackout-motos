@@ -1,0 +1,206 @@
+.dashboard {
+  --gold: #c99712;
+  --gold-strong: #a97800;
+  --ink: #101114;
+  --muted: #737880;
+  --line: #e7e9ed;
+  --soft: #f6f7f9;
+  min-height: 100vh;
+  color: var(--ink);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 128px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  background:
+    linear-gradient(100deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.96) 54%, rgba(255,255,255,.35) 100%),
+    url('/login-moto-fundo.png') right center / cover no-repeat;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 2px 4px rgba(15,23,42,.03),
+    0 18px 42px rgba(15,23,42,.07);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -120px;
+  width: 300px;
+  height: 300px;
+  border: 2px solid rgba(201,151,18,.22);
+  border-radius: 999px;
+  box-shadow: 0 0 0 22px rgba(201,151,18,.035), 0 0 0 48px rgba(201,151,18,.02);
+}
+
+.metricCard,
+.panel,
+.miniCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(145deg, #ffffff 0%, #fbfbfc 72%, #f4f5f7 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(15,23,42,.025),
+    0 2px 4px rgba(15,23,42,.035),
+    0 10px 20px rgba(15,23,42,.055),
+    0 22px 46px rgba(15,23,42,.035);
+}
+
+.metricCard {
+  border-radius: 22px;
+  padding: 20px;
+  min-height: 148px;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+.metricCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255,255,255,.8), transparent 36%);
+  z-index: -1;
+}
+
+.metricCard::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, transparent, rgba(201,151,18,.9), transparent);
+  opacity: .5;
+}
+
+.icon3d {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border: 1px solid rgba(201,151,18,.22);
+  border-radius: 16px;
+  color: var(--gold-strong);
+  background: linear-gradient(145deg, #fffdf7, #f5ecd0);
+  box-shadow:
+    inset 2px 2px 4px rgba(255,255,255,.95),
+    inset -2px -2px 5px rgba(169,120,0,.08),
+    0 4px 7px rgba(15,23,42,.08),
+    0 11px 22px rgba(201,151,18,.10);
+}
+
+.panel {
+  border-radius: 24px;
+  padding: 22px;
+}
+
+.miniCard {
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.goldPanel {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255,213,94,.42), transparent 22%),
+    linear-gradient(135deg, #fffdf5 0%, #fff6dc 55%, #f4e0a8 100%);
+  border-color: rgba(201,151,18,.28);
+}
+
+.darkButton {
+  border: 1px solid #050607;
+  background: linear-gradient(180deg, #292b2f 0%, #0f1012 58%, #050607 100%);
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -2px 0 rgba(0,0,0,.34),
+    0 4px 8px rgba(15,23,42,.16),
+    0 11px 24px rgba(15,23,42,.12);
+}
+
+.goldButton {
+  border: 1px solid #b98600;
+  background: linear-gradient(180deg, #ffd85e 0%, #d8a51d 58%, #bd8700 100%);
+  color: #16130a !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.72),
+    inset 0 -2px 0 rgba(126,82,0,.23),
+    0 5px 11px rgba(169,120,0,.20),
+    0 12px 24px rgba(169,120,0,.12);
+}
+
+.dataPill {
+  border: 1px solid #e4e6ea;
+  background: linear-gradient(180deg, #fff, #f6f7f9);
+  box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(15,23,42,.06);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table tbody tr {
+  transition: background-color .16s ease;
+}
+
+.table tbody tr:hover {
+  background: #faf7ee !important;
+}
+
+.rankBar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceef1;
+}
+
+.rankFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f0c94f, #bd8700);
+  box-shadow: 0 1px 4px rgba(189,135,0,.22);
+}
+
+@media (hover: hover) {
+  .metricCard:hover,
+  .miniCard:hover {
+    transform: translateY(-4px);
+    border-color: #d9dce1;
+    box-shadow:
+      inset 0 1px 0 #fff,
+      0 4px 8px rgba(15,23,42,.045),
+      0 16px 30px rgba(15,23,42,.075),
+      0 30px 56px rgba(15,23,42,.045);
+  }
+
+  .darkButton:hover,
+  .goldButton:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.02);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    min-height: 150px;
+    background:
+      linear-gradient(100deg, rgba(255,255,255,.995), rgba(255,255,255,.88)),
+      url('/login-moto-fundo.png') center / cover no-repeat;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metricCard,
+  .miniCard,
+  .darkButton,
+  .goldButton {
+    transition: none;
+    transform: none !important;
+  }
+}

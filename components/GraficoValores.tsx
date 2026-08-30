@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
+  Area,
+  AreaChart,
   CartesianGrid,
   Legend,
   ReferenceLine,
@@ -13,14 +13,11 @@ import {
 } from "recharts";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 
-// Paleta validada para fundo escuro (#1a1a1a):
-// separação de matiz segura para daltonismo.
-const COR_FATURAMENTO = "#b08d1e";
-const COR_LUCRO = "#3b82f6";
-const COR_DESPESAS = "#db2777";
-
-const COR_GRADE = "#262626";
-const COR_TEXTO_SUAVE = "#a3a3a3";
+const COR_FATURAMENTO = "#c99712";
+const COR_LUCRO = "#111214";
+const COR_DESPESAS = "#ef4444";
+const COR_GRADE = "#eceef1";
+const COR_TEXTO = "#747982";
 
 export type PontoGrafico = {
   mes: string;
@@ -33,20 +30,12 @@ function abreviar(valor: number) {
   const absoluto = Math.abs(valor);
 
   if (absoluto >= 1000000) {
-    return `${(valor / 1000000).toLocaleString(
-      "pt-BR",
-      {
-        maximumFractionDigits: 1,
-      }
-    )}mi`;
+    return `${(valor / 1000000).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1,
+    })}mi`;
   }
 
-  if (absoluto >= 1000) {
-    return `${Math.round(
-      valor / 1000
-    )}k`;
-  }
-
+  if (absoluto >= 1000) return `${Math.round(valor / 1000)}k`;
   return String(valor);
 }
 
@@ -65,39 +54,21 @@ function ConteudoTooltip({
   payload?: ItemTooltip[];
   label?: string;
 }) {
-  if (
-    !active ||
-    !payload ||
-    payload.length === 0
-  ) {
-    return null;
-  }
+  if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-grafite-claro bg-preto px-3 py-2 shadow-xl">
-      <p className="mb-1 text-xs font-semibold capitalize text-texto">
-        {label}
-      </p>
+    <div className="min-w-48 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-2xl">
+      <p className="mb-2 text-xs font-black capitalize text-black">{label}</p>
 
       {payload.map((item) => (
-        <div
-          key={item.name}
-          className="flex items-center gap-2 text-xs text-texto-suave"
-        >
+        <div key={item.name} className="flex items-center gap-2 py-1 text-xs text-black/60">
           <span
-            className="h-2 w-2 rounded-full"
-            style={{
-              backgroundColor:
-                item.color,
-            }}
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: item.color }}
           />
-
           <span>{item.name}</span>
-
-          <span className="ml-auto font-semibold text-texto">
-            {formatarMoeda(
-              Number(item.value || 0)
-            )}
+          <span className="ml-auto font-black text-black">
+            {formatarMoeda(Number(item.value || 0))}
           </span>
         </div>
       ))}
@@ -105,114 +76,91 @@ function ConteudoTooltip({
   );
 }
 
-export default function GraficoValores({
-  dados,
-}: {
-  dados: PontoGrafico[];
-}) {
+export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
   return (
-    <div className="rounded-xl border border-grafite-claro bg-grafite p-5">
-      <div className="mb-4">
-        <h3 className="font-semibold text-dourado">
-          Faturamento, despesas e lucro líquido
-        </h3>
-
-        <p className="text-xs text-texto-suave">
-          Últimos 6 meses · valores em R$
-        </p>
-      </div>
-
-      <div className="h-72 w-full">
-        <ResponsiveContainer
-          width="100%"
-          height="100%"
+    <div className="h-[320px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={dados}
+          margin={{ top: 12, right: 8, bottom: 0, left: 4 }}
         >
-          <BarChart
-            data={dados}
-            margin={{
-              top: 8,
-              right: 8,
-              bottom: 0,
-              left: 8,
-            }}
-            barGap={2}
-            barCategoryGap="25%"
-          >
-            <CartesianGrid
-              stroke={COR_GRADE}
-              vertical={false}
-            />
+          <defs>
+            <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COR_FATURAMENTO} stopOpacity={0.32} />
+              <stop offset="100%" stopColor={COR_FATURAMENTO} stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient id="blackArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COR_LUCRO} stopOpacity={0.15} />
+              <stop offset="100%" stopColor={COR_LUCRO} stopOpacity={0} />
+            </linearGradient>
+          </defs>
 
-            <XAxis
-              dataKey="mes"
-              tickLine={false}
-              axisLine={{
-                stroke: COR_GRADE,
-              }}
-              tick={{
-                fill: COR_TEXTO_SUAVE,
-                fontSize: 12,
-              }}
-            />
+          <CartesianGrid stroke={COR_GRADE} vertical={false} strokeDasharray="3 4" />
 
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              width={52}
-              tick={{
-                fill: COR_TEXTO_SUAVE,
-                fontSize: 12,
-              }}
-              tickFormatter={abreviar}
-            />
+          <XAxis
+            dataKey="mes"
+            tickLine={false}
+            axisLine={{ stroke: COR_GRADE }}
+            tick={{ fill: COR_TEXTO, fontSize: 12, fontWeight: 700 }}
+          />
 
-            <ReferenceLine
-              y={0}
-              stroke={COR_GRADE}
-            />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            width={54}
+            tick={{ fill: COR_TEXTO, fontSize: 12, fontWeight: 700 }}
+            tickFormatter={abreviar}
+          />
 
-            <Tooltip
-              cursor={{
-                fill: "rgba(255,255,255,0.04)",
-              }}
-              content={
-                <ConteudoTooltip />
-              }
-            />
+          <ReferenceLine y={0} stroke={COR_GRADE} />
 
-            <Legend
-              iconType="circle"
-              iconSize={8}
-              formatter={(valor) => (
-                <span className="text-xs text-texto-suave">
-                  {valor}
-                </span>
-              )}
-            />
+          <Tooltip
+            cursor={{ stroke: "#d7d9dd", strokeDasharray: "4 4" }}
+            content={<ConteudoTooltip />}
+          />
 
-            <Bar
-              dataKey="faturamento"
-              name="Faturamento"
-              fill={COR_FATURAMENTO}
-              radius={[4, 4, 0, 0]}
-            />
+          <Legend
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ paddingTop: 12 }}
+            formatter={(valor) => (
+              <span style={{ color: COR_TEXTO, fontSize: 12, fontWeight: 700 }}>
+                {valor}
+              </span>
+            )}
+          />
 
-            <Bar
-              dataKey="despesas"
-              name="Despesas da loja"
-              fill={COR_DESPESAS}
-              radius={[4, 4, 0, 0]}
-            />
+          <Area
+            type="monotone"
+            dataKey="faturamento"
+            name="Faturamento"
+            stroke={COR_FATURAMENTO}
+            strokeWidth={3}
+            fill="url(#goldArea)"
+            activeDot={{ r: 6, strokeWidth: 3, stroke: "#fff" }}
+          />
 
-            <Bar
-              dataKey="lucro"
-              name="Lucro líquido"
-              fill={COR_LUCRO}
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+          <Area
+            type="monotone"
+            dataKey="lucro"
+            name="Lucro líquido"
+            stroke={COR_LUCRO}
+            strokeWidth={2.5}
+            fill="url(#blackArea)"
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+          />
+
+          <Area
+            type="monotone"
+            dataKey="despesas"
+            name="Despesas"
+            stroke={COR_DESPESAS}
+            strokeWidth={2}
+            fill="transparent"
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
