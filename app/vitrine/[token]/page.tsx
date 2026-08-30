@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatarMoeda } from "@/lib/formatadores/moeda";
-import { Bike } from "lucide-react";
+import VitrineLista, {
+  type MotoVitrine,
+} from "@/components/VitrineLista";
 
 /*
  * Vitrine do estoque para outra loja.
@@ -12,38 +13,6 @@ import { Bike } from "lucide-react";
  */
 
 export const dynamic = "force-dynamic";
-
-type MotoVitrine = {
-  id: string;
-  codigo: string | null;
-  marca: string | null;
-  modelo: string | null;
-  versao: string | null;
-  cor: string | null;
-  ano_fabricacao: number | null;
-  ano_modelo: number | null;
-  quilometragem: number | null;
-  preco_anunciado: number | null;
-};
-
-function anos(moto: MotoVitrine) {
-  const fabricacao = moto.ano_fabricacao;
-  const modelo = moto.ano_modelo;
-
-  if (fabricacao && modelo) {
-    return `${fabricacao}/${modelo}`;
-  }
-
-  return String(fabricacao || modelo || "—");
-}
-
-function quilometragem(valor: number | null) {
-  if (valor === null || valor === undefined) return "—";
-
-  return `${new Intl.NumberFormat("pt-BR").format(
-    valor
-  )} km`;
-}
 
 export default async function VitrinePage({
   params,
@@ -111,92 +80,12 @@ export default async function VitrinePage({
           </p>
         </div>
 
-        {lista.length === 0 && (
+        {lista.length === 0 ? (
           <div className="rounded-2xl border border-black/10 bg-white p-10 text-center text-sm text-black/60">
             Nenhuma moto disponível no momento.
           </div>
-        )}
-
-        {/* LISTA */}
-
-        {lista.length > 0 && (
-          <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-black/10 bg-[#f7f8fa] text-left text-xs uppercase tracking-wide text-black/50">
-                  <tr>
-                    <th className="px-4 py-3">Moto</th>
-                    <th className="px-4 py-3">Cor</th>
-                    <th className="px-4 py-3">Ano</th>
-                    <th className="px-4 py-3 text-right">
-                      Km
-                    </th>
-                    <th className="px-4 py-3 text-right">
-                      Valor
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {lista.map((moto) => (
-                    <tr
-                      key={moto.id}
-                      className="border-b border-black/[.06] last:border-0"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Bike
-                            size={16}
-                            className="shrink-0 text-black/35"
-                          />
-
-                          <div>
-                            <p className="font-semibold text-black">
-                              {[
-                                moto.marca,
-                                moto.modelo,
-                                moto.versao,
-                              ]
-                                .filter(Boolean)
-                                .join(" ")}
-                            </p>
-
-                            {moto.codigo && (
-                              <p className="text-xs text-black/45">
-                                {moto.codigo}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3 text-black/70">
-                        {moto.cor || "—"}
-                      </td>
-
-                      <td className="whitespace-nowrap px-4 py-3 text-black/70">
-                        {anos(moto)}
-                      </td>
-
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-black/70">
-                        {quilometragem(
-                          moto.quilometragem
-                        )}
-                      </td>
-
-                      <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-black">
-                        {moto.preco_anunciado
-                          ? formatarMoeda(
-                              moto.preco_anunciado
-                            )
-                          : "Consultar"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        ) : (
+          <VitrineLista motos={lista} />
         )}
 
         <p className="mt-6 text-center text-xs text-black/45">
