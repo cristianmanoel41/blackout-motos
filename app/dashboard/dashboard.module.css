@@ -259,6 +259,13 @@
   color: #1d8a4b !important;
 }
 
+.metricCard [class~='text-white'],
+.panel [class~='text-white'],
+.miniCard [class~='text-white'],
+.goldPanel [class~='text-white'] {
+  color: #ffffff !important;
+}
+
 .paradaEtiqueta,
 .goldPanel p.paradaEtiqueta {
   color: #f0c640 !important;
