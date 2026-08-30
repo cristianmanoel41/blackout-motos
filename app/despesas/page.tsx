@@ -1,54 +1,62 @@
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { formatarMoeda } from '@/lib/formatadores/moeda'
-import { formatarData } from '@/lib/formatadores/data'
-import { Plus } from 'lucide-react'
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import DespesasLista, {
+  type Despesa,
+} from "@/components/DespesasLista";
+import { Plus, Receipt } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function DespesasPage() {
-  const supabase = await createClient()
-  const { data: despesas } = await supabase
-    .from('store_expenses')
-    .select('*')
-    .order('data', { ascending: false })
+  const supabase = await createClient();
 
-  const total = despesas?.reduce((soma, d) => soma + Number(d.valor), 0) ?? 0
+  const { data: despesas, error } = await supabase
+    .from("store_expenses")
+    .select(
+      "id, data, categoria, descricao, valor, forma_pagamento, pago, data_pagamento, observacoes"
+    )
+    .order("data", { ascending: false });
+
+  const lista = (despesas || []) as Despesa[];
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-dourado">Despesas da Loja</h1>
-        <Link href="/despesas/nova" className="flex items-center gap-2 bg-dourado hover:bg-dourado-claro text-preto font-semibold rounded-lg px-4 py-2 transition">
-          <Plus size={18} /> Nova Despesa
+    <div className="w-full">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-dourado">
+            <Receipt size={24} />
+            Despesas da Loja
+          </h1>
+
+          <p className="mt-1 text-sm text-texto-suave">
+            Aluguel, energia, funcionários e o resto do custo
+            fixo. O que está pago já saiu do caixa.
+          </p>
+        </div>
+
+        <Link
+          href="/despesas/nova"
+          className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
+        >
+          <Plus size={18} />
+          Nova Despesa
         </Link>
       </div>
 
-      <div className="bg-grafite border border-grafite-claro rounded-xl p-5 mb-6">
-        <p className="text-xs text-texto-suave">Total de despesas registradas</p>
-        <p className="text-2xl font-bold text-dourado">{formatarMoeda(total)}</p>
-      </div>
-
-      {(!despesas || despesas.length === 0) && (
-        <div className="bg-grafite border border-grafite-claro rounded-xl p-8 text-center text-texto-suave">
-          Nenhuma despesa cadastrada ainda.
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-700 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+          Não foi possível carregar as despesas:{" "}
+          {error.message}
         </div>
       )}
 
-      <div className="space-y-2">
-        {despesas?.map((d) => (
-          <div key={d.id} className="bg-grafite border border-grafite-claro rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-texto font-medium">{d.categoria}</p>
-              <p className="text-texto-suave text-sm">{d.descricao || '—'} · {formatarData(d.data)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-dourado font-semibold">{formatarMoeda(d.valor)}</p>
-              <p className={`text-xs ${d.pago ? 'text-green-400' : 'text-yellow-400'}`}>
-                {d.pago ? 'Pago' : 'Em aberto'}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {lista.length === 0 ? (
+        <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
+          Nenhuma despesa cadastrada ainda.
+        </div>
+      ) : (
+        <DespesasLista despesas={lista} />
+      )}
     </div>
-  )
+  );
 }
