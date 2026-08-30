@@ -444,3 +444,160 @@ aside a[href="/dashboard"] > div:nth-child(2) {
 .text-neutral-600,
 .text-slate-400,
 .text-slate-500 { color: #111214 !important; }
+
+
+/*
+ * ============================================================
+ * CARDS ESCUROS, NO PADRAO DO PAINEL
+ * ============================================================
+ *
+ * A tela e a lateral continuam brancas. O que fica escuro sao
+ * as caixas de informacao - do mesmo jeito que o painel faz:
+ * o card escuro flutuando sobre o fundo claro.
+ *
+ * Por isso tudo aqui e escrito como "dentro do card". Fora
+ * dele, o titulo da pagina e o resto continuam pretos sobre o
+ * branco, sem mudanca nenhuma.
+ */
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl):not(input):not(select):not(textarea) {
+  color: #f1f3f5 !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(224,177,41,.09), transparent 28%),
+    linear-gradient(145deg, #181b1f 0%, #101214 54%, #08090b 100%) !important;
+  border-color: rgba(255,255,255,.11) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.8),
+    0 3px 5px rgba(0,0,0,.18),
+    0 12px 24px rgba(15,23,42,.13) !important;
+}
+
+/* Caixas internas: um degrau mais claro que o card. */
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) .bg-grafite-claro,
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) .bg-preto {
+  background: #1b1e22 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) .border-grafite-claro {
+  border-color: rgba(255,255,255,.10) !important;
+}
+
+/* ---------- TEXTO DENTRO DO CARD ---------- */
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-texto, .text-zinc-200, .text-zinc-300, [class~='text-black']) {
+  color: #f1f3f5 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(
+  .text-texto-suave,
+  .text-zinc-400, .text-zinc-500, .text-zinc-600,
+  .text-gray-400, .text-gray-500,
+  .text-neutral-400, .text-neutral-500, .text-neutral-600,
+  .text-slate-400, .text-slate-500,
+  [class*='text-black/']
+) {
+  color: #a7adb6 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='text-white']) {
+  color: #ffffff !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-dourado, .text-yellow-500, .text-yellow-600) {
+  color: #f0c640 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-yellow-200, .text-yellow-300, .text-yellow-400) {
+  color: #ffc94d !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-green-300, .text-green-400, .text-green-500) {
+  color: #4ade80 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-red-300, .text-red-400, .text-red-500) {
+  color: #ff7a80 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-blue-300, .text-blue-400, .text-blue-500) {
+  color: #60a5fa !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(
+  .text-purple-300, .text-purple-400, .text-purple-500,
+  .text-indigo-300, .text-indigo-400, .text-indigo-500
+) {
+  color: #a78bfa !important;
+}
+
+/* ---------- TABELAS DENTRO DO CARD ---------- */
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(table, thead, tbody, tr, td, th) {
+  color: #e7e9ec !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) thead {
+  background: rgba(255,255,255,.045) !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(thead th, thead tr) {
+  color: #a7adb6 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) tbody tr {
+  background: transparent !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* ---------- CAMPOS DENTRO DO CARD ---------- */
+
+main :is(input, select, textarea) {
+  background: #14171a !important;
+  color: #f1f3f5 !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.45) !important;
+}
+
+main :is(input, textarea)::placeholder {
+  color: #7d838c !important;
+}
+
+main :is(input, select, textarea):focus {
+  border-color: #d4a514 !important;
+}
+
+/* ---------- CAIXAS DE AVISO ---------- */
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.bg-yellow-950\/10, .bg-yellow-950\/20, .bg-yellow-950\/30, .bg-yellow-900\/30) {
+  background: rgba(224,177,41,.10) !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.bg-red-950\/30, .bg-red-900\/30) {
+  background: rgba(239,68,68,.12) !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.bg-green-950\/30, .bg-green-900\/30) {
+  background: rgba(74,222,128,.12) !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.border-yellow-700, .border-yellow-800, .border-yellow-800\/50, .border-yellow-800\/60) {
+  border-color: rgba(224,177,41,.42) !important;
+}
+
+/* Botao claro sobre card escuro precisa de texto escuro. */
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(button.bg-dourado, a.bg-dourado) {
+  background: linear-gradient(180deg, #f2cb4e 0%, #c99712 100%) !important;
+  color: #111214 !important;
+  border-color: rgba(0,0,0,.35) !important;
+}
+
+@media (hover: hover) {
+  main :is(section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border):hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.14),
+      inset 0 -1px 0 rgba(0,0,0,.8),
+      0 4px 8px rgba(0,0,0,.22),
+      0 18px 38px rgba(15,23,42,.18) !important;
+  }
+}
