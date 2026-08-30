@@ -363,11 +363,12 @@ export default function DespesasLista({
               : `Total de ${nomesMeses[mes - 1]}`}
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-dourado">
-            {formatarMoeda(totais.total)}
+          <p className="mt-1 text-2xl font-bold text-red-400">
+            - {formatarMoeda(totais.total)}
           </p>
 
           <p className="mt-1 text-xs text-texto-suave">
+            Dinheiro saindo ·{" "}
             {doPeriodo.length} lançamento
             {doPeriodo.length === 1 ? "" : "s"}
           </p>
@@ -376,8 +377,8 @@ export default function DespesasLista({
         <div className="rounded-xl border border-grafite-claro bg-grafite p-4">
           <p className="text-xs text-texto-suave">Pago</p>
 
-          <p className="mt-1 text-2xl font-bold text-green-400">
-            {formatarMoeda(totais.pago)}
+          <p className="mt-1 text-2xl font-bold text-red-300">
+            - {formatarMoeda(totais.pago)}
           </p>
 
           <p className="mt-1 text-xs text-texto-suave">
@@ -457,7 +458,7 @@ export default function DespesasLista({
 
                   <span className="h-2 flex-1 overflow-hidden rounded-full bg-grafite-claro">
                     <span
-                      className="block h-full rounded-full bg-dourado"
+                      className="block h-full rounded-full bg-red-400"
                       style={{ width: `${fatia}%` }}
                     />
                   </span>
@@ -591,13 +592,13 @@ export default function DespesasLista({
                       {despesa.forma_pagamento || "—"}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-texto">
-                      {formatarMoeda(despesa.valor)}
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-red-300">
+                      - {formatarMoeda(despesa.valor)}
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-2.5">
                       {despesa.pago ? (
-                        <span className="text-xs font-semibold text-green-400">
+                        <span className="text-xs font-semibold text-texto-suave">
                           Pago
                           {despesa.data_pagamento
                             ? ` · ${formatarData(

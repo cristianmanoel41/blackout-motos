@@ -1024,7 +1024,7 @@ export default function NovaMotoPage() {
             data:
               dataCaixaCompra,
             tipo: "saida",
-            origem: "outro",
+            origem: "compra_moto",
             origem_id:
               String(motoCriada.id),
             valor:
@@ -1043,7 +1043,7 @@ export default function NovaMotoPage() {
               data:
                 dataCaixaCompra,
               tipo: "saida",
-              origem: "outro",
+              origem: "compra_moto",
               origem_id:
                 String(motoCriada.id),
               valor:
@@ -1060,7 +1060,7 @@ export default function NovaMotoPage() {
             data:
               dataCaixaCompra,
             tipo: "saida",
-            origem: "outro",
+            origem: "compra_moto",
             origem_id:
               String(motoCriada.id),
             valor:
@@ -1155,7 +1155,7 @@ export default function NovaMotoPage() {
                 tipo:
                   "saida",
                 origem:
-                  "outro",
+                  "gasto_moto",
                 origem_id:
                   gastoLavagem.id,
                 valor: 35,

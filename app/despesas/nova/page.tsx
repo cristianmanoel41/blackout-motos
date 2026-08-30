@@ -577,7 +577,7 @@ export default function NovaDespesaPage() {
               data:
                 dataCaixaLancamento(),
               tipo: "saida",
-              origem: "outro",
+              origem: "gasto_moto",
               confirmado: form.pago,
               data_confirmacao:
                 confirmacaoLancamento(),
@@ -687,7 +687,7 @@ export default function NovaDespesaPage() {
           data:
             dataCaixaLancamento(),
           tipo: "saida",
-          origem: "outro",
+          origem: "gasto_moto",
           confirmado: form.pago,
           data_confirmacao:
             confirmacaoLancamento(),

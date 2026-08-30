@@ -212,7 +212,7 @@ export async function POST(
     .insert({
       data: dataVenda,
       tipo: "entrada",
-      origem: "outro",
+      origem: "venda_capacete",
       origem_id: venda.id,
       valor: valorRecebido,
       descricao:
@@ -327,7 +327,7 @@ export async function DELETE(
     .select(
       "id, data, tipo, origem, origem_id, valor, descricao, criado_em"
     )
-    .eq("origem", "outro")
+    .in("origem", ["outro", "venda_capacete"])
     .eq("origem_id", id)
     .like(
       "descricao",
@@ -356,7 +356,7 @@ export async function DELETE(
         "cash_transactions"
       )
       .delete()
-      .eq("origem", "outro")
+      .in("origem", ["outro", "venda_capacete"])
       .eq("origem_id", id)
       .like(
         "descricao",

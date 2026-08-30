@@ -392,7 +392,7 @@ export async function POST(
       .insert({
         data,
         tipo: "entrada",
-        origem: "outro",
+        origem: "venda_capacete",
         origem_id:
           lancamento.id,
         valor,
@@ -535,7 +535,7 @@ export async function DELETE(
         descricao,
         criado_em
       `)
-      .eq("origem", "outro")
+      .in("origem", ["outro", "venda_capacete"])
       .eq(
         "origem_id",
         lancamentoId
