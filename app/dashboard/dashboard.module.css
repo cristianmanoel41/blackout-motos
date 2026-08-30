@@ -246,6 +246,22 @@
   color: #4b5058 !important;
 }
 
+.paradaEtiqueta,
+.goldPanel p.paradaEtiqueta {
+  color: #f0c640 !important;
+}
+
+.paradaDias,
+.goldPanel p.paradaDias {
+  color: #ff9f43 !important;
+  text-shadow: 0 1px 0 #000, 0 8px 22px rgba(0,0,0,.22);
+}
+
+.paradaPreco,
+.goldPanel span.paradaPreco {
+  color: #f8fafc !important;
+}
+
 .statusSuccess {
   color: #1d8a4b !important;
   text-shadow: none !important;

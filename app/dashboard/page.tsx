@@ -10,7 +10,7 @@ import {
   PlusCircle,
   Receipt,
   ShoppingCart,
-  TrendingDown,
+  Timer,
   TrendingUp,
   Wallet,
   Warehouse,
@@ -20,6 +20,11 @@ import { nomeCurtoVendedor } from '@/lib/dados/vendedores'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import GraficoValores from '@/components/GraficoValores'
 import styles from './dashboard.module.css'
+
+type MotoParada = MotoResumo & {
+  codigo?: string | null
+  data_entrada?: string | null
+}
 
 type MotoResumo = {
   id: string
@@ -275,6 +280,32 @@ export default async function DashboardPage() {
     .limit(1)
 
   const motoDestaque = (motoDestaqueData?.[0] || null) as MotoResumo | null
+
+  /*
+   * A moto encalhada: a que entrou há mais tempo e continua
+   * disponível. É a que mais custa dinheiro parada, então é a
+   * que merece o foco da venda.
+   */
+  const { data: motoParadaData } = await supabase
+    .from('motorcycles')
+    .select('id, codigo, marca, modelo, versao, ano_modelo, quilometragem, preco_anunciado, data_entrada')
+    .eq('status', 'disponivel')
+    .not('data_entrada', 'is', null)
+    .order('data_entrada', { ascending: true })
+    .limit(1)
+
+  const motoParada = (motoParadaData?.[0] || null) as MotoParada | null
+
+  const diasParada = motoParada?.data_entrada
+    ? Math.max(
+        0,
+        Math.floor(
+          (new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime() -
+            new Date(`${String(motoParada.data_entrada).slice(0, 10)}T00:00:00`).getTime()) /
+            86400000
+        )
+      )
+    : 0
 
   const nomeMes = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   const periodoLabel = `${inicioMes.split('-').reverse().join('/')} - ${fimMes.split('-').reverse().join('/')}`
@@ -562,17 +593,43 @@ export default async function DashboardPage() {
         <div className={`${styles.panel} ${styles.goldPanel}`}>
           <div className="flex h-full flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8a6400]">Acesso rápido</p>
-              <h2 className="mt-2 text-2xl font-black text-black">Controle sua operação sem sair do painel</h2>
-              <p className="mt-2 max-w-xl text-sm font-bold text-black/50">Cadastre uma moto, abra o estoque ou confira o relatório mensal em poucos cliques.</p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link href="/motos/nova" className={`${styles.darkButton} rounded-xl px-4 py-3 text-sm font-black`}>Cadastrar moto</Link>
-                <Link href="/estoque" className={`${styles.lightAction} rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black shadow-sm`}>Abrir estoque</Link>
-                <Link href="/relatorios" className={`${styles.lightAction} rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black shadow-sm`}>Relatórios</Link>
-              </div>
+              <p className={`text-xs font-black uppercase tracking-[0.18em] ${styles.paradaEtiqueta}`}>Parada há mais tempo</p>
+
+              {motoParada ? (
+                <>
+                  <h2 className="mt-2 text-2xl font-black text-black">{nomeMoto(motoParada)}</h2>
+
+                  <p className="mt-1 text-sm font-bold text-black/50">
+                    {motoParada.codigo ? `${motoParada.codigo} · ` : ''}
+                    {motoParada.ano_modelo || 'Ano não informado'} · {kmBR(motoParada.quilometragem)} km · entrou em {dataBR(motoParada.data_entrada)}
+                  </p>
+
+                  <p className={`mt-3 text-4xl font-black tracking-tight ${styles.paradaDias}`}>
+                    {diasParada} {diasParada === 1 ? 'dia' : 'dias'} no estoque
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <Link href={`/motos/${motoParada.id}`} className={`${styles.darkButton} flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black`}>
+                      Ver moto <ArrowRight size={16} />
+                    </Link>
+
+                    <span className={`${styles.paradaPreco} text-lg font-black`}>
+                      {motoParada.preco_anunciado ? formatarMoeda(motoParada.preco_anunciado) : 'Preço não informado'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="mt-2 text-2xl font-black text-black">Nenhuma moto parada</h2>
+                  <p className="mt-2 max-w-xl text-sm font-bold text-black/50">
+                    Não há moto disponível com data de entrada registrada.
+                  </p>
+                </>
+              )}
             </div>
+
             <div className={`${styles.icon3d} !h-24 !w-24 shrink-0 !rounded-[28px]`}>
-              <TrendingDown size={42} className="rotate-180" />
+              <Timer size={42} />
             </div>
           </div>
         </div>
