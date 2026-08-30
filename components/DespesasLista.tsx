@@ -268,16 +268,29 @@ export default function DespesasLista({
       .eq("origem", "despesa_loja")
       .eq("origem_id", despesa.id);
 
-    const { error } = await supabase
+    /*
+     * O .select() no fim devolve o que foi apagado. Sem ele, uma
+     * exclusão barrada pela permissão do banco volta sem erro
+     * nenhum e a despesa continua na tela, sem explicação.
+     */
+    const { data: apagadas, error } = await supabase
       .from("store_expenses")
       .delete()
-      .eq("id", despesa.id);
+      .eq("id", despesa.id)
+      .select("id");
 
     setOcupado("");
 
     if (error) {
       setErro(
         `Não foi possível excluir: ${error.message}`
+      );
+      return;
+    }
+
+    if (!apagadas || apagadas.length === 0) {
+      setErro(
+        "A despesa não foi apagada: seu usuário não tem permissão de exclusão em despesas no banco. Fale comigo que eu te passo o SQL para liberar."
       );
       return;
     }
