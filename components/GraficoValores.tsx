@@ -12,12 +12,13 @@ import {
   YAxis,
 } from "recharts";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import styles from "./GraficoValores.module.css";
 
-const COR_FATURAMENTO = "#c99712";
-const COR_LUCRO = "#111214";
-const COR_DESPESAS = "#ef4444";
-const COR_GRADE = "#eceef1";
-const COR_TEXTO = "#747982";
+const COR_FATURAMENTO = "#e0b129";
+const COR_LUCRO = "#f5f7fa";
+const COR_DESPESAS = "#ff525b";
+const COR_GRADE = "#2b2e33";
+const COR_TEXTO = "#aeb4bd";
 
 export type PontoGrafico = {
   mes: string;
@@ -57,17 +58,17 @@ function ConteudoTooltip({
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="min-w-48 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-2xl">
-      <p className="mb-2 text-xs font-black capitalize text-black">{label}</p>
+    <div className={styles.tooltip}>
+      <p className={styles.tooltipTitle}>{label}</p>
 
       {payload.map((item) => (
-        <div key={item.name} className="flex items-center gap-2 py-1 text-xs text-black/60">
+        <div key={item.name} className={styles.tooltipRow}>
           <span
             className="h-2.5 w-2.5 rounded-full"
             style={{ backgroundColor: item.color }}
           />
           <span>{item.name}</span>
-          <span className="ml-auto font-black text-black">
+          <span className={styles.tooltipValue}>
             {formatarMoeda(Number(item.value || 0))}
           </span>
         </div>
@@ -78,19 +79,19 @@ function ConteudoTooltip({
 
 export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
   return (
-    <div className="h-[320px] w-full">
+    <div className={`${styles.chart} h-[320px] w-full`}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={dados}
           margin={{ top: 12, right: 8, bottom: 0, left: 4 }}
         >
           <defs>
-            <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COR_FATURAMENTO} stopOpacity={0.32} />
+            <linearGradient id="goldAreaDark" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COR_FATURAMENTO} stopOpacity={0.42} />
               <stop offset="100%" stopColor={COR_FATURAMENTO} stopOpacity={0.02} />
             </linearGradient>
-            <linearGradient id="blackArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COR_LUCRO} stopOpacity={0.15} />
+            <linearGradient id="whiteAreaDark" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COR_LUCRO} stopOpacity={0.13} />
               <stop offset="100%" stopColor={COR_LUCRO} stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -115,7 +116,7 @@ export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
           <ReferenceLine y={0} stroke={COR_GRADE} />
 
           <Tooltip
-            cursor={{ stroke: "#d7d9dd", strokeDasharray: "4 4" }}
+            cursor={{ stroke: "#575c64", strokeDasharray: "4 4" }}
             content={<ConteudoTooltip />}
           />
 
@@ -123,11 +124,7 @@ export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
             iconType="circle"
             iconSize={8}
             wrapperStyle={{ paddingTop: 12 }}
-            formatter={(valor) => (
-              <span style={{ color: COR_TEXTO, fontSize: 12, fontWeight: 700 }}>
-                {valor}
-              </span>
-            )}
+            formatter={(valor) => <span className={styles.legendText}>{valor}</span>}
           />
 
           <Area
@@ -136,8 +133,8 @@ export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
             name="Faturamento"
             stroke={COR_FATURAMENTO}
             strokeWidth={3}
-            fill="url(#goldArea)"
-            activeDot={{ r: 6, strokeWidth: 3, stroke: "#fff" }}
+            fill="url(#goldAreaDark)"
+            activeDot={{ r: 6, strokeWidth: 3, stroke: "#111316" }}
           />
 
           <Area
@@ -146,8 +143,8 @@ export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
             name="Lucro líquido"
             stroke={COR_LUCRO}
             strokeWidth={2.5}
-            fill="url(#blackArea)"
-            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+            fill="url(#whiteAreaDark)"
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#111316" }}
           />
 
           <Area
@@ -157,7 +154,7 @@ export default function GraficoValores({ dados }: { dados: PontoGrafico[] }) {
             stroke={COR_DESPESAS}
             strokeWidth={2}
             fill="transparent"
-            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#111316" }}
           />
         </AreaChart>
       </ResponsiveContainer>

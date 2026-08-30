@@ -290,7 +290,7 @@ export default async function DashboardPage() {
     icone: LucideIcon
     destaque?: 'green' | 'red' | 'gold'
   }) => {
-    const cor = destaque === 'green' ? 'text-emerald-600' : destaque === 'red' ? 'text-red-500' : 'text-[#a97800]'
+    const cor = destaque === 'red' ? styles.metricValueNegative : styles.metricValue
 
     return (
       <div className={styles.metricCard}>
@@ -469,7 +469,7 @@ export default async function DashboardPage() {
                         <td className="px-3 py-4 text-xs font-bold text-black/55">{nomeCurtoVendedor(venda.vendedor) || 'Não informado'}</td>
                         <td className="px-3 py-4 text-right font-black text-black">{formatarMoeda(venda.valor_total_venda)}</td>
                         <td className="px-3 py-4 text-right">
-                          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">Concluída</span>
+                          <span className={`${styles.statusSuccess} rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black`}>Concluída</span>
                         </td>
                       </tr>
                     )
@@ -567,8 +567,8 @@ export default async function DashboardPage() {
               <p className="mt-2 max-w-xl text-sm font-bold text-black/50">Cadastre uma moto, abra o estoque ou confira o relatório mensal em poucos cliques.</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href="/motos/nova" className={`${styles.darkButton} rounded-xl px-4 py-3 text-sm font-black`}>Cadastrar moto</Link>
-                <Link href="/estoque" className="rounded-xl border border-black/10 bg-white/80 px-4 py-3 text-sm font-black text-black shadow-sm">Abrir estoque</Link>
-                <Link href="/relatorios" className="rounded-xl border border-black/10 bg-white/80 px-4 py-3 text-sm font-black text-black shadow-sm">Relatórios</Link>
+                <Link href="/estoque" className={`${styles.lightAction} rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black shadow-sm`}>Abrir estoque</Link>
+                <Link href="/relatorios" className={`${styles.lightAction} rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-black shadow-sm`}>Relatórios</Link>
               </div>
             </div>
             <div className={`${styles.icon3d} !h-24 !w-24 shrink-0 !rounded-[28px]`}>
