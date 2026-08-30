@@ -276,7 +276,8 @@ export default async function DashboardPage() {
     .from('motorcycles')
     .select('id, marca, modelo, versao, ano_modelo, quilometragem, preco_anunciado')
     .eq('status', 'disponivel')
-    .order('data_entrada', { ascending: false })
+    .not('quilometragem', 'is', null)
+    .order('quilometragem', { ascending: true })
     .limit(1)
 
   const motoDestaque = (motoDestaqueData?.[0] || null) as MotoResumo | null
@@ -518,7 +519,7 @@ export default async function DashboardPage() {
         <div className={styles.panel}>
           <div className="mb-5">
             <h2 className="text-lg font-black text-black">Motos em destaque</h2>
-            <p className="text-xs font-bold text-black/45">Última moto disponível cadastrada</p>
+            <p className="text-xs font-bold text-black/45">Moto disponível com a menor quilometragem</p>
           </div>
 
           {motoDestaque ? (
