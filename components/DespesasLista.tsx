@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import {
   Check,
+  Plus,
   Search,
   Trash2,
   TriangleAlert,
@@ -490,8 +492,24 @@ export default function DespesasLista({
       {/* TABELA */}
 
       {filtradas.length === 0 ? (
-        <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-sm text-texto-suave">
-          Nenhuma despesa neste período.
+        <div className="rounded-xl border border-grafite-claro bg-grafite p-10 text-center">
+          <p className="text-sm text-texto-suave">
+            {despesas.length === 0
+              ? "Nenhuma despesa cadastrada ainda. Lance o aluguel, a energia, o contador - o que sai todo mês - para acompanhar aqui."
+              : periodoTodo
+              ? "Nenhuma despesa com esse filtro."
+              : `Nenhuma despesa em ${
+                  nomesMeses[mes - 1]
+                } de ${ano} com esse filtro.`}
+          </p>
+
+          <Link
+            href="/despesas/nova"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-semibold text-preto transition hover:bg-dourado-claro"
+          >
+            <Plus size={16} />
+            Nova Despesa
+          </Link>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
@@ -590,10 +608,10 @@ export default function DespesasLista({
                           type="button"
                           disabled={ocupado === despesa.id}
                           onClick={() => excluir(despesa)}
-                          className="rounded-lg border border-grafite-claro p-1.5 text-red-300 transition hover:border-red-700 hover:bg-red-950/40 disabled:opacity-50"
-                          aria-label="Excluir despesa"
+                          className="inline-flex items-center gap-1 rounded-lg border border-grafite-claro px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:border-red-700 hover:bg-red-950/40 disabled:opacity-50"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
+                          Excluir
                         </button>
                       </div>
                     </td>

@@ -50,13 +50,7 @@ export default async function DespesasPage() {
         </div>
       )}
 
-      {lista.length === 0 ? (
-        <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
-          Nenhuma despesa cadastrada ainda.
-        </div>
-      ) : (
-        <DespesasLista despesas={lista} />
-      )}
+      <DespesasLista despesas={lista} />
     </div>
   );
 }
