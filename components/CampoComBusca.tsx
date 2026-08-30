@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 /*
- * Campo de escolha com busca.
+ * Campo de texto com sugestões.
  *
- * Você digita e a lista filtra. Se o que precisa não estiver
- * na lista, o que foi digitado vale do mesmo jeito - por isso
- * ele não impede cadastrar uma moto que o catálogo não tem.
+ * Funciona como um campo comum: você digita o que quiser e o
+ * que foi digitado é o valor, sem precisar escolher nada. À
+ * medida que digita, aparecem as sugestões do catálogo, e a
+ * seta abre a lista inteira.
+ *
+ * Nada aqui bloqueia um valor fora da lista - o catálogo não
+ * tem todas as motos do mercado.
  */
 
 function semAcento(valor: string) {
@@ -35,10 +39,9 @@ export default function CampoComBusca({
   aviso?: string;
 }) {
   const [aberto, setAberto] = useState(false);
-  const [busca, setBusca] = useState("");
+  const [destaque, setDestaque] = useState(0);
   const caixa = useRef<HTMLDivElement>(null);
 
-  /* fecha ao clicar fora */
   useEffect(() => {
     function aoClicarFora(evento: MouseEvent) {
       if (
@@ -58,25 +61,29 @@ export default function CampoComBusca({
       );
   }, []);
 
-  const filtradas = useMemo(() => {
-    const termo = semAcento(busca);
+  /*
+   * Filtra pelo que já está escrito no campo. Quando o texto
+   * é exatamente uma das opções, mostra a lista toda - senão
+   * escolher uma sugestão faria a lista sumir para um item só.
+   */
+  const sugestoes = useMemo(() => {
+    const termo = semAcento(value);
 
     if (!termo) return opcoes;
+
+    const exata = opcoes.some(
+      (opcao) => semAcento(opcao) === termo
+    );
+
+    if (exata) return opcoes;
 
     return opcoes.filter((opcao) =>
       semAcento(opcao).includes(termo)
     );
-  }, [opcoes, busca]);
+  }, [opcoes, value]);
 
-  const digitadoEhNovo =
-    busca.trim().length > 0 &&
-    !opcoes.some(
-      (opcao) => semAcento(opcao) === semAcento(busca)
-    );
-
-  function escolher(valor: string) {
-    onChange(valor);
-    setBusca("");
+  function escolher(opcao: string) {
+    onChange(opcao);
     setAberto(false);
   }
 
@@ -86,24 +93,63 @@ export default function CampoComBusca({
         {label}
       </label>
 
-      <button
-        type="button"
-        onClick={() => setAberto((atual) => !atual)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-3 text-left text-texto outline-none transition focus:border-dourado"
-      >
-        <span
-          className={
-            value ? "truncate" : "truncate text-texto-suave"
-          }
-        >
-          {value || placeholder || "Selecione"}
-        </span>
+      <div className="relative">
+        <input
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setAberto(true);
+            setDestaque(0);
+          }}
+          onFocus={() => setAberto(true)}
+          onKeyDown={(e) => {
+            if (!aberto && e.key === "ArrowDown") {
+              setAberto(true);
+              return;
+            }
 
-        <ChevronDown
-          size={17}
-          className="shrink-0 text-texto-suave"
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setDestaque((atual) =>
+                Math.min(atual + 1, sugestoes.length - 1)
+              );
+            }
+
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setDestaque((atual) =>
+                Math.max(atual - 1, 0)
+              );
+            }
+
+            if (e.key === "Enter" && aberto) {
+              const escolhida = sugestoes[destaque];
+
+              if (escolhida) {
+                e.preventDefault();
+                escolher(escolhida);
+              }
+            }
+
+            if (e.key === "Escape") {
+              setAberto(false);
+            }
+          }}
+          placeholder={placeholder}
+          autoComplete="off"
+          className="w-full rounded-lg border border-grafite-claro bg-grafite-claro py-3 pl-4 pr-10 text-texto outline-none transition focus:border-dourado"
         />
-      </button>
+
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setAberto((atual) => !atual)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-texto-suave transition hover:text-dourado"
+          aria-label="Ver a lista"
+        >
+          <ChevronDown size={17} />
+        </button>
+      </div>
 
       {aviso && (
         <p className="mt-1 text-xs text-texto-suave">
@@ -111,77 +157,23 @@ export default function CampoComBusca({
         </p>
       )}
 
-      {aberto && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-lg border border-grafite-claro bg-grafite shadow-2xl">
-          <div className="relative border-b border-grafite-claro">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-suave"
-            />
-
-            <input
-              autoFocus
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-
-                  if (filtradas.length > 0) {
-                    escolher(filtradas[0]);
-                  } else if (busca.trim()) {
-                    escolher(busca.trim());
-                  }
-                }
-
-                if (e.key === "Escape") {
-                  setAberto(false);
-                }
-              }}
-              placeholder="Digite para procurar"
-              className="w-full bg-transparent py-3 pl-9 pr-3 text-sm text-texto outline-none"
-            />
-          </div>
-
-          <div className="max-h-64 overflow-y-auto">
-            {filtradas.map((opcao) => (
-              <button
-                key={opcao}
-                type="button"
-                onClick={() => escolher(opcao)}
-                className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-sm text-texto transition hover:bg-grafite-claro"
-              >
-                <span className="truncate">{opcao}</span>
-
-                {value === opcao && (
-                  <Check
-                    size={15}
-                    className="shrink-0 text-dourado"
-                  />
-                )}
-              </button>
-            ))}
-
-            {filtradas.length === 0 && !digitadoEhNovo && (
-              <p className="px-4 py-3 text-sm text-texto-suave">
-                Nada encontrado.
-              </p>
-            )}
-
-            {/*
-              Escape para o que o catálogo não tem: o que foi
-              digitado pode ser usado como está.
-            */}
-            {digitadoEhNovo && (
-              <button
-                type="button"
-                onClick={() => escolher(busca.trim())}
-                className="flex w-full items-center gap-2 border-t border-grafite-claro px-4 py-3 text-left text-sm text-dourado transition hover:bg-grafite-claro"
-              >
-                Usar &quot;{busca.trim()}&quot;
-              </button>
-            )}
-          </div>
+      {aberto && sugestoes.length > 0 && (
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-lg border border-grafite-claro bg-grafite shadow-2xl">
+          {sugestoes.map((opcao, indice) => (
+            <button
+              key={opcao}
+              type="button"
+              onMouseEnter={() => setDestaque(indice)}
+              onClick={() => escolher(opcao)}
+              className={`block w-full px-4 py-2.5 text-left text-sm transition ${
+                indice === destaque
+                  ? "bg-grafite-claro text-dourado"
+                  : "text-texto hover:bg-grafite-claro"
+              }`}
+            >
+              {opcao}
+            </button>
+          ))}
         </div>
       )}
     </div>
