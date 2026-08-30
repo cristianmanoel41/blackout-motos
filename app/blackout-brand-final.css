@@ -5,7 +5,7 @@
   --bo-soft: #f8f9fb;
   --bo-border: #e4e6ea;
   --bo-text: #111214;
-  --bo-muted: #686d75;
+  --bo-muted: #111214;
   --bo-black: #0c0d0f;
   --bo-gold: #d4a514;
 }
@@ -385,3 +385,31 @@ aside a[href="/dashboard"] > div:first-child img {
 aside a[href="/dashboard"] > div:nth-child(2) {
   display: none !important;
 }
+
+/*
+ * TEXTO PRETO EM TODA PARTE
+ *
+ * O tema claro herdou varios tons de cinza do tema escuro:
+ * text-texto-suave, os zinc e as opacidades sobre preto
+ * (text-black/40, /45, /50...). Em fundo branco eles ficavam
+ * lavados e dificeis de ler.
+ *
+ * Aqui todos passam a ser a mesma cor de texto, preta. O
+ * contraste vem do tamanho e do peso da fonte, nao da cor.
+ */
+.text-black\/25,
+.text-black\/35,
+.text-black\/40,
+.text-black\/45,
+.text-black\/50,
+.text-black\/55,
+.text-black\/60,
+.text-black\/65,
+.text-black\/70,
+.text-gray-400,
+.text-gray-500,
+.text-neutral-400,
+.text-neutral-500,
+.text-neutral-600,
+.text-slate-400,
+.text-slate-500 { color: #111214 !important; }
