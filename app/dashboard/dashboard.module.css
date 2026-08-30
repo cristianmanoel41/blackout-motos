@@ -175,6 +175,34 @@
   color: #f8fafc !important;
 }
 
+.metricCard [class*='a97800'],
+.panel [class*='a97800'],
+.miniCard [class*='a97800'],
+.goldPanel [class*='a97800'] {
+  color: #f0c640 !important;
+}
+
+.metricCard [class*='text-emerald-'],
+.panel [class*='text-emerald-'],
+.miniCard [class*='text-emerald-'],
+.goldPanel [class*='text-emerald-'] {
+  color: #4ade80 !important;
+}
+
+.metricCard [class*='text-red-'],
+.panel [class*='text-red-'],
+.miniCard [class*='text-red-'],
+.goldPanel [class*='text-red-'] {
+  color: #ff666d !important;
+}
+
+/* Os numeros grandes ficam dourados, como o resto do painel. */
+.metricCard [class~='text-black'],
+.miniCard [class~='text-black'],
+.goldPanel [class~='text-black'] {
+  color: #f0c640 !important;
+}
+
 .darkButton {
   border: 1px solid rgba(255,255,255,.11);
   background: linear-gradient(180deg, #24272b 0%, #141619 58%, #090a0c 100%);
@@ -202,8 +230,24 @@
   text-shadow: none !important;
 }
 
+.panel table,
+.panel th,
+.panel td,
+.panel th [class~='text-black'],
+.panel td [class~='text-black'],
+.panel th [class*='text-black/'],
+.panel td [class*='text-black/'] {
+  color: #111214 !important;
+  text-shadow: none !important;
+}
+
+.panel thead tr,
+.panel thead th {
+  color: #4b5058 !important;
+}
+
 .statusSuccess {
-  color: #57d786 !important;
+  color: #1d8a4b !important;
   text-shadow: none !important;
 }
 
