@@ -48,3 +48,11 @@ Toda tabela principal tem `created_by`, `updated_by` e `atualizado_em`, preenchi
 - Registro criado antes da migration `0004` fica sem autor; não há como descobrir quem criou.
 - O nome exibido vem de `profiles.nome`. Todo usuário logado pode ler a lista de perfis (política criada na `0004`).
 - O campo `vendedor` das vendas continua existindo e é o que os relatórios usam: ele vem preenchido com o usuário logado, mas pode ser trocado quando um registra a venda do outro.
+
+## Compartilhar o estoque com outra loja
+
+- `stock_shares` guarda os links gerados (token, loja, ativo). Só usuário logado lê e cria.
+- A vitrine em `/vitrine/<token>` é **pública** (liberada no `middleware.ts`) e lê pela função `estoque_compartilhado(token)`.
+- A função é `security definer` e devolve **apenas** motos com `status = 'disponivel'` e **apenas** as colunas de vitrine: código, marca, modelo, versão, cor, anos, km e preço anunciado. Valor de compra, gastos, fornecedor e clientes ficam fora.
+- Sem token válido a função devolve vazio, então o link não pode ser adivinhado a partir de outro.
+- Desativar o link em Estoque → Compartilhar Estoque corta o acesso na hora.

@@ -10,7 +10,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const paginaDocumento =
     pathname.startsWith('/recibos/') ||
-    pathname.startsWith('/documentos/')
+    pathname.startsWith('/documentos/') ||
+    pathname.startsWith('/vitrine/')
 
   if (paginaDocumento) return <>{children}</>
 

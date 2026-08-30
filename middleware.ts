@@ -29,7 +29,16 @@ export async function middleware(request: NextRequest) {
 
   const rotaEhLogin = request.nextUrl.pathname.startsWith('/login')
 
-  if (!user && !rotaEhLogin) {
+  /*
+   * A vitrine do estoque é pública: a outra loja abre pelo
+   * link, sem login. O que ela vê é limitado pela função no
+   * banco, que só devolve moto disponível e só com token
+   * válido.
+   */
+  const rotaEhPublica =
+    request.nextUrl.pathname.startsWith('/vitrine')
+
+  if (!user && !rotaEhLogin && !rotaEhPublica) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

@@ -11,6 +11,7 @@ import {
 import {
   Check,
   ChevronDown,
+  Link2,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -513,13 +514,23 @@ export default function EstoquePage() {
             </p>
           </div>
 
-          <Link
-            href="/motos/nova"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-dourado px-5 py-3 font-bold text-preto transition hover:bg-dourado-claro"
-          >
-            <Plus size={18} />
-            Cadastrar Moto
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/estoque/compartilhar"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto transition hover:border-dourado hover:text-dourado"
+            >
+              <Link2 size={18} />
+              Compartilhar Estoque
+            </Link>
+
+            <Link
+              href="/motos/nova"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-dourado px-5 py-3 font-bold text-preto transition hover:bg-dourado-claro"
+            >
+              <Plus size={18} />
+              Cadastrar Moto
+            </Link>
+          </div>
         </div>
 
         <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
