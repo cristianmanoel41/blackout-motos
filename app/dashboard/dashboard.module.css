@@ -231,8 +231,15 @@
 }
 
 .panel table,
+.panel tr,
 .panel th,
 .panel td,
+.panel tr[class~='text-black'],
+.panel th[class~='text-black'],
+.panel td[class~='text-black'],
+.panel tr[class*='text-black/'],
+.panel th[class*='text-black/'],
+.panel td[class*='text-black/'],
 .panel th [class~='text-black'],
 .panel td [class~='text-black'],
 .panel th [class*='text-black/'],
@@ -242,8 +249,14 @@
 }
 
 .panel thead tr,
-.panel thead th {
-  color: #4b5058 !important;
+.panel thead th,
+.panel thead tr[class*='text-black/'],
+.panel thead th[class*='text-black/'] {
+  color: #3f444b !important;
+}
+
+.panel td span.statusSuccess {
+  color: #1d8a4b !important;
 }
 
 .paradaEtiqueta,
