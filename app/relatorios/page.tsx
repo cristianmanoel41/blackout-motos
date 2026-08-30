@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
+import {
+  BANCOS_FINANCIAMENTO,
+  OPERADORA_CARTAO,
+} from '@/lib/dados/financeiras'
 
 const nomesMeses = [
   'Janeiro',
@@ -83,7 +87,9 @@ export default async function RelatorioMensalPage({
       vendedor,
       valor_total_venda,
       valor_documentacao,
-      documentacao_entra_no_lucro
+      documentacao_entra_no_lucro,
+      banco,
+      valor_financiado
     `)
     .eq('status', 'ativa')
     .gte('data_venda', inicioMes)
@@ -196,13 +202,267 @@ export default async function RelatorioMensalPage({
   }
 
   // =========================================================
+  // FINANCIAMENTOS POR BANCO
+  // =========================================================
+
+  const normalizarBanco = (
+    valor: string | null | undefined
+  ) =>
+    (valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+
+  const mapaBancosOficiais = new Map(
+    BANCOS_FINANCIAMENTO.map((banco) => [
+      normalizarBanco(banco),
+      banco,
+    ])
+  )
+
+  const financiamentosMes =
+    vendasMes?.filter(
+      (venda) => Number(venda.valor_financiado || 0) > 0
+    ) ?? []
+
+  const porBanco = new Map<
+    string,
+    { quantidade: number; valor: number }
+  >()
+
+  // Todos os bancos oficiais aparecem, mesmo com zero contratos.
+  BANCOS_FINANCIAMENTO.forEach((banco) => {
+    porBanco.set(banco, {
+      quantidade: 0,
+      valor: 0,
+    })
+  })
+
+  // Só soma vendas cujo banco exista na lista oficial.
+  financiamentosMes.forEach((venda) => {
+    const bancoOficial = mapaBancosOficiais.get(
+      normalizarBanco(venda.banco)
+    )
+
+    if (!bancoOficial) {
+      return
+    }
+
+    const atual =
+      porBanco.get(bancoOficial) ?? {
+        quantidade: 0,
+        valor: 0,
+      }
+
+    porBanco.set(bancoOficial, {
+      quantidade: atual.quantidade + 1,
+      valor:
+        atual.valor + Number(venda.valor_financiado || 0),
+    })
+  })
+
+  const totalFinanciadoMes =
+    Array.from(porBanco.values()).reduce(
+      (soma, banco) => soma + banco.valor,
+      0
+    )
+
+  const bancos = BANCOS_FINANCIAMENTO.map((nome) => {
+    const dados =
+      porBanco.get(nome) ?? {
+        quantidade: 0,
+        valor: 0,
+      }
+
+    return {
+      nome,
+      quantidade: dados.quantidade,
+      valor: dados.valor,
+      participacao:
+        totalFinanciadoMes > 0
+          ? (dados.valor / totalFinanciadoMes) * 100
+          : 0,
+    }
+  })
+
+  // =========================================================
+  // CARTÃO (OPERADORA)
+  // =========================================================
+
+  const idsVendasMes =
+    vendasMes?.map((venda) => venda.id) ?? []
+
+  let cartaoMotos = { quantidade: 0, valor: 0 }
+
+  if (idsVendasMes.length > 0) {
+    const { data: pagamentosCartao } = await supabase
+      .from('sale_payment_components')
+      .select('valor, parcelas')
+      .eq('tipo', 'Cartão')
+      .in('sale_id', idsVendasMes)
+
+    cartaoMotos = (pagamentosCartao ?? []).reduce(
+      (resumo, item) => ({
+        quantidade: resumo.quantidade + 1,
+        valor: resumo.valor + Number(item.valor || 0),
+      }),
+      { quantidade: 0, valor: 0 }
+    )
+  }
+
+  const { data: capacetesNoCartao } = await supabase
+    .from('helmet_sales')
+    .select('valor_total')
+    .eq('forma_pagamento', 'Cartão')
+    .gte('data_venda', inicioMes)
+    .lte('data_venda', fimMes)
+
+  const cartaoCapacetes = (capacetesNoCartao ?? []).reduce(
+    (resumo, venda) => ({
+      quantidade: resumo.quantidade + 1,
+      valor: resumo.valor + Number(venda.valor_total || 0),
+    }),
+    { quantidade: 0, valor: 0 }
+  )
+
+  const totalCartao =
+    cartaoMotos.valor + cartaoCapacetes.valor
+
+  const quantidadeCartao =
+    cartaoMotos.quantidade + cartaoCapacetes.quantidade
+
+  // =========================================================
+  // CAPACETES
+  // =========================================================
+
+  const { data: comprasCapacetes } = await supabase
+    .from('helmet_purchases')
+    .select(`
+      valor_total,
+      helmet_purchase_items (
+        quantidade
+      )
+    `)
+    .gte('data_compra', inicioMes)
+    .lte('data_compra', fimMes)
+
+  const valorCapacetesComprados =
+    comprasCapacetes?.reduce(
+      (soma, nota) =>
+        soma + Number(nota.valor_total || 0),
+      0
+    ) ?? 0
+
+  const qtdCapacetesComprados =
+    comprasCapacetes?.reduce(
+      (soma, nota) =>
+        soma +
+        (nota.helmet_purchase_items ?? []).reduce(
+          (total, item) =>
+            total + Number(item.quantidade || 0),
+          0
+        ),
+      0
+    ) ?? 0
+
+  const { data: capacetesVendidos } = await supabase
+    .from('helmet_sale_items')
+    .select(
+      'sale_id, quantidade, valor_unitario, custo_unitario'
+    )
+    .gte('data', inicioMes)
+    .lte('data', fimMes)
+
+  const resumoCapacetes =
+    capacetesVendidos?.reduce(
+      (resumo, item) => {
+        const quantidade = Number(item.quantidade || 0)
+        const valor = Number(item.valor_unitario || 0)
+        const custo = Number(item.custo_unitario || 0)
+
+        return {
+          quantidade: resumo.quantidade + quantidade,
+
+          receitaNaMoto:
+            resumo.receitaNaMoto +
+            (item.sale_id ? quantidade * valor : 0),
+
+          receitaAvulsa:
+            resumo.receitaAvulsa +
+            (item.sale_id ? 0 : quantidade * valor),
+
+          custo: resumo.custo + quantidade * custo,
+
+          brindes:
+            resumo.brindes + (valor === 0 ? quantidade : 0),
+        }
+      },
+      {
+        quantidade: 0,
+        receitaNaMoto: 0,
+        receitaAvulsa: 0,
+        custo: 0,
+        brindes: 0,
+      }
+    ) ?? {
+      quantidade: 0,
+      receitaNaMoto: 0,
+      receitaAvulsa: 0,
+      custo: 0,
+      brindes: 0,
+    }
+
+  const receitaCapacetes =
+    resumoCapacetes.receitaNaMoto +
+    resumoCapacetes.receitaAvulsa
+
+  const lucroCapacetes =
+    receitaCapacetes - resumoCapacetes.custo
+
+  const { data: estoqueCapacetes } = await supabase
+    .from('helmet_models')
+    .select('estoque_atual, custo_medio, preco_venda_padrao')
+
+  const totaisEstoqueCapacetes =
+    estoqueCapacetes?.reduce(
+      (resumo, modelo) => {
+        const estoque = Math.max(
+          Number(modelo.estoque_atual || 0),
+          0
+        )
+
+        return {
+          quantidade: resumo.quantidade + estoque,
+
+          custo:
+            resumo.custo +
+            estoque * Number(modelo.custo_medio || 0),
+
+          venda:
+            resumo.venda +
+            estoque * Number(modelo.preco_venda_padrao || 0),
+        }
+      },
+      { quantidade: 0, custo: 0, venda: 0 }
+    ) ?? { quantidade: 0, custo: 0, venda: 0 }
+
+  // =========================================================
   // LUCRO BRUTO
   // =========================================================
 
+  /*
+   * O faturamento das vendas já inclui os capacetes
+   * que saíram junto com a moto. As vendas avulsas
+   * de capacete entram aqui, e o custo da mercadoria
+   * vendida é descontado.
+   */
   const lucroBruto =
     faturamento +
-    receitaDocNoLucro -
-    custoMotosVendidas
+    receitaDocNoLucro +
+    resumoCapacetes.receitaAvulsa -
+    custoMotosVendidas -
+    resumoCapacetes.custo
 
   // =========================================================
   // GASTOS DAS MOTOS NO MÊS
@@ -523,6 +783,160 @@ export default async function RelatorioMensalPage({
               lucroLiquido
             ),
             true
+          )}
+        </div>
+
+        {/* FINANCIAMENTOS POR BANCO */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Financiamentos por Banco
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              {nomesMeses[mesSelecionado - 1]} de{' '}
+              {anoSelecionado} · {financiamentosMes.length}{' '}
+              venda
+              {financiamentosMes.length === 1 ? '' : 's'}{' '}
+              financiada
+              {financiamentosMes.length === 1 ? '' : 's'} ·
+              total {formatarMoeda(totalFinanciadoMes)}
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
+                <tr>
+                  <th className="px-5 py-3">Banco</th>
+                  <th className="px-5 py-3 text-right">
+                    Contratos
+                  </th>
+                  <th className="px-5 py-3 text-right">
+                    Valor financiado
+                  </th>
+                  <th className="px-5 py-3 text-right">
+                    Participação
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {bancos.map((banco) => (
+                  <tr
+                    key={banco.nome}
+                    className="border-b border-grafite-claro/60 text-white last:border-0"
+                  >
+                    <td className="px-5 py-3 font-medium text-white">
+                      {banco.nome}
+                    </td>
+
+                    <td className="px-5 py-3 text-right text-white">
+                      {banco.quantidade}
+                    </td>
+
+                    <td className="px-5 py-3 text-right font-semibold text-white">
+                      {formatarMoeda(banco.valor)}
+                    </td>
+
+                    <td className="px-5 py-3 text-right text-white">
+                      {banco.participacao.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border-t border-grafite-claro px-5 py-4">
+            <p className="text-xs text-texto-suave">
+              Cartão · operadora {OPERADORA_CARTAO}
+            </p>
+
+            <p className="mt-1 font-semibold text-texto">
+              {formatarMoeda(totalCartao)}{' '}
+              <span className="text-xs font-normal text-texto-suave">
+                em {quantidadeCartao} pagamento
+                {quantidadeCartao === 1 ? '' : 's'} (
+                {formatarMoeda(cartaoMotos.valor)} em motos ·{' '}
+                {formatarMoeda(cartaoCapacetes.valor)} em
+                capacetes)
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* CAPACETES */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite divide-y divide-grafite-claro xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Capacetes
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              Compras e vendas de {nomesMeses[mesSelecionado - 1]}{' '}
+              de {anoSelecionado} · estoque é sempre o atual
+            </p>
+          </div>
+
+          {linha(
+            'Capacetes comprados no mês',
+            String(qtdCapacetesComprados)
+          )}
+
+          {linha(
+            'Gasto com capacetes no mês',
+            formatarMoeda(
+              valorCapacetesComprados
+            )
+          )}
+
+          {linha(
+            'Capacetes vendidos no mês',
+            String(resumoCapacetes.quantidade)
+          )}
+
+          {linha(
+            'Dados de brinde no mês',
+            String(resumoCapacetes.brindes)
+          )}
+
+          {linha(
+            'Recebido com capacetes',
+            formatarMoeda(receitaCapacetes)
+          )}
+
+          {linha(
+            'Custo da mercadoria vendida',
+            formatarMoeda(resumoCapacetes.custo)
+          )}
+
+          {linha(
+            'Lucro com capacetes',
+            formatarMoeda(lucroCapacetes),
+            true
+          )}
+
+          {linha(
+            'Capacetes em estoque (atual)',
+            String(totaisEstoqueCapacetes.quantidade)
+          )}
+
+          {linha(
+            'Mercadoria disponível (a custo)',
+            formatarMoeda(
+              totaisEstoqueCapacetes.custo
+            ),
+            true
+          )}
+
+          {linha(
+            'Mercadoria disponível (a preço de venda)',
+            formatarMoeda(
+              totaisEstoqueCapacetes.venda
+            )
           )}
         </div>
 
