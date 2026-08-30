@@ -485,6 +485,33 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
 
 /* ---------- TEXTO DENTRO DO CARD ---------- */
 
+/*
+ * O AppShell pinta de preto, com !important, todo p, span,
+ * titulo, label e item de lista - nao pela classe, pelo proprio
+ * elemento. Quem nao tinha classe de cor caia nessa regra e
+ * ficava preto dentro do card escuro.
+ *
+ * Esta regra desfaz isso so dentro do card. As regras por
+ * classe logo abaixo continuam mandando, porque contam mais
+ * classes no seletor.
+ */
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(
+  h1, h2, h3, h4, h5, h6,
+  p, span, strong, b, em, small,
+  label, legend, li, dt, dd,
+  caption, figcaption
+) {
+  color: #f1f3f5 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(input, select, textarea) {
+  color: #f1f3f5 !important;
+}
+
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(input, textarea)::placeholder {
+  color: #7d838c !important;
+}
+
 main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(.text-texto, .text-zinc-200, .text-zinc-300, [class~='text-black']) {
   color: #f1f3f5 !important;
 }
