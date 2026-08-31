@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# arquivos de trabalho: pacotes, copias e backups manuais
+*.zip
+*.rar
+*.backup-*
+backup-*/
+projeto-para-chatgpt/
+white-label-nova/
+LEIA-ME-*.txt
