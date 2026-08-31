@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
@@ -28,6 +28,21 @@ export type RegistroHistorico = {
   observacaoPagamento: string;
   extra: string;
 };
+
+const nomesMeses = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
 
 const filtros = [
   { chave: "todos", nome: "Todas" },
@@ -86,6 +101,52 @@ export default function HistoricoGeral({
       ).includes(termo);
     });
   }, [registros, filtro, busca]);
+
+  /*
+   * As vendas ja chegam da mais recente para a mais antiga.
+   * Aqui elas so ganham uma faixa a cada virada de mes, com
+   * quantas foram e quanto somaram - o mes vira um bloco em
+   * vez de uma lista continua.
+   */
+  const grupos = useMemo(() => {
+    const meses: Array<{
+      chave: string;
+      titulo: string;
+      itens: typeof filtrados;
+      total: number;
+    }> = [];
+
+    filtrados.forEach((registro) => {
+      const chave = String(registro.data || "").slice(0, 7);
+
+      let grupo = meses.find(
+        (item) => item.chave === chave
+      );
+
+      if (!grupo) {
+        const [ano, mes] = chave.split("-");
+
+        const indice = Number(mes) - 1;
+
+        grupo = {
+          chave,
+          titulo:
+            nomesMeses[indice] && ano
+              ? `${nomesMeses[indice]} de ${ano}`
+              : "Sem data",
+          itens: [],
+          total: 0,
+        };
+
+        meses.push(grupo);
+      }
+
+      grupo.itens.push(registro);
+      grupo.total += Number(registro.valor) || 0;
+    });
+
+    return meses;
+  }, [filtrados]);
 
   const totais = useMemo(() => {
     return registros.reduce(
@@ -251,7 +312,27 @@ export default function HistoricoGeral({
             </thead>
 
             <tbody>
-              {filtrados.map((registro) => (
+              {grupos.map((grupo) => (
+                <Fragment key={grupo.chave}>
+                <tr className="border-b border-grafite-claro bg-preto/60">
+                  <td colSpan={8} className="px-4 py-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-dourado">
+                        {grupo.titulo}
+                      </span>
+
+                      <span className="text-xs text-texto-suave">
+                        {grupo.itens.length} venda
+                        {grupo.itens.length === 1 ? "" : "s"} ·{" "}
+                        <strong className="text-texto">
+                          {formatarMoeda(grupo.total)}
+                        </strong>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+
+                {grupo.itens.map((registro) => (
                 <tr
                   key={`${registro.tipo}-${registro.id}`}
                   className="border-b border-grafite-claro last:border-b-0 hover:bg-preto/40"
@@ -388,6 +469,8 @@ export default function HistoricoGeral({
                     </div>
                   </td>
                 </tr>
+                ))}
+                </Fragment>
               ))}
             </tbody>
           </table>
