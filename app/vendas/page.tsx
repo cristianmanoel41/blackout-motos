@@ -246,6 +246,15 @@ export default function VendasPage() {
     useState(hoje());
 
   /*
+   * Financiamento sem entrada: o banco financia o valor
+   * inteiro da moto e o cliente nao entrega nada na loja.
+   * Acontece, e ate aqui a venda travava pedindo uma forma
+   * de pagamento para a entrada.
+   */
+  const [semEntrada, setSemEntrada] =
+    useState(false);
+
+  /*
    * O que o cliente entrega na hora normalmente já é dinheiro
    * no caixa. O financiamento não: o banco deposita depois, e
    * até lá o valor fica pendente esperando baixa.
@@ -1291,6 +1300,28 @@ export default function VendasPage() {
     }
   }
 
+  /*
+   * Marcar "sem entrada" apaga o que ja tinha sido montado:
+   * se sobrasse um pix ali, ele viraria entrada de novo e o
+   * valor financiado sairia menor do que o combinado.
+   */
+  function alternarSemEntrada() {
+    setSemEntrada((atual) => {
+      const novo = !atual;
+
+      if (novo) {
+        setComponentes((atuais) =>
+          atuais.filter(
+            (item) =>
+              item.destino === "capacete"
+          )
+        );
+      }
+
+      return novo;
+    });
+  }
+
   function adicionarPagamento(
     tipo: TipoPagamento
   ) {
@@ -1513,13 +1544,18 @@ export default function VendasPage() {
       return;
     }
 
+    const financiamentoSemEntrada =
+      tipoVenda === "financiamento" &&
+      semEntrada;
+
     if (
-      componentes.length === 0
+      componentes.length === 0 &&
+      !financiamentoSemEntrada
     ) {
       setErro(
         tipoVenda ===
           "financiamento"
-          ? "Adicione pelo menos uma forma de pagamento para a entrada."
+          ? 'Adicione a forma de pagamento da entrada, ou marque "Venda sem entrada".'
           : "Adicione a forma de pagamento da venda."
       );
       return;
@@ -3175,6 +3211,33 @@ export default function VendasPage() {
               </p>
             </div>
 
+            {tipoVenda ===
+              "financiamento" && (
+              <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+                <input
+                  type="checkbox"
+                  checked={semEntrada}
+                  onChange={alternarSemEntrada}
+                  className="mt-0.5 h-4 w-4 accent-yellow-500"
+                />
+
+                <span>
+                  <span className="block text-sm font-semibold text-zinc-200">
+                    Venda sem entrada
+                  </span>
+
+                  <span className="mt-1 block text-xs text-zinc-500">
+                    O banco financia o valor inteiro da moto e o
+                    cliente não entrega nada na loja.
+                  </span>
+                </span>
+              </label>
+            )}
+
+            {!(
+              tipoVenda === "financiamento" &&
+              semEntrada
+            ) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {(
                 [
@@ -3219,9 +3282,21 @@ export default function VendasPage() {
                 Moto na troca
               </button>
             </div>
+            )}
 
-            {componentes.length ===
-              0 && (
+            {tipoVenda === "financiamento" &&
+              semEntrada && (
+              <div className="rounded-xl border border-yellow-700/50 bg-yellow-950/10 p-5 text-sm text-yellow-300">
+                Venda sem entrada: o banco financia os{" "}
+                {moeda(valorVendaNumero)} da moto.
+              </div>
+            )}
+
+            {componentes.length === 0 &&
+              !(
+                tipoVenda === "financiamento" &&
+                semEntrada
+              ) && (
               <div className="rounded-xl border border-zinc-800 bg-black/40 p-5 text-sm text-zinc-400">
                 Nenhuma forma de pagamento adicionada.
               </div>
