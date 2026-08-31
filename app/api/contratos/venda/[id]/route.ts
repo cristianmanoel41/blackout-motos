@@ -73,9 +73,46 @@ function horaAtual() {
   }).format(new Date());
 }
 
+/*
+ * A moto que entra como parte do pagamento precisa estar
+ * identificada no contrato: modelo, ano e placa. Sem isso o
+ * contrato registra so o valor abatido, e nao diz qual moto
+ * o cliente entregou.
+ */
+function identificacaoDaTroca(motoTroca: any) {
+  if (!motoTroca) return "";
+
+  const nome = [
+    motoTroca.marca,
+    motoTroca.modelo,
+    motoTroca.versao,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const ano = motoTroca.ano_fabricacao
+    ? `${motoTroca.ano_fabricacao}${
+        motoTroca.ano_modelo
+          ? `/${motoTroca.ano_modelo}`
+          : ""
+      }`
+    : motoTroca.ano_modelo || "";
+
+  const partes: string[] = [];
+
+  if (nome) partes.push(nome);
+  if (ano) partes.push(`ano ${ano}`);
+  if (motoTroca.placa) {
+    partes.push(`placa ${motoTroca.placa}`);
+  }
+
+  return partes.join(", ");
+}
+
 function descricaoPagamentos(
   venda: any,
-  componentes: any[]
+  componentes: any[],
+  motoTroca?: any
 ) {
   const partes: string[] = [];
 
@@ -98,8 +135,17 @@ function descricaoPagamentos(
     } else if (
       item.tipo === "Moto na troca"
     ) {
+      const identificacao =
+        identificacaoDaTroca(motoTroca) ||
+        item.observacoes ||
+        "";
+
       partes.push(
-        `moto na troca considerada pelo valor de ${moeda(
+        `moto recebida na troca${
+          identificacao
+            ? ` (${identificacao})`
+            : ""
+        }, considerada pelo valor de ${moeda(
           item.valor
         )}`
       );
@@ -378,6 +424,50 @@ export async function GET(
     }
 
     // =====================================================
+    // 4b. MOTO RECEBIDA NA TROCA
+    //
+    // O componente de pagamento do tipo "Moto na troca" guarda
+    // o id da moto que entrou no estoque como parte do
+    // pagamento. É dela que saem modelo, ano e placa.
+    // =====================================================
+
+    let motoTroca: any = null;
+
+    const componenteTroca =
+      (componentes || []).find(
+        (item: any) =>
+          item.tipo ===
+            "Moto na troca" &&
+          item.motorcycle_id
+      );
+
+    if (componenteTroca) {
+      const {
+        data: motoTrocaData,
+        error: motoTrocaError,
+      } = await supabase
+        .from("motorcycles")
+        .select(
+          "marca, modelo, versao, ano_fabricacao, ano_modelo, placa"
+        )
+        .eq(
+          "id",
+          componenteTroca.motorcycle_id
+        )
+        .single();
+
+      if (motoTrocaError) {
+        console.error(
+          "Erro ao carregar a moto da troca:",
+          motoTrocaError
+        );
+      } else {
+        motoTroca =
+          motoTrocaData;
+      }
+    }
+
+    // =====================================================
     // 5. VALIDAÇÕES
     // =====================================================
 
@@ -504,7 +594,48 @@ export async function GET(
       forma_pagamento_descricao:
         descricaoPagamentos(
           venda,
-          componentes || []
+          componentes || [],
+          motoTroca
+        ),
+
+      /*
+       * Marcadores da moto da troca, para quem quiser uma
+       * clausula propria no modelo do Word. Sem moto na
+       * troca eles saem em branco.
+       */
+      troca_marca:
+        motoTroca?.marca || "",
+
+      troca_modelo:
+        [
+          motoTroca?.modelo,
+          motoTroca?.versao,
+        ]
+          .filter(Boolean)
+          .join(" "),
+
+      troca_ano:
+        motoTroca?.ano_fabricacao
+          ? `${motoTroca.ano_fabricacao}${
+              motoTroca.ano_modelo
+                ? `/${motoTroca.ano_modelo}`
+                : ""
+            }`
+          : motoTroca?.ano_modelo || "",
+
+      troca_placa:
+        motoTroca?.placa || "",
+
+      troca_valor:
+        componenteTroca
+          ? moeda(
+              componenteTroca.valor
+            )
+          : "",
+
+      troca_descricao:
+        identificacaoDaTroca(
+          motoTroca
         ),
 
       financiamento_banco:
