@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import CampoPagamentoFeito from '@/components/CampoPagamentoFeito'
@@ -36,6 +36,14 @@ export default function RegistrarGastoPage() {
    */
   const [pago, setPago] = useState(true)
 
+  /*
+   * Data em que a contabilidade da loja comecou. Gasto pago
+   * antes dela ja saiu do bolso antes do controle existir:
+   * fica no historico da moto, para o custo dela ficar certo,
+   * mas nao tira dinheiro do caixa de hoje.
+   */
+  const [dataInicioCaixa, setDataInicioCaixa] = useState("")
+
   const [previsao, setPrevisao] = useState(
     new Date().toISOString().slice(0, 10)
   )
@@ -48,6 +56,36 @@ export default function RegistrarGastoPage() {
     forma_pagamento: 'Dinheiro',
     observacoes: '',
   })
+
+  useEffect(() => {
+    async function carregarInicioDoControle() {
+      const { data, error } = await supabase
+        .from('cash_control_settings')
+        .select('data_inicio')
+        .eq('id', 'principal')
+        .maybeSingle()
+
+      if (error) {
+        console.error(
+          'Não foi possível carregar a data de início do caixa:',
+          error
+        )
+        return
+      }
+
+      setDataInicioCaixa(data?.data_inicio || '')
+    }
+
+    carregarInicioDoControle()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const antesDoControle = Boolean(
+    pago &&
+      dataInicioCaixa &&
+      form.data &&
+      form.data < dataInicioCaixa
+  )
 
   function handleChange(
     e: React.ChangeEvent<
@@ -95,6 +133,14 @@ export default function RegistrarGastoPage() {
       )
 
       setSalvando(false)
+      return
+    }
+
+    if (antesDoControle) {
+      setSalvando(false)
+
+      router.push(`/motos/${params.id}`)
+      router.refresh()
       return
     }
 
@@ -250,6 +296,15 @@ export default function RegistrarGastoPage() {
             rows={2}
           />
         </div>
+
+        {antesDoControle && (
+          <div className="rounded-lg border border-yellow-800/60 bg-yellow-950/20 px-4 py-3 text-sm text-yellow-300">
+            Este gasto é anterior ao início do controle do caixa
+            ({dataInicioCaixa.split("-").reverse().join("/")}).
+            Ele entra no custo da moto, mas não sai do caixa —
+            esse dinheiro já tinha saído antes.
+          </div>
+        )}
 
         <CampoPagamentoFeito
           titulo="Este gasto já foi pago?"
