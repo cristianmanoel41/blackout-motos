@@ -77,6 +77,12 @@ type ComponentePagamento = {
   destino: DestinoPagamento;
   valor: string;
   parcelas: string;
+  /*
+   * A maquininha cobra juros, entao a parcela quase nunca e o
+   * valor dividido em partes iguais. Quando o valor e digitado
+   * aqui, e ele que vale.
+   */
+  valorParcela?: string;
   motoId?: string;
   motoDescricao?: string;
 };
@@ -1322,6 +1328,7 @@ export default function VendasPage() {
     campo:
       | "valor"
       | "parcelas"
+      | "valorParcela"
       | "destino",
     valor: string
   ) {
@@ -1878,8 +1885,10 @@ export default function VendasPage() {
               parcelas,
               valor_parcela:
                 parcelas
-                  ? valor /
-                    parcelas
+                  ? Number(
+                      componente.valorParcela
+                    ) ||
+                    valor / parcelas
                   : null,
               motorcycle_id:
                 componente.motoId ||
@@ -3388,11 +3397,44 @@ export default function VendasPage() {
                                 )}
                               </select>
 
+                              <label className="mb-2 mt-3 block text-xs text-zinc-500">
+                                Valor da parcela
+                              </label>
+
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={
+                                  componente.valorParcela ||
+                                  ""
+                                }
+                                onChange={(e) =>
+                                  alterarComponente(
+                                    componente.idLocal,
+                                    "valorParcela",
+                                    e
+                                      .target
+                                      .value
+                                  )
+                                }
+                                placeholder={String(
+                                  (
+                                    valor /
+                                    parcelas
+                                  ).toFixed(2)
+                                )}
+                                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none focus:border-yellow-500"
+                              />
+
                               <p className="mt-1 text-xs text-yellow-500">
                                 {parcelas}x de{" "}
                                 {moeda(
-                                  valor /
-                                    parcelas
+                                  Number(
+                                    componente.valorParcela
+                                  ) ||
+                                    valor /
+                                      parcelas
                                 )}
                               </p>
 

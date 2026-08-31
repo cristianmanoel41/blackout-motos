@@ -345,6 +345,11 @@ export default function EditarVendaPage() {
           parcelas: String(
             item.parcelas ?? "1"
           ),
+          valorParcela:
+            item.valor_parcela === null ||
+            item.valor_parcela === undefined
+              ? ""
+              : String(item.valor_parcela),
           motorcycle_id:
             item.motorcycle_id ||
             null,
@@ -490,6 +495,7 @@ export default function EditarVendaPage() {
         destino: "moto",
         valor: "",
         parcelas: "1",
+        valorParcela: "",
         motorcycle_id: null,
         observacoes: null,
       },
@@ -550,8 +556,14 @@ export default function EditarVendaPage() {
               : "moto",
           valor,
           parcelas,
+          /*
+           * A maquininha cobra juros: a parcela quase nunca
+           * e o valor dividido em partes iguais. Quando o
+           * valor e digitado, e ele que vale.
+           */
           valor_parcela: parcelas
-            ? valor / parcelas
+            ? Number(item.valorParcela) ||
+              valor / parcelas
             : null,
           motorcycle_id:
             item.motorcycle_id ||
@@ -1236,43 +1248,25 @@ export default function EditarVendaPage() {
 
                         <div>
                           <label className="mb-1 block text-xs text-zinc-400">
-                            {item.tipo === "Cartão"
-                              ? "Parcelas"
-                              : "Refere-se a"}
+                            Refere-se a
                           </label>
 
-                          {item.tipo === "Cartão" ? (
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.parcelas}
-                              onChange={(e) =>
-                                atualizarComponente(
-                                  item.idLocal,
-                                  "parcelas",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
-                            />
-                          ) : (
-                            <select
-                              value={item.destino}
-                              onChange={(e) =>
-                                atualizarComponente(
-                                  item.idLocal,
-                                  "destino",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
-                            >
-                              <option value="moto">Moto</option>
-                              <option value="capacete">
-                                Capacete
-                              </option>
-                            </select>
-                          )}
+                          <select
+                            value={item.destino}
+                            onChange={(e) =>
+                              atualizarComponente(
+                                item.idLocal,
+                                "destino",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                          >
+                            <option value="moto">Moto</option>
+                            <option value="capacete">
+                              Capacete
+                            </option>
+                          </select>
                         </div>
 
                         <div className="flex items-end">
@@ -1289,6 +1283,66 @@ export default function EditarVendaPage() {
                           </button>
                         </div>
                       </div>
+
+                      {item.tipo === "Cartão" && (
+                        <div className="mt-3 grid gap-3 border-t border-zinc-800 pt-3 md:grid-cols-3">
+                          <div>
+                            <label className="mb-1 block text-xs text-zinc-400">
+                              Parcelas
+                            </label>
+
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.parcelas}
+                              onChange={(e) =>
+                                atualizarComponente(
+                                  item.idLocal,
+                                  "parcelas",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-1 block text-xs text-zinc-400">
+                              Valor da parcela
+                            </label>
+
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.valorParcela || ""}
+                              onChange={(e) =>
+                                atualizarComponente(
+                                  item.idLocal,
+                                  "valorParcela",
+                                  e.target.value
+                                )
+                              }
+                              placeholder={(
+                                (Number(item.valor) || 0) /
+                                (Number(item.parcelas) || 1)
+                              ).toFixed(2)}
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                            />
+                          </div>
+
+                          <div className="flex items-end">
+                            <p className="text-xs text-yellow-400">
+                              {Number(item.parcelas) || 1}x de{" "}
+                              {formatarMoeda(
+                                Number(item.valorParcela) ||
+                                  (Number(item.valor) || 0) /
+                                    (Number(item.parcelas) || 1)
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {ehTroca && item.observacoes && (
                         <p className="mt-2 text-xs text-zinc-500">
