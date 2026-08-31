@@ -15,6 +15,7 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import { OPERADORA_CARTAO } from "@/lib/dados/financeiras";
 
 const supabase = createClient();
 
@@ -1331,7 +1332,7 @@ export default function EditarVendaPage() {
                             />
                           </div>
 
-                          <div className="flex items-end">
+                          <div className="flex flex-col justify-end">
                             <p className="text-xs text-yellow-400">
                               {Number(item.parcelas) || 1}x de{" "}
                               {formatarMoeda(
@@ -1339,6 +1340,10 @@ export default function EditarVendaPage() {
                                   (Number(item.valor) || 0) /
                                     (Number(item.parcelas) || 1)
                               )}
+                            </p>
+
+                            <p className="mt-1 text-xs text-zinc-500">
+                              Operadora: {OPERADORA_CARTAO}
                             </p>
                           </div>
                         </div>
