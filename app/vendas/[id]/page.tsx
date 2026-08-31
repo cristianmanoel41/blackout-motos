@@ -49,6 +49,9 @@ export default function EditarVendaPage() {
   const [salvando, setSalvando] =
     useState(false);
 
+  const [excluindo, setExcluindo] =
+    useState(false);
+
   const [erro, setErro] =
     useState("");
 
@@ -647,6 +650,86 @@ export default function EditarVendaPage() {
         })
         .eq("id", doBanco.id);
     }
+  }
+
+  /*
+   * Apagar a venda. Serve para a venda lancada errado ou de
+   * teste: enquanto ela existe, conta no faturamento do mes
+   * e a moto fica presa como vendida.
+   *
+   * Sai tudo que aponta para ela - composicao do pagamento e
+   * lancamentos do caixa - e a moto volta para o estoque.
+   */
+  async function apagarVenda() {
+    setErro("");
+    setMensagem("");
+
+    if (capacetesVinculados.length > 0) {
+      setErro(
+        "Esta venda tem capacete vinculado. Remova os capacetes primeiro, para o estoque deles voltar certo."
+      );
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Apagar definitivamente esta venda${
+        motoNome ? ` (${motoNome})` : ""
+      }? A moto volta para o estoque e os lançamentos dela saem do caixa. Não dá para desfazer.`
+    );
+
+    if (!confirmar) return;
+
+    setExcluindo(true);
+
+    await supabase
+      .from("cash_transactions")
+      .delete()
+      .eq("origem", "venda")
+      .eq("origem_id", id);
+
+    await supabase
+      .from("sale_payment_components")
+      .delete()
+      .eq("sale_id", id);
+
+    const { data: apagadas, error } = await supabase
+      .from("sales")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    if (error) {
+      setExcluindo(false);
+      setErro(
+        `Não foi possível apagar a venda: ${error.message}`
+      );
+      return;
+    }
+
+    /*
+     * Sem politica de exclusao no banco o Postgres nao
+     * devolve erro: ele so nao apaga. O select mostra o que
+     * saiu de verdade.
+     */
+    if (!apagadas || apagadas.length === 0) {
+      setExcluindo(false);
+      setErro(
+        "A venda não foi apagada: seu usuário não tem permissão de exclusão em vendas no banco. Me avise que eu passo o SQL para liberar."
+      );
+      return;
+    }
+
+    /* A moto so volta ao estoque depois que a venda sai. */
+    if (motorcycleId) {
+      await supabase
+        .from("motorcycles")
+        .update({ status: "disponivel" })
+        .eq("id", motorcycleId);
+    }
+
+    setExcluindo(false);
+
+    window.location.href = "/vendas/historico";
   }
 
   async function salvarAlteracoes() {
@@ -1701,8 +1784,19 @@ export default function EditarVendaPage() {
               href="/vendas/historico"
               className="rounded-xl border border-zinc-700 px-6 py-4 text-center font-semibold text-zinc-300"
             >
-              Cancelar
+              Voltar
             </Link>
+
+            <button
+              type="button"
+              disabled={excluindo || salvando}
+              onClick={apagarVenda}
+              className="rounded-xl border border-zinc-700 px-6 py-4 font-semibold text-red-300 transition hover:border-red-700 hover:bg-red-950/30 disabled:opacity-50"
+            >
+              {excluindo
+                ? "Apagando..."
+                : "Apagar Venda"}
+            </button>
 
           </div>
 
