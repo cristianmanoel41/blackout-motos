@@ -364,7 +364,7 @@ export default function DetalheMotoPage() {
   const custoTotal =
     Number(moto.valor_compra || 0) + totalGastos;
 
-  const linkGasto = `/motos/${moto.id}/gasto`;
+  const linkGasto = `/despesas/nova?moto=${moto.id}`;
   const linkVender = `/vendas?moto=${moto.id}`
 
   return (

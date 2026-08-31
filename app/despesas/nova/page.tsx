@@ -1,11 +1,15 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import {
   Bike,
   Building2,
@@ -102,7 +106,22 @@ function descricaoMoto(
 }
 
 export default function NovaDespesaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6 text-texto-suave">
+          Carregando...
+        </div>
+      }
+    >
+      <FormularioNovaDespesa />
+    </Suspense>
+  );
+}
+
+function FormularioNovaDespesa() {
   const router = useRouter();
+  const parametros = useSearchParams();
   const supabase = createClient();
 
   const [
@@ -127,6 +146,14 @@ export default function NovaDespesaPage() {
   ] = useState("");
 
   const [motoId, setMotoId] =
+    useState("");
+
+  /*
+   * Chegando pela ficha da moto, a tela e so daquela moto:
+   * nao faz sentido oferecer despesa da loja nem deixar
+   * trocar de moto no meio do caminho.
+   */
+  const [motoFixada, setMotoFixada] =
     useState("");
 
   const [erro, setErro] =
@@ -202,6 +229,24 @@ export default function NovaDespesaPage() {
     }
 
     carregarControleCaixa();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const motoRecebida =
+      parametros.get("moto") || "";
+
+    if (motoRecebida) {
+      setTipoLancamento("moto");
+      setMotoId(motoRecebida);
+      setMotoFixada(motoRecebida);
+
+      /* Categoria de loja nao serve para gasto de moto. */
+      setForm((anterior) => ({
+        ...anterior,
+        categoria: "Documentação",
+      }));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -854,11 +899,15 @@ export default function NovaDespesaPage() {
     <div className="max-w-2xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-dourado">
-          Novo Lançamento
+          {motoFixada
+            ? "Novo Gasto da Moto"
+            : "Novo Lançamento"}
         </h1>
 
         <p className="mt-1 text-sm text-texto-suave">
-          Registre uma despesa da loja ou um gasto vinculado a uma moto.
+          {motoFixada
+            ? "Peças, mão de obra, documentação e o que mais entrar no custo desta moto."
+            : "Registre uma despesa da loja ou um gasto vinculado a uma moto."}
         </p>
       </div>
 
@@ -888,6 +937,7 @@ export default function NovaDespesaPage() {
         </div>
       )}
 
+      {!motoFixada && (
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           type="button"
@@ -941,6 +991,7 @@ export default function NovaDespesaPage() {
           </div>
         </button>
       </div>
+      )}
 
       <form
         onSubmit={
@@ -948,8 +999,23 @@ export default function NovaDespesaPage() {
         }
         className="space-y-4 rounded-xl border border-grafite-claro bg-grafite p-5"
       >
-        {tipoLancamento ===
-          "moto" && (
+        {tipoLancamento === "moto" &&
+          motoFixada && (
+          <div className="rounded-xl border border-dourado/30 bg-preto/30 p-4">
+            <p className="text-xs text-texto-suave">
+              Gasto desta moto
+            </p>
+
+            <p className="mt-1 font-semibold text-white">
+              {motoSelecionada
+                ? descricaoMoto(motoSelecionada)
+                : "Carregando..."}
+            </p>
+          </div>
+        )}
+
+        {tipoLancamento === "moto" &&
+          !motoFixada && (
           <div className="rounded-xl border border-dourado/30 bg-preto/30 p-4">
             <p className="mb-3 font-semibold text-dourado">
               Moto do gasto
