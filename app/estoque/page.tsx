@@ -54,6 +54,35 @@ type Moto = {
  * a fazer a conta de cabeca; o numero de dias diz na hora
  * quem esta encalhando.
  */
+/*
+ * Como a moto entrou no estoque: comprada, recebida na troca
+ * de outra venda, ou ja estava na loja quando o controle
+ * comecou. Muda o custo e muda a conversa da venda.
+ */
+function rotuloEntrada(tipo?: string | null) {
+  switch (normalizarTexto(tipo)) {
+    case "troca":
+      return "Troca";
+    case "compra_nova":
+      return "Compra";
+    case "estoque_inicial":
+      return "Estoque inicial";
+    default:
+      return "";
+  }
+}
+
+function classeEntrada(tipo?: string | null) {
+  switch (normalizarTexto(tipo)) {
+    case "troca":
+      return "border-dourado/45 bg-dourado/10 text-dourado";
+    case "compra_nova":
+      return "border-sky-500/40 bg-sky-500/10 text-sky-300";
+    default:
+      return "border-zinc-600/50 bg-zinc-500/10 text-zinc-300";
+  }
+}
+
 function diasNoEstoque(dataEntrada?: string | null) {
   if (!dataEntrada) return null;
 
@@ -794,9 +823,19 @@ export default function EstoquePage() {
                         title="Clique para ver detalhes da moto"
                       >
                         <td className="whitespace-nowrap px-4 py-3">
-                          <span className="font-mono text-xs font-semibold text-dourado">
+                          <span className="block font-mono text-xs font-semibold text-dourado">
                             {moto.codigo || `#${moto.id}`}
                           </span>
+
+                          {rotuloEntrada(moto.tipo_entrada) && (
+                            <span
+                              className={`mt-1 inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${classeEntrada(
+                                moto.tipo_entrada
+                              )}`}
+                            >
+                              {rotuloEntrada(moto.tipo_entrada)}
+                            </span>
+                          )}
                         </td>
 
                         <td className="px-4 py-3">
