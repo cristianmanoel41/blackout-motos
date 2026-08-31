@@ -638,6 +638,10 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
  * card ficou escuro, a regra que clareia o texto pegou nele
  * tambem: texto claro sobre pastel claro, ilegivel.
  *
+ * A comparacao e pela classe inteira (~=), nao por pedaco:
+ * por pedaco, bg-zinc-50 casava tambem com bg-zinc-500/10 e
+ * apagava o selo escuro de "Estoque inicial".
+ *
  * O selo ja tem contraste proprio, entao dentro dele o texto
  * volta a ser escuro. Vale para o selo e para o que estiver
  * dentro dele.
@@ -645,7 +649,7 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
  * Precisa vir depois das regras de texto do card: as duas tem
  * o mesmo peso de seletor, e ai quem vem por ultimo manda.
  */
-main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class*='bg-green-50'], [class*='bg-green-100'], [class*='bg-blue-50'], [class*='bg-blue-100'], [class*='bg-orange-50'], [class*='bg-orange-100'], [class*='bg-indigo-50'], [class*='bg-indigo-100'], [class*='bg-zinc-50'], [class*='bg-zinc-100'], [class*='bg-red-50'], [class*='bg-red-100'], [class*='bg-yellow-50'], [class*='bg-yellow-100'], [class*='bg-emerald-50'], [class*='bg-emerald-100'], [class*='bg-amber-50'], [class*='bg-amber-100'], [class*='bg-purple-50'], [class*='bg-purple-100'], [class*='bg-slate-50'], [class*='bg-slate-100'], [class*='bg-gray-50'], [class*='bg-gray-100'], [class*='bg-neutral-50'], [class*='bg-neutral-100']),
-main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class*='bg-green-50'], [class*='bg-green-100'], [class*='bg-blue-50'], [class*='bg-blue-100'], [class*='bg-orange-50'], [class*='bg-orange-100'], [class*='bg-indigo-50'], [class*='bg-indigo-100'], [class*='bg-zinc-50'], [class*='bg-zinc-100'], [class*='bg-red-50'], [class*='bg-red-100'], [class*='bg-yellow-50'], [class*='bg-yellow-100'], [class*='bg-emerald-50'], [class*='bg-emerald-100'], [class*='bg-amber-50'], [class*='bg-amber-100'], [class*='bg-purple-50'], [class*='bg-purple-100'], [class*='bg-slate-50'], [class*='bg-slate-100'], [class*='bg-gray-50'], [class*='bg-gray-100'], [class*='bg-neutral-50'], [class*='bg-neutral-100']) * {
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='bg-green-50'], [class~='bg-green-100'], [class~='bg-blue-50'], [class~='bg-blue-100'], [class~='bg-orange-50'], [class~='bg-orange-100'], [class~='bg-indigo-50'], [class~='bg-indigo-100'], [class~='bg-zinc-50'], [class~='bg-zinc-100'], [class~='bg-red-50'], [class~='bg-red-100'], [class~='bg-yellow-50'], [class~='bg-yellow-100'], [class~='bg-emerald-50'], [class~='bg-emerald-100'], [class~='bg-amber-50'], [class~='bg-amber-100'], [class~='bg-purple-50'], [class~='bg-purple-100'], [class~='bg-slate-50'], [class~='bg-slate-100'], [class~='bg-gray-50'], [class~='bg-gray-100'], [class~='bg-neutral-50'], [class~='bg-neutral-100']),
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='bg-green-50'], [class~='bg-green-100'], [class~='bg-blue-50'], [class~='bg-blue-100'], [class~='bg-orange-50'], [class~='bg-orange-100'], [class~='bg-indigo-50'], [class~='bg-indigo-100'], [class~='bg-zinc-50'], [class~='bg-zinc-100'], [class~='bg-red-50'], [class~='bg-red-100'], [class~='bg-yellow-50'], [class~='bg-yellow-100'], [class~='bg-emerald-50'], [class~='bg-emerald-100'], [class~='bg-amber-50'], [class~='bg-amber-100'], [class~='bg-purple-50'], [class~='bg-purple-100'], [class~='bg-slate-50'], [class~='bg-slate-100'], [class~='bg-gray-50'], [class~='bg-gray-100'], [class~='bg-neutral-50'], [class~='bg-neutral-100']) * {
   color: #111214 !important;
 }
