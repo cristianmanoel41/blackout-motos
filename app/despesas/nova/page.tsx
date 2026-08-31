@@ -169,7 +169,7 @@ export default function NovaDespesaPage() {
       descricao: "",
       valor: "",
       forma_pagamento:
-        "Dinheiro",
+        "Pix",
       pago: true,
       data_pagamento: hoje(),
       observacoes: "",

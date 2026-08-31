@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import {
   Check,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -36,6 +37,24 @@ export type Despesa = {
   data_pagamento: string | null;
   observacoes: string | null;
 };
+
+/* As mesmas do cadastro de despesa. */
+const categorias = [
+  "Aluguel",
+  "Água",
+  "Energia",
+  "Internet",
+  "Funcionários",
+  "Comissão",
+  "Contador",
+  "Impostos",
+  "Anúncios",
+  "Combustível",
+  "Materiais",
+  "Manutenção",
+  "Alimentação",
+  "Outros",
+];
 
 const nomesMeses = [
   "Janeiro",
@@ -86,6 +105,16 @@ export default function DespesasLista({
   >("todas");
   const [busca, setBusca] = useState("");
   const [erro, setErro] = useState("");
+
+  const [editandoId, setEditandoId] = useState("");
+
+  const [formEdicao, setFormEdicao] = useState({
+    data: "",
+    categoria: "",
+    descricao: "",
+    valor: "",
+    observacoes: "",
+  });
   const [ocupado, setOcupado] = useState("");
 
   /* Despesas do período escolhido. */
@@ -174,6 +203,92 @@ export default function DespesasLista({
     { length: 5 },
     (_, i) => hoje.getFullYear() - i
   );
+
+  function abrirEdicao(despesa: Despesa) {
+    setErro("");
+    setEditandoId(despesa.id);
+
+    setFormEdicao({
+      data: (despesa.data || "").slice(0, 10),
+      categoria: despesa.categoria || "Outros",
+      descricao: despesa.descricao || "",
+      valor: String(despesa.valor ?? ""),
+      observacoes: despesa.observacoes || "",
+    });
+  }
+
+  /*
+   * Ao salvar, o lancamento do caixa acompanha: se o valor
+   * da despesa muda e o caixa fica com o valor antigo, o
+   * saldo passa a mentir.
+   */
+  async function salvarEdicao(despesa: Despesa) {
+    setErro("");
+
+    const valor = Number(formEdicao.valor);
+
+    if (!formEdicao.valor || valor <= 0) {
+      setErro("Informe um valor válido.");
+      return;
+    }
+
+    if (!formEdicao.data) {
+      setErro("Informe a data.");
+      return;
+    }
+
+    setOcupado(despesa.id);
+
+    const { error } = await supabase
+      .from("store_expenses")
+      .update({
+        data: formEdicao.data,
+        categoria: formEdicao.categoria,
+        descricao: formEdicao.descricao.trim() || null,
+        valor,
+        observacoes:
+          formEdicao.observacoes.trim() || null,
+      })
+      .eq("id", despesa.id);
+
+    if (error) {
+      setOcupado("");
+      setErro(
+        `Não foi possível salvar: ${error.message}`
+      );
+      return;
+    }
+
+    const descricaoCaixa = `${
+      formEdicao.categoria || "Despesa"
+    } - ${
+      formEdicao.descricao.trim() || "Despesa da loja"
+    }`;
+
+    /*
+     * A despesa em aberto ainda nao aconteceu, entao a data
+     * do caixa acompanha o vencimento. A que ja foi paga
+     * mantem o dia do pagamento.
+     */
+    const camposCaixa: Record<string, unknown> = {
+      valor,
+      descricao: descricaoCaixa,
+    };
+
+    if (!despesa.pago) {
+      camposCaixa.data = formEdicao.data;
+    }
+
+    await supabase
+      .from("cash_transactions")
+      .update(camposCaixa)
+      .eq("origem", "despesa_loja")
+      .eq("origem_id", despesa.id);
+
+    setOcupado("");
+    setEditandoId("");
+    router.refresh();
+  }
 
   async function marcarComoPaga(despesa: Despesa) {
     setErro("");
@@ -297,6 +412,9 @@ export default function DespesasLista({
 
     router.refresh();
   }
+
+  const campoClass =
+    "w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none transition focus:border-dourado";
 
   const seletorClass =
     "rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none transition focus:border-dourado";
@@ -570,10 +688,8 @@ export default function DespesasLista({
                   despesa.data < hojeISO();
 
                 return (
-                  <tr
-                    key={despesa.id}
-                    className="border-b border-grafite-claro/60 last:border-0"
-                  >
+                  <Fragment key={despesa.id}>
+                  <tr className="border-b border-grafite-claro/60">
                     <td className="whitespace-nowrap px-4 py-2.5 text-texto-suave">
                       {formatarData(despesa.data)}
                     </td>
@@ -623,6 +739,17 @@ export default function DespesasLista({
 
                     <td className="px-4 py-2.5">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            abrirEdicao(despesa)
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg border border-grafite-claro px-3 py-1.5 text-xs font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+                        >
+                          <Pencil size={13} />
+                          Editar
+                        </button>
+
                         {!despesa.pago && (
                           <button
                             type="button"
@@ -651,6 +778,139 @@ export default function DespesasLista({
                       </div>
                     </td>
                   </tr>
+
+                  {editandoId === despesa.id && (
+                    <tr className="border-b border-grafite-claro/60">
+                      <td colSpan={7} className="px-4 py-4">
+                        <div className="rounded-xl border border-dourado/30 bg-preto/20 p-4">
+                          <div className="grid gap-3 md:grid-cols-4">
+                            <div>
+                              <label className="mb-1 block text-xs text-texto-suave">
+                                {despesa.pago
+                                  ? "Data"
+                                  : "Vencimento"}
+                              </label>
+
+                              <input
+                                type="date"
+                                value={formEdicao.data}
+                                onChange={(e) =>
+                                  setFormEdicao({
+                                    ...formEdicao,
+                                    data: e.target.value,
+                                  })
+                                }
+                                className={campoClass}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-xs text-texto-suave">
+                                Categoria
+                              </label>
+
+                              <select
+                                value={formEdicao.categoria}
+                                onChange={(e) =>
+                                  setFormEdicao({
+                                    ...formEdicao,
+                                    categoria: e.target.value,
+                                  })
+                                }
+                                className={campoClass}
+                              >
+                                {categorias.map((nome) => (
+                                  <option key={nome} value={nome}>
+                                    {nome}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="mb-1 block text-xs text-texto-suave">
+                                Descrição
+                              </label>
+
+                              <input
+                                value={formEdicao.descricao}
+                                onChange={(e) =>
+                                  setFormEdicao({
+                                    ...formEdicao,
+                                    descricao: e.target.value,
+                                  })
+                                }
+                                className={campoClass}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-xs text-texto-suave">
+                                Valor (R$)
+                              </label>
+
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formEdicao.valor}
+                                onChange={(e) =>
+                                  setFormEdicao({
+                                    ...formEdicao,
+                                    valor: e.target.value,
+                                  })
+                                }
+                                className={campoClass}
+                              />
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <label className="mb-1 block text-xs text-texto-suave">
+                                Observações
+                              </label>
+
+                              <input
+                                value={formEdicao.observacoes}
+                                onChange={(e) =>
+                                  setFormEdicao({
+                                    ...formEdicao,
+                                    observacoes: e.target.value,
+                                  })
+                                }
+                                className={campoClass}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={ocupado === despesa.id}
+                              onClick={() => salvarEdicao(despesa)}
+                              className="rounded-lg bg-dourado px-4 py-2 text-sm font-semibold text-preto transition hover:bg-dourado-claro disabled:opacity-50"
+                            >
+                              {ocupado === despesa.id
+                                ? "Salvando..."
+                                : "Salvar"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setEditandoId("")}
+                              className="rounded-lg border border-grafite-claro px-4 py-2 text-sm text-texto-suave transition hover:border-dourado hover:text-dourado"
+                            >
+                              Cancelar
+                            </button>
+
+                            <p className="ml-auto self-center text-xs text-texto-suave">
+                              Pagamento em Pix
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>
