@@ -413,8 +413,9 @@ export default function DespesasLista({
     router.refresh();
   }
 
+  /* campo-claro: fundo branco e letra preta, como foi pedido. */
   const campoClass =
-    "w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none transition focus:border-dourado";
+    "campo-claro w-full rounded-lg border px-3 py-2 text-sm outline-none transition";
 
   const seletorClass =
     "rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none transition focus:border-dourado";

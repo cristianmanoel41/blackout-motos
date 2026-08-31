@@ -504,7 +504,7 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
   color: #f1f3f5 !important;
 }
 
-main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(input, select, textarea) {
+main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is(input, select, textarea):not(.campo-claro) {
   color: #f1f3f5 !important;
 }
 
@@ -579,14 +579,14 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
 
 /* ---------- CAMPOS DENTRO DO CARD ---------- */
 
-main :is(input, select, textarea) {
+main :is(input, select, textarea):not(.campo-claro) {
   background: #14171a !important;
   color: #f1f3f5 !important;
   border-color: rgba(255,255,255,.14) !important;
   box-shadow: inset 0 1px 2px rgba(0,0,0,.45) !important;
 }
 
-main :is(input, textarea)::placeholder {
+main :is(input, textarea):not(.campo-claro)::placeholder {
   color: #7d838c !important;
 }
 
@@ -652,4 +652,28 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
 main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='bg-green-50'], [class~='bg-green-100'], [class~='bg-blue-50'], [class~='bg-blue-100'], [class~='bg-orange-50'], [class~='bg-orange-100'], [class~='bg-indigo-50'], [class~='bg-indigo-100'], [class~='bg-zinc-50'], [class~='bg-zinc-100'], [class~='bg-red-50'], [class~='bg-red-100'], [class~='bg-yellow-50'], [class~='bg-yellow-100'], [class~='bg-emerald-50'], [class~='bg-emerald-100'], [class~='bg-amber-50'], [class~='bg-amber-100'], [class~='bg-purple-50'], [class~='bg-purple-100'], [class~='bg-slate-50'], [class~='bg-slate-100'], [class~='bg-gray-50'], [class~='bg-gray-100'], [class~='bg-neutral-50'], [class~='bg-neutral-100']),
 main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='bg-green-50'], [class~='bg-green-100'], [class~='bg-blue-50'], [class~='bg-blue-100'], [class~='bg-orange-50'], [class~='bg-orange-100'], [class~='bg-indigo-50'], [class~='bg-indigo-100'], [class~='bg-zinc-50'], [class~='bg-zinc-100'], [class~='bg-red-50'], [class~='bg-red-100'], [class~='bg-yellow-50'], [class~='bg-yellow-100'], [class~='bg-emerald-50'], [class~='bg-emerald-100'], [class~='bg-amber-50'], [class~='bg-amber-100'], [class~='bg-purple-50'], [class~='bg-purple-100'], [class~='bg-slate-50'], [class~='bg-slate-100'], [class~='bg-gray-50'], [class~='bg-gray-100'], [class~='bg-neutral-50'], [class~='bg-neutral-100']) * {
   color: #111214 !important;
+}
+
+
+/*
+ * CAMPO CLARO
+ *
+ * O tema deixa todo campo escuro, com letra clara. Em alguns
+ * lugares o campo precisa ser branco com letra preta - foi o
+ * pedido na edicao de despesa. Quem quiser esse campo marca a
+ * classe campo-claro, e as regras acima abrem excecao para ela.
+ */
+main .campo-claro {
+  background: #ffffff !important;
+  color: #111214 !important;
+  border-color: #d7d9de !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.06) !important;
+}
+
+main .campo-claro::placeholder {
+  color: #6b7280 !important;
+}
+
+main .campo-claro:focus {
+  border-color: #c99712 !important;
 }
