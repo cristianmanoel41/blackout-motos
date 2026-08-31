@@ -71,6 +71,7 @@ export default function DetalheMotoPage() {
 
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -107,6 +108,103 @@ export default function DetalheMotoPage() {
     setForm(motoData);
     setTotalGastos(total);
     setCarregando(false);
+  }
+
+  /*
+   * Apagar a moto. Serve para o cadastro feito errado ou de
+   * teste - nao para dar baixa de moto vendida, que precisa
+   * continuar no historico.
+   *
+   * Antes de apagar, sai tudo que aponta para ela: os gastos
+   * e as saidas que eles geraram no caixa, mais a saida da
+   * propria compra. Senao ficam lancamentos orfaos, somando
+   * dinheiro de uma moto que nao existe mais.
+   */
+  async function excluirMoto() {
+    if (!moto) return;
+
+    setErro("");
+    setMensagem("");
+
+    const { data: vendas } = await supabase
+      .from("sales")
+      .select("id")
+      .eq("motorcycle_id", id)
+      .limit(1);
+
+    if (vendas && vendas.length > 0) {
+      setErro(
+        "Esta moto tem venda registrada e por isso não pode ser apagada. Apague a venda antes, se ela também for teste."
+      );
+      return;
+    }
+
+    const nome = [moto.marca, moto.modelo]
+      .filter(Boolean)
+      .join(" ");
+
+    const confirmar = window.confirm(
+      `Apagar definitivamente a moto ${nome || "sem nome"}? Os gastos dela e os lançamentos do caixa ligados a ela também saem. Não dá para desfazer.`
+    );
+
+    if (!confirmar) return;
+
+    setExcluindo(true);
+
+    const { data: gastos } = await supabase
+      .from("motorcycle_expenses")
+      .select("id")
+      .eq("motorcycle_id", id);
+
+    const idsGastos = (gastos || []).map(
+      (gasto: any) => String(gasto.id)
+    );
+
+    if (idsGastos.length > 0) {
+      await supabase
+        .from("cash_transactions")
+        .delete()
+        .in("origem", ["outro", "gasto_moto"])
+        .in("origem_id", idsGastos);
+
+      await supabase
+        .from("motorcycle_expenses")
+        .delete()
+        .eq("motorcycle_id", id);
+    }
+
+    await supabase
+      .from("cash_transactions")
+      .delete()
+      .in("origem", ["outro", "compra_moto"])
+      .eq("origem_id", String(id));
+
+    const { data: apagadas, error } = await supabase
+      .from("motorcycles")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    setExcluindo(false);
+
+    if (error) {
+      setErro(`Não foi possível apagar: ${error.message}`);
+      return;
+    }
+
+    /*
+     * Sem politica de exclusao no banco, o Postgres nao
+     * devolve erro: ele so nao apaga. O select no fim mostra
+     * o que saiu de verdade.
+     */
+    if (!apagadas || apagadas.length === 0) {
+      setErro(
+        "A moto não foi apagada: seu usuário não tem permissão de exclusão em motos no banco. Me avise que eu passo o SQL para liberar."
+      );
+      return;
+    }
+
+    window.location.href = "/estoque";
   }
 
   function alterarCampo(
@@ -351,6 +449,15 @@ export default function DetalheMotoPage() {
             >
               Contrato de Compra
             </a>
+
+            <button
+              type="button"
+              disabled={excluindo}
+              onClick={excluirMoto}
+              className="ml-auto rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-red-300 transition hover:border-red-700 hover:bg-red-950/30 disabled:opacity-50"
+            >
+              {excluindo ? "Apagando..." : "Apagar Moto"}
+            </button>
           </>
         )}
 
