@@ -49,6 +49,26 @@ type Moto = {
   unico_dono?: boolean | null;
 };
 
+/*
+ * Ha quantos dias a moto esta no patio. A data sozinha obriga
+ * a fazer a conta de cabeca; o numero de dias diz na hora
+ * quem esta encalhando.
+ */
+function diasNoEstoque(dataEntrada?: string | null) {
+  if (!dataEntrada) return null;
+
+  const entrada = new Date(`${String(dataEntrada).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(entrada.getTime())) return null;
+
+  const agora = new Date();
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+  return Math.max(
+    0,
+    Math.floor((hoje.getTime() - entrada.getTime()) / 86400000)
+  );
+}
+
 function normalizarTexto(valor: unknown) {
   return String(valor ?? "")
     .normalize("NFD")
@@ -132,6 +152,7 @@ export default function EstoquePage() {
   const [status, setStatus] = useState("disponivel");
   const [marca, setMarca] = useState("todas");
   const [ano, setAno] = useState("todos");
+  const [ordem, setOrdem] = useState("entrada-recente");
   const [cilindradaSelecionada, setCilindradaSelecionada] =
     useState("todas");
   const [pagina, setPagina] = useState(1);
@@ -405,7 +426,7 @@ export default function EstoquePage() {
   }, [motosBaseFiltradas]);
 
   const motosFiltradas = useMemo(() => {
-    return motosBaseFiltradas.filter((moto) => {
+    const lista = motosBaseFiltradas.filter((moto) => {
 
       const cilindradaMoto = Number(moto.cilindrada || 0);
       const cilindradaValida =
@@ -421,7 +442,24 @@ export default function EstoquePage() {
 
       return passouCilindrada;
     });
-  }, [motosBaseFiltradas, cilindradaSelecionada]);
+
+    /*
+     * Sem data de entrada a moto vai para o fim nas duas
+     * ordens: nao da para dizer ha quanto tempo ela esta ali.
+     */
+    const semData = ordem === "entrada-antiga" ? Infinity : -Infinity;
+
+    const emDias = (moto: Moto) => {
+      const dias = diasNoEstoque(moto.data_entrada);
+      return dias === null ? semData : dias;
+    };
+
+    return [...lista].sort((a, b) =>
+      ordem === "entrada-antiga"
+        ? emDias(b) - emDias(a)
+        : emDias(a) - emDias(b)
+    );
+  }, [motosBaseFiltradas, cilindradaSelecionada, ordem]);
 
   const totalPaginas = Math.max(
     1,
@@ -430,7 +468,7 @@ export default function EstoquePage() {
 
   useEffect(() => {
     setPagina(1);
-  }, [busca, status, marca, ano, cilindradaSelecionada]);
+  }, [busca, status, marca, ano, cilindradaSelecionada, ordem]);
 
   useEffect(() => {
     if (pagina > totalPaginas) setPagina(totalPaginas);
@@ -456,6 +494,7 @@ export default function EstoquePage() {
     setMarca("todas");
     setAno("todos");
     setCilindradaSelecionada("todas");
+    setOrdem("entrada-recente");
     setPagina(1);
   }
 
@@ -649,6 +688,19 @@ export default function EstoquePage() {
               ))}
             </select>
 
+            <select
+              value={ordem}
+              onChange={(e) => setOrdem(e.target.value)}
+              className="rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
+            >
+              <option value="entrada-recente">
+                Entrada: mais recente
+              </option>
+              <option value="entrada-antiga">
+                Entrada: mais tempo parada
+              </option>
+            </select>
+
             <button
               type="button"
               onClick={limparFiltros}
@@ -804,6 +856,16 @@ export default function EstoquePage() {
 
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
                           {formatarData(moto.data_entrada)}
+
+                          {diasNoEstoque(moto.data_entrada) !== null && (
+                            <span className="mt-0.5 block text-xs text-zinc-400">
+                              {diasNoEstoque(moto.data_entrada)}{" "}
+                              {diasNoEstoque(moto.data_entrada) === 1
+                                ? "dia"
+                                : "dias"}{" "}
+                              no estoque
+                            </span>
+                          )}
                         </td>
 
                         <td
