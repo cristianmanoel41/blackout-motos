@@ -307,7 +307,7 @@
 }
 
 .table tbody tr:hover {
-  background: rgba(224,177,41,.055) !important;
+  background: #f1f2f5 !important;
 }
 
 .rankBar {

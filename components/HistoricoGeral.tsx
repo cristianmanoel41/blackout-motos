@@ -17,6 +17,8 @@ export type RegistroHistorico = {
   tipo: "moto" | "capacete";
   data: string;
   hora: string | null;
+  /* Quando a venda foi cadastrada no sistema. */
+  registradoEm?: string | null;
   titulo: string;
   detalhe: string;
   cliente: string;
@@ -71,11 +73,22 @@ function normalizar(valor: string) {
 }
 
 export default function HistoricoGeral({
+  ordemInicial = "venda",
   registros,
 }: {
   registros: RegistroHistorico[];
+  ordemInicial?: "venda" | "registro";
 }) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
+
+  /*
+   * Duas leituras da mesma lista: por data da venda, que e
+   * como o mes fecha, e por ordem de cadastro, que e como
+   * se confere o que acabou de ser lancado.
+   */
+  const [ordem, setOrdem] = useState<
+    "venda" | "registro"
+  >(ordemInicial);
   const [busca, setBusca] = useState("");
 
   const filtrados = useMemo(() => {
@@ -116,6 +129,32 @@ export default function HistoricoGeral({
       total: number;
     }> = [];
 
+    /*
+     * Na ordem de cadastro nao faz sentido quebrar por mes:
+     * a lista vira uma so, do que foi lancado por ultimo para
+     * o mais antigo.
+     */
+    if (ordem === "registro") {
+      const porRegistro = [...filtrados].sort((a, b) =>
+        String(b.registradoEm || "").localeCompare(
+          String(a.registradoEm || "")
+        )
+      );
+
+      return [
+        {
+          chave: "registro",
+          titulo: "Por ordem de cadastro",
+          itens: porRegistro,
+          total: porRegistro.reduce(
+            (soma, item) =>
+              soma + (Number(item.valor) || 0),
+            0
+          ),
+        },
+      ];
+    }
+
     filtrados.forEach((registro) => {
       const chave = String(registro.data || "").slice(0, 7);
 
@@ -146,7 +185,7 @@ export default function HistoricoGeral({
     });
 
     return meses;
-  }, [filtrados]);
+  }, [filtrados, ordem]);
 
   const totais = useMemo(() => {
     return registros.reduce(
@@ -251,6 +290,28 @@ export default function HistoricoGeral({
               </button>
             );
           })}
+
+          <span className="mx-1 hidden w-px self-stretch bg-grafite-claro sm:block" />
+
+          {(
+            [
+              { chave: "venda", nome: "Por data da venda" },
+              { chave: "registro", nome: "Por ordem de cadastro" },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.chave}
+              type="button"
+              onClick={() => setOrdem(item.chave)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                ordem === item.chave
+                  ? "bg-dourado text-preto"
+                  : "border border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+              }`}
+            >
+              {item.nome}
+            </button>
+          ))}
         </div>
 
         <div className="relative w-full lg:max-w-sm">
@@ -345,6 +406,22 @@ export default function HistoricoGeral({
                         {registro.hora}
                       </span>
                     )}
+
+                    {ordem === "registro" &&
+                      registro.registradoEm && (
+                        <span className="mt-1 block text-xs text-dourado">
+                          cadastrada{" "}
+                          {new Date(
+                            registro.registradoEm
+                          ).toLocaleString("pt-BR", {
+                            timeZone: "America/Sao_Paulo",
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
                   </td>
 
                   <td className="px-4 py-3">

@@ -32,6 +32,7 @@ type MotoHistorico = {
   modelo?: string | null;
   versao?: string | null;
   ano_modelo?: string | number | null;
+  cor?: string | null;
   placa?: string | null;
 };
 
@@ -45,7 +46,14 @@ function erro(mensagem: string) {
   );
 }
 
-export default async function HistoricoVendasPage() {
+export default async function HistoricoVendasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    ordem?: string;
+  }>;
+}) {
+  const { ordem } = await searchParams;
   const supabase = await createClient();
 
   // ==========================================
@@ -93,6 +101,7 @@ export default async function HistoricoVendasPage() {
           modelo,
           versao,
           ano_modelo,
+          cor,
           placa
         `
         )
@@ -191,6 +200,7 @@ export default async function HistoricoVendasPage() {
         tipo: "moto",
         data: venda.data_venda || "",
         hora: horaBrasil(venda.hora_venda),
+        registradoEm: venda.criado_em || null,
         titulo: moto
           ? `${moto.marca || ""} ${moto.modelo || ""}`.trim() ||
             "Moto"
@@ -198,6 +208,7 @@ export default async function HistoricoVendasPage() {
         detalhe: [
           moto?.codigo,
           moto?.ano_modelo,
+          moto?.cor,
           moto?.placa,
         ]
           .filter(Boolean)
@@ -265,6 +276,7 @@ export default async function HistoricoVendasPage() {
       tipo: "capacete",
       data: venda.data_venda || "",
       hora: null,
+      registradoEm: venda.criado_em || null,
       titulo,
       detalhe,
       cliente: venda.cliente_nome || "Não informado",
@@ -330,7 +342,14 @@ export default async function HistoricoVendasPage() {
         </div>
       </div>
 
-      <HistoricoGeral registros={registros} />
+      <HistoricoGeral
+        registros={registros}
+        ordemInicial={
+          ordem === "registro"
+            ? "registro"
+            : "venda"
+        }
+      />
     </div>
   );
 }

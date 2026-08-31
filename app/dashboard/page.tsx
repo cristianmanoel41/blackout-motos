@@ -365,7 +365,10 @@ export default async function DashboardPage() {
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card titulo="Motos disponíveis" valor={String(motosDisponiveis ?? 0)} icone={Bike} />
-        <Card titulo="Vendas no mês" valor={String(motosVendidasMes)} icone={ShoppingCart} />
+        {/* Clicar abre a lista na ordem em que as vendas foram cadastradas. */}
+        <Link href="/vendas/historico?ordem=registro" className="block">
+          <Card titulo="Vendas no mês" valor={String(motosVendidasMes)} icone={ShoppingCart} />
+        </Link>
         <Card titulo="Faturamento" valor={formatarMoeda(faturamentoMes)} icone={DollarSign} />
         <Card
           titulo="Lucro líquido"

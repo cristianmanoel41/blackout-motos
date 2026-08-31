@@ -23,10 +23,23 @@ import {
 } from "@/lib/dados/motos";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 
+/*
+ * Unica loja parceira hoje. Vira uma lista quando aparecer
+ * a segunda.
+ */
+const LOJA_PARCEIRA = "Edvaldo";
+
 type TipoEntrada =
   | "estoque_inicial"
   | "compra_nova"
-  | "troca";
+  | "troca"
+  /*
+   * Moto de outra loja do grupo: fica no nosso patio para
+   * vender, mas a loja nao pagou nada por ela. O custo e o
+   * repasse combinado, pago so depois da venda - por isso
+   * ela nao gera saida no caixa ao entrar.
+   */
+  | "outra_loja";
 
 type StatusMoto =
   | "disponivel"
@@ -224,6 +237,10 @@ export default function NovaMotoPage() {
   const ehEstoqueInicial =
     form.tipo_entrada ===
     "estoque_inicial";
+
+  const ehOutraLoja =
+    form.tipo_entrada ===
+    "outra_loja";
 
   const ehTroca =
     form.tipo_entrada ===
@@ -463,10 +480,32 @@ export default function NovaMotoPage() {
     campo: keyof FormMoto,
     valor: string | boolean
   ) {
-    setForm((anterior) => ({
-      ...anterior,
-      [campo]: valor,
-    }));
+    setForm((anterior) => {
+      const atualizado = {
+        ...anterior,
+        [campo]: valor,
+      };
+
+      /*
+       * Moto de outra loja nao tem valor de compra: a loja
+       * nao pagou nada por ela. O que ela custa e o repasse,
+       * lancado como gasto da moto quando for pago - assim o
+       * lucro e o caixa ficam certos sozinhos.
+       */
+      if (
+        campo === "tipo_entrada" &&
+        valor === "outra_loja"
+      ) {
+        atualizado.valor_compra = "0";
+
+        if (!atualizado.fornecedor_nome.trim()) {
+          atualizado.fornecedor_nome =
+            LOJA_PARCEIRA;
+        }
+      }
+
+      return atualizado;
+    });
   }
 
   async function buscarPlaca() {
@@ -1404,6 +1443,12 @@ export default function NovaMotoPage() {
                     nome:
                       "Moto recebida na troca",
                   },
+                  {
+                    valor:
+                      "outra_loja",
+                    nome:
+                      "Moto de outra loja",
+                  },
                 ]}
               />
 
@@ -1424,12 +1469,14 @@ export default function NovaMotoPage() {
 
             <div
               className={`mt-5 rounded-xl border p-4 text-sm ${
-                ehEstoqueInicial
+                ehEstoqueInicial || ehOutraLoja
                   ? "border-blue-800 bg-blue-950/20 text-blue-300"
                   : "border-yellow-800 bg-yellow-950/20 text-yellow-300"
               }`}
             >
-              {ehEstoqueInicial
+              {ehOutraLoja
+                ? `Moto de ${LOJA_PARCEIRA}: a loja não pagou nada por ela, então o valor de compra fica zero e nada sai do caixa agora. Quando ela for vendida e você repassar o dinheiro, lance o repasse em Registrar Gasto, na ficha dela. Aí o lucro e o saldo do caixa ficam certos sozinhos.`
+                : ehEstoqueInicial
                 ? "Estoque inicial: use para motos que já pertenciam à loja antes de você começar a usar o sistema. Pode colocar a data real, mesmo retroativa. O valor não gera saída nova no caixa."
                 : ehTroca
                   ? "Moto na troca: informe o valor total considerado na moto. Se ela ainda estiver financiada, informe também a quitação. O sistema usa somente a diferença como crédito de entrada e lança a quitação no caixa quando a venda for concluída."
@@ -1840,7 +1887,9 @@ export default function NovaMotoPage() {
                 label={
                   ehTroca
                     ? "Valor considerado na troca *"
-                    : "Valor de compra *"
+                    : ehOutraLoja
+                      ? "Valor de compra (fica zero)"
+                      : "Valor de compra *"
                 }
                 type="number"
                 step="0.01"

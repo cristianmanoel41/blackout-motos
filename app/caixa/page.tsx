@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
@@ -8,7 +9,6 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Wallet,
-  Pencil,
   X,
   Check,
   Clock,
@@ -42,14 +42,6 @@ export default function CaixaPage() {
   const [transacoes, setTransacoes] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
-  const [abrirSaldoInicial, setAbrirSaldoInicial] =
-    useState(false);
-
-  const [valorSaldoInicial, setValorSaldoInicial] =
-    useState("");
-
-  const [dataSaldoInicial, setDataSaldoInicial] =
-    useState(hoje());
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -80,22 +72,6 @@ export default function CaixaPage() {
     }
 
     setTransacoes(data || []);
-
-    const saldoInicialExistente = data?.find(
-      (t) =>
-        t.origem === "outro" &&
-        t.descricao === DESCRICAO_SALDO_INICIAL
-    );
-
-    if (saldoInicialExistente) {
-      setValorSaldoInicial(
-        String(saldoInicialExistente.valor || "")
-      );
-
-      setDataSaldoInicial(
-        saldoInicialExistente.data || hoje()
-      );
-    }
 
     setCarregando(false);
   }
@@ -238,92 +214,6 @@ export default function CaixaPage() {
     await carregarCaixa();
   }
 
-  async function salvarSaldoInicial() {
-    setErro("");
-    setMensagem("");
-
-    const valor = Number(valorSaldoInicial);
-
-    if (!valorSaldoInicial || valor < 0) {
-      setErro("Informe um valor válido para o saldo inicial.");
-      return;
-    }
-
-    if (!dataSaldoInicial) {
-      setErro("Informe a data do saldo inicial.");
-      return;
-    }
-
-    const confirmar = window.confirm(
-      transacaoSaldoInicial
-        ? "Deseja alterar o saldo inicial do caixa?"
-        : "Deseja definir este valor como saldo inicial do caixa?"
-    );
-
-    if (!confirmar) return;
-
-    setSalvando(true);
-
-    if (transacaoSaldoInicial) {
-      const { error } = await supabase
-        .from("cash_transactions")
-        .update({
-          data: dataSaldoInicial,
-          tipo: "entrada",
-          origem: "outro",
-          valor,
-          descricao: DESCRICAO_SALDO_INICIAL,
-        })
-        .eq("id", transacaoSaldoInicial.id);
-
-      if (error) {
-        console.error(error);
-
-        setErro(
-          `Erro ao alterar saldo inicial: ${error.message}`
-        );
-
-        setSalvando(false);
-        return;
-      }
-    } else {
-      const { error } = await supabase
-        .from("cash_transactions")
-        .insert({
-          data: dataSaldoInicial,
-          tipo: "entrada",
-          origem: "outro",
-          valor,
-          descricao: DESCRICAO_SALDO_INICIAL,
-        });
-
-      if (error) {
-        console.error(error);
-
-        setErro(
-          `Erro ao registrar saldo inicial: ${error.message}`
-        );
-
-        setSalvando(false);
-        return;
-      }
-    }
-
-    await carregarCaixa();
-
-    setMensagem(
-      transacaoSaldoInicial
-        ? "Saldo inicial alterado com sucesso."
-        : "Saldo inicial definido com sucesso."
-    );
-
-    setAbrirSaldoInicial(false);
-    setSalvando(false);
-
-    setTimeout(() => {
-      setMensagem("");
-    }, 3000);
-  }
 
   if (carregando) {
     return (
@@ -348,25 +238,19 @@ export default function CaixaPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            setAbrirSaldoInicial(!abrirSaldoInicial)
-          }
+        {/*
+          O saldo inicial passou a ser definido na Conciliação,
+          junto da data de início do controle e da separação
+          entre banco, dinheiro e outros. Ter os dois caminhos
+          criava saldo em dobro.
+        */}
+        <Link
+          href="/caixa/conciliacao"
           className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-3 font-semibold text-preto transition hover:bg-dourado-claro"
         >
-          {transacaoSaldoInicial ? (
-            <>
-              <Pencil size={18} />
-              Alterar Saldo Inicial
-            </>
-          ) : (
-            <>
-              <Wallet size={18} />
-              Definir Saldo Inicial
-            </>
-          )}
-        </button>
+          <Wallet size={18} />
+          Conciliação e saldo inicial
+        </Link>
       </div>
 
       {/* MENSAGENS */}
@@ -380,83 +264,6 @@ export default function CaixaPage() {
       {mensagem && (
         <div className="mb-5 rounded-lg border border-green-700 bg-green-950/40 px-4 py-3 text-sm text-green-300">
           {mensagem}
-        </div>
-      )}
-
-      {/* FORMULÁRIO SALDO INICIAL */}
-
-      {abrirSaldoInicial && (
-        <div className="mb-6 rounded-xl border border-dourado/50 bg-grafite p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-dourado">
-                {transacaoSaldoInicial
-                  ? "Alterar Saldo Inicial"
-                  : "Definir Saldo Inicial"}
-              </h2>
-
-              <p className="mt-1 text-xs text-texto-suave">
-                Informe quanto dinheiro a loja possui no caixa
-                no início do controle.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                setAbrirSaldoInicial(false)
-              }
-              className="text-texto-suave hover:text-white"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm text-texto">
-                Data inicial
-              </label>
-
-              <input
-                type="date"
-                value={dataSaldoInicial}
-                onChange={(e) =>
-                  setDataSaldoInicial(e.target.value)
-                }
-                className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-3 text-texto outline-none focus:border-dourado"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm text-texto">
-                Valor atual do caixa (R$)
-              </label>
-
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={valorSaldoInicial}
-                onChange={(e) =>
-                  setValorSaldoInicial(e.target.value)
-                }
-                placeholder="Ex.: 25000.00"
-                className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-3 text-texto outline-none focus:border-dourado"
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={salvarSaldoInicial}
-            disabled={salvando}
-            className="mt-4 rounded-lg bg-dourado px-6 py-3 font-semibold text-preto transition hover:bg-dourado-claro disabled:opacity-60"
-          >
-            {salvando
-              ? "Salvando..."
-              : "Salvar Saldo Inicial"}
-          </button>
         </div>
       )}
 

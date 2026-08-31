@@ -152,9 +152,13 @@ function FormularioNovaDespesa() {
    * Chegando pela ficha da moto, a tela e so daquela moto:
    * nao faz sentido oferecer despesa da loja nem deixar
    * trocar de moto no meio do caminho.
+   *
+   * Vem da URL a cada render, e nao de um estado preenchido
+   * depois, para os cartoes de escolha nao piscarem na tela
+   * antes de sumir.
    */
-  const [motoFixada, setMotoFixada] =
-    useState("");
+  const motoFixada =
+    parametros.get("moto") || "";
 
   const [erro, setErro] =
     useState("");
@@ -239,8 +243,6 @@ function FormularioNovaDespesa() {
     if (motoRecebida) {
       setTipoLancamento("moto");
       setMotoId(motoRecebida);
-      setMotoFixada(motoRecebida);
-
       /* Categoria de loja nao serve para gasto de moto. */
       setForm((anterior) => ({
         ...anterior,

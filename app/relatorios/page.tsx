@@ -89,7 +89,8 @@ export default async function RelatorioMensalPage({
       valor_documentacao,
       documentacao_entra_no_lucro,
       banco,
-      valor_financiado
+      valor_financiado,
+      data_venda
     `)
     .eq('status', 'ativa')
     .gte('data_venda', inicioMes)
@@ -170,11 +171,28 @@ export default async function RelatorioMensalPage({
 
   let custoMotosVendidas = 0
 
+  /*
+   * Lucro moto a moto. O total do mes ja era calculado, mas
+   * so como um numero fechado - nao dava para ver qual moto
+   * estava puxando o resultado para cima ou para baixo.
+   */
+  let lucroPorMoto: Array<{
+    id: string
+    codigo: string
+    nome: string
+    tipoEntrada: string
+    dataVenda: string
+    venda: number
+    compra: number
+    gastos: number
+    lucro: number
+  }> = []
+
   if (idsMotosVendidas.length > 0) {
     const { data: motosVendidas } =
       await supabase
         .from('motorcycles')
-        .select('id, valor_compra')
+        .select('id, codigo, marca, modelo, versao, valor_compra, tipo_entrada')
         .in('id', idsMotosVendidas)
 
     const { data: gastosDessasMotos } =
@@ -199,6 +217,56 @@ export default async function RelatorioMensalPage({
           (gastosPorMoto[moto.id] || 0),
         0
       ) ?? 0
+
+    const mapaMotos = new Map(
+      (motosVendidas || []).map((moto) => [
+        String(moto.id),
+        moto,
+      ])
+    )
+
+    lucroPorMoto = (vendasMes || [])
+      .map((venda) => {
+        const moto = mapaMotos.get(
+          String(venda.motorcycle_id)
+        )
+
+        const compra = Number(
+          moto?.valor_compra || 0
+        )
+
+        const gastos =
+          gastosPorMoto[
+            String(venda.motorcycle_id)
+          ] || 0
+
+        const valorVenda =
+          Number(
+            venda.valor_total_venda || 0
+          )
+
+        return {
+          id: String(venda.id),
+          codigo: moto?.codigo || "—",
+          nome: [
+            moto?.marca,
+            moto?.modelo,
+            moto?.versao,
+          ]
+            .filter(Boolean)
+            .join(" ") || "Moto",
+          tipoEntrada:
+            moto?.tipo_entrada || "",
+          dataVenda:
+            venda.data_venda || "",
+          venda: valorVenda,
+          compra,
+          gastos,
+          lucro:
+            valorVenda - compra - gastos,
+        }
+      })
+      .sort((a, b) => b.lucro - a.lucro)
   }
 
   // =========================================================
@@ -785,6 +853,110 @@ export default async function RelatorioMensalPage({
               lucroLiquido
             ),
             true
+          )}
+        </div>
+
+        {/* LUCRO POR MOTO VENDIDA */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Lucro por moto vendida
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              {nomesMeses[mesSelecionado - 1]} de{" "}
+              {anoSelecionado} · venda menos o valor de compra e
+              os gastos de cada moto
+            </p>
+          </div>
+
+          {lucroPorMoto.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-texto-suave">
+              Nenhuma moto vendida neste período.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-sm">
+                <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
+                  <tr>
+                    <th className="px-5 py-3">Moto</th>
+                    <th className="px-5 py-3">Vendida em</th>
+                    <th className="px-5 py-3 text-right">Venda</th>
+                    <th className="px-5 py-3 text-right">Compra</th>
+                    <th className="px-5 py-3 text-right">Gastos</th>
+                    <th className="px-5 py-3 text-right">Lucro</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {lucroPorMoto.map((item) => {
+                    /*
+                     * Moto sem custo e sem gasto quase sempre e
+                     * lançamento pela metade: ou falta o valor de
+                     * compra, ou falta o repasse à outra loja.
+                     */
+                    const suspeita =
+                      item.compra === 0 &&
+                      item.gastos === 0
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className="border-b border-grafite-claro/60 last:border-0"
+                      >
+                        <td className="px-5 py-3">
+                          <span className="block font-semibold text-texto">
+                            {item.nome}
+                          </span>
+
+                          <span className="text-xs text-texto-suave">
+                            {item.codigo}
+                          </span>
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-3 text-texto-suave">
+                          {item.dataVenda
+                            .split("-")
+                            .reverse()
+                            .join("/")}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-3 text-right text-texto">
+                          {formatarMoeda(item.venda)}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-3 text-right text-texto-suave">
+                          {formatarMoeda(item.compra)}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-3 text-right text-texto-suave">
+                          {formatarMoeda(item.gastos)}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-3 text-right">
+                          <span
+                            className={
+                              item.lucro >= 0
+                                ? "font-bold text-green-400"
+                                : "font-bold text-red-400"
+                            }
+                          >
+                            {formatarMoeda(item.lucro)}
+                          </span>
+
+                          {suspeita && (
+                            <span className="mt-1 block text-xs text-yellow-400">
+                              sem custo lançado
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 

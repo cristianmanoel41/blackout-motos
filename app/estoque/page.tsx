@@ -65,6 +65,8 @@ function rotuloEntrada(tipo?: string | null) {
       return "Troca";
     case "compra_nova":
       return "Compra";
+    case "outra_loja":
+      return "Outra loja";
     case "estoque_inicial":
       return "Estoque inicial";
     default:
@@ -78,6 +80,8 @@ function classeEntrada(tipo?: string | null) {
       return "border-dourado/45 bg-dourado/10 text-dourado";
     case "compra_nova":
       return "border-sky-500/40 bg-sky-500/10 text-sky-300";
+    case "outra_loja":
+      return "border-purple-500/40 bg-purple-500/10 text-purple-300";
     default:
       return "border-zinc-600/50 bg-zinc-500/10 text-zinc-300";
   }
