@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 const supabase = createClient();
 
@@ -108,6 +109,14 @@ export default function EditarVendaPage() {
     setCapacetesVinculados,
   ] = useState<any[]>([]);
 
+  /*
+   * Composicao do pagamento: pix, dinheiro, cartao, moto na
+   * troca. Ficava so na criacao da venda; se o cliente
+   * trocasse a forma depois, nao havia onde corrigir.
+   */
+  const [componentes, setComponentes] =
+    useState<any[]>([]);
+
   const ehFinanciamento =
     formaPagamento ===
     "Financiamento";
@@ -182,6 +191,16 @@ export default function EditarVendaPage() {
           0
         );
     }, [capacetesVinculados]);
+
+  const totalComponentes =
+    useMemo(() => {
+      return componentes.reduce(
+        (total, item) =>
+          total +
+          (Number(item.valor) || 0),
+        0
+      );
+    }, [componentes]);
 
   const totalFinanceiroOperacao =
     (Number(valorVenda) || 0) +
@@ -289,6 +308,50 @@ export default function EditarVendaPage() {
 
     setObservacoes(
       venda.observacoes || ""
+    );
+
+    const {
+      data: componentesData,
+      error: componentesError,
+    } = await supabase
+      .from(
+        "sale_payment_components"
+      )
+      .select("*")
+      .eq("sale_id", id)
+      .order("criado_em", {
+        ascending: true,
+      });
+
+    if (componentesError) {
+      console.error(
+        componentesError
+      );
+    }
+
+    setComponentes(
+      (componentesData || []).map(
+        (item: any) => ({
+          idLocal: String(item.id),
+          tipo: item.tipo || "Pix",
+          destino:
+            item.destino ===
+            "capacete"
+              ? "capacete"
+              : "moto",
+          valor: String(
+            item.valor ?? ""
+          ),
+          parcelas: String(
+            item.parcelas ?? "1"
+          ),
+          motorcycle_id:
+            item.motorcycle_id ||
+            null,
+          observacoes:
+            item.observacoes || null,
+        })
+      )
     );
 
     const idMoto =
@@ -402,6 +465,175 @@ export default function EditarVendaPage() {
     }
 
     setCarregando(false);
+  }
+
+  function atualizarComponente(
+    idLocal: string,
+    campo: string,
+    valor: string
+  ) {
+    setComponentes((atuais) =>
+      atuais.map((item) =>
+        item.idLocal === idLocal
+          ? { ...item, [campo]: valor }
+          : item
+      )
+    );
+  }
+
+  function adicionarComponente() {
+    setComponentes((atuais) => [
+      ...atuais,
+      {
+        idLocal: `novo-${Date.now()}-${atuais.length}`,
+        tipo: "Pix",
+        destino: "moto",
+        valor: "",
+        parcelas: "1",
+        motorcycle_id: null,
+        observacoes: null,
+      },
+    ]);
+  }
+
+  function removerComponente(
+    idLocal: string
+  ) {
+    setComponentes((atuais) =>
+      atuais.filter(
+        (item) =>
+          item.idLocal !== idLocal
+      )
+    );
+  }
+
+  /*
+   * A composicao e regravada inteira: apaga o que estava e
+   * insere o que esta na tela. E o mesmo caminho da criacao da
+   * venda, entao os dois lugares gravam igual.
+   */
+  async function regravarComponentes() {
+    const { error: erroApagar } =
+      await supabase
+        .from(
+          "sale_payment_components"
+        )
+        .delete()
+        .eq("sale_id", id);
+
+    if (erroApagar) throw erroApagar;
+
+    const validos = componentes.filter(
+      (item) =>
+        Number(item.valor) > 0
+    );
+
+    if (validos.length === 0) return;
+
+    const linhas = validos.map(
+      (item) => {
+        const valor =
+          Number(item.valor) || 0;
+
+        const parcelas =
+          item.tipo === "Cartão"
+            ? Number(item.parcelas) || 1
+            : null;
+
+        return {
+          sale_id: id,
+          tipo: item.tipo,
+          destino:
+            item.destino ===
+            "capacete"
+              ? "capacete"
+              : "moto",
+          valor,
+          parcelas,
+          valor_parcela: parcelas
+            ? valor / parcelas
+            : null,
+          motorcycle_id:
+            item.motorcycle_id ||
+            null,
+          observacoes:
+            item.observacoes || null,
+        };
+      }
+    );
+
+    const { error: erroInserir } =
+      await supabase
+        .from(
+          "sale_payment_components"
+        )
+        .insert(linhas);
+
+    if (erroInserir) throw erroInserir;
+  }
+
+  /*
+   * O caixa tem que acompanhar: se o valor da venda muda, o
+   * lancamento antigo fica mentindo. A baixa ja dada e
+   * preservada - so o valor e a descricao sao corrigidos.
+   */
+  async function sincronizarCaixa() {
+    const recebidoDoCliente =
+      componentes
+        .filter(
+          (item) =>
+            item.tipo !==
+            "Moto na troca"
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            (Number(item.valor) || 0),
+          0
+        ) +
+      (Number(transferenciaCliente) ||
+        0);
+
+    const { data: lancamentos } =
+      await supabase
+        .from("cash_transactions")
+        .select("id, valor, descricao, tipo")
+        .eq("origem", "venda")
+        .eq("origem_id", id)
+        .eq("tipo", "entrada")
+        .order("criado_em", {
+          ascending: true,
+        });
+
+    const lista = lancamentos || [];
+
+    const doBanco = lista.find((item: any) =>
+      String(item.descricao || "").startsWith(
+        "Financiamento"
+      )
+    );
+
+    const doCliente = lista.find(
+      (item: any) => item !== doBanco
+    );
+
+    if (doCliente) {
+      await supabase
+        .from("cash_transactions")
+        .update({
+          valor: recebidoDoCliente,
+        })
+        .eq("id", doCliente.id);
+    }
+
+    if (doBanco) {
+      await supabase
+        .from("cash_transactions")
+        .update({
+          valor: valorFinanciado,
+        })
+        .eq("id", doBanco.id);
+    }
   }
 
   async function salvarAlteracoes() {
@@ -554,6 +786,22 @@ export default function EditarVendaPage() {
 
       setErro(
         `Não foi possível salvar: ${error.message}`
+      );
+
+      setSalvando(false);
+      return;
+    }
+
+    try {
+      await regravarComponentes();
+      await sincronizarCaixa();
+    } catch (erroComposicao: any) {
+      console.error(erroComposicao);
+
+      setErro(
+        `A venda foi salva, mas a composição do pagamento não: ${
+          erroComposicao?.message || ""
+        }`
       );
 
       setSalvando(false);
@@ -898,6 +1146,192 @@ export default function EditarVendaPage() {
                   R$ 0,00.
                 </div>
               )}
+          </section>
+
+          {/* COMPOSIÇÃO DO PAGAMENTO */}
+
+          <section>
+            <div className="mb-4 flex flex-col gap-3 border-b border-zinc-800 pb-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-yellow-500">
+                  Composição do pagamento
+                </h2>
+
+                <p className="mt-1 text-xs text-zinc-500">
+                  Como o cliente pagou. Corrija aqui se a forma
+                  mudou depois da venda fechada.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={adicionarComponente}
+                className="rounded-xl border border-yellow-600/60 px-4 py-2 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500/10"
+              >
+                + Adicionar pagamento
+              </button>
+            </div>
+
+            {componentes.length === 0 ? (
+              <p className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
+                Nenhum pagamento detalhado nesta venda.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {componentes.map((item) => {
+                  const ehTroca =
+                    item.tipo === "Moto na troca";
+
+                  return (
+                    <div
+                      key={item.idLocal}
+                      className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+                    >
+                      <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto]">
+                        <div>
+                          <label className="mb-1 block text-xs text-zinc-400">
+                            Forma
+                          </label>
+
+                          <select
+                            value={item.tipo}
+                            disabled={ehTroca}
+                            onChange={(e) =>
+                              atualizarComponente(
+                                item.idLocal,
+                                "tipo",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500 disabled:opacity-60"
+                          >
+                            <option>Pix</option>
+                            <option>Dinheiro</option>
+                            <option>Transferência</option>
+                            <option>Cartão</option>
+                            <option>Moto na troca</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs text-zinc-400">
+                            Valor
+                          </label>
+
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.valor}
+                            onChange={(e) =>
+                              atualizarComponente(
+                                item.idLocal,
+                                "valor",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs text-zinc-400">
+                            {item.tipo === "Cartão"
+                              ? "Parcelas"
+                              : "Refere-se a"}
+                          </label>
+
+                          {item.tipo === "Cartão" ? (
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.parcelas}
+                              onChange={(e) =>
+                                atualizarComponente(
+                                  item.idLocal,
+                                  "parcelas",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                            />
+                          ) : (
+                            <select
+                              value={item.destino}
+                              onChange={(e) =>
+                                atualizarComponente(
+                                  item.idLocal,
+                                  "destino",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                            >
+                              <option value="moto">Moto</option>
+                              <option value="capacete">
+                                Capacete
+                              </option>
+                            </select>
+                          )}
+                        </div>
+
+                        <div className="flex items-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removerComponente(
+                                item.idLocal
+                              )
+                            }
+                            className="w-full rounded-lg border border-zinc-700 px-3 py-2.5 text-sm text-red-300 transition hover:border-red-700 hover:bg-red-950/30 md:w-auto"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+
+                      {ehTroca && item.observacoes && (
+                        <p className="mt-2 text-xs text-zinc-500">
+                          {item.observacoes}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-sm">
+                  <span className="text-zinc-400">
+                    Total da composição
+                  </span>
+
+                  <strong
+                    className={
+                      Math.abs(
+                        totalComponentes -
+                          (Number(valorVenda) || 0)
+                      ) < 0.01
+                        ? "text-green-400"
+                        : "text-yellow-400"
+                    }
+                  >
+                    {formatarMoeda(totalComponentes)}
+                  </strong>
+                </div>
+
+                {Math.abs(
+                  totalComponentes -
+                    (Number(valorVenda) || 0)
+                ) >= 0.01 && (
+                  <p className="text-xs text-yellow-400">
+                    A composição soma{" "}
+                    {formatarMoeda(totalComponentes)} e o valor
+                    da venda é{" "}
+                    {formatarMoeda(Number(valorVenda) || 0)}.
+                    Confira antes de salvar.
+                  </p>
+                )}
+              </div>
+            )}
           </section>
 
           {/* CAPACETES VINCULADOS À VENDA */}
