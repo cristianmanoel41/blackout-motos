@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   FileBarChart,
+  History,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -32,6 +33,7 @@ const menuItems = [
   { label: 'Despesas da Loja', href: '/despesas', icon: Receipt },
   { label: 'Caixa', href: '/caixa', icon: Wallet },
   { label: 'Relatórios', href: '/relatorios', icon: FileBarChart },
+  { label: 'Histórico', href: '/historico', icon: History },
   { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ] as const
 
