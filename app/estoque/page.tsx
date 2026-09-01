@@ -59,6 +59,21 @@ type Moto = {
  * de outra venda, ou ja estava na loja quando o controle
  * comecou. Muda o custo e muda a conversa da venda.
  */
+const NOMES_MESES = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
 function rotuloEntrada(tipo?: string | null) {
   switch (normalizarTexto(tipo)) {
     case "troca":
@@ -178,6 +193,15 @@ function paginasVisiveis(paginaAtual: number, totalPaginas: number) {
 
 export default function EstoquePage() {
   const [motos, setMotos] = useState<Moto[]>([]);
+
+  /*
+   * Quantas motos sairam em cada mes. Vem da tabela de
+   * vendas, porque a moto nao guarda a data em que foi
+   * vendida - so o status.
+   */
+  const [vendasPorMes, setVendasPorMes] = useState<
+    Array<{ rotulo: string; quantidade: number }>
+  >([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
@@ -355,7 +379,61 @@ export default function EstoquePage() {
 
   useEffect(() => {
     carregarEstoque();
+    carregarVendasPorMes();
   }, []);
+
+  async function carregarVendasPorMes() {
+    const agora = new Date();
+
+    /* Seis meses, contando o atual. */
+    const meses = Array.from(
+      { length: 6 },
+      (_, indice) => {
+        const data = new Date(
+          agora.getFullYear(),
+          agora.getMonth() - indice,
+          1
+        );
+
+        const chave = `${data.getFullYear()}-${String(
+          data.getMonth() + 1
+        ).padStart(2, "0")}`;
+
+        return {
+          chave,
+          rotulo: `${
+            NOMES_MESES[data.getMonth()]
+          } de ${data.getFullYear()}`,
+        };
+      }
+    );
+
+    const inicio = `${
+      meses[meses.length - 1].chave
+    }-01`;
+
+    const { data, error } = await supabase
+      .from("sales")
+      .select("data_venda")
+      .eq("status", "ativa")
+      .gte("data_venda", inicio);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setVendasPorMes(
+      meses.map((mes) => ({
+        rotulo: mes.rotulo,
+        quantidade: (data || []).filter(
+          (venda: any) =>
+            String(venda.data_venda).slice(0, 7) ===
+            mes.chave
+        ).length,
+      }))
+    );
+  }
 
   const marcas = useMemo(() => {
     const valores = new Set<string>();
@@ -457,6 +535,39 @@ export default function EstoquePage() {
       total: motosBaseFiltradas.length,
     };
   }, [motosBaseFiltradas]);
+
+  /*
+   * A lista traz o estoque inteiro, entao a contagem sai
+   * daqui mesmo, sem ir ao banco de novo. Ela e do estoque
+   * todo, nao da selecao filtrada.
+   *
+   * "Total em estoque" soma disponivel, reservada e em
+   * manutencao - tudo que a loja tem hoje, sem as vendidas.
+   */
+  const situacoes = useMemo(() => {
+    const contagem = {
+      disponivel: 0,
+      reservada: 0,
+      manutencao: 0,
+      vendida: 0,
+    };
+
+    motos.forEach((moto) => {
+      const situacao = normalizarTexto(moto.status);
+
+      if (situacao in contagem) {
+        contagem[situacao as keyof typeof contagem] += 1;
+      }
+    });
+
+    return {
+      ...contagem,
+      noPatio:
+        contagem.disponivel +
+        contagem.reservada +
+        contagem.manutencao,
+    };
+  }, [motos]);
 
   const motosFiltradas = useMemo(() => {
     const lista = motosBaseFiltradas.filter((moto) => {
@@ -562,6 +673,64 @@ export default function EstoquePage() {
             </Link>
           </div>
         </div>
+
+        <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+              <p className="text-xs text-texto-suave">Total em estoque</p>
+              <p className="mt-1 text-2xl font-bold text-dourado">
+                {situacoes.noPatio}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+              <p className="text-xs text-texto-suave">Disponíveis</p>
+              <p className="mt-1 text-2xl font-bold text-texto">
+                {situacoes.disponivel}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+              <p className="text-xs text-texto-suave">Em manutenção</p>
+              <p className="mt-1 text-2xl font-bold text-texto">
+                {situacoes.manutencao}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+              <p className="text-xs text-texto-suave">Reservadas</p>
+              <p className="mt-1 text-2xl font-bold text-texto">
+                {situacoes.reservada}
+              </p>
+            </div>
+          </div>
+
+          {vendasPorMes.length > 0 && (
+            <div className="mt-4 border-t border-grafite-claro pt-4">
+              <p className="text-xs text-texto-suave">
+                Motos vendidas por mês
+              </p>
+
+              <div className="mt-2 flex flex-wrap gap-2">
+                {vendasPorMes.map((mes) => (
+                  <span
+                    key={mes.rotulo}
+                    className="rounded-lg border border-grafite-claro bg-preto/40 px-3 py-2 text-sm text-texto"
+                  >
+                    {mes.rotulo}:{" "}
+                    <strong className="text-dourado">
+                      {mes.quantidade}
+                    </strong>
+                  </span>
+                ))}
+              </div>
+
+              <p className="mt-3 text-xs text-texto-suave">
+                Vendidas desde o início: {situacoes.vendida}
+              </p>
+            </div>
+          )}
+        </section>
 
         <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
