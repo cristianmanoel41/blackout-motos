@@ -4156,7 +4156,29 @@ export default function VendasPage() {
                 }
                 destaque
               />
+
+              <Resumo
+                titulo="Entra no caixa"
+                valor={
+                  totalPagamentosCaixa +
+                  (Number(
+                    transferenciaCliente
+                  ) || 0) +
+                  valorFinanciado
+                }
+              />
             </div>
+
+            <p className="mt-3 text-xs text-zinc-500">
+              <strong className="text-zinc-400">
+                Entra no caixa
+              </strong>{" "}
+              é o dinheiro que passa pela conta: o que o cliente
+              paga, a documentação e o que o banco deposita. Moto
+              na troca não entra, porque é mercadoria. E a
+              documentação entra no caixa mas não é lucro — ela
+              paga a vistoria e o despachante.
+            </p>
           </section>
 
           <button
