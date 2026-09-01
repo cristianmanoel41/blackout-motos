@@ -9,6 +9,12 @@ import {
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
+import {
+  CUSTOS_PADRAO_VENDA,
+  TOTAL_PADRAO_VENDA,
+  fechamentoDaQuinzena,
+  empresaDoTipo,
+} from "@/lib/dados/documentacao";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import {
   BANCOS_FINANCIAMENTO,
@@ -246,6 +252,16 @@ export default function VendasPage() {
     useState(hoje());
 
   /*
+   * Vistoria de transferência e honorário do despachante
+   * existem em toda venda, sempre pelo mesmo valor. Ja vem
+   * marcado para nao precisar digitar de novo a cada moto.
+   */
+  const [
+    custosDocPadrao,
+    setCustosDocPadrao,
+  ] = useState(true);
+
+  /*
    * Financiamento sem entrada: o banco financia o valor
    * inteiro da moto e o cliente nao entrega nada na loja.
    * Acontece, e ate aqui a venda travava pedindo uma forma
@@ -329,10 +345,15 @@ export default function VendasPage() {
   }, [usuario]);
 
   useEffect(() => {
+    const configurado =
+      valorTransferenciaConfigurado();
+
     setValorTransferencia(
-      String(
-        valorTransferenciaConfigurado()
-      )
+      String(configurado)
+    );
+
+    setTransferenciaCliente(
+      String(configurado)
     );
   }, []);
 
@@ -2206,6 +2227,85 @@ export default function VendasPage() {
       }
 
       /*
+       * CUSTOS PADRÃO DA DOCUMENTAÇÃO
+       *
+       * Saem do caixa de verdade e ficam ligados a venda,
+       * na tabela propria - nao em despesa da loja, senao
+       * seriam descontados duas vezes do lucro.
+       */
+      if (custosDocPadrao) {
+        const {
+          data: custosCriados,
+          error: erroCustosDoc,
+        } = await supabase
+          .from(
+            "sale_documentation_costs"
+          )
+          .insert(
+            CUSTOS_PADRAO_VENDA.map(
+              (padrao) => ({
+                sale_id:
+                  vendaCriada.id,
+                tipo: padrao.tipo,
+                descricao:
+                  padrao.descricao,
+                valor: padrao.valor,
+                data: dataVenda,
+              })
+            )
+          )
+          .select("id, tipo, valor, descricao");
+
+        if (erroCustosDoc) {
+          console.error(
+            "Erro ao lancar os custos padrao da documentacao:",
+            erroCustosDoc
+          );
+        } else if (custosCriados) {
+          const {
+            error: erroCaixaDoc,
+          } = await supabase
+            .from(
+              "cash_transactions"
+            )
+            .insert(
+              custosCriados.map(
+                (custo: any) => ({
+                  data:
+                    fechamentoDaQuinzena(
+                      dataVenda
+                    ),
+                  tipo: "saida",
+                  /* Vistoria e despachante sao empresas distintas. */
+                  origem:
+                    custo.tipo === "vistoria"
+                      ? "vistoria"
+                      : "documentacao",
+                  origem_id: custo.id,
+                  valor:
+                    Number(
+                      custo.valor
+                    ) || 0,
+                  descricao: `${
+                    custo.descricao
+                  } - ${identificacaoVenda}`,
+                  confirmado: false,
+                  data_confirmacao:
+                    null,
+                })
+              )
+            );
+
+          if (erroCaixaDoc) {
+            console.error(
+              "Erro ao lancar no caixa os custos da documentacao:",
+              erroCaixaDoc
+            );
+          }
+        }
+      }
+
+      /*
        * VISTORIA DE TRANSFERÊNCIA:
        * fica guardada na moto e vinculada a esta venda.
        * Se o envio falhar, a venda continua salva - só
@@ -3870,7 +3970,7 @@ export default function VendasPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
-                  Transferência paga pelo cliente
+                  Valor recebido para documentação
                 </label>
 
                 <input
@@ -3888,6 +3988,29 @@ export default function VendasPage() {
                   placeholder="0,00"
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+
+                <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-zinc-400">
+                  <input
+                    type="checkbox"
+                    checked={custosDocPadrao}
+                    onChange={(e) =>
+                      setCustosDocPadrao(
+                        e.target.checked
+                      )
+                    }
+                    className="mt-0.5 h-4 w-4 accent-yellow-500"
+                  />
+
+                  <span>
+                    Deixar pendente a vistoria de
+                    transferência e a documentação desta moto,{" "}
+                    <strong className="text-yellow-500">
+                      {moeda(TOTAL_PADRAO_VENDA)}
+                    </strong>
+                    . O valor é uma previsão: você corrige na
+                    baixa, com o que a Alvo e a Cris cobrarem.
+                  </span>
+                </label>
               </div>
 
               <div>

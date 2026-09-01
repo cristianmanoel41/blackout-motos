@@ -16,8 +16,40 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { OPERADORA_CARTAO } from "@/lib/dados/financeiras";
+import {
+  CUSTOS_PADRAO_VENDA,
+  TOTAL_PADRAO_VENDA,
+  empresaDoTipo,
+  valorPadraoDoTipo,
+} from "@/lib/dados/documentacao";
 
 const supabase = createClient();
+
+/*
+ * O cliente entrega um valor para a loja cuidar da
+ * documentacao. Esse dinheiro nao e lucro: ele existe para
+ * pagar estes custos. O que sobrar e que e da loja.
+ */
+const tiposCustoDocumentacao = [
+  {
+    chave: "vistoria",
+    nome: "Vistoria de transferência",
+  },
+  { chave: "taxas", nome: "Taxas / documentação" },
+  {
+    chave: "despachante",
+    nome: "Documentação",
+  },
+  { chave: "outros", nome: "Outros custos" },
+];
+
+function nomeTipoCusto(chave: string) {
+  return (
+    tiposCustoDocumentacao.find(
+      (item) => item.chave === chave
+    )?.nome || chave
+  );
+}
 
 const formasPagamento = [
   "Pix",
@@ -121,6 +153,20 @@ export default function EditarVendaPage() {
   const [componentes, setComponentes] =
     useState<any[]>([]);
 
+  /* Custos da documentação desta venda. */
+  const [custosDoc, setCustosDoc] =
+    useState<any[]>([]);
+
+  const [docConcluida, setDocConcluida] =
+    useState(false);
+
+  const [novoCusto, setNovoCusto] = useState({
+    tipo: "vistoria",
+    descricao: "",
+    valor: "",
+    data: "",
+  });
+
   const ehFinanciamento =
     formaPagamento ===
     "Financiamento";
@@ -205,6 +251,38 @@ export default function EditarVendaPage() {
         0
       );
     }, [componentes]);
+
+  /* Quanto vai para cada empresa. */
+  const custosPorEmpresa = useMemo(() => {
+    const mapa: Record<string, number> = {};
+
+    custosDoc.forEach((item) => {
+      const empresa = empresaDoTipo(item.tipo);
+
+      mapa[empresa] =
+        (mapa[empresa] || 0) +
+        (Number(item.valor) || 0);
+    });
+
+    return mapa;
+  }, [custosDoc]);
+
+  const totalCustosDoc = useMemo(() => {
+    return custosDoc.reduce(
+      (total, item) =>
+        total + (Number(item.valor) || 0),
+      0
+    );
+  }, [custosDoc]);
+
+  /*
+   * Sobrou dinheiro da documentação, vira lucro da loja.
+   * Faltou, sai do lucro. Mas só depois de concluída: até lá
+   * ainda pode aparecer custo.
+   */
+  const resultadoDoc =
+    (Number(transferenciaCliente) || 0) -
+    totalCustosDoc;
 
   const totalFinanceiroOperacao =
     (Number(valorVenda) || 0) +
@@ -313,6 +391,26 @@ export default function EditarVendaPage() {
     setObservacoes(
       venda.observacoes || ""
     );
+
+    setDocConcluida(
+      Boolean(venda.documentacao_concluida)
+    );
+
+    setNovoCusto((atual) => ({
+      ...atual,
+      data:
+        atual.data ||
+        venda.data_venda ||
+        "",
+    }));
+
+    const { data: custosData } = await supabase
+      .from("sale_documentation_costs")
+      .select("*")
+      .eq("sale_id", id)
+      .order("data", { ascending: true });
+
+    setCustosDoc(custosData || []);
 
     const {
       data: componentesData,
@@ -681,6 +779,23 @@ export default function EditarVendaPage() {
 
     setExcluindo(true);
 
+    const { data: custosDaVenda } = await supabase
+      .from("sale_documentation_costs")
+      .select("id")
+      .eq("sale_id", id);
+
+    const idsCustos = (custosDaVenda || []).map(
+      (custo: any) => String(custo.id)
+    );
+
+    if (idsCustos.length > 0) {
+      await supabase
+        .from("cash_transactions")
+        .delete()
+        .in("origem", ["documentacao", "vistoria"])
+        .in("origem_id", idsCustos);
+    }
+
     await supabase
       .from("cash_transactions")
       .delete()
@@ -730,6 +845,249 @@ export default function EditarVendaPage() {
     setExcluindo(false);
 
     window.location.href = "/vendas/historico";
+  }
+
+  /*
+   * Cada custo da documentação sai do caixa de verdade,
+   * entao ele nasce com o lancamento junto. Nao vai para
+   * store_expenses: la ele seria descontado do lucro uma
+   * segunda vez.
+   */
+  async function adicionarCusto() {
+    setErro("");
+
+    const valor = Number(novoCusto.valor);
+
+    if (!novoCusto.valor || valor <= 0) {
+      setErro("Informe o valor do custo.");
+      return;
+    }
+
+    if (!novoCusto.data) {
+      setErro("Informe a data do custo.");
+      return;
+    }
+
+    setSalvando(true);
+
+    const { data: criado, error } = await supabase
+      .from("sale_documentation_costs")
+      .insert({
+        sale_id: id,
+        tipo: novoCusto.tipo,
+        descricao:
+          novoCusto.descricao.trim() || null,
+        valor,
+        data: novoCusto.data,
+      })
+      .select("*")
+      .single();
+
+    if (error || !criado) {
+      setSalvando(false);
+      setErro(
+        `Não foi possível lançar o custo: ${
+          error?.message || ""
+        }`
+      );
+      return;
+    }
+
+    const { error: erroCaixa } = await supabase
+      .from("cash_transactions")
+      .insert({
+        data: novoCusto.data,
+        tipo: "saida",
+        origem:
+          novoCusto.tipo === "vistoria"
+            ? "vistoria"
+            : "documentacao",
+        origem_id: criado.id,
+        valor,
+        descricao: `${
+          novoCusto.descricao.trim() ||
+          nomeTipoCusto(novoCusto.tipo)
+        } - ${motoNome || "Venda"}`,
+        /*
+         * Nasce pendente: o dinheiro so sai quando a
+         * documentacao vai para o despachante. A baixa e dada
+         * no Caixa, na data do pagamento.
+         */
+        confirmado: false,
+        data_confirmacao: null,
+      });
+
+    setSalvando(false);
+
+    if (erroCaixa) {
+      setErro(
+        `Custo lançado, mas não entrou no caixa: ${erroCaixa.message}`
+      );
+    }
+
+    setCustosDoc((atuais) => [
+      ...atuais,
+      criado,
+    ]);
+
+    setNovoCusto((atual) => ({
+      ...atual,
+      descricao: "",
+      valor: "",
+    }));
+  }
+
+  /*
+   * Toda venda tem a vistoria de transferencia e o honorario
+   * do despachante. Em vez de digitar os dois toda vez, o
+   * botao lanca o par de uma vez, e o que ja estiver lancado
+   * nao repete.
+   */
+  async function lancarCustosPadrao() {
+    setErro("");
+
+    const faltando = CUSTOS_PADRAO_VENDA.filter(
+      (padrao) =>
+        !custosDoc.some(
+          (item) => item.tipo === padrao.tipo
+        )
+    );
+
+    if (faltando.length === 0) {
+      setErro(
+        "Os custos padrão desta venda já estão lançados."
+      );
+      return;
+    }
+
+    const data =
+      novoCusto.data ||
+      dataVenda ||
+      new Date().toISOString().slice(0, 10);
+
+    setSalvando(true);
+
+    const { data: criados, error } = await supabase
+      .from("sale_documentation_costs")
+      .insert(
+        faltando.map((padrao) => ({
+          sale_id: id,
+          tipo: padrao.tipo,
+          descricao: padrao.descricao,
+          valor: padrao.valor,
+          data,
+        }))
+      )
+      .select("*");
+
+    if (error || !criados) {
+      setSalvando(false);
+      setErro(
+        `Não foi possível lançar: ${error?.message || ""}`
+      );
+      return;
+    }
+
+    const { error: erroCaixa } = await supabase
+      .from("cash_transactions")
+      .insert(
+        criados.map((custo: any) => ({
+          data,
+          tipo: "saida",
+          origem:
+            custo.tipo === "vistoria"
+              ? "vistoria"
+              : "documentacao",
+          origem_id: custo.id,
+          valor: Number(custo.valor) || 0,
+          descricao: `${
+            custo.descricao ||
+            nomeTipoCusto(custo.tipo)
+          } - ${motoNome || "Venda"}`,
+          confirmado: false,
+          data_confirmacao: null,
+        }))
+      );
+
+    setSalvando(false);
+
+    if (erroCaixa) {
+      setErro(
+        `Custos lançados, mas não entraram no caixa: ${erroCaixa.message}`
+      );
+    }
+
+    setCustosDoc((atuais) => [
+      ...atuais,
+      ...criados,
+    ]);
+  }
+
+  async function removerCusto(custo: any) {
+    const confirmar = window.confirm(
+      `Remover ${nomeTipoCusto(custo.tipo)} de ${formatarMoeda(
+        custo.valor
+      )}? A saída do caixa sai junto.`
+    );
+
+    if (!confirmar) return;
+
+    setSalvando(true);
+
+    await supabase
+      .from("cash_transactions")
+      .delete()
+      .in("origem", ["documentacao", "vistoria"])
+      .eq("origem_id", custo.id);
+
+    const { error } = await supabase
+      .from("sale_documentation_costs")
+      .delete()
+      .eq("id", custo.id);
+
+    setSalvando(false);
+
+    if (error) {
+      setErro(
+        `Não foi possível remover: ${error.message}`
+      );
+      return;
+    }
+
+    setCustosDoc((atuais) =>
+      atuais.filter(
+        (item) => item.id !== custo.id
+      )
+    );
+  }
+
+  async function alternarConclusaoDoc() {
+    const novoEstado = !docConcluida;
+
+    setSalvando(true);
+
+    const { error } = await supabase
+      .from("sales")
+      .update({
+        documentacao_concluida: novoEstado,
+        documentacao_concluida_em: novoEstado
+          ? new Date()
+              .toISOString()
+              .slice(0, 10)
+          : null,
+      })
+      .eq("id", id);
+
+    setSalvando(false);
+
+    if (error) {
+      setErro(
+        `Não foi possível concluir: ${error.message}`
+      );
+      return;
+    }
+
+    setDocConcluida(novoEstado);
   }
 
   async function salvarAlteracoes() {
@@ -1631,18 +1989,32 @@ export default function EditarVendaPage() {
             )}
           </section>
 
-          {/* TRANSFERÊNCIA */}
+          {/* CONTROLE DA DOCUMENTAÇÃO */}
 
           <section>
-            <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
-              Transferência
-            </h2>
+            <div className="mb-4 border-b border-zinc-800 pb-3">
+              <h2 className="text-lg font-semibold text-yellow-500">
+                Controle da Documentação
+              </h2>
+
+              <p className="mt-1 text-xs text-zinc-500">
+                O valor recebido do cliente entra no caixa, mas
+                não é lucro: ele paga vistoria, taxas e
+                despachante. O lucro é o que sobra.
+              </p>
+
+              <p className="mt-1 text-xs text-zinc-500">
+                Cada custo lançado aqui fica pendente no caixa
+                e recebe baixa quando a documentação for para o
+                despachante.
+              </p>
+            </div>
 
             <div className="grid gap-4 md:grid-cols-2">
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
-                  Paga pelo cliente
+                  Valor recebido para documentação
                 </label>
 
                 <input
@@ -1663,7 +2035,7 @@ export default function EditarVendaPage() {
 
               <div>
                 <label className="mb-2 block text-sm text-zinc-300">
-                  Paga pela loja
+                  Transferência paga pela loja
                 </label>
 
                 <input
@@ -1680,9 +2052,253 @@ export default function EditarVendaPage() {
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+
+                <p className="mt-1 text-xs text-zinc-500">
+                  Campo antigo. Se você lançar os custos abaixo,
+                  deixe este zerado para não sair do caixa duas
+                  vezes.
+                </p>
               </div>
 
             </div>
+
+            {/* A CONTA */}
+
+            <div className="mt-5 rounded-xl border border-yellow-700/40 bg-yellow-950/10 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-sm text-zinc-300">
+                  Recebido do cliente
+                </span>
+
+                <strong className="text-lg text-green-400">
+                  {formatarMoeda(
+                    Number(transferenciaCliente) || 0
+                  )}
+                </strong>
+              </div>
+
+              {Object.entries(custosPorEmpresa).map(
+                ([empresa, total]) => (
+                  <div
+                    key={empresa}
+                    className="mt-2 flex flex-wrap items-center justify-between gap-3"
+                  >
+                    <span className="text-sm text-zinc-300">
+                      Pago à {empresa.toLowerCase()}
+                    </span>
+
+                    <strong className="text-lg text-red-300">
+                      - {formatarMoeda(total)}
+                    </strong>
+                  </div>
+                )
+              )}
+
+              {custosDoc.length === 0 && (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm text-zinc-300">
+                    Gasto com a documentação
+                  </span>
+
+                  <strong className="text-lg text-red-300">
+                    - {formatarMoeda(0)}
+                  </strong>
+                </div>
+              )}
+
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-yellow-700/30 pt-3">
+                <span className="font-bold text-white">
+                  {resultadoDoc >= 0
+                    ? "Sobra para a loja"
+                    : "Faltou, sai do lucro"}
+                </span>
+
+                <strong
+                  className={
+                    resultadoDoc >= 0
+                      ? "text-2xl font-black text-green-400"
+                      : "text-2xl font-black text-red-400"
+                  }
+                >
+                  {formatarMoeda(resultadoDoc)}
+                </strong>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={salvando}
+                  onClick={alternarConclusaoDoc}
+                  className={
+                    docConcluida
+                      ? "rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-400 disabled:opacity-50"
+                      : "rounded-lg bg-yellow-500 px-4 py-2.5 text-sm font-bold text-black transition hover:bg-yellow-400 disabled:opacity-50"
+                  }
+                >
+                  {docConcluida
+                    ? "Reabrir documentação"
+                    : "Concluir documentação"}
+                </button>
+
+                <p className="text-xs text-zinc-500">
+                  {docConcluida
+                    ? "Concluída: a sobra já entra no lucro."
+                    : "Enquanto estiver em aberto, a sobra não entra no lucro."}
+                </p>
+              </div>
+            </div>
+            {/* DETALHE DOS CUSTOS */}
+
+            <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-zinc-200">
+                  Custos da documentação
+                </p>
+
+                <button
+                  type="button"
+                  disabled={salvando}
+                  onClick={lancarCustosPadrao}
+                  className="rounded-lg border border-yellow-600/60 px-3 py-1.5 text-xs font-semibold text-yellow-400 transition hover:bg-yellow-500/10 disabled:opacity-50"
+                >
+                  Lançar custos padrão ({formatarMoeda(
+                    TOTAL_PADRAO_VENDA
+                  )})
+                </button>
+              </div>
+
+              {custosDoc.length === 0 ? (
+                <p className="text-sm text-zinc-500">
+                  Nenhum custo lançado ainda.
+                </p>
+              ) : (
+                <div className="mb-4 space-y-2">
+                  {custosDoc.map((custo) => (
+                    <div
+                      key={custo.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2.5"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-200">
+                          {nomeTipoCusto(custo.tipo)}
+                        </p>
+
+                        <p className="text-xs text-zinc-500">
+                          {String(custo.data)
+                            .slice(0, 10)
+                            .split("-")
+                            .reverse()
+                            .join("/")}
+                          {custo.descricao
+                            ? ` · ${custo.descricao}`
+                            : ""}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-red-300">
+                          - {formatarMoeda(custo.valor)}
+                        </span>
+
+                        <button
+                          type="button"
+                          disabled={salvando}
+                          onClick={() =>
+                            removerCusto(custo)
+                          }
+                          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-red-300 transition hover:border-red-700 hover:bg-red-950/30 disabled:opacity-50"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid gap-3 md:grid-cols-[1.1fr_1.4fr_0.8fr_0.9fr_auto]">
+                <select
+                  value={novoCusto.tipo}
+                  onChange={(e) => {
+                    /*
+                     * A tabela de valores e fixa, entao o campo
+                     * ja vem preenchido. Continua editavel: o
+                     * valor sugerido nao trava nada.
+                     */
+                    const padrao = valorPadraoDoTipo(
+                      e.target.value
+                    );
+
+                    setNovoCusto({
+                      ...novoCusto,
+                      tipo: e.target.value,
+                      valor: padrao
+                        ? String(padrao)
+                        : novoCusto.valor,
+                    });
+                  }}
+                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                >
+                  {tiposCustoDocumentacao.map((item) => (
+                    <option
+                      key={item.chave}
+                      value={item.chave}
+                    >
+                      {item.nome}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  value={novoCusto.descricao}
+                  onChange={(e) =>
+                    setNovoCusto({
+                      ...novoCusto,
+                      descricao: e.target.value,
+                    })
+                  }
+                  placeholder="Descrição (opcional)"
+                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                />
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={novoCusto.valor}
+                  onChange={(e) =>
+                    setNovoCusto({
+                      ...novoCusto,
+                      valor: e.target.value,
+                    })
+                  }
+                  placeholder="Valor"
+                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                />
+
+                <input
+                  type="date"
+                  value={novoCusto.data}
+                  onChange={(e) =>
+                    setNovoCusto({
+                      ...novoCusto,
+                      data: e.target.value,
+                    })
+                  }
+                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
+                />
+
+                <button
+                  type="button"
+                  disabled={salvando}
+                  onClick={adicionarCusto}
+                  className="rounded-lg border border-yellow-600/60 px-4 py-2.5 text-sm font-semibold text-yellow-400 transition hover:bg-yellow-500/10 disabled:opacity-50"
+                >
+                  Lançar
+                </button>
+              </div>
+            </div>
+
           </section>
 
           <section>

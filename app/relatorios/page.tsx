@@ -86,8 +86,8 @@ export default async function RelatorioMensalPage({
       motorcycle_id,
       vendedor,
       valor_total_venda,
-      valor_documentacao,
-      documentacao_entra_no_lucro,
+      transferencia_cliente,
+      documentacao_concluida,
       banco,
       valor_financiado,
       data_venda
@@ -150,15 +150,57 @@ export default async function RelatorioMensalPage({
       (venda) => !normalizarVendedor(venda.vendedor)
     ).length ?? 0
 
-  const receitaDocNoLucro =
+  const idsVendasMes =
+    vendasMes?.map((venda) => venda.id) ?? []
+
+  const custosDocPorVenda: Record<string, number> = {}
+
+  if (idsVendasMes.length > 0) {
+    const { data: custosDoc } =
+      await supabase
+        .from('sale_documentation_costs')
+        .select('sale_id, valor')
+        .in('sale_id', idsVendasMes)
+
+    custosDoc?.forEach((custo) => {
+      custosDocPorVenda[String(custo.sale_id)] =
+        (custosDocPorVenda[String(custo.sale_id)] || 0) +
+        Number(custo.valor || 0)
+    })
+  }
+
+  const resultadoDocumentacao =
+    vendasMes?.reduce((soma, venda) => {
+      if (!venda.documentacao_concluida) {
+        return soma
+      }
+
+      const recebido = Number(
+        venda.transferencia_cliente || 0
+      )
+
+      const custos =
+        custosDocPorVenda[String(venda.id)] || 0
+
+      return soma + (recebido - custos)
+    }, 0) ?? 0
+
+  const totalRecebidoDocumentacao =
     vendasMes?.reduce(
       (soma, venda) =>
         soma +
-        (venda.documentacao_entra_no_lucro
-          ? Number(venda.valor_documentacao || 0)
-          : 0),
+        Number(venda.transferencia_cliente || 0),
       0
     ) ?? 0
+
+  const totalCustosDocumentacao = Object.values(
+    custosDocPorVenda
+  ).reduce((soma, valor) => soma + valor, 0)
+
+  const documentacaoEmAberto =
+    vendasMes?.filter(
+      (venda) => !venda.documentacao_concluida
+    ).length ?? 0
 
   // =========================================================
   // CUSTO DAS MOTOS VENDIDAS
@@ -358,9 +400,6 @@ export default async function RelatorioMensalPage({
   // CARTÃO (OPERADORA)
   // =========================================================
 
-  const idsVendasMes =
-    vendasMes?.map((venda) => venda.id) ?? []
-
   let cartaoMotos = { quantidade: 0, valor: 0 }
 
   if (idsVendasMes.length > 0) {
@@ -527,7 +566,7 @@ export default async function RelatorioMensalPage({
    */
   const lucroBruto =
     faturamento +
-    receitaDocNoLucro +
+    resultadoDocumentacao +
     resumoCapacetes.receitaAvulsa -
     custoMotosVendidas -
     resumoCapacetes.custo
@@ -829,6 +868,29 @@ export default async function RelatorioMensalPage({
             'Gastos das motos (mês)',
             formatarMoeda(
               totalGastosMotosMes
+            )
+          )}
+
+          {linha(
+            'Documentação recebida',
+            formatarMoeda(
+              totalRecebidoDocumentacao
+            )
+          )}
+
+          {linha(
+            'Custos da documentação',
+            formatarMoeda(
+              totalCustosDocumentacao
+            )
+          )}
+
+          {linha(
+            documentacaoEmAberto > 0
+              ? `Resultado da documentação (${documentacaoEmAberto} em aberto, fora da conta)`
+              : 'Resultado da documentação',
+            formatarMoeda(
+              resultadoDocumentacao
             )
           )}
 

@@ -15,6 +15,11 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
+import {
+  CUSTOS_PADRAO_COMPRA,
+  TOTAL_PADRAO_COMPRA,
+  fechamentoDaQuinzena,
+} from "@/lib/dados/documentacao";
 import CampoComBusca from "@/components/CampoComBusca";
 import {
   MARCAS,
@@ -66,6 +71,29 @@ type FormMoto = {
   possui_chave_reserva: boolean;
   unico_dono: boolean;
   lavagem_padrao: boolean;
+
+  /*
+   * Vistoria cautelar e recibo de compra e venda: existem em
+   * toda compra, sempre pelo mesmo valor. Entram como gasto
+   * da moto, para o custo dela ficar completo.
+   */
+  documentacao_padrao: boolean;
+
+  /*
+   * Débitos que vêm com a moto. Sao obrigatorios de
+   * responder: uma moto comprada com IPVA atrasado sem
+   * ninguem perceber vira prejuizo escondido no custo dela.
+   *
+   * "" = ainda nao respondido, e o que trava o salvamento.
+   */
+  possui_ipva: "" | "sim" | "nao";
+  valor_ipva: string;
+
+  possui_multas: "" | "sim" | "nao";
+  valor_multas: string;
+
+  possui_licenciamento: "" | "sim" | "nao";
+  valor_licenciamento: string;
 
   valor_compra: string;
   preco_anunciado: string;
@@ -139,6 +167,16 @@ const formInicial: FormMoto = {
   possui_chave_reserva: false,
   unico_dono: false,
   lavagem_padrao: true,
+  documentacao_padrao: true,
+
+  possui_ipva: "",
+  valor_ipva: "",
+
+  possui_multas: "",
+  valor_multas: "",
+
+  possui_licenciamento: "",
+  valor_licenciamento: "",
 
   valor_compra: "",
   preco_anunciado: "",
@@ -629,6 +667,49 @@ export default function NovaMotoPage() {
         "Informe a marca da moto."
       );
       return;
+    }
+
+    /*
+     * Débitos: nao basta deixar em branco. Cada um precisa
+     * de um sim ou um nao, e o sim precisa de valor.
+     */
+    const debitos = [
+      {
+        possui: form.possui_ipva,
+        valor: form.valor_ipva,
+        nome: "IPVA",
+      },
+      {
+        possui: form.possui_multas,
+        valor: form.valor_multas,
+        nome: "multas",
+      },
+      {
+        possui:
+          form.possui_licenciamento,
+        valor:
+          form.valor_licenciamento,
+        nome: "licenciamento",
+      },
+    ];
+
+    for (const debito of debitos) {
+      if (!debito.possui) {
+        setErro(
+          `Informe se a moto tem ${debito.nome} a pagar.`
+        );
+        return;
+      }
+
+      if (
+        debito.possui === "sim" &&
+        !(Number(debito.valor) > 0)
+      ) {
+        setErro(
+          `Informe o valor de ${debito.nome} a pagar.`
+        );
+        return;
+      }
     }
 
     if (!form.modelo.trim()) {
@@ -1223,6 +1304,192 @@ export default function NovaMotoPage() {
             } else {
               lavagemLancadaNoCaixa = true;
             }
+          }
+        }
+      }
+
+      /*
+       * DÉBITOS DA MOTO
+       *
+       * IPVA, multas e licenciamento entram no custo da moto
+       * ja na compra, para o valor dela nascer certo.
+       *
+       * No caixa eles nascem PENDENTES: sao contas conhecidas,
+       * mas o dinheiro so sai quando forem pagas. A baixa e
+       * dada no Caixa, na data em que o pagamento acontecer.
+       *
+       * Por serem pagamento futuro, valem tambem para estoque
+       * inicial: nao e dinheiro antigo, e dinheiro que ainda
+       * vai sair.
+       */
+      const debitosDaMoto = [
+        {
+          possui: form.possui_ipva,
+          valor: form.valor_ipva,
+          descricao: "IPVA",
+        },
+        {
+          possui: form.possui_multas,
+          valor: form.valor_multas,
+          descricao: "Multas",
+        },
+        {
+          possui:
+            form.possui_licenciamento,
+          valor:
+            form.valor_licenciamento,
+          descricao: "Licenciamento",
+        },
+      ].filter(
+        (debito) =>
+          debito.possui === "sim" &&
+          Number(debito.valor) > 0
+      );
+
+      if (debitosDaMoto.length > 0) {
+        /* Identifica a moto no extrato do caixa. */
+        const identificacaoDebito = [
+          motoCriada.codigo,
+          `${form.marca} ${form.modelo}`.trim(),
+          form.placa.trim().toUpperCase(),
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
+        const {
+          data: gastosDebito,
+          error: erroDebito,
+        } = await supabase
+          .from("motorcycle_expenses")
+          .insert(
+            debitosDaMoto.map(
+              (debito) => ({
+                motorcycle_id:
+                  motoCriada.id,
+                data:
+                  form.data_entrada,
+                categoria:
+                  "Documentação",
+                descricao:
+                  debito.descricao,
+                forma_pagamento:
+                  "A pagar",
+                valor: Number(
+                  debito.valor
+                ),
+              })
+            )
+          )
+          .select("id, valor, descricao");
+
+        if (erroDebito) {
+          console.error(
+            "Erro ao lancar os debitos da moto:",
+            erroDebito
+          );
+        } else if (gastosDebito) {
+          const {
+            error: erroCaixaDebito,
+          } = await supabase
+            .from("cash_transactions")
+            .insert(
+              gastosDebito.map(
+                (gasto) => ({
+                  data:
+                    form.data_entrada,
+                  tipo: "saida",
+                  origem: "gasto_moto",
+                  origem_id: gasto.id,
+                  valor:
+                    Number(gasto.valor) ||
+                    0,
+                  descricao: `${
+                    gasto.descricao
+                  } - ${identificacaoDebito}`,
+                  confirmado: false,
+                  data_confirmacao: null,
+                })
+              )
+            );
+
+          if (erroCaixaDebito) {
+            console.error(
+              "Erro ao deixar os debitos pendentes no caixa:",
+              erroCaixaDebito
+            );
+          }
+        }
+      }
+      /*
+       * Custos fixos da compra. Seguem a mesma regra da
+       * lavagem: viram gasto da moto sempre, e so saem do
+       * caixa quando a entrada nao e estoque inicial.
+       */
+      if (form.documentacao_padrao) {
+        const {
+          data: gastosDoc,
+          error: erroDoc,
+        } = await supabase
+          .from("motorcycle_expenses")
+          .insert(
+            CUSTOS_PADRAO_COMPRA.map(
+              (padrao) => ({
+                motorcycle_id:
+                  motoCriada.id,
+                data:
+                  form.data_entrada,
+                categoria:
+                  padrao.categoria,
+                descricao:
+                  padrao.descricao,
+                forma_pagamento:
+                  "Automático na compra",
+                valor: padrao.valor,
+              })
+            )
+          )
+          .select("id, valor, descricao");
+
+        if (erroDoc) {
+          console.error(
+            "Erro ao lancar custos padrao da compra:",
+            erroDoc
+          );
+        } else if (
+          gastosDoc &&
+          !ehEstoqueInicial
+        ) {
+          const { error: erroCaixaDoc } =
+            await supabase
+              .from("cash_transactions")
+              .insert(
+                gastosDoc.map((gasto) => ({
+                  data:
+                    fechamentoDaQuinzena(
+                      form.data_entrada
+                    ),
+                  tipo: "saida",
+                  /* Mesma empresa da vistoria de transferência. */
+                  origem: "vistoria",
+                  origem_id: gasto.id,
+                  valor:
+                    Number(gasto.valor) || 0,
+                  descricao: `${
+                    gasto.descricao
+                  } - ${
+                    motoCriada.codigo ||
+                    `${form.marca} ${form.modelo}`
+                  }`,
+                  confirmado: false,
+                  data_confirmacao: null,
+                }))
+              );
+
+          if (erroCaixaDoc) {
+            console.error(
+              "Erro ao lancar no caixa os custos padrao:",
+              erroCaixaDoc
+            );
           }
         }
       }
@@ -1870,9 +2137,236 @@ export default function NovaMotoPage() {
               </div>
             </label>
 
+            {(
+              <label
+                className={`mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition ${
+                  form.documentacao_padrao
+                    ? "border-dourado bg-dourado/10"
+                    : "border-grafite-claro bg-preto/30"
+                }`}
+              >
+                <div>
+                  <p className="font-semibold text-white">
+                    Vistoria cautelar
+                  </p>
+
+                  <p className="mt-1 text-sm text-texto-suave">
+                    Vistoria cautelar, lançada no custo da moto na
+                    data da compra.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="whitespace-nowrap font-bold text-dourado">
+                    {moeda(TOTAL_PADRAO_COMPRA)}
+                  </span>
+
+                  <input
+                    type="checkbox"
+                    checked={
+                      form.documentacao_padrao
+                    }
+                    onChange={(event) =>
+                      atualizarCampo(
+                        "documentacao_padrao",
+                        event.target.checked
+                      )
+                    }
+                    className="h-5 w-5 accent-yellow-500"
+                  />
+                </div>
+              </label>
+            )}
+
             <p className="mt-3 text-xs leading-5 text-texto-suave">
-              Esta opção já vem marcada. Desmarque somente quando a moto não tiver o custo da lavagem.
+              As duas opções já vêm marcadas. Desmarque quando a moto não tiver aquele custo.
             </p>
+          </section>
+
+          {/* DÉBITOS DA MOTO */}
+
+          <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
+            <div className="mb-5 border-b border-grafite-claro pb-3">
+              <h2 className="text-lg font-semibold text-dourado">
+                Débitos da Moto *
+              </h2>
+
+              <p className="mt-1 text-sm text-texto-suave">
+                Responda os três antes de salvar. O que estiver
+                em aberto entra no custo da moto e fica pendente
+                no caixa até ser pago.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-grafite-claro bg-preto/30 p-4">
+                <p className="font-semibold text-white">
+                  Possui IPVA a pagar?
+                </p>
+
+                <p className="mt-1 text-xs text-texto-suave">
+                  IPVA atrasado ou do ano corrente ainda em aberto.
+                </p>
+
+                <div className="mt-3 flex gap-2">
+                  {(["nao", "sim"] as const).map(
+                    (opcao) => (
+                      <button
+                        key={opcao}
+                        type="button"
+                        onClick={() =>
+                          atualizarCampo(
+                            "possui_ipva",
+                            opcao
+                          )
+                        }
+                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                          form.possui_ipva === opcao
+                            ? "border-dourado bg-dourado text-preto"
+                            : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+                        }`}
+                      >
+                        {opcao === "sim" ? "Sim" : "Não"}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {form.possui_ipva === "sim" && (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-xs text-texto-suave">
+                      Valor a pagar (R$)
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.valor_ipva}
+                      onChange={(event) =>
+                        atualizarCampo(
+                          "valor_ipva",
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-grafite-claro bg-preto/30 p-4">
+                <p className="font-semibold text-white">
+                  Possui multas?
+                </p>
+
+                <p className="mt-1 text-xs text-texto-suave">
+                  Multas registradas no documento da moto.
+                </p>
+
+                <div className="mt-3 flex gap-2">
+                  {(["nao", "sim"] as const).map(
+                    (opcao) => (
+                      <button
+                        key={opcao}
+                        type="button"
+                        onClick={() =>
+                          atualizarCampo(
+                            "possui_multas",
+                            opcao
+                          )
+                        }
+                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                          form.possui_multas === opcao
+                            ? "border-dourado bg-dourado text-preto"
+                            : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+                        }`}
+                      >
+                        {opcao === "sim" ? "Sim" : "Não"}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {form.possui_multas === "sim" && (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-xs text-texto-suave">
+                      Valor a pagar (R$)
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.valor_multas}
+                      onChange={(event) =>
+                        atualizarCampo(
+                          "valor_multas",
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-grafite-claro bg-preto/30 p-4">
+                <p className="font-semibold text-white">
+                  Precisa licenciar?
+                </p>
+
+                <p className="mt-1 text-xs text-texto-suave">
+                  Licenciamento do ano ainda não pago.
+                </p>
+
+                <div className="mt-3 flex gap-2">
+                  {(["nao", "sim"] as const).map(
+                    (opcao) => (
+                      <button
+                        key={opcao}
+                        type="button"
+                        onClick={() =>
+                          atualizarCampo(
+                            "possui_licenciamento",
+                            opcao
+                          )
+                        }
+                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                          form.possui_licenciamento === opcao
+                            ? "border-dourado bg-dourado text-preto"
+                            : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+                        }`}
+                      >
+                        {opcao === "sim" ? "Sim" : "Não"}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {form.possui_licenciamento === "sim" && (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-xs text-texto-suave">
+                      Valor a pagar (R$)
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.valor_licenciamento}
+                      onChange={(event) =>
+                        atualizarCampo(
+                          "valor_licenciamento",
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
 
           {/* VALORES */}

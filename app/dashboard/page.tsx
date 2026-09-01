@@ -82,7 +82,7 @@ export default async function DashboardPage() {
 
   const { data: vendasMes } = await supabase
     .from('sales')
-    .select('id, motorcycle_id, valor_total_venda, valor_documentacao, documentacao_entra_no_lucro')
+    .select('id, motorcycle_id, valor_total_venda, transferencia_cliente, documentacao_concluida')
     .eq('status', 'ativa')
     .gte('data_venda', inicioMes)
     .lte('data_venda', fimMes)
@@ -118,13 +118,46 @@ export default async function DashboardPage() {
       ) ?? 0
   }
 
-  const receitaDocumentacaoNoLucro =
-    vendasMes?.reduce(
-      (s, v) => s + (v.documentacao_entra_no_lucro ? Number(v.valor_documentacao || 0) : 0),
-      0
-    ) ?? 0
+  /*
+   * DOCUMENTAÇÃO
+   *
+   * O valor que o cliente entrega para a loja cuidar do
+   * documento entra no caixa, mas nao e faturamento: ele
+   * existe para pagar vistoria, taxas e despachante.
+   *
+   * O que entra no lucro e a SOBRA, e so depois de a
+   * documentacao ser dada por concluida - ate la ainda pode
+   * aparecer custo. Se os custos passarem do recebido, a
+   * diferenca desconta do lucro.
+   */
+  const idsVendasMes = vendasMes?.map((v) => v.id) ?? []
 
-  const lucroBrutoMes = faturamentoMes + receitaDocumentacaoNoLucro - custoMotosVendidas
+  const custosPorVenda: Record<string, number> = {}
+
+  if (idsVendasMes.length > 0) {
+    const { data: custosDoc } = await supabase
+      .from('sale_documentation_costs')
+      .select('sale_id, valor')
+      .in('sale_id', idsVendasMes)
+
+    custosDoc?.forEach((custo) => {
+      custosPorVenda[String(custo.sale_id)] =
+        (custosPorVenda[String(custo.sale_id)] || 0) +
+        Number(custo.valor || 0)
+    })
+  }
+
+  const resultadoDocumentacao =
+    vendasMes?.reduce((soma, venda) => {
+      if (!venda.documentacao_concluida) return soma
+
+      const recebido = Number(venda.transferencia_cliente || 0)
+      const custos = custosPorVenda[String(venda.id)] || 0
+
+      return soma + (recebido - custos)
+    }, 0) ?? 0
+
+  const lucroBrutoMes = faturamentoMes + resultadoDocumentacao - custoMotosVendidas
 
   const { data: despesasMes } = await supabase
     .from('store_expenses')
@@ -187,7 +220,7 @@ export default async function DashboardPage() {
 
   const { data: vendasJanela } = await supabase
     .from('sales')
-    .select('motorcycle_id, valor_total_venda, valor_documentacao, documentacao_entra_no_lucro, data_venda')
+    .select('id, motorcycle_id, valor_total_venda, transferencia_cliente, documentacao_concluida, data_venda')
     .eq('status', 'ativa')
     .gte('data_venda', inicioJanela)
     .lte('data_venda', fimMes)
@@ -222,11 +255,34 @@ export default async function DashboardPage() {
     })
   }
 
+  const custosDocJanela: Record<string, number> = {}
+
+  const idsJanela =
+    vendasJanela?.map((venda) => venda.id).filter(Boolean) ?? []
+
+  if (idsJanela.length > 0) {
+    const { data: custosJanela } = await supabase
+      .from('sale_documentation_costs')
+      .select('sale_id, valor')
+      .in('sale_id', idsJanela)
+
+    custosJanela?.forEach((custo) => {
+      custosDocJanela[String(custo.sale_id)] =
+        (custosDocJanela[String(custo.sale_id)] || 0) +
+        Number(custo.valor || 0)
+    })
+  }
+
   const dadosGrafico = mesesGrafico.map(({ chave, rotulo }) => {
     const vendasDoMes = vendasJanela?.filter((v) => String(v.data_venda).slice(0, 7) === chave) ?? []
     const faturamento = vendasDoMes.reduce((s, v) => s + Number(v.valor_total_venda || 0), 0)
     const documentacao = vendasDoMes.reduce(
-      (s, v) => s + (v.documentacao_entra_no_lucro ? Number(v.valor_documentacao || 0) : 0),
+      (s, v) =>
+        s +
+        (v.documentacao_concluida
+          ? Number(v.transferencia_cliente || 0) -
+            (custosDocJanela[String(v.id)] || 0)
+          : 0),
       0
     )
     const custo = vendasDoMes.reduce((s, v) => s + (custoPorMoto[String(v.motorcycle_id)] || 0), 0)

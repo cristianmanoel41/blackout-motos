@@ -73,8 +73,8 @@ export async function GET(request: Request) {
           motorcycle_id,
           vendedor,
           valor_total_venda,
-          valor_documentacao,
-          documentacao_entra_no_lucro,
+          transferencia_cliente,
+          documentacao_concluida,
           banco,
           valor_financiado
         `)
@@ -171,12 +171,35 @@ export async function GET(request: Request) {
       0
     )
 
+    const idsVendasMes = vendas
+      .map((venda) => venda.id)
+      .filter(Boolean)
+
+    const custosDocPorVenda: Record<string, number> = {}
+
+    if (idsVendasMes.length > 0) {
+      const { data: custosDoc } = await supabase
+        .from('sale_documentation_costs')
+        .select('sale_id, valor')
+        .in('sale_id', idsVendasMes)
+
+      custosDoc?.forEach((custo: any) => {
+        custosDocPorVenda[String(custo.sale_id)] =
+          (custosDocPorVenda[String(custo.sale_id)] || 0) +
+          numero(custo.valor)
+      })
+    }
+
     const receitaDocumentacao = vendas.reduce(
-      (soma, item) =>
-        soma +
-        (item.documentacao_entra_no_lucro
-          ? numero(item.valor_documentacao)
-          : 0),
+      (soma, item: any) => {
+        if (!item.documentacao_concluida) return soma
+
+        return (
+          soma +
+          (numero(item.transferencia_cliente) -
+            (custosDocPorVenda[String(item.id)] || 0))
+        )
+      },
       0
     )
 
