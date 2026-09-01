@@ -92,6 +92,19 @@ export default function CaixaPage() {
   const [filtroPendente, setFiltroPendente] =
     useState("");
 
+  /*
+   * Correção de lançamento já confirmado. Toda mudança de
+   * valor fica registrada no Histórico do Sistema, então dá
+   * para saber depois o que era antes.
+   */
+  const [editandoId, setEditandoId] = useState("");
+
+  const [formEdicao, setFormEdicao] = useState({
+    data: "",
+    valor: "",
+    descricao: "",
+  });
+
   useEffect(() => {
     carregarCaixa();
   }, []);
@@ -432,6 +445,101 @@ export default function CaixaPage() {
     );
 
     setTimeout(() => setMensagem(""), 3000);
+  }
+
+  function abrirEdicao(t: any) {
+    setErro("");
+    setEditandoId(t.id);
+
+    setFormEdicao({
+      data: String(t.data || "").slice(0, 10),
+      valor: String(t.valor ?? ""),
+      descricao: t.descricao || "",
+    });
+  }
+
+  async function salvarEdicao(t: any) {
+    setErro("");
+    setMensagem("");
+
+    const valor = Number(formEdicao.valor);
+
+    if (!(valor > 0)) {
+      setErro("Informe um valor válido.");
+      return;
+    }
+
+    if (!formEdicao.data) {
+      setErro("Informe a data.");
+      return;
+    }
+
+    setSalvando(true);
+
+    const { error } = await supabase
+      .from("cash_transactions")
+      .update({
+        data: formEdicao.data,
+        valor,
+        descricao:
+          formEdicao.descricao.trim() || null,
+      })
+      .eq("id", t.id);
+
+    setSalvando(false);
+
+    if (error) {
+      console.error(error);
+      setErro(`Erro ao salvar: ${error.message}`);
+      return;
+    }
+
+    setEditandoId("");
+    await carregarCaixa();
+
+    setMensagem("Lançamento corrigido.");
+    setTimeout(() => setMensagem(""), 3000);
+  }
+
+  /*
+   * Apagar tira só o lançamento do caixa. A venda, a moto ou
+   * a despesa que o originou continuam como estão - por isso
+   * o aviso.
+   */
+  async function apagarLancamento(t: any) {
+    const confirmar = window.confirm(
+      `Apagar este lançamento de ${formatarMoeda(
+        t.valor
+      )}? O registro que o originou (venda, moto ou despesa) não é alterado.`
+    );
+
+    if (!confirmar) return;
+
+    setSalvando(true);
+
+    const { data: apagados, error } = await supabase
+      .from("cash_transactions")
+      .delete()
+      .eq("id", t.id)
+      .select("id");
+
+    setSalvando(false);
+
+    if (error) {
+      console.error(error);
+      setErro(`Erro ao apagar: ${error.message}`);
+      return;
+    }
+
+    if (!apagados || apagados.length === 0) {
+      setErro(
+        "O lançamento não foi apagado: seu usuário não tem permissão de exclusão no caixa."
+      );
+      return;
+    }
+
+    setEditandoId("");
+    await carregarCaixa();
   }
 
   async function cancelarLancamento(transacao: any) {
@@ -1013,8 +1121,9 @@ export default function CaixaPage() {
             return (
               <div
                 key={t.id}
-                className="flex items-center justify-between gap-4 px-5 py-3"
+                className="px-5 py-3"
               >
+              <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   {t.tipo === "entrada" ? (
                     <ArrowUpCircle
@@ -1049,19 +1158,122 @@ export default function CaixaPage() {
                   </div>
                 </div>
 
-                <p
-                  className={`whitespace-nowrap font-semibold ${
-                    ehSaldoInicial
-                      ? "text-dourado"
-                      : t.tipo === "entrada"
-                        ? "text-green-400"
-                        : "text-red-400"
-                  }`}
-                >
-                  {t.tipo === "entrada" ? "+" : "-"}{" "}
-                  {formatarMoeda(t.valor)}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p
+                    className={`whitespace-nowrap font-semibold ${
+                      ehSaldoInicial
+                        ? "text-dourado"
+                        : t.tipo === "entrada"
+                          ? "text-green-400"
+                          : "text-red-400"
+                    }`}
+                  >
+                    {t.tipo === "entrada" ? "+" : "-"}{" "}
+                    {formatarMoeda(t.valor)}
+                  </p>
+
+                  {/*
+                    O saldo inicial é gerido pela Conciliação;
+                    mexer nele por aqui quebraria o cálculo.
+                  */}
+                  {!ehSaldoInicial &&
+                    editandoId !== t.id && (
+                      <button
+                        type="button"
+                        onClick={() => abrirEdicao(t)}
+                        className="rounded-lg border border-grafite-claro px-3 py-1.5 text-xs font-semibold text-texto-suave transition hover:border-dourado hover:text-dourado"
+                      >
+                        Editar
+                      </button>
+                    )}
+                </div>
               </div>
+
+              {editandoId === t.id && (
+                <div className="mt-3 flex flex-wrap items-end gap-3 rounded-lg border border-grafite-claro bg-preto/20 p-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-texto-suave">
+                      Data
+                    </label>
+
+                    <input
+                      type="date"
+                      value={formEdicao.data}
+                      onChange={(e) =>
+                        setFormEdicao({
+                          ...formEdicao,
+                          data: e.target.value,
+                        })
+                      }
+                      className="rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none focus:border-dourado"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs text-texto-suave">
+                      Valor
+                    </label>
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formEdicao.valor}
+                      onChange={(e) =>
+                        setFormEdicao({
+                          ...formEdicao,
+                          valor: e.target.value,
+                        })
+                      }
+                      className="w-36 rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none focus:border-dourado"
+                    />
+                  </div>
+
+                  <div className="min-w-[220px] flex-1">
+                    <label className="mb-1 block text-xs text-texto-suave">
+                      Descrição
+                    </label>
+
+                    <input
+                      value={formEdicao.descricao}
+                      onChange={(e) =>
+                        setFormEdicao({
+                          ...formEdicao,
+                          descricao: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none focus:border-dourado"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={salvando}
+                    onClick={() => salvarEdicao(t)}
+                    className="rounded-lg bg-dourado px-4 py-2 text-sm font-semibold text-preto transition hover:bg-dourado-claro disabled:opacity-50"
+                  >
+                    {salvando ? "Salvando..." : "Salvar"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditandoId("")}
+                    className="rounded-lg border border-grafite-claro px-4 py-2 text-sm text-texto-suave transition hover:border-dourado hover:text-dourado"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={salvando}
+                    onClick={() => apagarLancamento(t)}
+                    className="ml-auto rounded-lg border border-grafite-claro px-4 py-2 text-sm text-red-300 transition hover:border-red-700 hover:bg-red-950/40 disabled:opacity-50"
+                  >
+                    Apagar lançamento
+                  </button>
+                </div>
+              )}
+            </div>
             );
           })}
         </div>

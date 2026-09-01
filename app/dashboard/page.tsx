@@ -87,10 +87,33 @@ export default async function DashboardPage() {
     .gte('data_venda', inicioMes)
     .lte('data_venda', fimMes)
 
-  const motosVendidasMes = vendasMes?.length ?? 0
-  const faturamentoMes = vendasMes?.reduce((s, v) => s + Number(v.valor_total_venda || 0), 0) ?? 0
+  const idsDeOutraLoja = new Set<string>()
 
-  const idsMotosVendidas = vendasMes?.map((v) => v.motorcycle_id).filter(Boolean) ?? []
+  {
+    const ids = vendasMes?.map((v) => v.motorcycle_id).filter(Boolean) ?? []
+
+    if (ids.length > 0) {
+      const { data: motosParceiras } = await supabase
+        .from('motorcycles')
+        .select('id')
+        .eq('tipo_entrada', 'outra_loja')
+        .in('id', ids)
+
+      motosParceiras?.forEach((moto) =>
+        idsDeOutraLoja.add(String(moto.id))
+      )
+    }
+  }
+
+  const vendasProprias =
+    vendasMes?.filter(
+      (v) => !idsDeOutraLoja.has(String(v.motorcycle_id))
+    ) ?? []
+
+  const motosVendidasMes = vendasProprias.length
+  const faturamentoMes = vendasProprias.reduce((s, v) => s + Number(v.valor_total_venda || 0), 0)
+
+  const idsMotosVendidas = vendasProprias.map((v) => v.motorcycle_id).filter(Boolean)
   let custoMotosVendidas = 0
 
   if (idsMotosVendidas.length > 0) {

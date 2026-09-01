@@ -160,6 +160,16 @@ export default function EditarVendaPage() {
   const [docConcluida, setDocConcluida] =
     useState(false);
 
+  /*
+   * Quanto desta venda ja caiu na conta e quanto ainda vai
+   * cair. Vem dos lancamentos do caixa, nao do que foi
+   * combinado - o combinado esta nos campos da venda.
+   */
+  const [caixaDaVenda, setCaixaDaVenda] = useState({
+    confirmado: 0,
+    pendente: 0,
+  });
+
   const [novoCusto, setNovoCusto] = useState({
     tipo: "vistoria",
     descricao: "",
@@ -266,6 +276,23 @@ export default function EditarVendaPage() {
 
     return mapa;
   }, [custosDoc]);
+
+  /*
+   * Dinheiro que entra na conta por causa desta moto. A
+   * moto na troca fica de fora: ela e mercadoria, nao
+   * dinheiro.
+   */
+  const pagamentosDoCliente = useMemo(() => {
+    return componentes
+      .filter(
+        (item) => item.tipo !== "Moto na troca"
+      )
+      .reduce(
+        (total, item) =>
+          total + (Number(item.valor) || 0),
+        0
+      );
+  }, [componentes]);
 
   const totalCustosDoc = useMemo(() => {
     return custosDoc.reduce(
@@ -411,6 +438,33 @@ export default function EditarVendaPage() {
       .order("data", { ascending: true });
 
     setCustosDoc(custosData || []);
+
+    const { data: lancamentosCaixa } = await supabase
+      .from("cash_transactions")
+      .select("valor, confirmado")
+      .eq("origem", "venda")
+      .eq("origem_id", id)
+      .eq("tipo", "entrada");
+
+    setCaixaDaVenda(
+      (lancamentosCaixa || []).reduce(
+        (resumo, item: any) => {
+          const valor = Number(item.valor || 0);
+
+          return item.confirmado === false
+            ? {
+                ...resumo,
+                pendente: resumo.pendente + valor,
+              }
+            : {
+                ...resumo,
+                confirmado:
+                  resumo.confirmado + valor,
+              };
+        },
+        { confirmado: 0, pendente: 0 }
+      )
+    );
 
     const {
       data: componentesData,
@@ -1964,6 +2018,109 @@ export default function EditarVendaPage() {
                       )}
                     </p>
                   </div>
+                </div>
+
+                {/* ENTRA NO CAIXA */}
+
+                <div className="rounded-xl border border-green-800/50 bg-green-950/10 p-4">
+                  <p className="text-sm font-semibold text-green-300">
+                    Entra no caixa por esta moto
+                  </p>
+
+                  <div className="mt-3 space-y-1.5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-zinc-400">
+                        Pago pelo cliente
+                      </span>
+
+                      <span className="text-zinc-200">
+                        {moeda(pagamentosDoCliente)}
+                      </span>
+                    </div>
+
+                    {Number(transferenciaCliente) > 0 && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-400">
+                          Documentação
+                        </span>
+
+                        <span className="text-zinc-200">
+                          {moeda(
+                            Number(transferenciaCliente) || 0
+                          )}
+                        </span>
+                      </div>
+                    )}
+
+                    {valorFinanciado > 0 && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-400">
+                          Financiamento{" "}
+                          {banco ? `(${banco})` : ""}
+                        </span>
+
+                        <span className="text-zinc-200">
+                          {moeda(valorFinanciado)}
+                        </span>
+                      </div>
+                    )}
+
+                    {totalCapacetesRecebidosDepois > 0 && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-zinc-400">
+                          Capacete recebido depois
+                        </span>
+
+                        <span className="text-zinc-200">
+                          {moeda(
+                            totalCapacetesRecebidosDepois
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-green-800/40 pt-3">
+                    <span className="font-bold text-white">
+                      Total
+                    </span>
+
+                    <span className="text-xl font-black text-green-400">
+                      {moeda(
+                        pagamentosDoCliente +
+                          (Number(transferenciaCliente) ||
+                            0) +
+                          valorFinanciado +
+                          totalCapacetesRecebidosDepois
+                      )}
+                    </span>
+                  </div>
+
+                  {/* O que ja caiu e o que falta cair. */}
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs">
+                    <span className="text-zinc-400">
+                      Já na conta{" "}
+                      <strong className="text-green-400">
+                        {moeda(caixaDaVenda.confirmado)}
+                      </strong>
+                    </span>
+
+                    {caixaDaVenda.pendente > 0 && (
+                      <span className="text-zinc-400">
+                        Ainda vai entrar{" "}
+                        <strong className="text-yellow-400">
+                          {moeda(caixaDaVenda.pendente)}
+                        </strong>
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-xs text-zinc-500">
+                    A moto recebida na troca não entra: ela é
+                    mercadoria, não dinheiro. E a documentação
+                    entra no caixa, mas não é lucro - ela paga a
+                    vistoria e o despachante.
+                  </p>
                 </div>
 
                 {totalCapacetesRecebidosDepois >

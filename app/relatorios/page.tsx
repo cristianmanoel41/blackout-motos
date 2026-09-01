@@ -99,12 +99,61 @@ export default async function RelatorioMensalPage({
   const qtdMotosVendidas =
     vendasMes?.length ?? 0
 
-  const faturamento =
-    vendasMes?.reduce(
-      (soma, venda) =>
-        soma + Number(venda.valor_total_venda || 0),
-      0
-    ) ?? 0
+  /*
+   * MOTO DE OUTRA LOJA
+   *
+   * O dinheiro passa pela conta, mas é do parceiro: a loja
+   * recebe do cliente e repassa inteiro. Contar isso como
+   * faturamento infla o mês com dinheiro que não é nosso.
+   *
+   * Então essas vendas saem da conta de resultado - receita
+   * e custo - e aparecem numa linha à parte. No caixa elas
+   * continuam aparecendo, porque o dinheiro entrou e saiu de
+   * verdade.
+   */
+  const idsDeOutraLoja = new Set<string>()
+
+  {
+    const ids =
+      vendasMes
+        ?.map((venda) => venda.motorcycle_id)
+        .filter(Boolean) ?? []
+
+    if (ids.length > 0) {
+      const { data: motosParceiras } = await supabase
+        .from('motorcycles')
+        .select('id')
+        .eq('tipo_entrada', 'outra_loja')
+        .in('id', ids)
+
+      motosParceiras?.forEach((moto) =>
+        idsDeOutraLoja.add(String(moto.id))
+      )
+    }
+  }
+
+  const ehDeOutraLoja = (venda: any) =>
+    idsDeOutraLoja.has(String(venda.motorcycle_id))
+
+  const vendasProprias =
+    vendasMes?.filter(
+      (venda) => !ehDeOutraLoja(venda)
+    ) ?? []
+
+  const vendasDeOutraLoja =
+    vendasMes?.filter(ehDeOutraLoja) ?? []
+
+  const totalDeOutraLoja = vendasDeOutraLoja.reduce(
+    (soma, venda) =>
+      soma + Number(venda.valor_total_venda || 0),
+    0
+  )
+
+  const faturamento = vendasProprias.reduce(
+    (soma, venda) =>
+      soma + Number(venda.valor_total_venda || 0),
+    0
+  )
 
   const normalizarVendedor = (valor: string | null | undefined) =>
     (valor || '')
@@ -206,10 +255,9 @@ export default async function RelatorioMensalPage({
   // CUSTO DAS MOTOS VENDIDAS
   // =========================================================
 
-  const idsMotosVendidas =
-    vendasMes
-      ?.map((venda) => venda.motorcycle_id)
-      .filter(Boolean) ?? []
+  const idsMotosVendidas = vendasProprias
+    .map((venda) => venda.motorcycle_id)
+    .filter(Boolean)
 
   let custoMotosVendidas = 0
 
@@ -870,6 +918,12 @@ export default async function RelatorioMensalPage({
               totalGastosMotosMes
             )
           )}
+
+          {totalDeOutraLoja > 0 &&
+            linha(
+              `Vendas de outra loja (${vendasDeOutraLoja.length}, fora do faturamento)`,
+              formatarMoeda(totalDeOutraLoja)
+            )}
 
           {linha(
             'Documentação recebida',
