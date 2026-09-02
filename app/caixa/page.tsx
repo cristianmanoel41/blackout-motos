@@ -16,6 +16,7 @@ import {
   X,
   Check,
   Clock,
+  Plus,
 } from "lucide-react";
 
 const supabase = createClient();
@@ -98,6 +99,23 @@ export default function CaixaPage() {
    * para saber depois o que era antes.
    */
   const [editandoId, setEditandoId] = useState("");
+
+  /*
+   * Dinheiro que passa pela conta sem ser venda nem despesa:
+   * a loja compra uma peça para um amigo e ele deposita, um
+   * empréstimo, uma transferência entre contas. Entra e sai
+   * do caixa, mas não é receita nem custo - por isso fica
+   * fora do lucro.
+   */
+  const [abrirAvulso, setAbrirAvulso] = useState(false);
+
+  const [avulso, setAvulso] = useState({
+    tipo: "entrada",
+    data: hoje(),
+    valor: "",
+    descricao: "",
+    confirmado: true,
+  });
 
   const [formEdicao, setFormEdicao] = useState({
     data: "",
@@ -447,6 +465,64 @@ export default function CaixaPage() {
     setTimeout(() => setMensagem(""), 3000);
   }
 
+  async function salvarAvulso() {
+    setErro("");
+    setMensagem("");
+
+    const valor = Number(avulso.valor);
+
+    if (!(valor > 0)) {
+      setErro("Informe um valor válido.");
+      return;
+    }
+
+    if (!avulso.descricao.trim()) {
+      setErro(
+        "Escreva do que se trata, para reconhecer depois."
+      );
+      return;
+    }
+
+    setSalvando(true);
+
+    const { error } = await supabase
+      .from("cash_transactions")
+      .insert({
+        data: avulso.data,
+        tipo: avulso.tipo,
+        origem: "outro",
+        origem_id: null,
+        valor,
+        descricao: avulso.descricao.trim(),
+        confirmado: avulso.confirmado,
+        data_confirmacao: avulso.confirmado
+          ? avulso.data
+          : null,
+      });
+
+    setSalvando(false);
+
+    if (error) {
+      console.error(error);
+      setErro(`Erro ao lançar: ${error.message}`);
+      return;
+    }
+
+    setAvulso({
+      tipo: "entrada",
+      data: hoje(),
+      valor: "",
+      descricao: "",
+      confirmado: true,
+    });
+
+    setAbrirAvulso(false);
+    await carregarCaixa();
+
+    setMensagem("Lançamento registrado no caixa.");
+    setTimeout(() => setMensagem(""), 3000);
+  }
+
   function abrirEdicao(t: any) {
     setErro("");
     setEditandoId(t.id);
@@ -599,14 +675,163 @@ export default function CaixaPage() {
           entre banco, dinheiro e outros. Ter os dois caminhos
           criava saldo em dobro.
         */}
-        <Link
-          href="/caixa/conciliacao"
-          className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-3 font-semibold text-preto transition hover:bg-dourado-claro"
-        >
-          <Wallet size={18} />
-          Conciliação e saldo inicial
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() =>
+              setAbrirAvulso(!abrirAvulso)
+            }
+            className="flex items-center justify-center gap-2 rounded-lg border border-dourado px-4 py-3 font-semibold text-dourado transition hover:bg-dourado/10"
+          >
+            <Plus size={18} />
+            Novo lançamento
+          </button>
+
+          <Link
+            href="/caixa/conciliacao"
+            className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-3 font-semibold text-preto transition hover:bg-dourado-claro"
+          >
+            <Wallet size={18} />
+            Conciliação e saldo inicial
+          </Link>
+        </div>
       </div>
+
+      {/* LANÇAMENTO AVULSO */}
+
+      {abrirAvulso && (
+        <div className="mb-6 rounded-xl border border-dourado/50 bg-grafite p-5">
+          <h2 className="font-semibold text-dourado">
+            Novo lançamento no caixa
+          </h2>
+
+          <p className="mt-1 text-xs text-texto-suave">
+            Para dinheiro que passa pela conta sem ser venda
+            nem despesa da loja: uma peça comprada para
+            terceiro e reembolsada, um empréstimo, uma
+            transferência entre contas. Entra no saldo, mas
+            não conta no lucro.
+          </p>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <div>
+              <label className="mb-1 block text-xs text-texto-suave">
+                Tipo
+              </label>
+
+              <select
+                value={avulso.tipo}
+                onChange={(e) =>
+                  setAvulso({
+                    ...avulso,
+                    tipo: e.target.value,
+                  })
+                }
+                className="w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+              >
+                <option value="entrada">
+                  Entrada - dinheiro que chegou
+                </option>
+                <option value="saida">
+                  Saída - dinheiro que saiu
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-texto-suave">
+                Data
+              </label>
+
+              <input
+                type="date"
+                value={avulso.data}
+                onChange={(e) =>
+                  setAvulso({
+                    ...avulso,
+                    data: e.target.value,
+                  })
+                }
+                className="w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-texto-suave">
+                Valor (R$)
+              </label>
+
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={avulso.valor}
+                onChange={(e) =>
+                  setAvulso({
+                    ...avulso,
+                    valor: e.target.value,
+                  })
+                }
+                className="w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+              />
+            </div>
+
+            <div className="flex items-end">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-texto">
+                <input
+                  type="checkbox"
+                  checked={avulso.confirmado}
+                  onChange={(e) =>
+                    setAvulso({
+                      ...avulso,
+                      confirmado: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 accent-yellow-500"
+                />
+                Já aconteceu
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="mb-1 block text-xs text-texto-suave">
+              Descrição
+            </label>
+
+            <input
+              value={avulso.descricao}
+              onChange={(e) =>
+                setAvulso({
+                  ...avulso,
+                  descricao: e.target.value,
+                })
+              }
+              placeholder="Ex.: Pneu comprado para o João - reembolsado por ele"
+              className="w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={salvando}
+              onClick={salvarAvulso}
+              className="rounded-lg bg-dourado px-5 py-2.5 text-sm font-semibold text-preto transition hover:bg-dourado-claro disabled:opacity-50"
+            >
+              {salvando ? "Salvando..." : "Lançar"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAbrirAvulso(false)}
+              className="rounded-lg border border-grafite-claro px-5 py-2.5 text-sm text-texto-suave transition hover:border-dourado hover:text-dourado"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MENSAGENS */}
 
