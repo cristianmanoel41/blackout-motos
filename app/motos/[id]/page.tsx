@@ -21,6 +21,7 @@ const tipoEntradaLabel: Record<string, string> = {
   compra_nova: "Comprada",
   troca: "Recebida na troca",
   estoque_inicial: "Estoque inicial",
+  outra_loja: "De outra loja",
 };
 
 type Moto = {
@@ -613,6 +614,10 @@ export default function DetalheMotoPage() {
                 <option value="estoque_inicial">
                   Estoque inicial
                 </option>
+
+                <option value="outra_loja">
+                  De outra loja
+                </option>
               </select>
             ) : (
               <p className="font-medium text-texto">
@@ -621,6 +626,16 @@ export default function DetalheMotoPage() {
                 ] || "—"}
               </p>
             )}
+
+            {editando &&
+              form.tipo_entrada === "outra_loja" && (
+                <p className="mt-2 text-xs text-dourado">
+                  A moto não é da loja: deixe o valor de compra
+                  zerado e informe a loja parceira em Fornecedor.
+                  Ela fica fora do faturamento, e o repasse entra
+                  como gasto quando a moto for vendida.
+                </p>
+              )}
           </div>
 
           <Campo
