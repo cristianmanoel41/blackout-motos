@@ -557,7 +557,7 @@ export default function ConciliacaoCaixaPage() {
             <strong>
               Primeiro uso:
             </strong>{" "}
-            informe abaixo o dinheiro que existe realmente agora no banco, no caixa físico e em outros saldos disponíveis. O sistema vai criar um ponto de partida sem apagar o histórico já registrado.
+            informe abaixo o dinheiro que existe realmente agora no banco e no caixa físico. O sistema vai criar um ponto de partida sem apagar o histórico já registrado.
           </div>
         )}
 
@@ -705,29 +705,6 @@ export default function ConciliacaoCaixaPage() {
                 />
               </div>
 
-              <div>
-                <label className="mb-2 flex items-center gap-2 text-sm text-texto-suave">
-                  <WalletCards size={16} />
-                  Outros valores disponíveis
-                </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={
-                    saldoOutrosInicial
-                  }
-                  onChange={(e) =>
-                    setSaldoOutrosInicial(
-                      e.target.value
-                    )
-                  }
-                  placeholder="0,00"
-                  className={inputClass}
-                />
-              </div>
-
               <div className="rounded-xl border border-dourado/30 bg-preto p-4">
                 <p className="text-xs text-texto-suave">
                   Total do saldo inicial
@@ -815,28 +792,6 @@ export default function ConciliacaoCaixaPage() {
                     }
                     onChange={(e) =>
                       setSaldoDinheiroHoje(
-                        e.target.value
-                      )
-                    }
-                    placeholder="0,00"
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm text-texto-suave">
-                    Outros valores disponíveis hoje
-                  </label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={
-                      saldoOutrosHoje
-                    }
-                    onChange={(e) =>
-                      setSaldoOutrosHoje(
                         e.target.value
                       )
                     }

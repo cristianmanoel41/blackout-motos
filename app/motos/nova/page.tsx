@@ -114,6 +114,17 @@ type FormMoto = {
   fornecedor_estado: string;
   fornecedor_cep: string;
 
+  /*
+   * Nem sempre quem entrega a moto é o dono dela. O
+   * documento fica no nome de um e a negociação é feita por
+   * outro - guardamos com quem a loja realmente tratou.
+   */
+  intermediador_nome: string;
+  intermediador_cpf: string;
+  intermediador_rg: string;
+  intermediador_telefone: string;
+  intermediador_observacoes: string;
+
   status: StatusMoto;
   observacoes: string;
 };
@@ -197,6 +208,12 @@ const formInicial: FormMoto = {
   fornecedor_estado: "",
   fornecedor_cep: "",
 
+  intermediador_nome: "",
+  intermediador_cpf: "",
+  intermediador_rg: "",
+  intermediador_telefone: "",
+  intermediador_observacoes: "",
+
   status: "disponivel",
   observacoes: "",
 };
@@ -214,6 +231,11 @@ export default function NovaMotoPage() {
    */
   const [pagoCompra, setPagoCompra] =
     useState(true);
+
+  const [
+    abrirIntermediador,
+    setAbrirIntermediador,
+  ] = useState(false);
 
   const [
     previsaoCompra,
@@ -1064,6 +1086,26 @@ export default function NovaMotoPage() {
 
           fornecedor_customer_id:
             fornecedorCustomerId,
+
+          intermediador_nome:
+            form.intermediador_nome.trim() ||
+            null,
+
+          intermediador_cpf:
+            form.intermediador_cpf.trim() ||
+            null,
+
+          intermediador_rg:
+            form.intermediador_rg.trim() ||
+            null,
+
+          intermediador_telefone:
+            form.intermediador_telefone.trim() ||
+            null,
+
+          intermediador_observacoes:
+            form.intermediador_observacoes.trim() ||
+            null,
 
           status: form.status,
 
@@ -2835,6 +2877,120 @@ export default function NovaMotoPage() {
                 placeholder="SP"
               />
             </div>
+          </section>
+
+          {/* INTERMEDIADOR */}
+
+          <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
+            <button
+              type="button"
+              onClick={() =>
+                setAbrirIntermediador(
+                  !abrirIntermediador
+                )
+              }
+              className="flex w-full items-center justify-between gap-4 text-left"
+            >
+              <div>
+                <h2 className="text-lg font-semibold text-dourado">
+                  Quem Intermediou a Venda
+                </h2>
+
+                <p className="mt-1 text-xs text-texto-suave">
+                  Preencha só quando quem entregou a moto não é
+                  o dono do documento.
+                </p>
+              </div>
+
+              <span className="whitespace-nowrap text-sm font-semibold text-dourado">
+                {abrirIntermediador
+                  ? "Fechar"
+                  : form.intermediador_nome.trim()
+                    ? form.intermediador_nome
+                    : "Abrir"}
+              </span>
+            </button>
+
+            {abrirIntermediador && (
+            <>
+            <p className="mt-4 border-t border-grafite-claro pt-4 text-xs text-texto-suave">
+              O contrato e a procuração continuam saindo no nome
+              do dono; isto fica registrado para a loja saber com
+              quem tratou.
+            </p>
+
+            <div className="mt-4 grid gap-5 md:grid-cols-2">
+              <Campo
+                label="Nome do intermediador"
+                value={form.intermediador_nome}
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "intermediador_nome",
+                    valor
+                  )
+                }
+                placeholder="Nome completo"
+              />
+
+              <Campo
+                label="Telefone"
+                value={form.intermediador_telefone}
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "intermediador_telefone",
+                    valor
+                  )
+                }
+                placeholder="(00) 00000-0000"
+              />
+
+              <Campo
+                label="CPF"
+                value={form.intermediador_cpf}
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "intermediador_cpf",
+                    valor
+                  )
+                }
+                placeholder="000.000.000-00"
+              />
+
+              <Campo
+                label="RG"
+                value={form.intermediador_rg}
+                onChange={(valor) =>
+                  atualizarCampo(
+                    "intermediador_rg",
+                    valor
+                  )
+                }
+                placeholder="00.000.000-0"
+              />
+            </div>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-medium text-texto-suave">
+                Observações sobre a negociação
+              </label>
+
+              <textarea
+                value={
+                  form.intermediador_observacoes
+                }
+                onChange={(event) =>
+                  atualizarCampo(
+                    "intermediador_observacoes",
+                    event.target.value
+                  )
+                }
+                rows={2}
+                placeholder="Ex.: irmão do dono, negociou pelo WhatsApp"
+                className="w-full rounded-xl border border-grafite-claro bg-preto/40 px-4 py-3 text-texto outline-none transition focus:border-dourado"
+              />
+            </div>
+            </>
+            )}
           </section>
 
           {/* OBSERVAÇÕES */}

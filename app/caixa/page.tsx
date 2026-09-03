@@ -16,6 +16,7 @@ import {
   X,
   Check,
   Clock,
+  Minus,
   Plus,
 } from "lucide-react";
 
@@ -756,13 +757,34 @@ export default function CaixaPage() {
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() =>
-              setAbrirAvulso(!abrirAvulso)
-            }
-            className="flex items-center justify-center gap-2 rounded-lg border border-dourado px-4 py-3 font-semibold text-dourado transition hover:bg-dourado/10"
+            onClick={() => {
+              setAvulso((atual) => ({
+                ...atual,
+                tipo: "entrada",
+              }));
+
+              setAbrirAvulso(true);
+            }}
+            className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-3 font-semibold text-preto transition hover:bg-dourado-claro"
           >
             <Plus size={18} />
-            Novo lançamento
+            Adicionar saldo
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAvulso((atual) => ({
+                ...atual,
+                tipo: "saida",
+              }));
+
+              setAbrirAvulso(true);
+            }}
+            className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-3 font-semibold text-preto transition hover:bg-dourado-claro"
+          >
+            <Minus size={18} />
+            Retirar saldo
           </button>
 
           <Link
@@ -780,7 +802,9 @@ export default function CaixaPage() {
       {abrirAvulso && (
         <div className="mb-6 rounded-xl border border-dourado/50 bg-grafite p-5">
           <h2 className="font-semibold text-dourado">
-            Novo lançamento no caixa
+            {avulso.tipo === "entrada"
+              ? "Adicionar saldo ao caixa"
+              : "Retirar saldo do caixa"}
           </h2>
 
           <p className="mt-1 text-xs text-texto-suave">

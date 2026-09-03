@@ -38,14 +38,14 @@ body {
  */
 .documento-word {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 10pt;
-  line-height: 1.38;
+  font-size: 11pt;
+  line-height: 1.48;
   text-align: justify;
   color: #000;
 }
 
 .documento-word p {
-  margin: 0 0 0.45em;
+  margin: 0 0 0.55em;
 }
 
 .documento-word strong {
@@ -61,11 +61,11 @@ body {
 }
 
 .documento-word h1 {
-  font-size: 14pt;
+  font-size: 15pt;
 }
 
 .documento-word h2 {
-  font-size: 12pt;
+  font-size: 13pt;
 }
 
 /*
@@ -78,7 +78,7 @@ body {
 .documento-word img {
   display: block;
   max-width: 100%;
-  max-height: 2cm;
+  max-height: 3cm;
   width: auto;
   height: auto;
   margin: 0 auto;
@@ -91,7 +91,7 @@ body {
 
 .documento-word td,
 .documento-word th {
-  padding: 4px 6px;
+  padding: 5px 7px;
   vertical-align: top;
 }
 

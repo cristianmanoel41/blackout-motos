@@ -4,7 +4,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import HistoricoGeral, {
   type RegistroHistorico,
 } from "@/components/HistoricoGeral";
-import { Plus, HardHat } from "lucide-react";
+import { Plus, HardHat, TrendingUp } from "lucide-react";
 
 /*
  * Histórico geral: vendas de moto e vendas de capacete
@@ -324,6 +324,14 @@ export default async function HistoricoVendasPage({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Link
+            href="/vendas/entradas"
+            className="flex items-center justify-center gap-2 rounded-lg border border-grafite-claro px-4 py-2 font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+          >
+            <TrendingUp size={18} />
+            Entradas
+          </Link>
+
           <Link
             href="/capacetes/vendas/nova"
             className="flex items-center justify-center gap-2 rounded-lg border border-grafite-claro px-4 py-2 font-semibold text-texto transition hover:border-dourado hover:text-dourado"

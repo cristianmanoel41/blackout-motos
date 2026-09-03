@@ -82,6 +82,24 @@ export default function HistoricoGeral({
   const [filtro, setFiltro] = useState<Filtro>("todos");
 
   /*
+   * A lista inteira cresce todo mês e vira uma rolagem sem
+   * fim. O normal é olhar um mês por vez - o mês corrente,
+   * quase sempre.
+   */
+  const hoje = new Date();
+
+  const [mes, setMes] = useState(
+    hoje.getMonth() + 1
+  );
+
+  const [ano, setAno] = useState(
+    hoje.getFullYear()
+  );
+
+  const [periodoTodo, setPeriodoTodo] =
+    useState(false);
+
+  /*
    * Duas leituras da mesma lista: por data da venda, que e
    * como o mes fecha, e por ordem de cadastro, que e como
    * se confere o que acabou de ser lancado.
@@ -91,10 +109,23 @@ export default function HistoricoGeral({
   >(ordemInicial);
   const [busca, setBusca] = useState("");
 
+  const doPeriodo = useMemo(() => {
+    if (periodoTodo) return registros;
+
+    const prefixo = `${ano}-${String(mes).padStart(
+      2,
+      "0"
+    )}`;
+
+    return registros.filter((registro) =>
+      String(registro.data || "").startsWith(prefixo)
+    );
+  }, [registros, mes, ano, periodoTodo]);
+
   const filtrados = useMemo(() => {
     const termo = normalizar(busca);
 
-    return registros.filter((registro) => {
+    return doPeriodo.filter((registro) => {
       const passouTipo =
         filtro === "todos" || registro.tipo === filtro;
 
@@ -113,7 +144,7 @@ export default function HistoricoGeral({
         ].join(" ")
       ).includes(termo);
     });
-  }, [registros, filtro, busca]);
+  }, [doPeriodo, filtro, busca]);
 
   /*
    * As vendas ja chegam da mais recente para a mais antiga.
@@ -188,7 +219,7 @@ export default function HistoricoGeral({
   }, [filtrados, ordem]);
 
   const totais = useMemo(() => {
-    return registros.reduce(
+    return doPeriodo.reduce(
       (resumo, registro) => {
         const chave =
           registro.tipo === "moto" ? "motos" : "capacetes";
@@ -208,7 +239,7 @@ export default function HistoricoGeral({
         qtd_capacetes: 0,
       } as Record<string, number>
     );
-  }, [registros]);
+  }, [doPeriodo]);
 
   const totalFiltrado = filtrados.reduce(
     (soma, registro) => soma + registro.valor,
@@ -230,8 +261,11 @@ export default function HistoricoGeral({
           </p>
 
           <p className="mt-1 text-xs text-texto-suave">
-            {registros.length} venda
-            {registros.length === 1 ? "" : "s"} no total
+            {doPeriodo.length} venda
+            {doPeriodo.length === 1 ? "" : "s"}{" "}
+            {periodoTodo
+              ? "no total"
+              : `em ${nomesMeses[mes - 1]}`}
           </p>
         </div>
 
@@ -269,6 +303,59 @@ export default function HistoricoGeral({
       </div>
 
       {/* FILTROS */}
+
+      {/* PERÍODO */}
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <select
+          value={mes}
+          onChange={(e) => {
+            setMes(Number(e.target.value));
+            setPeriodoTodo(false);
+          }}
+          disabled={periodoTodo}
+          className="rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none transition focus:border-dourado disabled:opacity-50"
+        >
+          {nomesMeses.map((nome, indice) => (
+            <option key={nome} value={indice + 1}>
+              {nome}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={ano}
+          onChange={(e) => {
+            setAno(Number(e.target.value));
+            setPeriodoTodo(false);
+          }}
+          disabled={periodoTodo}
+          className="rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none transition focus:border-dourado disabled:opacity-50"
+        >
+          {Array.from(
+            { length: 5 },
+            (_, i) => hoje.getFullYear() - i
+          ).map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+
+        <button
+          type="button"
+          onClick={() =>
+            setPeriodoTodo((atual) => !atual)
+          }
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+            periodoTodo
+              ? "border-dourado bg-dourado text-preto"
+              : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+          }`}
+        >
+          Todos os meses
+        </button>
+      </div>
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
@@ -337,7 +424,7 @@ export default function HistoricoGeral({
           <strong className="text-texto">
             {filtrados.length}
           </strong>{" "}
-          de {registros.length} · total{" "}
+          de {doPeriodo.length} · total{" "}
           <strong className="text-dourado">
             {formatarMoeda(totalFiltrado)}
           </strong>
@@ -348,7 +435,7 @@ export default function HistoricoGeral({
 
       {filtrados.length === 0 && (
         <div className="rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-sm text-texto-suave">
-          {registros.length === 0
+          {doPeriodo.length === 0
             ? "Nenhuma venda registrada ainda."
             : "Nenhuma venda encontrada com esse filtro."}
         </div>
