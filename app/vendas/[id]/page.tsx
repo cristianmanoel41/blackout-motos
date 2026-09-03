@@ -35,10 +35,11 @@ const tiposCustoDocumentacao = [
     chave: "vistoria",
     nome: "Vistoria de transferência",
   },
-  { chave: "taxas", nome: "Taxas / documentação" },
+  { chave: "taxas", nome: "Emissão de recibo" },
+  { chave: "detran", nome: "Taxas do Detran" },
   {
     chave: "despachante",
-    nome: "Documentação",
+    nome: "Entrada na documentação",
   },
   { chave: "outros", nome: "Outros custos" },
 ];

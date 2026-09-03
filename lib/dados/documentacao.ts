@@ -36,9 +36,14 @@ export const CUSTOS_PADRAO_VENDA = [
     valor: CUSTO_VISTORIA_TRANSFERENCIA,
   },
   {
+    tipo: "taxas",
+    descricao: "Emissão de recibo",
+    valor: CUSTO_RECIBO_COMPRA_VENDA,
+  },
+  {
     tipo: "despachante",
-    descricao: "Documentação",
-    valor: CUSTO_DOCUMENTACAO_PREVISTO,
+    descricao: "Entrada na documentação",
+    valor: CUSTO_ENTRADA_DOCUMENTACAO,
   },
 ] as const;
 
@@ -70,9 +75,12 @@ export function valorPadraoDoTipo(tipo: string) {
     case "vistoria":
       return CUSTO_VISTORIA_TRANSFERENCIA;
     case "despachante":
-      return CUSTO_DOCUMENTACAO_PREVISTO;
+      return CUSTO_ENTRADA_DOCUMENTACAO;
     case "taxas":
       return CUSTO_RECIBO_COMPRA_VENDA;
+    case "detran":
+      /* Só se sabe quando o despachante manda. */
+      return 0;
     default:
       return 0;
   }

@@ -88,6 +88,24 @@ export default function CaixaPage() {
   const [grupoAberto, setGrupoAberto] = useState("");
 
   /*
+   * O que o Caixa responde no dia a dia é "quanto entrou e
+   * saiu". As contas a confirmar - vistoria, despachante - são
+   * outra conversa, e deixá-las na frente do extrato só polui.
+   * Ficam numa aba, à mão mas fora do caminho.
+   */
+  const [aba, setAba] = useState<
+    "extrato" | "pendentes"
+  >("extrato");
+
+  /*
+   * A conta da Cris nem sempre vem inteira: as vezes ela
+   * cobra so o recibo de varias motos de uma vez. Filtrar
+   * pelo serviço deixa pagar exatamente o que ela mandou.
+   */
+  const [filtroServico, setFiltroServico] =
+    useState("");
+
+  /*
    * O repasse da vistoria é feito de quinze em quinze dias:
    * várias pendências são pagas de uma vez, no mesmo dia.
    * Dar baixa uma a uma seria trabalho repetido.
@@ -186,11 +204,41 @@ export default function CaixaPage() {
     {}
   );
 
-  const pendentesVisiveis = filtroPendente
+  function servicoDoLancamento(t: any) {
+    const descricao = String(t.descricao || "");
+    const corte = descricao.indexOf(" - ");
+
+    return corte >= 0
+      ? descricao.slice(0, corte)
+      : descricao;
+  }
+
+  const pendentesDaEmpresa = filtroPendente
     ? pendentes.filter(
         (t) => t.origem === filtroPendente
       )
     : pendentes;
+
+  /* Quanto está pendente em cada serviço da empresa. */
+  const servicosPendentes =
+    pendentesDaEmpresa.reduce(
+      (mapa: Record<string, number>, t) => {
+        const nome = servicoDoLancamento(t);
+
+        mapa[nome] =
+          (mapa[nome] || 0) + Number(t.valor || 0);
+
+        return mapa;
+      },
+      {}
+    );
+
+  const pendentesVisiveis = filtroServico
+    ? pendentesDaEmpresa.filter(
+        (t) =>
+          servicoDoLancamento(t) === filtroServico
+      )
+    : pendentesDaEmpresa;
 
   /*
    * Uma moto gera várias taxas da mesma empresa - vistoria,
@@ -999,9 +1047,44 @@ export default function CaixaPage() {
         </div>
       </div>
 
+      {/* ABAS */}
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setAba("extrato")}
+          className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+            aba === "extrato"
+              ? "border-dourado bg-dourado text-preto"
+              : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+          }`}
+        >
+          Extrato
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAba("pendentes")}
+          className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+            aba === "pendentes"
+              ? "border-dourado bg-dourado text-preto"
+              : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+          }`}
+        >
+          A confirmar
+          {pendentes.length > 0 && ` (${gruposPendentes.length})`}
+        </button>
+      </div>
+
       {/* PENDENTES */}
 
-      {pendentes.length > 0 && (
+      {aba === "pendentes" && pendentes.length === 0 && (
+        <div className="mb-6 rounded-xl border border-grafite-claro bg-grafite p-8 text-center text-texto-suave">
+          Nenhuma conta esperando baixa.
+        </div>
+      )}
+
+      {aba === "pendentes" && pendentes.length > 0 && (
         <div className="mb-6 overflow-hidden rounded-xl border border-dourado/50 bg-grafite">
           <div className="flex flex-col gap-2 border-b border-grafite-claro px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-dourado">
@@ -1046,7 +1129,10 @@ export default function CaixaPage() {
             <div className="flex flex-wrap gap-2 border-b border-grafite-claro px-5 py-3">
               <button
                 type="button"
-                onClick={() => setFiltroPendente("")}
+                onClick={() => {
+                  setFiltroPendente("");
+                  setFiltroServico("");
+                }}
                 className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
                   filtroPendente === ""
                     ? "border-dourado bg-dourado text-preto"
@@ -1063,11 +1149,15 @@ export default function CaixaPage() {
                     key={origem}
                     type="button"
                     onClick={() =>
-                      setFiltroPendente(
-                        filtroPendente === origem
-                          ? ""
-                          : origem
-                      )
+                      {
+                        setFiltroPendente(
+                          filtroPendente === origem
+                            ? ""
+                            : origem
+                        );
+
+                        setFiltroServico("");
+                      }
                     }
                     className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
                       filtroPendente === origem
@@ -1113,6 +1203,49 @@ export default function CaixaPage() {
                   ? "Desmarcar todas"
                   : "Marcar todas"}
               </button>
+            </div>
+          )}
+
+          {Object.keys(servicosPendentes).length > 1 && (
+            <div className="flex flex-wrap gap-2 border-b border-grafite-claro px-5 py-2">
+              <span className="self-center text-xs text-texto-suave">
+                Serviço:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setFiltroServico("")}
+                className={`rounded-lg border px-3 py-1 text-xs font-semibold transition ${
+                  filtroServico === ""
+                    ? "border-dourado bg-dourado text-preto"
+                    : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+                }`}
+              >
+                Todos
+              </button>
+
+              {Object.entries(servicosPendentes)
+                .sort((a, b) => b[1] - a[1])
+                .map(([nome, total]) => (
+                  <button
+                    key={nome}
+                    type="button"
+                    onClick={() =>
+                      setFiltroServico(
+                        filtroServico === nome
+                          ? ""
+                          : nome
+                      )
+                    }
+                    className={`rounded-lg border px-3 py-1 text-xs font-semibold transition ${
+                      filtroServico === nome
+                        ? "border-dourado bg-dourado text-preto"
+                        : "border-grafite-claro text-texto-suave hover:border-dourado hover:text-dourado"
+                    }`}
+                  >
+                    {nome}: {formatarMoeda(total)}
+                  </button>
+                ))}
             </div>
           )}
 
@@ -1511,6 +1644,7 @@ export default function CaixaPage() {
 
       {/* EXTRATO */}
 
+      {aba === "extrato" && (
       <div className="overflow-hidden rounded-xl border border-grafite-claro bg-grafite">
         <div className="border-b border-grafite-claro px-5 py-3">
           <h2 className="font-semibold text-dourado">
@@ -1690,6 +1824,7 @@ export default function CaixaPage() {
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }
