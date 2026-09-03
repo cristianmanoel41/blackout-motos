@@ -138,6 +138,29 @@ export default function PreviaDocumento({
           margin: 0;
         }
 
+        .folha-documento {
+          position: relative;
+        }
+
+        .marca-dagua-documento {
+          position: absolute !important;
+          top: 45% !important;
+          left: 50% !important;
+          width: 13cm !important;
+          max-width: none !important;
+          height: auto !important;
+          max-height: none !important;
+          transform: translate(-50%, -50%) !important;
+          opacity: 0.07 !important;
+          pointer-events: none !important;
+          z-index: 0 !important;
+        }
+
+        .folha-documento > * {
+          position: relative;
+          z-index: 1;
+        }
+
         .documento-word img {
           display: block !important;
           width: 9.21cm !important;
@@ -241,6 +264,8 @@ export default function PreviaDocumento({
             position: absolute !important;
             top: 0 !important;
             left: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             width: 210mm !important;
             max-width: none !important;
             min-height: 297mm !important;
@@ -262,9 +287,11 @@ export default function PreviaDocumento({
           }
 
           .documento-word img {
-            width: 5cm !important;
-            max-width: 5cm !important;
-            height: auto !important;
+            width: 9.21cm !important;
+            max-width: 9.21cm !important;
+            height: 3cm !important;
+            max-height: 3cm !important;
+            object-fit: contain !important;
             margin: 0 auto 1mm !important;
           }
 
@@ -319,6 +346,14 @@ export default function PreviaDocumento({
         )}
 
         <div className="folha-documento mx-auto w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-blackout-clara.png"
+            alt=""
+            aria-hidden="true"
+            className="marca-dagua-documento"
+          />
+
           {carregando && (
             <p className="no-print text-center text-sm text-neutral-500">
               Montando a prévia de {titulo}...
