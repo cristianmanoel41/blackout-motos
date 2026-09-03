@@ -10,6 +10,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import DocumentosCliente from "@/components/DocumentosCliente";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import CardWhatsapp from "@/components/CardWhatsapp";
 
@@ -1043,6 +1044,10 @@ export default function ClienteDetalhesPage() {
               )}
             </div>
           )}
+        </section>
+
+        <section className="mt-4">
+          <DocumentosCliente customerId={id} />
         </section>
       </div>
     </main>
