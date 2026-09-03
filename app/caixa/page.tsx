@@ -75,6 +75,18 @@ export default function CaixaPage() {
   >({});
 
   /*
+   * A nota da Alvo nem sempre cobre tudo que esta pendente:
+   * pode faltar uma moto, pode sobrar de outra quinzena. Entao
+   * da para escolher quais entram nesta baixa.
+   */
+  const [itensDoGrupo, setItensDoGrupo] = useState<
+    Record<string, boolean>
+  >({});
+
+  /* Qual grupo está com a lista de motos aberta. */
+  const [grupoAberto, setGrupoAberto] = useState("");
+
+  /*
    * O repasse da vistoria é feito de quinze em quinze dias:
    * várias pendências são pagas de uma vez, no mesmo dia.
    * Dar baixa uma a uma seria trabalho repetido.
@@ -188,16 +200,30 @@ export default function CaixaPage() {
    * A descrição é "<taxa> - <moto>", entao o que vem depois
    * do primeiro " - " identifica a moto.
    */
-  function chaveDoGrupo(t: any) {
+  function identificacaoDaMoto(t: any) {
     const descricao = String(t.descricao || "");
     const corte = descricao.indexOf(" - ");
 
-    const moto =
-      corte >= 0
-        ? descricao.slice(corte + 3)
-        : descricao;
+    return corte >= 0
+      ? descricao.slice(corte + 3)
+      : descricao;
+  }
 
-    return `${t.origem}|${moto}`;
+  function chaveDoGrupo(t: any) {
+    /*
+     * Vistoria e documentação são de empresas diferentes, mas
+     * pertencem à mesma moto - e é por moto que se confere.
+     * Então as duas ficam na mesma linha, com o valor de cada
+     * uma separado dentro dela.
+     */
+    if (
+      t.origem === "vistoria" ||
+      t.origem === "documentacao"
+    ) {
+      return `moto|${identificacaoDaMoto(t)}`;
+    }
+
+    return `${t.origem}|${identificacaoDaMoto(t)}`;
   }
 
   const gruposPendentes = pendentesVisiveis.reduce(
@@ -211,21 +237,24 @@ export default function CaixaPage() {
       if (grupo) {
         grupo.itens.push(t);
         grupo.total += Number(t.valor || 0);
+
+        grupo.porEmpresa[t.origem] =
+          (grupo.porEmpresa[t.origem] || 0) +
+          Number(t.valor || 0);
+
         return lista;
       }
-
-      const descricao = String(t.descricao || "");
-      const corte = descricao.indexOf(" - ");
 
       lista.push({
         chave,
         origem: t.origem,
+        porMoto: chave.startsWith("moto|"),
+        porEmpresa: {
+          [t.origem]: Number(t.valor || 0),
+        } as Record<string, number>,
         tipo: t.tipo,
         data: t.data,
-        moto:
-          corte >= 0
-            ? descricao.slice(corte + 3)
-            : descricao,
+        moto: identificacaoDaMoto(t),
         itens: [t],
         total: Number(t.valor || 0),
       });
@@ -252,7 +281,19 @@ export default function CaixaPage() {
      */
     let error = null as any;
 
-    for (const item of grupo.itens) {
+    const escolhidos = grupo.itens.filter(
+      (item: any) => itensDoGrupo[item.id] !== false
+    );
+
+    if (escolhidos.length === 0) {
+      setSalvando(false);
+      setErro(
+        "Marque pelo menos uma moto para dar baixa."
+      );
+      return;
+    }
+
+    for (const item of escolhidos) {
       const digitado = valoresDoGrupo[item.id];
 
       const valorFinal =
@@ -295,6 +336,7 @@ export default function CaixaPage() {
 
     setBaixaId("");
     setValoresDoGrupo({});
+    setItensDoGrupo({});
     await carregarCaixa();
 
     setMensagem("Pagamento confirmado no caixa.");
@@ -411,6 +453,42 @@ export default function CaixaPage() {
    * Cancelar apaga o lançamento pendente. Serve para a compra
    * que não se confirmou ou o gasto que a oficina não cobrou.
    */
+  /*
+   * A Cris e a Alvo raramente sao pagas no mesmo dia, entao
+   * a baixa abre com so uma delas marcada. As outras taxas
+   * da moto continuam pendentes.
+   */
+  function abrirBaixaDaEmpresa(
+    grupo: any,
+    origem: string | null
+  ) {
+    setBaixaId(grupo.chave);
+    setDataBaixa(hoje());
+
+    setValorBaixa(
+      String(grupo.itens[0].valor ?? "")
+    );
+
+    setValoresDoGrupo(
+      Object.fromEntries(
+        grupo.itens.map((item: any) => [
+          item.id,
+          String(item.valor ?? ""),
+        ])
+      )
+    );
+
+    setItensDoGrupo(
+      Object.fromEntries(
+        grupo.itens.map((item: any) => [
+          item.id,
+          origem === null ||
+            item.origem === origem,
+        ])
+      )
+    );
+  }
+
   function alternarSelecao(id: string) {
     setSelecionados((atuais) =>
       atuais.includes(id)
@@ -905,6 +983,13 @@ export default function CaixaPage() {
             <h2 className="flex items-center gap-2 font-semibold text-dourado">
               <Clock size={18} />
               A confirmar
+
+              <span className="text-xs font-normal text-texto-suave">
+                {gruposPendentes.length}
+                {gruposPendentes.length === 1
+                  ? " conta"
+                  : " contas"}
+              </span>
             </h2>
 
             <div className="flex flex-wrap gap-4 text-xs">
@@ -929,11 +1014,8 @@ export default function CaixaPage() {
           </div>
 
           <p className="border-b border-grafite-claro px-5 py-2 text-xs text-texto-suave">
-            Lançamentos que ainda não entraram no saldo. Dê
-            baixa no dia em que o pagamento for feito de fato.
-            Marque vários para pagar tudo de uma vez - é o caso
-            do repasse das vistorias, que vai de quinze em
-            quinze dias.
+            Ainda não entraram no saldo. Dê baixa no dia do
+            pagamento.
           </p>
 
           {Object.keys(pendentesPorOrigem).length > 1 && (
@@ -1125,38 +1207,85 @@ export default function CaixaPage() {
 
                       <div>
                         <p className="text-sm text-texto">
-                          {varias
-                            ? `${
+                          {grupo.porMoto
+                            ? grupo.moto
+                            : varias
+                              ? `${
+                                  origemLabel[grupo.origem] ||
+                                  "Movimentação"
+                                } - ${grupo.moto}`
+                              : grupo.itens[0].descricao ||
                                 origemLabel[grupo.origem] ||
-                                "Movimentação"
-                              } - ${grupo.moto}`
-                            : grupo.itens[0].descricao ||
-                              origemLabel[grupo.origem] ||
-                              "Movimentação"}
+                                "Movimentação"}
                         </p>
 
                         <p className="text-xs text-texto-suave">
-                          {origemLabel[grupo.origem] ||
-                            "Outro"}{" "}
+                          {grupo.porMoto
+                            ? "Documentação"
+                            : origemLabel[grupo.origem] ||
+                              "Outro"}{" "}
                           · previsto para{" "}
                           {formatarData(grupo.data)}
                           {vencido ? " · atrasado" : ""}
                         </p>
 
-                        {varias && (
-                          <p className="mt-1 text-xs text-texto-suave">
-                            {grupo.itens
-                              .map(
-                                (t: any) =>
-                                  `${String(
-                                    t.descricao || ""
-                                  ).split(" - ")[0]} ${formatarMoeda(
-                                    t.valor
-                                  )}`
+                        {grupo.porMoto && (
+                          <p className="mt-1 text-xs">
+                            {Object.entries(
+                              grupo.porEmpresa
+                            ).map(
+                              (
+                                [origem, valor]: any,
+                                indice
+                              ) => (
+                                <span key={origem}>
+                                  {indice > 0 ? " · " : ""}
+                                  <span className="text-texto-suave">
+                                    {origemLabel[origem] ||
+                                      "Outro"}{" "}
+                                  </span>
+                                  <strong className="text-texto">
+                                    {formatarMoeda(valor)}
+                                  </strong>
+                                </span>
                               )
-                              .join(" · ")}
+                            )}
                           </p>
                         )}
+
+                        {varias && !grupo.porMoto && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setGrupoAberto(
+                                grupoAberto === grupo.chave
+                                  ? ""
+                                  : grupo.chave
+                              )
+                            }
+                            className="mt-1 text-xs text-dourado underline-offset-2 hover:underline"
+                          >
+                            {grupoAberto === grupo.chave
+                              ? "esconder"
+                              : `ver as ${grupo.itens.length} taxas`}
+                          </button>
+                        )}
+
+                        {varias &&
+                          !grupo.porMoto &&
+                          grupoAberto === grupo.chave && (
+                            <div className="mt-2 space-y-0.5">
+                              {grupo.itens.map((t: any) => (
+                                <p
+                                  key={t.id}
+                                  className="text-xs text-texto-suave"
+                                >
+                                  {identificacaoDaMoto(t)} ·{" "}
+                                  {formatarMoeda(t.valor)}
+                                </p>
+                              ))}
+                            </div>
+                          )}
                       </div>
                     </div>
 
@@ -1174,37 +1303,46 @@ export default function CaixaPage() {
                         {formatarMoeda(grupo.total)}
                       </p>
 
-                      {baixaId !== grupo.chave && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBaixaId(grupo.chave);
-                            setDataBaixa(hoje());
-                            setValorBaixa(
-                              String(
-                                grupo.itens[0].valor ?? ""
-                              )
-                            );
-
-                            setValoresDoGrupo(
-                              Object.fromEntries(
-                                grupo.itens.map(
-                                  (item: any) => [
-                                    item.id,
-                                    String(
-                                      item.valor ?? ""
-                                    ),
-                                  ]
+                      {baixaId !== grupo.chave &&
+                        (grupo.porMoto &&
+                        Object.keys(grupo.porEmpresa)
+                          .length > 1 ? (
+                          /* Uma empresa por vez, com o valor dela. */
+                          Object.entries(
+                            grupo.porEmpresa
+                          ).map(([origem, valor]: any) => (
+                            <button
+                              key={origem}
+                              type="button"
+                              onClick={() =>
+                                abrirBaixaDaEmpresa(
+                                  grupo,
+                                  origem
                                 )
+                              }
+                              className="inline-flex items-center gap-1 rounded-lg border border-dourado px-3 py-1.5 text-xs font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
+                            >
+                              <Check size={13} />
+                              {origemLabel[origem] ||
+                                "Outro"}{" "}
+                              {formatarMoeda(valor)}
+                            </button>
+                          ))
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              abrirBaixaDaEmpresa(
+                                grupo,
+                                null
                               )
-                            );
-                          }}
-                          className="inline-flex items-center gap-1 rounded-lg bg-dourado px-3 py-1.5 text-xs font-semibold text-preto transition hover:bg-dourado-claro"
-                        >
-                          <Check size={13} />
-                          Dar baixa
-                        </button>
-                      )}
+                            }
+                            className="inline-flex items-center gap-1 rounded-lg bg-dourado px-3 py-1.5 text-xs font-semibold text-preto transition hover:bg-dourado-claro"
+                          >
+                            <Check size={13} />
+                            Dar baixa
+                          </button>
+                        ))}
                     </div>
                   </div>
 
@@ -1247,10 +1385,29 @@ export default function CaixaPage() {
                       {varias &&
                         grupo.itens.map((item: any) => (
                           <div key={item.id}>
-                            <label className="mb-1 block text-xs text-texto-suave">
-                              {String(
-                                item.descricao || ""
-                              ).split(" - ")[0] || "Valor"}
+                            <label className="mb-1 flex items-center gap-2 text-xs text-texto-suave">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  itensDoGrupo[item.id] !==
+                                  false
+                                }
+                                onChange={(e) =>
+                                  setItensDoGrupo(
+                                    (atuais) => ({
+                                      ...atuais,
+                                      [item.id]:
+                                        e.target.checked,
+                                    })
+                                  )
+                                }
+                                className="h-3.5 w-3.5 accent-yellow-500"
+                              />
+
+                              {origemLabel[item.origem] ||
+                                String(
+                                  item.descricao || ""
+                                ).split(" - ")[0]}
                             </label>
 
                             <input
@@ -1288,7 +1445,13 @@ export default function CaixaPage() {
                         {salvando
                           ? "Confirmando..."
                           : varias
-                            ? `Confirmar ${grupo.itens.length} taxas`
+                            ? `Confirmar ${
+                                grupo.itens.filter(
+                                  (item: any) =>
+                                    itensDoGrupo[item.id] !==
+                                    false
+                                ).length
+                              }`
                             : "Confirmar"}
                       </button>
 
