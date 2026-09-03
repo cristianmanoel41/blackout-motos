@@ -140,10 +140,10 @@ export default function PreviaDocumento({
 
         .documento-word img {
           display: block !important;
-          width: 5cm !important;
-          max-width: 5cm !important;
-          height: auto !important;
-          max-height: none !important;
+          width: 9.21cm !important;
+          max-width: 9.21cm !important;
+          height: 3cm !important;
+          max-height: 3cm !important;
           margin: 0 auto 1mm !important;
           object-fit: contain !important;
         }
@@ -160,6 +160,12 @@ export default function PreviaDocumento({
 
         .documento-word .cabecalho-loja + .cabecalho-loja {
           margin-top: 0.4mm !important;
+        }
+
+        .documento-word
+          .cabecalho-loja
+          + *:not(.cabecalho-loja) {
+          margin-top: 1.5em !important;
         }
 
         .documento-word .data-documento {
