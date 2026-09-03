@@ -144,14 +144,15 @@ export default function PreviaDocumento({
 
         .marca-dagua-documento {
           position: absolute !important;
-          top: 45% !important;
+          top: 105mm !important;
           left: 50% !important;
           width: 13cm !important;
           max-width: none !important;
           height: auto !important;
           max-height: none !important;
-          transform: translate(-50%, -50%) !important;
-          opacity: 0.07 !important;
+          transform: translateX(-50%) !important;
+          opacity: 0.14 !important;
+          filter: grayscale(1) !important;
           pointer-events: none !important;
           z-index: 0 !important;
         }
@@ -283,7 +284,23 @@ export default function PreviaDocumento({
             margin: 0 !important;
             padding: 0 !important;
             color: #000000 !important;
-            background: #ffffff !important;
+            background: transparent !important;
+          }
+
+          .marca-dagua-documento {
+            display: block !important;
+            visibility: visible !important;
+            position: absolute !important;
+            top: 105mm !important;
+            left: 50% !important;
+            width: 13cm !important;
+            max-width: none !important;
+            height: auto !important;
+            max-height: none !important;
+            transform: translateX(-50%) !important;
+            opacity: 0.14 !important;
+            filter: grayscale(1) !important;
+            z-index: 0 !important;
           }
 
           .documento-word img {
@@ -348,7 +365,7 @@ export default function PreviaDocumento({
         <div className="folha-documento mx-auto w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-blackout-clara.png"
+            src="/logo-blackout-menu.png"
             alt=""
             aria-hidden="true"
             className="marca-dagua-documento"
