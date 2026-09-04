@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import ExcluirGastoButton from "./ExcluirGastoButton";
+import NovoGastoBotao from "./NovoGastoBotao";
 
 const NOMES_MESES = [
   "Janeiro",
@@ -86,6 +87,16 @@ export default async function GastosMotosPage({
       )
     `)
     .order("data", { ascending: false });
+
+  /*
+   * Motos que ainda estão na loja primeiro: gasto de moto
+   * vendida existe, mas é exceção.
+   */
+  const { data: motosParaGasto } = await supabase
+    .from("motorcycles")
+    .select("id, codigo, marca, modelo, placa, status")
+    .order("status", { ascending: true })
+    .order("codigo", { ascending: false });
 
   if (error) {
     return (
@@ -211,14 +222,20 @@ export default async function GastosMotosPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dourado">
-          Gastos das Motos
-        </h1>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-dourado">
+            Gastos das Motos
+          </h1>
 
-        <p className="mt-1 text-sm text-texto-suave">
-          Gastos separados por mês e agrupados por moto.
-        </p>
+          <p className="mt-1 text-sm text-texto-suave">
+            Gastos separados por mês e agrupados por moto.
+          </p>
+        </div>
+
+        <NovoGastoBotao
+          motos={motosParaGasto || []}
+        />
       </div>
 
       <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(520px,1fr)_minmax(360px,0.8fr)]">

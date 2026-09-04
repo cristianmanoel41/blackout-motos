@@ -29,6 +29,16 @@ export type RegistroHistorico = {
   pagamento: string;
   observacaoPagamento: string;
   extra: string;
+
+  /*
+   * Venda menos compra menos gastos daquela moto. Capacete de
+   * balcão não entra nessa conta, então vem nulo.
+   */
+  lucro?: number | null;
+
+  /* De onde saiu o lucro daquela moto. */
+  custoCompra?: number | null;
+  gastos?: number | null;
 };
 
 const nomesMeses = [
@@ -229,6 +239,11 @@ export default function HistoricoGeral({
           geral: resumo.geral + registro.valor,
           [chave]: resumo[chave] + registro.valor,
           [`qtd_${chave}`]: resumo[`qtd_${chave}`] + 1,
+          lucro:
+            resumo.lucro +
+            (typeof registro.lucro === "number"
+              ? registro.lucro
+              : 0),
         };
       },
       {
@@ -237,6 +252,7 @@ export default function HistoricoGeral({
         capacetes: 0,
         qtd_motos: 0,
         qtd_capacetes: 0,
+        lucro: 0,
       } as Record<string, number>
     );
   }, [doPeriodo]);
@@ -250,7 +266,7 @@ export default function HistoricoGeral({
     <div className="w-full">
       {/* NÚMEROS */}
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-grafite-claro bg-grafite p-4">
           <p className="text-xs text-texto-suave">
             Total vendido
@@ -266,6 +282,26 @@ export default function HistoricoGeral({
             {periodoTodo
               ? "no total"
               : `em ${nomesMeses[mes - 1]}`}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-dourado/50 bg-grafite p-4">
+          <p className="text-xs text-texto-suave">
+            Lucro nas motos
+          </p>
+
+          <p
+            className={`mt-1 text-2xl font-bold ${
+              totais.lucro >= 0
+                ? "text-green-400"
+                : "text-red-400"
+            }`}
+          >
+            {formatarMoeda(totais.lucro)}
+          </p>
+
+          <p className="mt-1 text-xs text-texto-suave">
+            Venda menos compra e gastos
           </p>
         </div>
 
@@ -454,6 +490,7 @@ export default function HistoricoGeral({
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Vendedor</th>
                 <th className="px-4 py-3 text-right">Valor</th>
+                <th className="px-4 py-3 text-right">Lucro</th>
                 <th className="px-4 py-3">Pagamento</th>
                 <th className="px-4 py-3 text-center">Ações</th>
               </tr>
@@ -577,6 +614,32 @@ export default function HistoricoGeral({
 
                   <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-white">
                     {formatarMoeda(registro.valor)}
+                  </td>
+
+                  <td
+                    className={`whitespace-nowrap px-4 py-3 text-right font-semibold ${
+                      typeof registro.lucro !== "number"
+                        ? "text-texto-suave"
+                        : registro.lucro >= 0
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {typeof registro.lucro === "number"
+                      ? formatarMoeda(registro.lucro)
+                      : "-"}
+
+                    {typeof registro.lucro === "number" && (
+                      <span className="mt-1 block text-xs font-normal text-texto-suave">
+                        compra{" "}
+                        {formatarMoeda(
+                          registro.custoCompra || 0
+                        )}
+                        <br />
+                        gastos{" "}
+                        {formatarMoeda(registro.gastos || 0)}
+                      </span>
+                    )}
                   </td>
 
                   <td className="px-4 py-3">

@@ -34,6 +34,7 @@ type MotoHistorico = {
   ano_modelo?: string | number | null;
   cor?: string | null;
   placa?: string | null;
+  valor_compra?: number | string | null;
 };
 
 function erro(mensagem: string) {
@@ -102,7 +103,8 @@ export default async function HistoricoVendasPage({
           versao,
           ano_modelo,
           cor,
-          placa
+          placa,
+          valor_compra
         `
         )
         .in("id", idsMotos);
@@ -121,6 +123,30 @@ export default async function HistoricoVendasPage({
   motos.forEach((moto) => {
     mapaMotos.set(String(moto.id), moto);
   });
+
+  /*
+   * O lucro de uma moto é o que ela vendeu menos o que ela
+   * custou: a compra mais tudo que foi gasto nela - mecânico,
+   * peça, lavagem. É a mesma conta do relatório mensal.
+   */
+  const gastosPorMoto = new Map<string, number>();
+
+  if (idsMotos.length > 0) {
+    const { data: gastosDasMotos } = await supabase
+      .from("motorcycle_expenses")
+      .select("motorcycle_id, valor")
+      .in("motorcycle_id", idsMotos);
+
+    (gastosDasMotos || []).forEach((gasto) => {
+      const chave = String(gasto.motorcycle_id);
+
+      gastosPorMoto.set(
+        chave,
+        (gastosPorMoto.get(chave) || 0) +
+          (Number(gasto.valor) || 0)
+      );
+    });
+  }
 
   // ==========================================
   // 3. CAPACETES QUE SAÍRAM JUNTO COM AS MOTOS
@@ -195,6 +221,25 @@ export default async function HistoricoVendasPage({
 
       const financiado = Number(venda.valor_financiado) || 0;
 
+      const valorVenda =
+        Number(
+          venda.valor_total_venda ?? venda.valor_venda
+        ) || 0;
+
+      const custoCompra = moto
+        ? Number(moto.valor_compra) || 0
+        : null;
+
+      const gastos = moto
+        ? gastosPorMoto.get(String(moto.id)) || 0
+        : null;
+
+      const lucro = moto
+        ? valorVenda -
+          (custoCompra || 0) -
+          (gastos || 0)
+        : null;
+
       return {
         id: String(venda.id),
         tipo: "moto",
@@ -217,10 +262,10 @@ export default async function HistoricoVendasPage({
         contato: venda.telefone || "",
         telefone: venda.telefone || null,
         vendedor: venda.vendedor || "",
-        valor:
-          Number(
-            venda.valor_total_venda ?? venda.valor_venda
-          ) || 0,
+        valor: valorVenda,
+        lucro,
+        custoCompra,
+        gastos,
         pagamento: venda.forma_pagamento || "-",
         observacaoPagamento:
           financiado > 0
