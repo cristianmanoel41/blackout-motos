@@ -8,6 +8,7 @@ import {
 } from "react";
 import Link from "next/link";
 import CampoMoeda from "@/components/CampoMoeda";
+import ExtratoOfx from "@/components/ExtratoOfx";
 import {
   Banknote,
   Building2,
@@ -879,6 +880,8 @@ export default function ConciliacaoCaixaPage() {
             ao criar o ponto de partida, o sistema não apaga as movimentações antigas. Ele neutraliza tecnicamente o saldo anterior e passa a considerar o valor real informado como base. Gastos históricos cadastrados com data anterior ao início continuam no custo da moto, mas não criam nova saída de caixa.
           </div>
         )}
+
+        <ExtratoOfx />
 
         <section className="mt-6 overflow-hidden rounded-2xl border border-grafite-claro bg-grafite">
           <div className="flex items-center justify-between border-b border-grafite-claro px-5 py-4">
