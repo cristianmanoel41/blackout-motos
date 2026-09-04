@@ -552,7 +552,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+      <section className="grid grid-cols-1 gap-5">
         <details className={styles.panel}>
           <summary className={styles.resumoPainel}>
             <div>

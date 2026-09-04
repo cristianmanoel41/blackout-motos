@@ -410,7 +410,6 @@ details[open] > .resumoPainel .setaPainel {
  */
 details.panel:not([open]) {
   padding: 14px 22px;
-  grid-column: 1 / -1;
 }
 
 details.panel:not([open]) > .resumoPainel {
