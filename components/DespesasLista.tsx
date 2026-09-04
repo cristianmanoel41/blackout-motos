@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   Check,
   Pencil,
@@ -40,20 +41,8 @@ export type Despesa = {
 
 /* As mesmas do cadastro de despesa. */
 const categorias = [
-  "Aluguel",
-  "Água",
-  "Energia",
-  "Internet",
+  "Gastos do dia",
   "Funcionários",
-  "Comissão",
-  "Contador",
-  "Impostos",
-  "Anúncios",
-  "Combustível",
-  "Materiais",
-  "Manutenção",
-  "Alimentação",
-  "Outros",
 ];
 
 const nomesMeses = [
@@ -820,7 +809,15 @@ export default function DespesasLista({
                                 }
                                 className={campoClass}
                               >
-                                {categorias.map((nome) => (
+                                {(categorias.includes(
+                                  formEdicao.categoria
+                                )
+                                  ? categorias
+                                  : [
+                                      formEdicao.categoria,
+                                      ...categorias,
+                                    ]
+                                ).map((nome) => (
                                   <option key={nome} value={nome}>
                                     {nome}
                                   </option>
@@ -850,15 +847,12 @@ export default function DespesasLista({
                                 Valor (R$)
                               </label>
 
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
+                              <CampoMoeda
                                 value={formEdicao.valor}
-                                onChange={(e) =>
+                                onChange={(valorDigitado) =>
                                   setFormEdicao({
                                     ...formEdicao,
-                                    valor: e.target.value,
+                                    valor: valorDigitado,
                                   })
                                 }
                                 className={campoClass}

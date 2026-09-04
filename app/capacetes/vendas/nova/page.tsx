@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   useUsuarioAtual,
   vendedorDoUsuario,
@@ -1189,16 +1190,13 @@ export default function NovaVendaCapacetePage() {
                             Custo unitário (o que a loja pagou)
                           </label>
 
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                          <CampoMoeda
                             value={item.novoCusto}
-                            onChange={(e) =>
+                            onChange={(valorDigitado) =>
                               alterarItem(
                                 item.idLocal,
                                 "novoCusto",
-                                e.target.value
+                                valorDigitado
                               )
                             }
                             placeholder="0,00"
@@ -1243,16 +1241,13 @@ export default function NovaVendaCapacetePage() {
                         Valor unitário (R$)
                       </label>
 
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
+                      <CampoMoeda
                         value={item.valorUnitario}
-                        onChange={(e) =>
+                        onChange={(valorDigitado) =>
                           alterarItem(
                             item.idLocal,
                             "valorUnitario",
-                            e.target.value
+                            valorDigitado
                           )
                         }
                         placeholder="0,00"

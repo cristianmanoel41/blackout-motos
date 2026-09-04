@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   HardHat,
   Pencil,
@@ -714,15 +715,12 @@ export default function CapacetesPage() {
                     Valor padrão de venda (R$)
                   </label>
 
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <CampoMoeda
                     value={form.preco_venda_padrao}
-                    onChange={(e) =>
+                    onChange={(valorDigitado) =>
                       setForm({
                         ...form,
-                        preco_venda_padrao: e.target.value,
+                        preco_venda_padrao: valorDigitado,
                       })
                     }
                     placeholder="0,00"
@@ -768,15 +766,12 @@ export default function CapacetesPage() {
                       Custo unitário (R$)
                     </label>
 
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                    <CampoMoeda
                       value={form.custo_inicial}
-                      onChange={(e) =>
+                      onChange={(valorDigitado) =>
                         setForm({
                           ...form,
-                          custo_inicial: e.target.value,
+                          custo_inicial: valorDigitado,
                         })
                       }
                       placeholder="0,00"

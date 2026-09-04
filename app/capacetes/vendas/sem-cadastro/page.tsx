@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import CampoMoeda from "@/components/CampoMoeda";
 
 type Lancamento = {
   id: string;
@@ -452,14 +453,11 @@ export default function VendaCapaceteSemCadastroPage() {
                 Valor recebido *
               </label>
 
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
+              <CampoMoeda
                 value={valorRecebido}
-                onChange={(event) =>
+                onChange={(valorDigitado) =>
                   setValorRecebido(
-                    event.target.value
+                    valorDigitado
                   )
                 }
                 placeholder="0,00"

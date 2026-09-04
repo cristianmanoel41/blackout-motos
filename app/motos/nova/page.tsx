@@ -27,6 +27,7 @@ import {
   versoesDoModelo,
 } from "@/lib/dados/motos";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import CampoMoeda from "@/components/CampoMoeda";
 
 /*
  * Unica loja parceira hoje. Vira uma lista quando aparecer
@@ -2280,15 +2281,12 @@ export default function NovaMotoPage() {
                       Valor a pagar (R$)
                     </label>
 
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <CampoMoeda
                       value={form.valor_ipva}
-                      onChange={(event) =>
+                      onChange={(valorDigitado) =>
                         atualizarCampo(
                           "valor_ipva",
-                          event.target.value
+                          valorDigitado
                         )
                       }
                       className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
@@ -2336,15 +2334,12 @@ export default function NovaMotoPage() {
                       Valor a pagar (R$)
                     </label>
 
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <CampoMoeda
                       value={form.valor_multas}
-                      onChange={(event) =>
+                      onChange={(valorDigitado) =>
                         atualizarCampo(
                           "valor_multas",
-                          event.target.value
+                          valorDigitado
                         )
                       }
                       className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
@@ -2392,15 +2387,12 @@ export default function NovaMotoPage() {
                       Valor a pagar (R$)
                     </label>
 
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <CampoMoeda
                       value={form.valor_licenciamento}
-                      onChange={(event) =>
+                      onChange={(valorDigitado) =>
                         atualizarCampo(
                           "valor_licenciamento",
-                          event.target.value
+                          valorDigitado
                         )
                       }
                       className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
@@ -2427,8 +2419,7 @@ export default function NovaMotoPage() {
                       ? "Valor de compra (fica zero)"
                       : "Valor de compra *"
                 }
-                type="number"
-                step="0.01"
+                type="moeda"
                 value={
                   form.valor_compra
                 }
@@ -2443,8 +2434,7 @@ export default function NovaMotoPage() {
 
               <Campo
                 label="Preço anunciado"
-                type="number"
-                step="0.01"
+                type="moeda"
                 value={
                   form.preco_anunciado
                 }
@@ -2561,8 +2551,7 @@ export default function NovaMotoPage() {
                   <div className="mt-4 grid gap-5 md:grid-cols-2">
                     <Campo
                       label="Valor da quitação *"
-                      type="number"
-                      step="0.01"
+                      type="moeda"
                       value={
                         form.valor_quitacao
                       }
@@ -3076,23 +3065,32 @@ function Campo({
         {label}
       </label>
 
-      <input
-        type={type}
-        step={step}
-        min={
-          type === "number"
-            ? "0"
-            : undefined
-        }
-        value={value}
-        onChange={(e) =>
-          onChange(
-            e.target.value
-          )
-        }
-        placeholder={placeholder}
-        className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
-      />
+      {type === "moeda" ? (
+        <CampoMoeda
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
+        />
+      ) : (
+        <input
+          type={type}
+          step={step}
+          min={
+            type === "number"
+              ? "0"
+              : undefined
+          }
+          value={value}
+          onChange={(e) =>
+            onChange(
+              e.target.value
+            )
+          }
+          placeholder={placeholder}
+          className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
+        />
+      )}
     </div>
   );
 }

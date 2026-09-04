@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import Vistorias from "@/components/Vistorias";
 import RegistradoPor from "@/components/RegistradoPor";
+import CampoMoeda from "@/components/CampoMoeda";
 
 const statusLabel: Record<string, string> = {
   disponivel: "Disponível",
@@ -722,8 +723,7 @@ export default function DetalheMotoPage() {
               form.valor_compra || 0
             )}
             editando={editando}
-            type="number"
-            step="0.01"
+            type="moeda"
             onChange={(v) =>
               alterarCampo(
                 "valor_compra",
@@ -761,8 +761,7 @@ export default function DetalheMotoPage() {
               form.preco_anunciado || 0
             )}
             editando={editando}
-            type="number"
-            step="0.01"
+            type="moeda"
             onChange={(v) =>
               alterarCampo(
                 "preco_anunciado",
@@ -971,13 +970,21 @@ function Campo({
       </p>
 
       {editando ? (
-        <input
-          type={type}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-grafite-claro bg-preto px-3 py-2 text-texto outline-none focus:border-dourado"
-        />
+        type === "moeda" ? (
+          <CampoMoeda
+            value={value}
+            onChange={onChange}
+            className="w-full rounded-lg border border-grafite-claro bg-preto px-3 py-2 text-texto outline-none focus:border-dourado"
+          />
+        ) : (
+          <input
+            type={type}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full rounded-lg border border-grafite-claro bg-preto px-3 py-2 text-texto outline-none focus:border-dourado"
+          />
+        )
       ) : (
         <p className="font-medium text-texto">
           {exibicao || value || "—"}

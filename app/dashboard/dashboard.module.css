@@ -362,3 +362,59 @@
     transform: none !important;
   }
 }
+
+/*
+ * Painel que abre e fecha no clique do título. A seta gira
+ * para mostrar o estado, e o triângulo padrão do navegador
+ * sai de cena.
+ */
+.resumoPainel {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin: -22px -22px 1rem;
+  padding: 22px;
+  border-radius: 24px 24px 0 0;
+  list-style: none;
+  user-select: none;
+  transition: background .18s ease;
+}
+
+.resumoPainel:hover {
+  background: rgba(224, 177, 41, .07);
+}
+
+.resumoPainel::-webkit-details-marker {
+  display: none;
+}
+
+.setaPainel {
+  flex: none;
+  color: rgba(0, 0, 0, .35);
+  transition: transform .2s ease, color .2s ease;
+}
+
+.resumoPainel:hover .setaPainel {
+  color: #a97800;
+}
+
+details[open] > .resumoPainel .setaPainel {
+  transform: rotate(180deg);
+}
+
+/*
+ * Fechado, o painel tem que encolher de verdade: sem a
+ * margem do título e com menos respiro em volta.
+ */
+details.panel:not([open]) {
+  padding: 14px 22px;
+  grid-column: 1 / -1;
+}
+
+details.panel:not([open]) > .resumoPainel {
+  margin: -14px -22px;
+  padding: 14px 22px;
+  border-radius: 24px;
+}

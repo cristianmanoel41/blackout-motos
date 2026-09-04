@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   Banknote,
   Building2,
@@ -665,16 +666,13 @@ export default function ConciliacaoCaixaPage() {
                   Saldo no banco
                 </label>
 
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <CampoMoeda
                   value={
                     saldoBancoInicial
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setSaldoBancoInicial(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   placeholder="0,00"
@@ -688,16 +686,13 @@ export default function ConciliacaoCaixaPage() {
                   Dinheiro em espécie
                 </label>
 
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <CampoMoeda
                   value={
                     saldoDinheiroInicial
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setSaldoDinheiroInicial(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   placeholder="0,00"
@@ -761,16 +756,13 @@ export default function ConciliacaoCaixaPage() {
                     Saldo no banco hoje
                   </label>
 
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <CampoMoeda
                     value={
                       saldoBancoHoje
                     }
-                    onChange={(e) =>
+                    onChange={(valorDigitado) =>
                       setSaldoBancoHoje(
-                        e.target.value
+                        valorDigitado
                       )
                     }
                     placeholder="0,00"
@@ -783,16 +775,13 @@ export default function ConciliacaoCaixaPage() {
                     Dinheiro em espécie hoje
                   </label>
 
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <CampoMoeda
                     value={
                       saldoDinheiroHoje
                     }
-                    onChange={(e) =>
+                    onChange={(valorDigitado) =>
                       setSaldoDinheiroHoje(
-                        e.target.value
+                        valorDigitado
                       )
                     }
                     placeholder="0,00"

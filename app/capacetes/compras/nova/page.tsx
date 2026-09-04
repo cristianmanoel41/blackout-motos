@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { Plus, Receipt, Trash2 } from "lucide-react";
+import CampoMoeda from "@/components/CampoMoeda";
 
 const supabase = createClient();
 
@@ -578,16 +579,13 @@ export default function NovaNotaCapacetesPage() {
                             Valor padrão de venda (R$)
                           </label>
 
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                          <CampoMoeda
                             value={item.novoPrecoVenda}
-                            onChange={(e) =>
+                            onChange={(valorDigitado) =>
                               alterarItem(
                                 item.idLocal,
                                 "novoPrecoVenda",
-                                e.target.value
+                                valorDigitado
                               )
                             }
                             placeholder="0,00"
@@ -623,16 +621,13 @@ export default function NovaNotaCapacetesPage() {
                         Custo unitário (R$) *
                       </label>
 
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
+                      <CampoMoeda
                         value={item.custoUnitario}
-                        onChange={(e) =>
+                        onChange={(valorDigitado) =>
                           alterarItem(
                             item.idLocal,
                             "custoUnitario",
-                            e.target.value
+                            valorDigitado
                           )
                         }
                         placeholder="0,00"

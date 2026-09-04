@@ -38,3 +38,29 @@ export function formatarNumero(
 ): string {
   return numeroBR.format(Number(valor) || 0)
 }
+
+/*
+ * Máscara de digitação. Os números entram pela direita e as
+ * duas últimas casas viram os centavos - digitar 2087 mostra
+ * 20,87. Assim ninguém precisa lembrar da vírgula.
+ */
+export function mascaraMoeda(texto: string) {
+  const digitos = String(texto ?? "").replace(/\D/g, "");
+
+  if (!digitos) return "";
+
+  /* Zeros à esquerda só atrapalham: 0045 é 0,45. */
+  const centavos = Number(digitos);
+
+  return (centavos / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/* Desfaz a máscara: "1.234,56" vira 1234.56. */
+export function valorDaMascara(texto: string) {
+  const digitos = String(texto ?? "").replace(/\D/g, "");
+
+  return digitos ? Number(digitos) / 100 : 0;
+}

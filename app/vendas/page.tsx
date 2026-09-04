@@ -16,6 +16,7 @@ import {
   empresaDoTipo,
 } from "@/lib/dados/documentacao";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   BANCOS_FINANCIAMENTO,
   OPERADORA_CARTAO,
@@ -2853,15 +2854,12 @@ export default function VendasPage() {
                   Valor da moto *
                 </label>
 
-                <input
+                <CampoMoeda
                   required
-                  type="number"
-                  min="0.01"
-                  step="0.01"
                   value={valorVenda}
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setValorVenda(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   placeholder="0,00"
@@ -2988,16 +2986,13 @@ export default function VendasPage() {
                     Valor da parcela
                   </label>
 
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <CampoMoeda
                     value={
                       valorParcelaManual
                     }
-                    onChange={(e) =>
+                    onChange={(valorDigitado) =>
                       setValorParcelaManual(
-                        e.target.value
+                        valorDigitado
                       )
                     }
                     placeholder="0,00"
@@ -3180,22 +3175,15 @@ export default function VendasPage() {
                             Valor unitário
                           </label>
 
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                          <CampoMoeda
                             value={
                               capacete.valorUnitario
                             }
-                            onChange={(
-                              e
-                            ) =>
+                            onChange={(valorDigitado) =>
                               alterarCapacete(
                                 capacete.idLocal,
                                 "valorUnitario",
-                                e
-                                  .target
-                                  .value
+                                valorDigitado
                               )
                             }
                             placeholder="0,00"
@@ -3497,20 +3485,15 @@ export default function VendasPage() {
                             Valor
                           </label>
 
-                          <input
-                            type="number"
-                            min="0.01"
-                            step="0.01"
+                          <CampoMoeda
                             value={
                               componente.valor
                             }
-                            onChange={(e) =>
+                            onChange={(valorDigitado) =>
                               alterarComponente(
                                 componente.idLocal,
                                 "valor",
-                                e
-                                  .target
-                                  .value
+                                valorDigitado
                               )
                             }
                             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none focus:border-yellow-500"
@@ -3576,21 +3559,16 @@ export default function VendasPage() {
                                 Valor da parcela
                               </label>
 
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
+                              <CampoMoeda
                                 value={
                                   componente.valorParcela ||
                                   ""
                                 }
-                                onChange={(e) =>
+                                onChange={(valorDigitado) =>
                                   alterarComponente(
                                     componente.idLocal,
                                     "valorParcela",
-                                    e
-                                      .target
-                                      .value
+                                    valorDigitado
                                   )
                                 }
                                 placeholder={String(
@@ -3916,14 +3894,11 @@ export default function VendasPage() {
                   Valor da transferência
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={valorTransferencia}
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setValorTransferencia(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
@@ -3973,16 +3948,13 @@ export default function VendasPage() {
                   Valor recebido para documentação
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={
                     transferenciaCliente
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setTransferenciaCliente(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   placeholder="0,00"
@@ -4018,16 +3990,13 @@ export default function VendasPage() {
                   Transferência paga pela loja
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={
                     transferenciaLoja
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setTransferenciaLoja(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   placeholder="0,00"

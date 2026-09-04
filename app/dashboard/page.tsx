@@ -6,6 +6,7 @@ import {
   ArrowUpCircle,
   Bike,
   CalendarDays,
+  ChevronDown,
   DollarSign,
   PlusCircle,
   Receipt,
@@ -355,6 +356,7 @@ export default async function DashboardPage() {
     .from('motorcycles')
     .select('id, marca, modelo, versao, ano_modelo, quilometragem, preco_anunciado')
     .eq('status', 'disponivel')
+    .or('tipo_entrada.is.null,tipo_entrada.neq.outra_loja')
     .not('quilometragem', 'is', null)
     .order('quilometragem', { ascending: true })
     .limit(1)
@@ -370,6 +372,7 @@ export default async function DashboardPage() {
     .from('motorcycles')
     .select('id, codigo, marca, modelo, versao, ano_modelo, quilometragem, preco_anunciado, data_entrada')
     .eq('status', 'disponivel')
+    .or('tipo_entrada.is.null,tipo_entrada.neq.outra_loja')
     .not('data_entrada', 'is', null)
     .order('data_entrada', { ascending: true })
     .limit(1)
@@ -423,16 +426,16 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className={`${styles.dashboard} mx-auto w-full max-w-[1720px] space-y-5 pb-10`}>
-      <section className={`${styles.hero} px-6 py-6 md:px-8`}>
+    <div className={`${styles.dashboard} mx-auto w-full max-w-[1720px] space-y-4 pb-6`}>
+      <section className={`${styles.hero} px-6 py-4 md:px-8`}>
         <div className="relative z-10 flex h-full flex-col justify-between gap-5 md:flex-row md:items-center">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#a97800]">Blackout Motos · Painel de gestão</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-black md:text-4xl">Olá, Cristian 👋</h1>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-black md:text-3xl">Olá, Cristian 👋</h1>
             <p className="mt-1 text-sm font-semibold text-black/50">Aqui está o resumo geral da sua loja.</p>
           </div>
 
-          <div className={`${styles.dataPill} flex w-fit items-center gap-3 rounded-2xl px-4 py-3`}>
+          <div className={`${styles.dataPill} flex w-fit items-center gap-3 rounded-2xl px-4 py-2`}>
             <CalendarDays size={18} className="text-[#a97800]" />
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Período atual</p>
@@ -549,17 +552,16 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_.85fr]">
-        <div className={styles.panel}>
-          <div className="mb-4 flex items-center justify-between gap-3">
+      <section className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+        <details className={styles.panel}>
+          <summary className={styles.resumoPainel}>
             <div>
               <h2 className="text-lg font-black text-black">Últimas vendas</h2>
               <p className="text-xs font-bold text-black/45">Movimentações mais recentes da loja</p>
             </div>
-            <Link href="/vendas/historico" className={`${styles.darkButton} flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black`}>
-              Ver todas <ArrowRight size={15} />
-            </Link>
-          </div>
+
+            <ChevronDown size={18} className={styles.setaPainel} />
+          </summary>
 
           <div className={styles.tableWrap}>
             <table className={`${styles.table} w-full min-w-[680px] text-left text-sm`}>
@@ -596,59 +598,23 @@ export default async function DashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
 
-        <div className={styles.panel}>
-          <div className="mb-5">
-            <h2 className="text-lg font-black text-black">Motos em destaque</h2>
-            <p className="text-xs font-bold text-black/45">Moto disponível com a menor quilometragem</p>
+          <div className="mt-4 flex justify-end">
+            <Link href="/vendas/historico" className={`${styles.darkButton} flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black`}>
+              Ver todas <ArrowRight size={15} />
+            </Link>
           </div>
+        </details>
 
-          {motoDestaque ? (
-            <div className={`${styles.goldPanel} rounded-[22px] border p-5`}>
-              <div className="flex min-h-52 flex-col justify-between">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className="rounded-full border border-[#c99712]/25 bg-white/70 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#8a6400]">Disponível</span>
-                    <h3 className="mt-4 text-2xl font-black text-black">{nomeMoto(motoDestaque)}</h3>
-                    <p className="mt-1 text-sm font-bold text-black/50">
-                      {motoDestaque.ano_modelo || 'Ano não informado'} · {kmBR(motoDestaque.quilometragem)} km
-                    </p>
-                  </div>
-                  <div className={`${styles.icon3d} !h-20 !w-20 !rounded-[24px]`}><Bike size={38} /></div>
-                </div>
-
-                <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Preço anunciado</p>
-                    <p className="mt-1 text-3xl font-black text-[#a97800]">{formatarMoeda(motoDestaque.preco_anunciado)}</p>
-                  </div>
-                  <Link href={`/motos/${motoDestaque.id}`} className={`${styles.goldButton} flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-black`}>
-                    Ver detalhes <ArrowRight size={17} />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="grid min-h-52 place-items-center rounded-[22px] border border-dashed border-black/15 bg-black/[.015] p-6 text-center">
-              <div>
-                <Bike className="mx-auto text-black/25" size={38} />
-                <p className="mt-3 text-sm font-black text-black/45">Nenhuma moto disponível.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className={styles.panel}>
-          <div className="mb-5 flex items-center justify-between">
+        <details className={styles.panel}>
+          <summary className={styles.resumoPainel}>
             <div>
               <h2 className="text-lg font-black text-black">Top motos nas vendas recentes</h2>
               <p className="text-xs font-bold text-black/45">Ranking baseado nas 5 vendas mais recentes</p>
             </div>
-            <ShoppingCart size={22} className="text-[#a97800]" />
-          </div>
+
+            <ChevronDown size={18} className={styles.setaPainel} />
+          </summary>
 
           <div className="space-y-4">
             {ranking.length ? (
@@ -671,28 +637,71 @@ export default async function DashboardPage() {
               <p className="py-8 text-center text-sm font-bold text-black/40">Ainda não há vendas para montar o ranking.</p>
             )}
           </div>
+        </details>
+      </section>
+
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className={`${styles.panel} flex flex-col`}>
+          <div className="mb-4">
+            <h2 className="text-lg font-black text-black">Motos em destaque</h2>
+            <p className="text-xs font-bold text-black/45">Moto disponível com a menor quilometragem</p>
+          </div>
+
+          {motoDestaque ? (
+            <div className={`${styles.goldPanel} flex-1 rounded-[22px] border p-4`}>
+              <div className="flex h-full flex-col justify-between gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="rounded-full border border-[#c99712]/25 bg-white/70 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#8a6400]">Disponível</span>
+                    <h3 className="mt-3 text-xl font-black text-black">{nomeMoto(motoDestaque)}</h3>
+                    <p className="mt-1 text-sm font-bold text-black/50">
+                      {motoDestaque.ano_modelo || 'Ano não informado'} · {kmBR(motoDestaque.quilometragem)} km
+                    </p>
+                  </div>
+                  <div className={`${styles.icon3d} !h-16 !w-16 !rounded-[20px]`}><Bike size={30} /></div>
+                </div>
+
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Preço anunciado</p>
+                    <p className="mt-1 text-2xl font-black text-[#a97800]">{formatarMoeda(motoDestaque.preco_anunciado)}</p>
+                  </div>
+                  <Link href={`/motos/${motoDestaque.id}`} className={`${styles.goldButton} flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black`}>
+                    Ver detalhes <ArrowRight size={17} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid flex-1 place-items-center rounded-[22px] border border-dashed border-black/15 bg-black/[.015] p-6 text-center">
+              <div>
+                <Bike className="mx-auto text-black/25" size={38} />
+                <p className="mt-3 text-sm font-black text-black/45">Nenhuma moto disponível.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={`${styles.panel} ${styles.goldPanel}`}>
-          <div className="flex h-full flex-col justify-between gap-5 sm:flex-row sm:items-center">
+          <div className="flex h-full flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <p className={`text-xs font-black uppercase tracking-[0.18em] ${styles.paradaEtiqueta}`}>Parada há mais tempo</p>
 
               {motoParada ? (
                 <>
-                  <h2 className="mt-2 text-2xl font-black text-black">{nomeMoto(motoParada)}</h2>
+                  <h2 className="mt-2 text-xl font-black text-black">{nomeMoto(motoParada)}</h2>
 
                   <p className="mt-1 text-sm font-bold text-black/50">
                     {motoParada.codigo ? `${motoParada.codigo} · ` : ''}
                     {motoParada.ano_modelo || 'Ano não informado'} · {kmBR(motoParada.quilometragem)} km · entrou em {dataBR(motoParada.data_entrada)}
                   </p>
 
-                  <p className={`mt-3 text-4xl font-black tracking-tight ${styles.paradaDias}`}>
+                  <p className={`mt-2 text-2xl font-black tracking-tight ${styles.paradaDias}`}>
                     {diasParada} {diasParada === 1 ? 'dia' : 'dias'} no estoque
                   </p>
 
-                  <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <Link href={`/motos/${motoParada.id}`} className={`${styles.darkButton} flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black`}>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Link href={`/motos/${motoParada.id}`} className={`${styles.darkButton} flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black`}>
                       Ver moto <ArrowRight size={16} />
                     </Link>
 
@@ -711,8 +720,8 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            <div className={`${styles.icon3d} !h-24 !w-24 shrink-0 !rounded-[28px]`}>
-              <Timer size={42} />
+            <div className={`${styles.icon3d} !h-16 !w-16 shrink-0 !rounded-[20px]`}>
+              <Timer size={30} />
             </div>
           </div>
         </div>

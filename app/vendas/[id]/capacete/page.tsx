@@ -8,6 +8,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   CircleDollarSign,
   HardHat,
@@ -558,14 +559,11 @@ export default function AdicionarCapaceteVendaPage() {
                   Valor do capacete *
                 </label>
 
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
+                <CampoMoeda
                   value={valor}
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setValor(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   placeholder="0,00"

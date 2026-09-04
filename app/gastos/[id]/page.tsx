@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import CampoMoeda from "@/components/CampoMoeda";
 
 const supabase = createClient();
 
@@ -253,13 +254,17 @@ export default function EditarGastoPage() {
           <div>
             <label className={labelClass}>Valor (R$) *</label>
 
-            <input
-              type="number"
-              step="0.01"
-              min="0"
+            <CampoMoeda
               name="valor"
               value={form.valor}
-              onChange={handleChange}
+              onChange={(valorDigitado) =>
+                handleChange({
+                  target: {
+                    name: "valor",
+                    value: valorDigitado,
+                  },
+                } as never)
+              }
               className={inputClass}
             />
           </div>

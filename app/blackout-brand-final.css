@@ -105,26 +105,6 @@ main {
   color: var(--bo-text) !important;
 }
 
-main::before {
-  content: "";
-  position: fixed;
-  pointer-events: none;
-  z-index: 0;
-  left: 16rem;
-  right: 0;
-  top: 70px;
-  bottom: 0;
-  background-image: url("/logo-blackout-clara.png");
-  background-repeat: no-repeat;
-  background-position: center 38%;
-  background-size: min(58vw, 820px) auto;
-  filter:
-    grayscale(1)
-    brightness(.75)
-    drop-shadow(4px 5px 4px rgba(0,0,0,.10))
-    drop-shadow(-2px -2px 2px rgba(255,255,255,.95));
-  opacity: .045;
-}
 
 main > * {
   position: relative;

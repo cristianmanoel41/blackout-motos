@@ -16,6 +16,7 @@ import {
   Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CampoMoeda from "@/components/CampoMoeda";
 
 type TipoLancamento =
   | "loja"
@@ -31,21 +32,14 @@ type Moto = {
   status?: string | null;
 };
 
+/*
+ * Só duas: o total gasto no dia e os funcionários. A loja
+ * lança o dia fechado, sem abrir item por item - o que é de
+ * moto tem lugar próprio e não entra aqui.
+ */
 const categoriasLoja = [
-  "Aluguel",
-  "Água",
-  "Energia",
-  "Internet",
+  "Gastos do dia",
   "Funcionários",
-  "Comissão",
-  "Contador",
-  "Impostos",
-  "Anúncios",
-  "Combustível",
-  "Materiais",
-  "Manutenção",
-  "Alimentação",
-  "Outros",
 ];
 
 const categoriasMoto = [
@@ -1309,16 +1303,13 @@ function FormularioNovaDespesa() {
                   Valor das peças (R$)
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={
                     valorPecas
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setValorPecas(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   className={
@@ -1337,16 +1328,13 @@ function FormularioNovaDespesa() {
                   Mão de obra (R$)
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={
                     valorMaoObra
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setValorMaoObra(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   className={
@@ -1460,16 +1448,18 @@ function FormularioNovaDespesa() {
               Valor (R$) *
             </label>
 
-            <input
-              type="number"
-              step="0.01"
-              min="0"
+            <CampoMoeda
               name="valor"
               value={
                 form.valor
               }
-              onChange={
-                handleChange
+              onChange={(valorDigitado) =>
+                handleChange({
+                  target: {
+                    name: "valor",
+                    value: valorDigitado,
+                  },
+                } as never)
               }
               className={
                 inputClass

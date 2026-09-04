@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   EMPRESA_DESPACHANTE,
   EMPRESA_VISTORIA,
@@ -911,15 +912,12 @@ export default function CaixaPage() {
                 Valor (R$)
               </label>
 
-              <input
-                type="number"
-                step="0.01"
-                min="0"
+              <CampoMoeda
                 value={avulso.valor}
-                onChange={(e) =>
+                onChange={(valorDigitado) =>
                   setAvulso({
                     ...avulso,
-                    valor: e.target.value,
+                    valor: valorDigitado,
                   })
                 }
                 className="w-full rounded-lg border border-grafite-claro bg-grafite px-3 py-2.5 text-sm text-texto outline-none focus:border-dourado"
@@ -1526,13 +1524,10 @@ export default function CaixaPage() {
                             Valor pago
                           </label>
 
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
+                          <CampoMoeda
                             value={valorBaixa}
-                            onChange={(e) =>
-                              setValorBaixa(e.target.value)
+                            onChange={(valorDigitado) =>
+                              setValorBaixa(valorDigitado)
                             }
                             className="w-36 rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none focus:border-dourado"
                           />
@@ -1567,20 +1562,17 @@ export default function CaixaPage() {
                                 ).split(" - ")[0]}
                             </label>
 
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                            <CampoMoeda
                               value={
                                 valoresDoGrupo[item.id] ??
                                 ""
                               }
-                              onChange={(e) =>
+                              onChange={(valorDigitado) =>
                                 setValoresDoGrupo(
                                   (atuais) => ({
                                     ...atuais,
                                     [item.id]:
-                                      e.target.value,
+                                      valorDigitado,
                                   })
                                 )
                               }
@@ -1760,15 +1752,12 @@ export default function CaixaPage() {
                       Valor
                     </label>
 
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <CampoMoeda
                       value={formEdicao.valor}
-                      onChange={(e) =>
+                      onChange={(valorDigitado) =>
                         setFormEdicao({
                           ...formEdicao,
-                          valor: e.target.value,
+                          valor: valorDigitado,
                         })
                       }
                       className="w-36 rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-sm text-texto outline-none focus:border-dourado"

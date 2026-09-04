@@ -11,6 +11,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import MeuUsuario from "@/components/MeuUsuario";
+import CampoMoeda from "@/components/CampoMoeda";
 
 type Configuracoes = {
   nomeLoja: string;
@@ -277,15 +278,12 @@ export default function ConfiguracoesPage() {
                     R$
                   </span>
 
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <CampoMoeda
                     value={config.valorTransferencia}
-                    onChange={(e) =>
+                    onChange={(valorDigitado) =>
                       atualizarCampo(
                         "valorTransferencia",
-                        e.target.value
+                        valorDigitado
                       )
                     }
                     className="w-full rounded-xl border border-grafite-claro bg-preto py-3 pl-12 pr-4 text-white outline-none transition focus:border-dourado"

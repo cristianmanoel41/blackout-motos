@@ -16,6 +16,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { OPERADORA_CARTAO } from "@/lib/dados/financeiras";
+import CampoMoeda from "@/components/CampoMoeda";
 import {
   CUSTOS_PADRAO_VENDA,
   TOTAL_PADRAO_VENDA,
@@ -1576,14 +1577,11 @@ export default function EditarVendaPage() {
                   Valor da venda *
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={valorVenda}
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setValorVenda(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
@@ -1596,14 +1594,11 @@ export default function EditarVendaPage() {
                     Entrada
                   </label>
 
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CampoMoeda
                     value={entrada}
-                    onChange={(e) =>
+                    onChange={(valorDigitado) =>
                       setEntrada(
-                        e.target.value
+                        valorDigitado
                       )
                     }
                     className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
@@ -1727,16 +1722,13 @@ export default function EditarVendaPage() {
                             Valor
                           </label>
 
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
+                          <CampoMoeda
                             value={item.valor}
-                            onChange={(e) =>
+                            onChange={(valorDigitado) =>
                               atualizarComponente(
                                 item.idLocal,
                                 "valor",
-                                e.target.value
+                                valorDigitado
                               )
                             }
                             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
@@ -1808,16 +1800,13 @@ export default function EditarVendaPage() {
                               Valor da parcela
                             </label>
 
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                            <CampoMoeda
                               value={item.valorParcela || ""}
-                              onChange={(e) =>
+                              onChange={(valorDigitado) =>
                                 atualizarComponente(
                                   item.idLocal,
                                   "valorParcela",
-                                  e.target.value
+                                  valorDigitado
                                 )
                               }
                               placeholder={(
@@ -2175,16 +2164,13 @@ export default function EditarVendaPage() {
                   Valor recebido para documentação
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={
                     transferenciaCliente
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setTransferenciaCliente(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
@@ -2196,16 +2182,13 @@ export default function EditarVendaPage() {
                   Transferência paga pela loja
                 </label>
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={
                     transferenciaLoja
                   }
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setTransferenciaLoja(
-                      e.target.value
+                      valorDigitado
                     )
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
@@ -2419,15 +2402,12 @@ export default function EditarVendaPage() {
                   className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-yellow-500"
                 />
 
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <CampoMoeda
                   value={novoCusto.valor}
-                  onChange={(e) =>
+                  onChange={(valorDigitado) =>
                     setNovoCusto({
                       ...novoCusto,
-                      valor: e.target.value,
+                      valor: valorDigitado,
                     })
                   }
                   placeholder="Valor"

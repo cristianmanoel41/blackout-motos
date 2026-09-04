@@ -19,6 +19,7 @@ import {
   Wallet,
   Warehouse,
   Wrench,
+  NotebookPen,
   X,
 } from 'lucide-react'
 
@@ -31,6 +32,7 @@ const menuItems = [
   { label: 'Capacetes', href: '/capacetes', icon: Package },
   { label: 'Gastos das Motos', href: '/gastos', icon: Wrench },
   { label: 'Despesas da Loja', href: '/despesas', icon: Receipt },
+  { label: 'Anotações do Dia', href: '/anotacoes', icon: NotebookPen },
   { label: 'Caixa', href: '/caixa', icon: Wallet },
   { label: 'Relatórios', href: '/relatorios', icon: FileBarChart },
   { label: 'Histórico', href: '/historico', icon: History },

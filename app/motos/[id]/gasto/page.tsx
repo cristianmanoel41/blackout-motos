@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import CampoPagamentoFeito from '@/components/CampoPagamentoFeito'
+import CampoMoeda from "@/components/CampoMoeda";
 
 const categorias = [
   'Mecânica',
@@ -252,13 +253,17 @@ export default function RegistrarGastoPage() {
               Valor (R$) *
             </label>
 
-            <input
-              type="number"
-              step="0.01"
-              min="0"
+            <CampoMoeda
               name="valor"
               value={form.valor}
-              onChange={handleChange}
+              onChange={(valorDigitado) =>
+                handleChange({
+                  target: {
+                    name: "valor",
+                    value: valorDigitado,
+                  },
+                } as never)
+              }
               className={inputClass}
             />
           </div>
