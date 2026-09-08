@@ -482,6 +482,16 @@ export default function VendasPage() {
     )
   );
 
+  /*
+   * O cliente paga a documentacao junto, mas nem sempre pelo
+   * mesmo caminho da moto: as vezes a moto vai no cartao e os
+   * 690 no Pix. O caixa precisa dizer por onde entrou.
+   */
+  const [
+    formaTransferencia,
+    setFormaTransferencia,
+  ] = useState<TipoPagamento>("Pix");
+
   const [
     transferenciaCliente,
     setTransferenciaCliente,
@@ -1925,6 +1935,12 @@ export default function VendasPage() {
             Number(
               transferenciaLoja
             ) || 0,
+          forma_transferencia:
+            (Number(
+              transferenciaCliente
+            ) || 0) > 0
+              ? formaTransferencia
+              : null,
           observacoes:
             observacoes.trim(),
         })
@@ -2218,7 +2234,7 @@ export default function VendasPage() {
             vendaCriada.id,
           valor: valorDocumentacao,
           descricao:
-            `Documentação - ${identificacaoVenda}`,
+            `Documentação - ${identificacaoVenda} · ${formaTransferencia}`,
           confirmado:
             recebidoDoCliente,
           data_confirmacao:
@@ -4109,6 +4125,38 @@ export default function VendasPage() {
                   placeholder="0,00"
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+
+                {(Number(
+                  transferenciaCliente
+                ) || 0) > 0 && (
+                  <div className="mt-3">
+                    <label className="mb-2 block text-xs text-zinc-400">
+                      Como o cliente pagou a documentação
+                    </label>
+
+                    <select
+                      value={formaTransferencia}
+                      onChange={(evento) =>
+                        setFormaTransferencia(
+                          evento.target
+                            .value as TipoPagamento
+                        )
+                      }
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm outline-none focus:border-yellow-500"
+                    >
+                      <option value="Pix">Pix</option>
+                      <option value="Cartão">
+                        Cartão
+                      </option>
+                      <option value="Dinheiro">
+                        Dinheiro
+                      </option>
+                      <option value="Transferência">
+                        Transferência
+                      </option>
+                    </select>
+                  </div>
+                )}
 
                 <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-zinc-400">
                   <input

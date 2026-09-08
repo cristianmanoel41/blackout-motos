@@ -212,6 +212,19 @@ function transferenciaDescricao(
       venda.transferencia_cliente
     ) || 0;
 
+  /*
+   * Como o cliente pagou essa parte. Só entra quando ele pagou
+   * alguma coisa - a parte da loja sai da conta dela.
+   */
+  const forma = String(
+    venda.forma_transferencia || ""
+  ).trim();
+
+  const pagoEm =
+    forma && cliente > 0
+      ? `, pago em ${forma.toLowerCase()}`
+      : "";
+
   const loja =
     Number(
       venda.transferencia_loja
@@ -233,7 +246,7 @@ function transferenciaDescricao(
         cliente
       )} para cada, totalizando ${moeda(
         cliente + loja
-      )}`;
+      )}${pagoEm}`;
     }
 
     return `cliente no valor de ${moeda(
@@ -242,13 +255,13 @@ function transferenciaDescricao(
       loja
     )}, totalizando ${moeda(
       cliente + loja
-    )}`;
+    )}${pagoEm}`;
   }
 
   if (cliente > 0) {
     return `cliente no valor de ${moeda(
       cliente
-    )}`;
+    )}${pagoEm}`;
   }
 
   if (loja > 0) {
