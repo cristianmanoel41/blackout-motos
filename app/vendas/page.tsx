@@ -92,6 +92,14 @@ type ComponentePagamento = {
   valorParcela?: string;
   motoId?: string;
   motoDescricao?: string;
+
+  /*
+   * Cada forma de pagamento chega no seu tempo: o PIX da
+   * entrada cai na hora, o cartao so quando passar a maquina.
+   * Por isso a confirmacao e de cada uma, nao da venda toda.
+   */
+  recebido?: boolean;
+  previsao?: string;
 };
 
 type ModeloCapacete = {
@@ -1371,6 +1379,8 @@ export default function VendasPage() {
               : "moto",
           valor: "",
           parcelas: "1",
+          recebido: true,
+          previsao: dataVenda,
         },
       ]
     );
@@ -1382,7 +1392,8 @@ export default function VendasPage() {
       | "valor"
       | "parcelas"
       | "valorParcela"
-      | "destino",
+      | "destino"
+      | "previsao",
     valor: string
   ) {
     setComponentes(
@@ -1397,6 +1408,25 @@ export default function VendasPage() {
                 }
               : item
         )
+    );
+  }
+
+  /* Marca uma forma de pagamento como recebida ou pendente. */
+  function marcarRecebimento(
+    idLocal: string,
+    recebido: boolean
+  ) {
+    setComponentes((atuais) =>
+      atuais.map((item) =>
+        item.idLocal === idLocal
+          ? {
+              ...item,
+              recebido,
+              previsao:
+                item.previsao || dataVenda,
+            }
+          : item
+      )
     );
   }
 
@@ -2119,21 +2149,65 @@ export default function VendasPage() {
           : "Moto";
 
       /*
-       * Dois lançamentos separados, porque o dinheiro chega em
-       * momentos diferentes: o que o cliente paga e o que o
-       * banco deposita. Assim dá para dar baixa em cada um no
-       * dia certo.
+       * Um lançamento por forma de pagamento, porque o dinheiro
+       * chega em momentos diferentes: o PIX da entrada cai na
+       * hora, o cartão só quando passar a maquininha, e o banco
+       * deposita o financiamento no dia dele. Assim cada um
+       * recebe baixa no seu dia, e o caixa diz de qual valor se
+       * trata.
        */
-      const valorDoCliente =
-        totalPagamentosCaixa +
-        (Number(
-          transferenciaCliente
-        ) || 0);
-
       const lancamentosVenda: any[] =
         [];
 
-      if (valorDoCliente > 0) {
+      componentes
+        .filter(
+          (componente) =>
+            componente.tipo !==
+              "Moto na troca" &&
+            (Number(componente.valor) || 0) > 0
+        )
+        .forEach((componente) => {
+          const recebido =
+            componente.recebido !== false;
+
+          const previsto =
+            componente.previsao || dataVenda;
+
+          const parcelas =
+            Number(componente.parcelas) || 1;
+
+          lancamentosVenda.push({
+            data: recebido
+              ? dataVenda
+              : previsto,
+            tipo: "entrada",
+            origem: "venda",
+            origem_id: vendaCriada.id,
+            valor:
+              Number(componente.valor) || 0,
+            descricao: `Venda - ${identificacaoVenda} · ${
+              componente.tipo
+            }${
+              parcelas > 1
+                ? ` ${parcelas}x`
+                : ""
+            }`,
+            confirmado: recebido,
+            data_confirmacao: recebido
+              ? dataVenda
+              : null,
+          });
+        });
+
+      /*
+       * O dinheiro da documentação vem junto da venda mas é
+       * outra conversa: entra no caixa e só vira lucro quando a
+       * documentação fecha.
+       */
+      const valorDocumentacao =
+        Number(transferenciaCliente) || 0;
+
+      if (valorDocumentacao > 0) {
         lancamentosVenda.push({
           data: recebidoDoCliente
             ? dataVenda
@@ -2142,9 +2216,9 @@ export default function VendasPage() {
           origem: "venda",
           origem_id:
             vendaCriada.id,
-          valor: valorDoCliente,
+          valor: valorDocumentacao,
           descricao:
-            `Venda - ${identificacaoVenda}`,
+            `Documentação - ${identificacaoVenda}`,
           confirmado:
             recebidoDoCliente,
           data_confirmacao:
@@ -3623,6 +3697,81 @@ export default function VendasPage() {
                           />
                         </button>
                       </div>
+
+                      {componente.tipo !==
+                        "Moto na troca" && (
+                        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-zinc-800 pt-3">
+                          <span className="text-xs text-zinc-500">
+                            {moeda(valor)} em{" "}
+                            {componente.tipo}:
+                          </span>
+
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                marcarRecebimento(
+                                  componente.idLocal,
+                                  true
+                                )
+                              }
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                                componente.recebido !== false
+                                  ? "border-green-600 bg-green-950/40 text-green-300"
+                                  : "border-zinc-700 text-zinc-400 hover:border-green-700"
+                              }`}
+                            >
+                              Já recebi
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                marcarRecebimento(
+                                  componente.idLocal,
+                                  false
+                                )
+                              }
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                                componente.recebido === false
+                                  ? "border-yellow-600 bg-yellow-950/40 text-yellow-300"
+                                  : "border-zinc-700 text-zinc-400 hover:border-yellow-700"
+                              }`}
+                            >
+                              Ainda vou receber
+                            </button>
+                          </div>
+
+                          {componente.recebido ===
+                            false && (
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-zinc-500">
+                                Previsão
+                              </label>
+
+                              <input
+                                type="date"
+                                value={
+                                  componente.previsao ||
+                                  dataVenda
+                                }
+                                onChange={(evento) =>
+                                  alterarComponente(
+                                    componente.idLocal,
+                                    "previsao",
+                                    evento.target.value
+                                  )
+                                }
+                                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs outline-none focus:border-yellow-500"
+                              />
+
+                              <span className="text-xs text-zinc-500">
+                                fica pendente no caixa
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -3764,13 +3913,13 @@ export default function VendasPage() {
             {/* BAIXA NO CAIXA */}
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {totalPagamentosCaixa +
-                (Number(
-                  transferenciaCliente
-                ) || 0) >
-                0 && (
+              {(Number(
+                transferenciaCliente
+              ) || 0) > 0 && (
                 <CampoPagamentoFeito
-                  titulo="Você já recebeu o valor do cliente?"
+                  titulo={`Já recebeu os ${moeda(
+                    Number(transferenciaCliente) || 0
+                  )} da documentação?`}
                   pago={
                     recebidoDoCliente
                   }
