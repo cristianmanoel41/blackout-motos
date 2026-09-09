@@ -176,8 +176,8 @@ export default function PreviaDocumento({
           margin: 0 auto !important;
           padding: 0 !important;
           text-align: center !important;
-          font-family: Arial, sans-serif !important;
-          font-size: 7pt !important;
+          font-family: Calibri, Carlito, sans-serif !important;
+          font-size: 10pt !important;
           line-height: 1.1 !important;
           font-weight: 400 !important;
         }

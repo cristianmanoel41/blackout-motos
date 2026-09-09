@@ -37,7 +37,7 @@ body {
  * alguns milímetros e a assinatura ia sozinha para a página 2.
  */
 .documento-word {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: Calibri, Carlito, sans-serif;
   font-size: 10pt;
   line-height: 1.5;
   text-align: justify;
@@ -60,12 +60,10 @@ body {
   font-weight: 700;
 }
 
-.documento-word h1 {
-  font-size: 15pt;
-}
-
-.documento-word h2 {
-  font-size: 13pt;
+.documento-word h1,
+.documento-word h2,
+.documento-word h3 {
+  font-size: 10pt;
 }
 
 /*

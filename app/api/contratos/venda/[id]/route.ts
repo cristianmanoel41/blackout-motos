@@ -61,7 +61,7 @@ function dataAtualExtenso() {
       (parte) => parte.type === "year"
     )?.value || "";
 
-  return `${dia} de ${mes.toUpperCase()} de ${ano}`;
+  return `${dia} de ${mes.toLowerCase()} de ${ano}`;
 }
 
 function horaAtual() {
