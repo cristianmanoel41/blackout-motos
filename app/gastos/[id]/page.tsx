@@ -155,6 +155,10 @@ export default function EditarGastoPage() {
         valor: Number(form.valor),
         descricao: `${form.categoria} - ${
           form.descricao.trim() || "Gasto de moto"
+        }${
+          motoNome && motoNome !== "Moto não encontrada"
+            ? ` · ${motoNome}`
+            : ""
         }`,
       })
       .eq("origem", "gasto_moto")

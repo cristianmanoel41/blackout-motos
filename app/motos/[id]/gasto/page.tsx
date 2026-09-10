@@ -45,6 +45,13 @@ export default function RegistrarGastoPage() {
    */
   const [dataInicioCaixa, setDataInicioCaixa] = useState("")
 
+  /*
+   * No extrato, "Mecanica - troca de oleo" nao dizia de qual
+   * moto era. Codigo e placa resolvem, inclusive quando ha
+   * duas do mesmo modelo no patio.
+   */
+  const [identificacao, setIdentificacao] = useState("")
+
   const [previsao, setPrevisao] = useState(
     new Date().toISOString().slice(0, 10)
   )
@@ -77,7 +84,28 @@ export default function RegistrarGastoPage() {
       setDataInicioCaixa(data?.data_inicio || '')
     }
 
+    async function carregarMoto() {
+      const { data } = await supabase
+        .from('motorcycles')
+        .select('codigo, marca, modelo, placa')
+        .eq('id', params.id)
+        .maybeSingle()
+
+      if (!data) return
+
+      setIdentificacao(
+        [
+          data.codigo,
+          `${data.marca || ''} ${data.modelo || ''}`.trim(),
+          data.placa,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      )
+    }
+
     carregarInicioDoControle()
+    carregarMoto()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -155,7 +183,7 @@ export default function RegistrarGastoPage() {
         valor: Number(form.valor),
         descricao: `${form.categoria} - ${
           form.descricao || 'Gasto de moto'
-        }`,
+        }${identificacao ? ` · ${identificacao}` : ''}`,
         confirmado: pago,
         data_confirmacao: pago ? form.data : null,
       })
