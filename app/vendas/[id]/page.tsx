@@ -747,62 +747,161 @@ export default function EditarVendaPage() {
    * lancamento antigo fica mentindo. A baixa ja dada e
    * preservada - so o valor e a descricao sao corrigidos.
    */
+  /*
+   * Acerta o caixa depois de mexer na venda.
+   *
+   * Cada forma de pagamento tem a sua linha, entao a conta e
+   * de casar linha com forma - nao de jogar o total do cliente
+   * na primeira que aparecer. Era o que a versao antiga fazia,
+   * de quando existiam so duas linhas, e o resultado era a
+   * primeira inflada com o total e as outras intactas ao lado,
+   * cobrando o mesmo dinheiro duas vezes.
+   *
+   * A baixa ja dada e preservada: linha que continua existindo
+   * so tem o valor corrigido.
+   */
   async function sincronizarCaixa() {
-    const recebidoDoCliente =
-      componentes
-        .filter(
-          (item) =>
-            item.tipo !==
-            "Moto na troca"
-        )
-        .reduce(
-          (total, item) =>
-            total +
-            (Number(item.valor) || 0),
-          0
-        ) +
-      (Number(transferenciaCliente) ||
-        0);
+    const identificacao = motoNome || "Venda";
 
-    const { data: lancamentos } =
-      await supabase
-        .from("cash_transactions")
-        .select("id, valor, descricao, tipo")
-        .eq("origem", "venda")
-        .eq("origem_id", id)
-        .eq("tipo", "entrada")
-        .order("criado_em", {
-          ascending: true,
-        });
-
-    const lista = lancamentos || [];
-
-    const doBanco = lista.find((item: any) =>
-      String(item.descricao || "").startsWith(
-        "Financiamento"
+    /* Como cada linha deve se chamar e quanto deve valer. */
+    const desejadas = componentes
+      .filter(
+        (item) =>
+          item.tipo !== "Moto na troca" &&
+          (Number(item.valor) || 0) > 0
       )
+      .map((item) => {
+        const parcelas =
+          Number(item.parcelas) || 1;
+
+        return {
+          chave: `${item.tipo}${
+            parcelas > 1 ? ` ${parcelas}x` : ""
+          }`,
+          valor: Number(item.valor) || 0,
+        };
+      });
+
+    const doc = Number(transferenciaCliente) || 0;
+
+    const linhas = [
+      ...desejadas.map((item) => ({
+        chave: item.chave,
+        valor: item.valor,
+        descricao: `Venda - ${identificacao} · ${item.chave}`,
+      })),
+      ...(doc > 0
+        ? [
+            {
+              chave: "__documentacao__",
+              valor: doc,
+              descricao: `Documentação - ${identificacao}`,
+            },
+          ]
+        : []),
+      ...(valorFinanciado > 0
+        ? [
+            {
+              chave: "__financiamento__",
+              valor: valorFinanciado,
+              descricao: `Financiamento - ${identificacao}`,
+            },
+          ]
+        : []),
+    ];
+
+    const { data: lancamentos } = await supabase
+      .from("cash_transactions")
+      .select("id, valor, descricao, data, confirmado")
+      .eq("origem", "venda")
+      .eq("origem_id", id)
+      .eq("tipo", "entrada")
+      .order("criado_em", { ascending: true });
+
+    const existentes = (lancamentos || []).map(
+      (item: any) => {
+        const descricao = String(item.descricao || "");
+
+        /*
+         * "Venda - Honda CG · Pix 3x" -> "Pix 3x". O nome da
+         * moto pode ter mudado, entao o que identifica a linha
+         * e o que vem depois do ponto.
+         */
+        const corte = descricao.lastIndexOf(" · ");
+
+        const chave = descricao.startsWith("Financiamento")
+          ? "__financiamento__"
+          : descricao.startsWith("Documentação")
+          ? "__documentacao__"
+          : corte >= 0
+          ? descricao.slice(corte + 3)
+          : "__cliente__";
+
+        return { ...item, chave };
+      }
     );
 
-    const doCliente = lista.find(
-      (item: any) => item !== doBanco
-    );
+    const usados = new Set<string>();
 
-    if (doCliente) {
+    for (const linha of linhas) {
+      const achado = existentes.find(
+        (item: any) =>
+          !usados.has(item.id) && item.chave === linha.chave
+      );
+
+      if (achado) {
+        usados.add(achado.id);
+
+        if (
+          Math.abs(
+            Number(achado.valor) - linha.valor
+          ) > 0.009 ||
+          achado.descricao !== linha.descricao
+        ) {
+          await supabase
+            .from("cash_transactions")
+            .update({
+              valor: linha.valor,
+              descricao: linha.descricao,
+            })
+            .eq("id", achado.id);
+        }
+
+        continue;
+      }
+
+      /*
+       * Forma que nao tinha linha - inclusive a venda antiga,
+       * lancada quando tudo ia junto. Nasce pendente: quem
+       * recebeu de verdade da a baixa no caixa.
+       */
       await supabase
         .from("cash_transactions")
-        .update({
-          valor: recebidoDoCliente,
-        })
-        .eq("id", doCliente.id);
+        .insert({
+          data: dataVenda,
+          tipo: "entrada",
+          origem: "venda",
+          origem_id: id,
+          valor: linha.valor,
+          descricao: linha.descricao,
+          confirmado: false,
+          data_confirmacao: null,
+        });
     }
 
-    if (doBanco) {
+    /* Linha de forma que nao existe mais na venda. */
+    const sobrando = existentes.filter(
+      (item: any) => !usados.has(item.id)
+    );
+
+    if (sobrando.length > 0) {
       await supabase
         .from("cash_transactions")
-        .update({
-          valor: valorFinanciado,
-        })
-        .eq("id", doBanco.id);
+        .delete()
+        .in(
+          "id",
+          sobrando.map((item: any) => item.id)
+        );
     }
   }
 
