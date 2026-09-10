@@ -212,6 +212,122 @@ export default function AnotacoesPage() {
     await carregar();
   }
 
+  /*
+   * Fecha o dia numa despesa so. E como a loja conta: nao
+   * interessa cada almoco, interessa quanto saiu no dia.
+   *
+   * Uma despesa, um lancamento no caixa, e todas as anotacoes
+   * daquele dia marcadas de uma vez - entao nao ha como a
+   * mesma anotacao virar despesa duas vezes.
+   */
+  async function lancarODia(
+    dia: string,
+    itens: Anotacao[]
+  ) {
+    setErro("");
+
+    const total = itens.reduce(
+      (soma, item) => soma + Number(item.valor || 0),
+      0
+    );
+
+    if (total <= 0) return;
+
+    const confirmar = window.confirm(
+      `Lançar ${formatarMoeda(total)} de ${
+        itens.length
+      } anotaç${
+        itens.length === 1 ? "ão" : "ões"
+      } como uma despesa de ${formatarData(dia)}?`
+    );
+
+    if (!confirmar) return;
+
+    setSalvando(true);
+
+    /* O detalhe do dia fica na descricao, para conferir depois. */
+    const detalhe = itens
+      .map((item) => item.descricao)
+      .join(", ");
+
+    const { data: despesa, error: erroDespesa } =
+      await supabase
+        .from("store_expenses")
+        .insert({
+          data: dia,
+          categoria: "Gastos do dia",
+          descricao: detalhe,
+          valor: total,
+          forma_pagamento: "Dinheiro",
+          pago: true,
+          data_pagamento: dia,
+        })
+        .select("id")
+        .single();
+
+    if (erroDespesa || !despesa) {
+      setSalvando(false);
+
+      setErro(
+        `Não foi possível lançar: ${
+          erroDespesa?.message || "despesa não criada"
+        }`
+      );
+
+      return;
+    }
+
+    const { error: erroCaixa } = await supabase
+      .from("cash_transactions")
+      .insert({
+        data: dia,
+        tipo: "saida",
+        origem: "despesa_loja",
+        origem_id: despesa.id,
+        valor: total,
+        descricao: `Gastos do dia - ${detalhe}`,
+        confirmado: true,
+        data_confirmacao: dia,
+      });
+
+    if (erroCaixa) {
+      await supabase
+        .from("store_expenses")
+        .delete()
+        .eq("id", despesa.id);
+
+      setSalvando(false);
+
+      setErro(
+        `Não foi possível lançar no caixa: ${erroCaixa.message}`
+      );
+
+      return;
+    }
+
+    const { error: erroMarca } = await supabase
+      .from("anotacoes_diarias")
+      .update({
+        lancada: true,
+        lancada_em: new Date().toISOString(),
+        store_expense_id: despesa.id,
+      })
+      .in(
+        "id",
+        itens.map((item) => item.id)
+      );
+
+    setSalvando(false);
+
+    if (erroMarca) {
+      setErro(
+        `A despesa entrou, mas as anotações não foram marcadas: ${erroMarca.message}`
+      );
+    }
+
+    await carregar();
+  }
+
   /* Para o que foi lançado em outro lugar - um gasto de moto. */
   async function marcarLancada(anotacao: Anotacao) {
     setErro("");
@@ -421,15 +537,28 @@ export default function AnotacoesPage() {
                     {formatarData(dia)}
                   </span>
 
-                  <span className="text-texto-suave">
-                    {formatarMoeda(
-                      itens.reduce(
-                        (soma, item) =>
-                          soma + Number(item.valor || 0),
-                        0
-                      )
-                    )}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-texto-suave">
+                      {formatarMoeda(
+                        itens.reduce(
+                          (soma, item) =>
+                            soma + Number(item.valor || 0),
+                          0
+                        )
+                      )}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={salvando}
+                      onClick={() =>
+                        lancarODia(dia, itens)
+                      }
+                      className="rounded-lg bg-dourado px-3 py-1 text-xs font-bold text-preto transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      Lançar o dia
+                    </button>
+                  </div>
                 </div>
 
                 {itens.map((anotacao) => (
