@@ -1449,8 +1449,9 @@ export default function NovaMotoPage() {
                   descricao: `${
                     gasto.descricao
                   } - ${identificacaoDebito}`,
-                  confirmado: false,
-                  data_confirmacao: null,
+                  confirmado: true,
+                  data_confirmacao:
+                    form.data_entrada,
                 })
               )
             );

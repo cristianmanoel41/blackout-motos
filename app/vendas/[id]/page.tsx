@@ -139,6 +139,16 @@ export default function EditarVendaPage() {
   const [motoNome, setMotoNome] =
     useState("");
 
+  /*
+   * Versao curta para o caixa: codigo, modelo e placa. O
+   * motoNome completo serve para o cabecalho da ficha, mas
+   * numa linha de caixa fica comprido demais.
+   */
+  const [
+    identificacaoCaixa,
+    setIdentificacaoCaixa,
+  ] = useState("");
+
   const [motorcycleId, setMotorcycleId] =
     useState("");
 
@@ -574,6 +584,16 @@ export default function EditarVendaPage() {
             .filter(Boolean)
             .join(" · ")
         );
+
+        setIdentificacaoCaixa(
+          [
+            moto.codigo,
+            `${moto.marca || ""} ${moto.modelo || ""}`.trim(),
+            moto.placa,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        );
       }
     } else {
       setMotoNome(
@@ -761,7 +781,8 @@ export default function EditarVendaPage() {
    * so tem o valor corrigido.
    */
   async function sincronizarCaixa() {
-    const identificacao = motoNome || "Venda";
+    const identificacao =
+      identificacaoCaixa || motoNome || "Venda";
 
     /* Como cada linha deve se chamar e quanto deve valer. */
     const desejadas = componentes
@@ -1062,7 +1083,7 @@ export default function EditarVendaPage() {
         descricao: `${
           novoCusto.descricao.trim() ||
           nomeTipoCusto(novoCusto.tipo)
-        } - ${motoNome || "Venda"}`,
+        } - ${identificacaoCaixa || motoNome || "Venda"}`,
         /*
          * Nasce pendente: o dinheiro so sai quando a
          * documentacao vai para o despachante. A baixa e dada
@@ -1158,7 +1179,7 @@ export default function EditarVendaPage() {
           descricao: `${
             custo.descricao ||
             nomeTipoCusto(custo.tipo)
-          } - ${motoNome || "Venda"}`,
+          } - ${identificacaoCaixa || motoNome || "Venda"}`,
           confirmado: false,
           data_confirmacao: null,
         }))

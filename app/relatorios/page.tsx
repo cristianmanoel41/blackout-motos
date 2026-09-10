@@ -231,7 +231,12 @@ export default async function RelatorioMensalPage({
       const custos =
         custosDocPorVenda[String(venda.id)] || 0
 
-      return soma + (recebido - custos)
+      /*
+       * Dinheiro de passagem: sobra nao vira lucro. So pesa
+       * quando a documentacao custou mais do que o cliente
+       * pagou, e a loja bancou a diferenca.
+       */
+      return soma + Math.min(0, recebido - custos)
     }, 0) ?? 0
 
   const totalRecebidoDocumentacao =
@@ -658,6 +663,23 @@ export default async function RelatorioMensalPage({
   const lucroLiquido =
     lucroBruto - totalDespesasMes
 
+  /*
+   * O resumo que o tio do Cristian pede: quanto custou a moto,
+   * por quanto saiu, quanto se gastou e o que sobrou. Os
+   * numeros vem da mesma conta do relatorio - so aparecem
+   * separados, porque "custo das motos vendidas" ja soma a
+   * compra com os gastos e esconde os dois.
+   */
+  const compraDasVendidas = lucroPorMoto.reduce(
+    (soma, item) => soma + item.compra,
+    0
+  )
+
+  const gastosDasVendidas = lucroPorMoto.reduce(
+    (soma, item) => soma + item.gastos,
+    0
+  )
+
   // =========================================================
   // CAIXA DO PERÍODO
   // =========================================================
@@ -848,6 +870,76 @@ export default async function RelatorioMensalPage({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
 
+        {/* RESUMO DO MÊS */}
+
+        <div className="w-full overflow-hidden rounded-xl border border-dourado/60 bg-grafite divide-y divide-grafite-claro xl:col-span-2">
+          <div className="bg-grafite-claro px-5 py-3">
+            <h2 className="font-semibold text-dourado">
+              Resumo do mês
+            </h2>
+
+            <p className="mt-1 text-xs text-texto-suave">
+              O que entrou, o que saiu e o que sobrou.
+            </p>
+          </div>
+
+          {linha(
+            `Vendas (${lucroPorMoto.length} moto${
+              lucroPorMoto.length === 1 ? '' : 's'
+            })`,
+            formatarMoeda(faturamento)
+          )}
+
+          {linha(
+            'Compra dessas motos',
+            `− ${formatarMoeda(compraDasVendidas)}`
+          )}
+
+          {linha(
+            'Gastos nessas motos',
+            `− ${formatarMoeda(gastosDasVendidas)}`
+          )}
+
+          {linha(
+            'Despesas da loja',
+            `− ${formatarMoeda(totalDespesasMes)}`
+          )}
+
+          {resultadoDocumentacao !== 0 &&
+            linha(
+              'Documentação bancada pela loja',
+              `− ${formatarMoeda(
+                Math.abs(resultadoDocumentacao)
+              )}`
+            )}
+
+          {(resumoCapacetes.receitaAvulsa > 0 ||
+            resumoCapacetes.custo > 0) &&
+            linha(
+              'Capacetes (venda de balcão)',
+              formatarMoeda(
+                resumoCapacetes.receitaAvulsa -
+                  resumoCapacetes.custo
+              )
+            )}
+
+          <div className="flex items-center justify-between px-5 py-4">
+            <span className="font-semibold text-white">
+              Lucro do mês
+            </span>
+
+            <span
+              className={`text-xl font-bold ${
+                lucroLiquido >= 0
+                  ? 'text-green-400'
+                  : 'text-red-400'
+              }`}
+            >
+              {formatarMoeda(lucroLiquido)}
+            </span>
+          </div>
+        </div>
+
         {/* MOTOS */}
 
         <div className="w-full overflow-hidden rounded-xl border border-grafite-claro bg-grafite divide-y divide-grafite-claro">
@@ -941,11 +1033,13 @@ export default async function RelatorioMensalPage({
 
           {linha(
             documentacaoEmAberto > 0
-              ? `Resultado da documentação (${documentacaoEmAberto} em aberto, fora da conta)`
-              : 'Resultado da documentação',
-            formatarMoeda(
-              resultadoDocumentacao
-            )
+              ? `Documentação no lucro (${documentacaoEmAberto} em aberto, fora da conta)`
+              : 'Documentação no lucro',
+            resultadoDocumentacao === 0
+              ? 'R$ 0,00 · o cliente cobriu'
+              : formatarMoeda(
+                  resultadoDocumentacao
+                )
           )}
 
           {linha(

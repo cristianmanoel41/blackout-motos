@@ -178,7 +178,12 @@ export default async function DashboardPage() {
       const recebido = Number(venda.transferencia_cliente || 0)
       const custos = custosPorVenda[String(venda.id)] || 0
 
-      return soma + (recebido - custos)
+      /*
+       * Dinheiro de passagem: sobra nao vira lucro. So pesa
+       * quando a documentacao custou mais do que o cliente
+       * pagou, e a loja bancou a diferenca.
+       */
+      return soma + Math.min(0, recebido - custos)
     }, 0) ?? 0
 
   const lucroBrutoMes = faturamentoMes + resultadoDocumentacao - custoMotosVendidas

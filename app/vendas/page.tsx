@@ -2159,9 +2159,22 @@ export default function VendasPage() {
        * - Moto na troca NÃO entra no caixa.
        * - Financiamento entra como recebimento do banco.
        */
+      /*
+       * Duas motos do mesmo modelo ficam iguais no caixa se o
+       * nome for so marca e modelo. A placa e o codigo dizem
+       * de qual moto e aquele valor a pagar.
+       */
       const identificacaoVenda =
         motoSelecionada
-          ? `${motoSelecionada.marca || ""} ${motoSelecionada.modelo || ""}`
+          ? [
+              motoSelecionada.codigo,
+              `${motoSelecionada.marca || ""} ${
+                motoSelecionada.modelo || ""
+              }`.trim(),
+              motoSelecionada.placa,
+            ]
+              .filter(Boolean)
+              .join(" · ")
           : "Moto";
 
       /*
@@ -2283,39 +2296,20 @@ export default function VendasPage() {
         }
       }
 
-      const valorTransfLoja =
-        Number(
-          transferenciaLoja
-        ) || 0;
-
-      if (
-        valorTransfLoja > 0
-      ) {
-        const {
-          error:
-            transferenciaError,
-        } = await supabase
-          .from(
-            "cash_transactions"
-          )
-          .insert({
-            data: dataVenda,
-            tipo: "saida",
-            origem: "venda",
-            origem_id:
-              vendaCriada.id,
-            valor:
-              valorTransfLoja,
-            descricao:
-              "Transferência paga pela loja",
-          });
-
-        if (
-          transferenciaError
-        ) {
-          throw transferenciaError;
-        }
-      }
+      /*
+       * A parte da transferencia que a loja assume NAO vira
+       * uma saida propria.
+       *
+       * Os 690 ja incluem tudo - vistoria, recibo, honorario
+       * da Cris e as taxas do Detran - e esses custos saem um
+       * a um logo abaixo, cada um no nome de quem recebe. Uma
+       * saida de 690 por cima deles cobraria o mesmo dinheiro
+       * duas vezes e derrubaria o lucro da moto.
+       *
+       * Quem paga aparece no resultado da documentacao: sem o
+       * dinheiro do cliente, o recebido e menor e a diferenca
+       * ja pesa no lucro sozinha.
+       */
 
       /*
        * CUSTOS PADRÃO DA DOCUMENTAÇÃO
