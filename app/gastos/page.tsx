@@ -411,9 +411,12 @@ export default async function GastosMotosPage({
 
                 return textoMoto.includes(termoBusca);
               })
-              .sort((a, b) =>
-                b.ultimaData.localeCompare(a.ultimaData)
-              );
+              /*
+               * A que mais custou primeiro. Ordenar por data
+               * deixava a moto de 3 mil perdida no meio de
+               * lavagens de 35.
+               */
+              .sort((a, b) => b.total - a.total);
 
             const totalExibido = motosDoMes.reduce(
               (soma, grupoMoto) => soma + grupoMoto.total,
@@ -448,9 +451,10 @@ export default async function GastosMotosPage({
                 </div>
 
                 <div className="overflow-hidden rounded-xl border border-grafite-claro bg-grafite">
-                  <div className="hidden grid-cols-[minmax(0,1.5fr)_160px_180px_44px] items-center gap-4 border-b border-grafite-claro bg-preto/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-texto-suave md:grid">
+                  <div className="hidden grid-cols-[minmax(0,1.4fr)_150px_140px_160px_44px] items-center gap-4 border-b border-grafite-claro bg-preto/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-texto-suave md:grid">
                     <span>Moto</span>
                     <span>Placa / ID</span>
+                    <span>Lançamentos</span>
                     <span className="text-right">Custo total</span>
                     <span />
                   </div>
@@ -467,7 +471,7 @@ export default async function GastosMotosPage({
                         }
                         className="group border-b border-grafite-claro last:border-b-0"
                       >
-                        <summary className="grid cursor-pointer list-none gap-3 bg-grafite px-5 py-4 transition hover:bg-preto/50 [&::-webkit-details-marker]:hidden md:grid-cols-[minmax(0,1.5fr)_160px_180px_44px] md:items-center md:gap-4">
+                        <summary className="grid cursor-pointer list-none gap-3 bg-grafite px-5 py-4 transition hover:bg-preto/50 [&::-webkit-details-marker]:hidden md:grid-cols-[minmax(0,1.4fr)_150px_140px_160px_44px] md:items-center md:gap-4">
                           <div className="min-w-0">
                             <div className="truncate text-base font-bold text-white">
                               {moto
@@ -482,6 +486,27 @@ export default async function GastosMotosPage({
                             {moto?.placa && moto?.codigo
                               ? ` · ${moto.codigo}`
                               : ""}
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 md:block">
+                            <span className="text-xs text-texto-suave md:hidden">
+                              Lançamentos
+                            </span>
+
+                            <span className="text-sm text-texto-suave">
+                              {grupoMoto.gastos.length}{" "}
+                              {grupoMoto.gastos.length === 1
+                                ? "gasto"
+                                : "gastos"}
+                              {grupoMoto.ultimaData && (
+                                <span className="block text-xs">
+                                  último em{" "}
+                                  {formatarData(
+                                    grupoMoto.ultimaData
+                                  )}
+                                </span>
+                              )}
+                            </span>
                           </div>
 
                           <div className="flex items-center justify-between gap-3 md:block md:text-right">
@@ -515,13 +540,11 @@ export default async function GastosMotosPage({
                           </div>
 
                           <div className="overflow-x-auto">
-                            <table className="w-full min-w-[850px] text-sm">
+                            <table className="w-full text-sm">
                               <thead className="border-y border-grafite-claro bg-preto/30">
                                 <tr className="text-left text-xs uppercase tracking-wide text-texto-suave">
                                   <th className="px-4 py-3">Data</th>
-                                  <th className="px-4 py-3">Categoria</th>
-                                  <th className="px-4 py-3">Descrição</th>
-                                  <th className="px-4 py-3">Pagamento</th>
+                                  <th className="px-4 py-3">Gasto</th>
                                   <th className="px-4 py-3 text-right">Valor</th>
                                   <th className="px-4 py-3 text-right">Ação</th>
                                 </tr>
@@ -540,15 +563,18 @@ export default async function GastosMotosPage({
                                     </td>
 
                                     <td className="px-4 py-3">
-                                      {gasto.categoria || "—"}
-                                    </td>
+                                      <span className="font-medium text-white">
+                                        {gasto.categoria || "Gasto"}
+                                      </span>
 
-                                    <td className="px-4 py-3">
-                                      {gasto.descricao || "—"}
-                                    </td>
-
-                                    <td className="px-4 py-3">
-                                      {gasto.forma_pagamento || "—"}
+                                      {gasto.descricao && (
+                                        <span className="block text-xs text-texto-suave">
+                                          {gasto.descricao}
+                                          {gasto.forma_pagamento
+                                            ? ` · ${gasto.forma_pagamento}`
+                                            : ""}
+                                        </span>
+                                      )}
                                     </td>
 
                                     <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
