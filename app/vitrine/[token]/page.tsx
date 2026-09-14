@@ -44,20 +44,41 @@ export default async function VitrinePage({
    */
   const capas: Record<string, string> = {};
 
+  /* Todas as fotos, na ordem, para o cliente ver a moto. */
+  const galerias: Record<string, string[]> = {};
+
   if (lista.length > 0) {
     const { data: fotos } = await supabase
       .from("motorcycle_photos")
-      .select("motorcycle_id, url")
-      .eq("principal", true)
+      .select(
+        "motorcycle_id, url, principal, arquivo_tipo, arquivo_nome"
+      )
       .in(
         "motorcycle_id",
         lista.map((moto) => moto.id)
-      );
+      )
+      .order("ordem", { ascending: true });
 
     (fotos || []).forEach((foto: any) => {
-      if (foto.url) {
-        capas[String(foto.motorcycle_id)] = foto.url;
-      }
+      if (!foto.url) return;
+
+      const moto = String(foto.motorcycle_id);
+
+      /* Video nao entra na vitrine: a faixa e de imagem. */
+      const ehVideo =
+        (foto.arquivo_tipo || "").startsWith("video/") ||
+        /.(mp4|mov|webm)$/i.test(
+          foto.arquivo_nome || ""
+        );
+
+      if (ehVideo) return;
+
+      if (foto.principal) capas[moto] = foto.url;
+
+      galerias[moto] = [
+        ...(galerias[moto] || []),
+        foto.url,
+      ];
     });
   }
 
@@ -109,7 +130,11 @@ export default async function VitrinePage({
             Nenhuma moto disponível no momento.
           </div>
         ) : (
-          <VitrineLista motos={lista} capas={capas} />
+          <VitrineLista
+            motos={lista}
+            capas={capas}
+            galerias={galerias}
+          />
         )}
 
         <p className="mt-6 text-center text-xs text-black/45">

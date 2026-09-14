@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { Bike, Search } from "lucide-react";
 
@@ -55,12 +55,38 @@ function quilometragem(valor: number | null) {
 export default function VitrineLista({
   motos,
   capas,
+  galerias,
 }: {
   motos: MotoVitrine[];
   /* Endereço da foto de capa, por moto. */
   capas?: Record<string, string>;
+  /* Todas as fotos, na ordem, por moto. */
+  galerias?: Record<string, string[]>;
 }) {
   const [busca, setBusca] = useState("");
+
+  /* Qual moto esta com as fotos abertas. */
+  const [aberta, setAberta] = useState("");
+
+  /* A foto em tela cheia: a lista e onde estamos nela. */
+  const [ampliada, setAmpliada] = useState<{
+    fotos: string[];
+    indice: number;
+  } | null>(null);
+
+  function passar(quanto: number) {
+    setAmpliada((atual) => {
+      if (!atual) return atual;
+
+      const total = atual.fotos.length;
+
+      /* Vai do fim para o comeco e vice-versa. */
+      const proximo =
+        (atual.indice + quanto + total) % total;
+
+      return { ...atual, indice: proximo };
+    });
+  }
 
   const filtradas = useMemo(() => {
     const termo = semAcento(busca);
@@ -142,10 +168,29 @@ export default function VitrineLista({
               </thead>
 
               <tbody>
-                {filtradas.map((moto) => (
+                {filtradas.map((moto) => {
+                  const fotos = galerias?.[moto.id] || [];
+                  const abertaAgora = aberta === moto.id;
+
+                  return (
+                  <Fragment key={moto.id}>
                   <tr
-                    key={moto.id}
-                    className="border-b border-black/[.06] last:border-0"
+                    onClick={() =>
+                      fotos.length > 0 &&
+                      setAberta(
+                        abertaAgora ? "" : moto.id
+                      )
+                    }
+                    className={`border-b border-black/[.06] last:border-0 ${
+                      fotos.length > 0
+                        ? "cursor-pointer hover:bg-black/[.02]"
+                        : ""
+                    }`}
+                    title={
+                      fotos.length > 0
+                        ? "Clique para ver as fotos"
+                        : ""
+                    }
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -203,12 +248,111 @@ export default function VitrineLista({
                             moto.preco_anunciado
                           )
                         : "Consultar"}
+
+                      {fotos.length > 1 && (
+                        <span className="mt-1 block text-[11px] font-normal text-black/45">
+                          {abertaAgora
+                            ? "fechar fotos"
+                            : `ver ${fotos.length} fotos`}
+                        </span>
+                      )}
                     </td>
                   </tr>
-                ))}
+
+                  {abertaAgora && fotos.length > 0 && (
+                    <tr className="border-b border-black/[.06]">
+                      <td colSpan={5} className="bg-black/[.02] p-3">
+                        <div className="flex gap-2 overflow-x-auto">
+                          {fotos.map((endereco, indice) => (
+                            <button
+                              key={endereco}
+                              type="button"
+                              onClick={(evento) => {
+                                evento.stopPropagation();
+                                setAmpliada({
+                                  fotos,
+                                  indice,
+                                });
+                              }}
+                              className="shrink-0"
+                              aria-label={`Abrir foto ${
+                                indice + 1
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={endereco}
+                                alt={`Foto ${indice + 1}`}
+                                className="h-48 w-auto rounded-lg border border-black/10 object-cover transition hover:brightness-110"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {ampliada && (
+        <div
+          onClick={() => setAmpliada(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+        >
+          <button
+            type="button"
+            onClick={() => setAmpliada(null)}
+            aria-label="Fechar"
+            className="absolute right-4 top-4 rounded-full bg-white/10 px-4 py-2 text-lg font-bold text-white hover:bg-white/20"
+          >
+            ✕
+          </button>
+
+          {ampliada.fotos.length > 1 && (
+            <button
+              type="button"
+              onClick={(evento) => {
+                evento.stopPropagation();
+                passar(-1);
+              }}
+              aria-label="Foto anterior"
+              className="absolute left-2 rounded-full bg-white/10 px-4 py-3 text-2xl text-white hover:bg-white/20 sm:left-6"
+            >
+              ‹
+            </button>
+          )}
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={ampliada.fotos[ampliada.indice]}
+            alt=""
+            onClick={(evento) => evento.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-lg object-contain"
+          />
+
+          {ampliada.fotos.length > 1 && (
+            <button
+              type="button"
+              onClick={(evento) => {
+                evento.stopPropagation();
+                passar(1);
+              }}
+              aria-label="Próxima foto"
+              className="absolute right-2 rounded-full bg-white/10 px-4 py-3 text-2xl text-white hover:bg-white/20 sm:right-6"
+            >
+              ›
+            </button>
+          )}
+
+          <span className="absolute bottom-5 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white">
+            {ampliada.indice + 1} de {ampliada.fotos.length}
+          </span>
         </div>
       )}
     </>
