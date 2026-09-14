@@ -30,6 +30,51 @@ export default function LegendaPost({
    * Publica na OLX com o texto que esta na caixa - o mesmo que
    * voce leu e ajustou. Uma moto por vez, so no clique.
    */
+  async function removerDaOlx() {
+    const confirmar = window.confirm(
+      "Tirar o anúncio desta moto do ar na OLX?"
+    );
+
+    if (!confirmar) return;
+
+    setErro("");
+    setAviso("");
+    setAnunciando(true);
+
+    try {
+      const resposta = await fetch("/api/olx/anunciar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          motorcycleId,
+          acao: "remover",
+        }),
+      });
+
+      const dados = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        setErro(
+          dados?.error || "Não foi possível remover."
+        );
+
+        return;
+      }
+
+      setAviso(
+        "Pedido de remoção enviado. A OLX leva alguns minutos para tirar do ar."
+      );
+    } catch {
+      setErro("Não foi possível falar com o servidor.");
+    } finally {
+      setAnunciando(false);
+    }
+  }
+
   async function anunciar() {
     const texto = legenda.trim();
 
@@ -270,6 +315,16 @@ export default function LegendaPost({
           </span>
 
           <div className="flex flex-wrap gap-2">
+
+          <button
+            type="button"
+            disabled={anunciando}
+            onClick={removerDaOlx}
+            title="Tira da OLX o anúncio publicado pelo sistema"
+            className="rounded-lg border border-grafite-claro px-3 py-2 text-sm font-semibold text-texto-suave transition hover:border-red-700 hover:text-red-300 disabled:opacity-50"
+          >
+            Tirar da OLX
+          </button>
 
           <button
             type="button"

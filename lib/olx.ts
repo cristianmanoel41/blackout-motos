@@ -19,6 +19,10 @@ const TOKEN = "https://auth.olx.com.br/oauth/token";
 const IMPORTAR =
   "https://apps.olx.com.br/autoupload/import";
 
+/* O que esta no ar agora, direto da OLX. */
+const PUBLICADOS =
+  "https://apps.olx.com.br/autoupload/v1/published";
+
 /* Tabelas de codigo da OLX: marca, modelo e cilindrada. */
 const MOTO_INFO =
   "https://apps.olx.com.br/autoupload/moto_info";
@@ -189,6 +193,64 @@ async function buscarTabela(
   if (!resposta.ok) {
     throw new Error(
       `A OLX não devolveu a tabela (${resposta.status}).`
+    );
+  }
+
+  return resposta.json();
+}
+
+/*
+ * O que a OLX tem publicado desta conta.
+ *
+ * Diferente do resto da API, esta chamada quer o token no
+ * cabecalho, no formato Bearer - e nao no corpo. Traz ate
+ * fetch_size anuncios por vez.
+ */
+export async function anunciosPublicados(
+  token: string,
+  quantidade = 100
+) {
+  const endereco = `${PUBLICADOS}?ads_status=published&fetch_size=${quantidade}`;
+
+  const resposta = await fetch(endereco, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0",
+    },
+  });
+
+  if (!resposta.ok) {
+    throw new Error(
+      `A OLX não devolveu os anúncios (${resposta.status}).`
+    );
+  }
+
+  return resposta.json();
+}
+
+/*
+ * Como foi uma importacao especifica. O token do processo vale
+ * 7 dias na OLX; depois disso ela responde 404.
+ */
+export async function statusDaImportacao(
+  token: string,
+  processo: string
+) {
+  const resposta = await fetch(
+    `${IMPORTAR}/${processo}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0",
+      },
+    }
+  );
+
+  if (!resposta.ok) {
+    throw new Error(
+      `A OLX não devolveu o status (${resposta.status}).`
     );
   }
 

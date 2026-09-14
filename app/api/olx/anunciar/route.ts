@@ -62,6 +62,9 @@ export async function POST(requisicao: Request) {
 
   const descricao = String(corpo?.descricao || "").trim();
 
+  /* "remover" tira o anuncio do ar; qualquer outra coisa publica. */
+  const remover = corpo?.acao === "remover";
+
   if (!motorcycleId) {
     return Response.json(
       { error: "Moto não informada." },
@@ -88,6 +91,41 @@ export async function POST(requisicao: Request) {
       { error: "Moto não encontrada." },
       { status: 404 }
     );
+  }
+
+  if (remover) {
+    try {
+      const token = await tokenSalvo();
+
+      const resposta = await importarAnuncios(token, [
+        {
+          id: String(moto.codigo || moto.id),
+          operation: "delete",
+        },
+      ]);
+
+      await supabase.from("olx_anuncios").insert({
+        motorcycle_id: motorcycleId,
+        token_processo:
+          resposta?.token ||
+          resposta?.data?.token ||
+          null,
+        situacao: "removido",
+        mensagem: resposta?.statusMessage || null,
+      });
+
+      return Response.json({ ok: true, removido: true });
+    } catch (falha) {
+      return Response.json(
+        {
+          error:
+            falha instanceof Error
+              ? falha.message
+              : "Não foi possível remover.",
+        },
+        { status: 502 }
+      );
+    }
   }
 
   if (moto.status === "vendida") {
