@@ -23,6 +23,69 @@ export default function LegendaPost({
   const [gerando, setGerando] = useState("");
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState("");
+  const [anunciando, setAnunciando] = useState(false);
+  const [aviso, setAviso] = useState("");
+
+  /*
+   * Publica na OLX com o texto que esta na caixa - o mesmo que
+   * voce leu e ajustou. Uma moto por vez, so no clique.
+   */
+  async function anunciar() {
+    const texto = legenda.trim();
+
+    if (!texto) {
+      setErro(
+        "Gere a descrição primeiro, no botão Descrição p/ OLX."
+      );
+
+      return;
+    }
+
+    const confirmar = window.confirm(
+      "Publicar esta moto na OLX com a descrição que está na caixa?"
+    );
+
+    if (!confirmar) return;
+
+    setErro("");
+    setAviso("");
+    setAnunciando(true);
+
+    try {
+      const resposta = await fetch("/api/olx/anunciar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          motorcycleId,
+          descricao: texto,
+        }),
+      });
+
+      const dados = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        setErro(
+          dados?.error || "Não foi possível anunciar."
+        );
+
+        return;
+      }
+
+      setAviso(
+        `Enviado para a OLX como ${dados.anunciadoComo}, com ${
+          dados.fotos
+        } foto${dados.fotos === 1 ? "" : "s"}. A OLX leva alguns minutos para publicar.`
+      );
+    } catch {
+      setErro("Não foi possível falar com o servidor.");
+    } finally {
+      setAnunciando(false);
+    }
+  }
 
   async function gerar(
     estilo:
@@ -166,6 +229,12 @@ export default function LegendaPost({
         </div>
       )}
 
+      {aviso && (
+        <div className="mb-4 rounded-lg border border-green-700 bg-green-950/30 px-4 py-3 text-sm text-green-300">
+          {aviso}
+        </div>
+      )}
+
       <textarea
         value={legenda}
         onChange={(evento) =>
@@ -195,10 +264,23 @@ export default function LegendaPost({
       </div>
 
       {legenda && (
-        <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs text-texto-suave">
             {legenda.length} caracteres
           </span>
+
+          <div className="flex flex-wrap gap-2">
+
+          <button
+            type="button"
+            disabled={anunciando}
+            onClick={anunciar}
+            className="inline-flex items-center gap-2 rounded-lg border border-dourado px-4 py-2 text-sm font-bold text-dourado transition hover:bg-dourado hover:text-preto disabled:opacity-50"
+          >
+            {anunciando
+              ? "Enviando..."
+              : "Publicar na OLX"}
+          </button>
 
           <button
             type="button"
@@ -216,7 +298,8 @@ export default function LegendaPost({
                 Copiar
               </>
             )}
-          </button>
+            </button>
+          </div>
         </div>
       )}
     </div>

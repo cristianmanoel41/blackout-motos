@@ -156,6 +156,18 @@ export async function modelosDaMarca(
   return buscarTabela(`${MOTO_INFO}/${marca}`, token);
 }
 
+/* A versao e obrigatoria no anuncio e depende do modelo. */
+export async function versoesDoModelo(
+  token: string,
+  marca: string,
+  modelo: string
+) {
+  return buscarTabela(
+    `${MOTO_INFO}/${marca}/${modelo}`,
+    token
+  );
+}
+
 export async function cilindradas(token: string) {
   return buscarTabela(CILINDRADAS, token);
 }
