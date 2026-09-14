@@ -28,16 +28,31 @@ const supabase = createClient();
 
 const BUCKET = "fotos-motos";
 
-/* 15 MB: acima disso e quase sempre foto sem compressao. */
-const TAMANHO_MAXIMO = 15 * 1024 * 1024;
+/*
+ * Video de celular e pesado: 30 segundos em 1080p passam de 50
+ * MB. O balde aceita ate 200, entao a tela segue o mesmo teto.
+ */
+const TAMANHO_MAXIMO = 200 * 1024 * 1024;
 
-const TIPOS_ACEITOS = ".jpg,.jpeg,.png,.webp";
+const TIPOS_ACEITOS =
+  ".jpg,.jpeg,.png,.webp,.mp4,.mov,.webm";
+
+function ehVideo(foto: { arquivo_tipo?: string | null; arquivo_nome?: string }) {
+  if (foto.arquivo_tipo) {
+    return foto.arquivo_tipo.startsWith("video/");
+  }
+
+  return /\.(mp4|mov|webm)$/i.test(
+    foto.arquivo_nome || ""
+  );
+}
 
 type Foto = {
   id: string;
   motorcycle_id: string;
   arquivo_path: string;
   arquivo_nome: string;
+  arquivo_tipo: string | null;
   tamanho: number | null;
   principal: boolean;
   url: string;
@@ -124,7 +139,7 @@ export default function FotosMoto({
         falhas.push(
           `${arquivo.name} tem ${tamanhoLegivel(
             arquivo.size
-          )}, acima do limite de 15 MB`
+          )}, acima do limite de 200 MB`
         );
 
         continue;
@@ -153,6 +168,10 @@ export default function FotosMoto({
         .from(BUCKET)
         .getPublicUrl(caminho).data.publicUrl;
 
+      const arquivoEhVideo = (arquivo.type || "").startsWith(
+        "video/"
+      );
+
       const { error: erroRegistro } = await supabase
         .from("motorcycle_photos")
         .insert({
@@ -161,8 +180,11 @@ export default function FotosMoto({
           arquivo_nome: arquivo.name,
           arquivo_tipo: arquivo.type || null,
           tamanho: arquivo.size,
-          /* A primeira foto da moto já vira a capa. */
-          principal: !temCapa,
+          /*
+           * A capa representa a moto na lista e na vitrine, e
+           * ali so cabe imagem - video nao vira miniatura.
+           */
+          principal: !temCapa && !arquivoEhVideo,
           url: publicUrl,
           ordem: proximaOrdem,
         });
@@ -180,7 +202,7 @@ export default function FotosMoto({
         continue;
       }
 
-      if (!temCapa) temCapa = true;
+      if (!temCapa && !arquivoEhVideo) temCapa = true;
       proximaOrdem++;
     }
 
@@ -300,18 +322,21 @@ export default function FotosMoto({
         <div>
           <h2 className="flex items-center gap-2 font-semibold text-dourado">
             <Camera size={18} />
-            Fotos da moto
+            Fotos e vídeos da moto
           </h2>
 
           <p className="mt-1 text-xs text-texto-suave">
-            A primeira vira a capa. Use as setas para ordenar —
-            é essa ordem que vale no anúncio.
+            A primeira foto vira a capa. Use as setas para
+            ordenar — é essa ordem que vale no anúncio. Vídeo é
+            o que rende no TikTok.
           </p>
         </div>
 
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-dourado px-4 py-2.5 text-sm font-semibold text-preto transition hover:opacity-90">
           <Upload size={16} />
-          {enviando ? progresso || "Enviando..." : "Adicionar fotos"}
+          {enviando
+            ? progresso || "Enviando..."
+            : "Adicionar fotos ou vídeo"}
 
           <input
             type="file"
@@ -345,7 +370,8 @@ export default function FotosMoto({
           />
 
           <p className="mt-3 text-sm text-texto-suave">
-            Nenhuma foto ainda. Suba várias de uma vez.
+            Nada aqui ainda. Suba várias de uma vez — fotos e
+            vídeos.
           </p>
         </div>
       ) : (
@@ -356,12 +382,27 @@ export default function FotosMoto({
               className="overflow-hidden rounded-lg border border-grafite-claro bg-preto/40"
             >
               <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={enderecoDe(foto)}
-                  alt={foto.legenda || foto.arquivo_nome}
-                  className="h-44 w-full object-cover"
-                />
+                {ehVideo(foto) ? (
+                  <video
+                    src={enderecoDe(foto)}
+                    controls
+                    preload="metadata"
+                    className="h-44 w-full bg-black object-contain"
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={enderecoDe(foto)}
+                    alt={foto.legenda || foto.arquivo_nome}
+                    className="h-44 w-full object-cover"
+                  />
+                )}
+
+                {ehVideo(foto) && (
+                  <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-bold text-white">
+                    Vídeo
+                  </span>
+                )}
 
                 {foto.principal && (
                   <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-dourado px-2 py-1 text-[10px] font-bold text-preto">
@@ -395,7 +436,7 @@ export default function FotosMoto({
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {!foto.principal && (
+                  {!foto.principal && !ehVideo(foto) && (
                     <button
                       type="button"
                       onClick={() => definirCapa(foto)}

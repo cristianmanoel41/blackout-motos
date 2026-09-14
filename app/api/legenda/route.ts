@@ -46,6 +46,24 @@ function kmTexto(valor: unknown) {
   return `${numero.toLocaleString("pt-BR")} km`;
 }
 
+function kmRedondo(valor: unknown) {
+  const numero = Number(valor || 0);
+
+  if (!numero) return "";
+
+  /*
+   * Abaixo de 2 mil o exato e curto e soa melhor: "1.482 km"
+   * em vez de "1 mil km", que ainda esconderia quase 500.
+   */
+  if (numero < 2000) {
+    return `${numero.toLocaleString("pt-BR")} km`;
+  }
+
+  const milhares = Math.round(numero / 1000);
+
+  return `${milhares} mil km`;
+}
+
 function anoTexto(moto: any) {
   if (moto.ano_fabricacao && moto.ano_modelo) {
     return moto.ano_fabricacao === moto.ano_modelo
@@ -196,6 +214,9 @@ export async function POST(requisicao: Request) {
   const preco = moeda(moto.preco_anunciado);
   const km = kmTexto(moto.quilometragem);
 
+  /* Para legenda; a ficha detalhada continua com o exato. */
+  const kmCurto = kmRedondo(moto.quilometragem);
+
   const hashtags = [
     "#blackoutmotos",
     tag(moto.marca),
@@ -254,8 +275,8 @@ export async function POST(requisicao: Request) {
     ];
 
     /* Km só entra quando é argumento de venda. */
-    if (km && Number(moto.quilometragem) < 30000) {
-      bloco.push(`Só ${km}`);
+    if (kmCurto && Number(moto.quilometragem) < 30000) {
+      bloco.push(`Só ${kmCurto}`);
     }
 
     if (preco) bloco.push(preco);
@@ -276,7 +297,7 @@ export async function POST(requisicao: Request) {
   if (estilo === "feed") {
     const itens: string[] = [];
 
-    if (km) itens.push(`🛣️ ${km}`);
+    if (kmCurto) itens.push(`🛣️ ${kmCurto}`);
     if (moto.cor) itens.push(`🎨 ${corTexto(moto.cor)}`);
 
     if (moto.cilindrada) {
@@ -322,8 +343,8 @@ export async function POST(requisicao: Request) {
 
     /* Km baixa é argumento; km alta não precisa virar manchete. */
     const destaque = [
-      km && Number(moto.quilometragem) < 30000
-        ? `Só ${km}`
+      kmCurto && Number(moto.quilometragem) < 30000
+        ? `Só ${kmCurto}`
         : "",
       moto.unico_dono ? "Único dono" : "",
     ].filter(Boolean);
