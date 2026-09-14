@@ -54,8 +54,11 @@ function quilometragem(valor: number | null) {
 
 export default function VitrineLista({
   motos,
+  capas,
 }: {
   motos: MotoVitrine[];
+  /* Endereço da foto de capa, por moto. */
+  capas?: Record<string, string>;
 }) {
   const [busca, setBusca] = useState("");
 
@@ -145,11 +148,22 @@ export default function VitrineLista({
                     className="border-b border-black/[.06] last:border-0"
                   >
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Bike
-                          size={16}
-                          className="shrink-0 text-black/35"
-                        />
+                      <div className="flex items-center gap-3">
+                        {capas?.[moto.id] ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={capas[moto.id]}
+                            alt=""
+                            className="h-12 w-16 shrink-0 rounded-md border border-black/10 object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-md border border-dashed border-black/15">
+                            <Bike
+                              size={16}
+                              className="text-black/25"
+                            />
+                          </div>
+                        )}
 
                         <div>
                           <p className="font-semibold text-black">

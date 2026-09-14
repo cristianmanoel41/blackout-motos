@@ -37,6 +37,30 @@ export default async function VitrinePage({
 
   const lista = (motos || []) as MotoVitrine[];
 
+  /*
+   * A capa de cada moto. A funcao da vitrine devolve so as
+   * colunas de vitrine, entao as fotos vem a parte - a tabela
+   * delas libera leitura publica de proposito.
+   */
+  const capas: Record<string, string> = {};
+
+  if (lista.length > 0) {
+    const { data: fotos } = await supabase
+      .from("motorcycle_photos")
+      .select("motorcycle_id, url")
+      .eq("principal", true)
+      .in(
+        "motorcycle_id",
+        lista.map((moto) => moto.id)
+      );
+
+    (fotos || []).forEach((foto: any) => {
+      if (foto.url) {
+        capas[String(foto.motorcycle_id)] = foto.url;
+      }
+    });
+  }
+
   if (!compartilhamento || error) {
     return (
       <main className="min-h-screen bg-[#f5f6f8] px-4 py-16">
@@ -85,7 +109,7 @@ export default async function VitrinePage({
             Nenhuma moto disponível no momento.
           </div>
         ) : (
-          <VitrineLista motos={lista} />
+          <VitrineLista motos={lista} capas={capas} />
         )}
 
         <p className="mt-6 text-center text-xs text-black/45">
