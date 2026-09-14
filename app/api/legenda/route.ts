@@ -154,6 +154,10 @@ function ganchos(moto: any, nome: string) {
   return lista;
 }
 
+const TELEFONE_FIXO = "(12) 3917-3777";
+
+const TELEFONE_CELULAR = "(12) 99662-6666";
+
 const CHAMADA_WHATSAPP =
   "Chama no WhatsApp — link na bio";
 
@@ -177,6 +181,7 @@ export async function POST(requisicao: Request) {
     "pedido",
     "feed",
     "story",
+    "olx",
   ].includes(corpo?.estilo)
     ? corpo.estilo
     : "chamada";
@@ -266,6 +271,64 @@ export async function POST(requisicao: Request) {
     ].join(QUEBRA);
 
     return Response.json({ legenda: pedido });
+  }
+
+  /*
+   * Descricao para classificado, no modelo que a loja ja usa
+   * na OLX: titulo em caixa alta, km, endereco, e o bloco de
+   * garantias e financiamento que vale para todas as motos.
+   *
+   * O km vai exato de proposito - em anuncio, numero redondo
+   * levanta duvida, e o formulario da OLX ja pede o valor
+   * certo.
+   */
+  if (estilo === "olx") {
+    /* YAMAHA MT-03 321cc ABS 2019 */
+    const titulo = [
+      moto.marca,
+      moto.modelo,
+      moto.cilindrada ? `${moto.cilindrada}cc` : "",
+      moto.versao,
+      ano,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleUpperCase("pt-BR");
+
+    const bloco = [titulo];
+
+    if (km) bloco.push(km);
+
+    bloco.push(
+      "BLACKOUT MOTOS",
+      "",
+      "Localizada na Avenida Andrômeda, 3521 - São José dos Campos/SP",
+      `Telefone: ${TELEFONE_FIXO}`,
+      "",
+      "Nossas motos são:",
+      "",
+      "Motos revisadas.",
+      "Perícia cautelar aprovada.",
+      "Com garantia total de 3 meses.",
+      "Documentação 100% em dia.",
+      "",
+      "Faça sua simulação personalizada via WhatsApp, 100% online.",
+      "",
+      "Chame no WhatsApp:",
+      TELEFONE_FIXO,
+      TELEFONE_CELULAR,
+      "",
+      "Financiamos em até 48x.",
+      "Cartão de crédito até 24x.",
+      "",
+      "Aceitamos seu veículo de menor valor como entrada ou na troca.",
+      "",
+      "Sujeito a avaliação."
+    );
+
+    return Response.json({
+      legenda: bloco.join(QUEBRA),
+    });
   }
 
   if (estilo === "story") {

@@ -30,6 +30,7 @@ export default function LegendaPost({
       | "detalhada"
       | "feed"
       | "story"
+      | "olx"
       | "pedido"
   ) {
     setErro("");
@@ -95,8 +96,8 @@ export default function LegendaPost({
           </h2>
 
           <p className="mt-1 text-xs text-texto-suave">
-            Sai pronta para copiar e colar no TikTok. Edite
-            antes, se quiser.
+            Sai pronta para copiar e colar. Edite antes, se
+            quiser.
           </p>
         </div>
 
@@ -110,6 +111,18 @@ export default function LegendaPost({
             {gerando === "feed"
               ? "Montando..."
               : "Post do feed"}
+          </button>
+
+          <button
+            type="button"
+            disabled={Boolean(gerando)}
+            onClick={() => gerar("olx")}
+            title="Sem hashtag e com o endereço da loja, para classificado"
+            className="inline-flex items-center gap-2 rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:opacity-90 disabled:opacity-50"
+          >
+            {gerando === "olx"
+              ? "Montando..."
+              : "Descrição p/ OLX"}
           </button>
 
           <button
