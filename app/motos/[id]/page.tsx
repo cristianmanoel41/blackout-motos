@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import Vistorias from "@/components/Vistorias";
+import FotosMoto from "@/components/FotosMoto";
 import RegistradoPor from "@/components/RegistradoPor";
 import CampoMoeda from "@/components/CampoMoeda";
 
@@ -932,6 +933,12 @@ export default function DetalheMotoPage() {
             {form.observacoes || "Nenhuma observação."}
           </p>
         )}
+      </div>
+
+      {/* FOTOS */}
+
+      <div className="mt-6">
+        <FotosMoto motorcycleId={String(id)} />
       </div>
 
       {/* VISTORIAS */}
