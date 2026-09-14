@@ -65,6 +65,13 @@ export async function POST(requisicao: Request) {
   /* "remover" tira o anuncio do ar; qualquer outra coisa publica. */
   const remover = corpo?.acao === "remover";
 
+  /*
+   * "previa" passa por todas as conferencias e monta o anuncio,
+   * mas para antes de enviar. E o mesmo caminho do envio de
+   * verdade - entao o que a previa mostra e o que vai.
+   */
+  const previa = corpo?.acao === "previa";
+
   if (!motorcycleId) {
     return Response.json(
       { error: "Moto não informada." },
@@ -318,6 +325,27 @@ export async function POST(requisicao: Request) {
       },
       images: imagens,
     };
+
+    if (previa) {
+      return Response.json({
+        previa: true,
+        titulo,
+        preco: Number(moto.preco_anunciado),
+        descricao: anuncio.body,
+        fotos: imagens,
+        /* Como a OLX vai entender a moto. */
+        entendido: {
+          marca: marca.nome,
+          modelo: modelo.nome,
+          versao: versao.nome,
+          cilindrada: comoTabela("cilindrada").find(
+            (item) => item.codigo === cilindrada
+          )?.nome,
+          ano,
+          km: Number(moto.quilometragem) || 0,
+        },
+      });
+    }
 
     const resposta = await importarAnuncios(token, [
       anuncio,

@@ -24,6 +24,62 @@ export default function LegendaPost({
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState("");
   const [anunciando, setAnunciando] = useState(false);
+  const [previa, setPrevia] = useState<any>(null);
+
+  /*
+   * Mostra o que seria enviado sem enviar. Passa pelo mesmo
+   * caminho do envio de verdade, entao o que aparece aqui e o
+   * que vai - inclusive como a OLX entendeu marca e modelo,
+   * que e onde da para errar sem perceber.
+   */
+  async function verPrevia() {
+    const texto = legenda.trim();
+
+    if (!texto) {
+      setErro(
+        "Gere a descrição primeiro, no botão Descrição p/ OLX."
+      );
+
+      return;
+    }
+
+    setErro("");
+    setAviso("");
+    setPrevia(null);
+    setAnunciando(true);
+
+    try {
+      const resposta = await fetch("/api/olx/anunciar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          motorcycleId,
+          descricao: texto,
+          acao: "previa",
+        }),
+      });
+
+      const dados = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        setErro(
+          dados?.error || "Não foi possível montar a prévia."
+        );
+
+        return;
+      }
+
+      setPrevia(dados);
+    } catch {
+      setErro("Não foi possível falar com o servidor.");
+    } finally {
+      setAnunciando(false);
+    }
+  }
   const [aviso, setAviso] = useState("");
 
   /*
@@ -319,6 +375,15 @@ export default function LegendaPost({
           <button
             type="button"
             disabled={anunciando}
+            onClick={verPrevia}
+            className="rounded-lg border border-grafite-claro px-3 py-2 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado disabled:opacity-50"
+          >
+            Ver prévia
+          </button>
+
+          <button
+            type="button"
+            disabled={anunciando}
             onClick={removerDaOlx}
             title="Tira da OLX o anúncio publicado pelo sistema"
             className="rounded-lg border border-grafite-claro px-3 py-2 text-sm font-semibold text-texto-suave transition hover:border-red-700 hover:text-red-300 disabled:opacity-50"
@@ -355,6 +420,88 @@ export default function LegendaPost({
             )}
             </button>
           </div>
+        </div>
+      )}
+
+      {previa && (
+        <div className="mt-4 overflow-hidden rounded-xl border border-dourado/50 bg-preto/40">
+          <div className="border-b border-grafite-claro px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-texto-suave">
+              Como vai ficar na OLX
+            </p>
+
+            <p className="mt-1 font-bold text-white">
+              {previa.titulo}
+            </p>
+
+            <p className="text-lg font-bold text-dourado">
+              {previa.preco?.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+                minimumFractionDigits: 0,
+              })}
+            </p>
+          </div>
+
+          {previa.fotos?.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto border-b border-grafite-claro p-3">
+              {previa.fotos.map(
+                (endereco: string, indice: number) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    key={endereco}
+                    src={endereco}
+                    alt={`Foto ${indice + 1}`}
+                    className="h-20 w-28 shrink-0 rounded border border-grafite-claro object-cover"
+                  />
+                )
+              )}
+            </div>
+          )}
+
+          <div className="border-b border-grafite-claro px-4 py-3">
+            <p className="mb-2 text-xs uppercase tracking-wide text-texto-suave">
+              Como a OLX entendeu a moto
+            </p>
+
+            <div className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+              {[
+                ["Marca", previa.entendido?.marca],
+                ["Modelo", previa.entendido?.modelo],
+                ["Versão", previa.entendido?.versao],
+                [
+                  "Cilindrada",
+                  previa.entendido?.cilindrada,
+                ],
+                ["Ano", previa.entendido?.ano],
+                [
+                  "Km",
+                  previa.entendido?.km?.toLocaleString(
+                    "pt-BR"
+                  ),
+                ],
+              ].map(([rotulo, valor]) => (
+                <p key={String(rotulo)}>
+                  <span className="text-texto-suave">
+                    {rotulo}:{" "}
+                  </span>
+                  <span className="text-white">
+                    {valor || "—"}
+                  </span>
+                </p>
+              ))}
+            </div>
+
+            <p className="mt-3 text-xs text-texto-suave">
+              Confira o modelo e a versão. Se a OLX entendeu
+              outra moto, corrija o nome na ficha antes de
+              publicar.
+            </p>
+          </div>
+
+          <pre className="whitespace-pre-wrap px-4 py-3 text-sm text-texto">
+            {previa.descricao}
+          </pre>
         </div>
       )}
     </div>
