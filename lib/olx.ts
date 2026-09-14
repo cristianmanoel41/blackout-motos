@@ -139,31 +139,39 @@ export async function tokenSalvo() {
 }
 
 /*
- * As tabelas de codigo. A OLX so responde com um token, entao
- * so da para baixar depois de conectar a conta.
+ * As tabelas de codigo.
+ *
+ * Sao POST com o token no corpo - nao GET, como o resto da
+ * API. E exigem User-Agent de navegador: sem ele a OLX
+ * responde 404, como se o endereco nao existisse.
  */
 export async function marcasDeMoto(token: string) {
-  return buscarTabela(`${MOTO_INFO}?access_token=${token}`);
+  return buscarTabela(MOTO_INFO, token);
 }
 
 export async function modelosDaMarca(
   token: string,
   marca: string
 ) {
-  return buscarTabela(
-    `${MOTO_INFO}/${marca}?access_token=${token}`
-  );
+  return buscarTabela(`${MOTO_INFO}/${marca}`, token);
 }
 
 export async function cilindradas(token: string) {
-  return buscarTabela(
-    `${CILINDRADAS}?access_token=${token}`
-  );
+  return buscarTabela(CILINDRADAS, token);
 }
 
-async function buscarTabela(endereco: string) {
+async function buscarTabela(
+  endereco: string,
+  token: string
+) {
   const resposta = await fetch(endereco, {
-    headers: { Accept: "application/json" },
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0",
+    },
+    body: JSON.stringify({ access_token: token }),
   });
 
   if (!resposta.ok) {

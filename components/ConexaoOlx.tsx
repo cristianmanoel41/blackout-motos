@@ -34,6 +34,48 @@ export default function ConexaoOlx() {
   const [conectado, setConectado] = useState(false);
   const [carregando, setCarregando] = useState(true);
 
+  /* Baixa da OLX as tabelas de marca, modelo e cilindrada. */
+  const [baixando, setBaixando] = useState(false);
+  const [resumo, setResumo] = useState("");
+  const [erro, setErro] = useState("");
+
+  async function baixarTabelas() {
+    setErro("");
+    setResumo("");
+    setBaixando(true);
+
+    try {
+      const resposta = await fetch("/api/olx/tabelas", {
+        method: "POST",
+      });
+
+      const dados = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        setErro(
+          dados?.error ||
+            "Não foi possível baixar as tabelas."
+        );
+
+        return;
+      }
+
+      setResumo(
+        `${dados.marcas} marcas, ${dados.modelos} modelos e ${
+          dados.cilindradas
+        } cilindradas. Marcas do seu estoque encontradas: ${
+          dados.marcasDaLoja?.join(", ") || "nenhuma"
+        }.`
+      );
+    } catch {
+      setErro("Não foi possível falar com o servidor.");
+    } finally {
+      setBaixando(false);
+    }
+  }
+
   const resultado = parametros.get("olx");
   const motivo = parametros.get("motivo");
 
@@ -80,6 +122,18 @@ export default function ConexaoOlx() {
         </div>
       )}
 
+      {resumo && (
+        <div className="mt-4 rounded-lg border border-green-700 bg-green-950/30 px-4 py-3 text-sm text-green-300">
+          {resumo}
+        </div>
+      )}
+
+      {erro && (
+        <div className="mt-4 rounded-lg border border-red-700 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+          {erro}
+        </div>
+      )}
+
       <div className="mt-5">
         {carregando ? (
           <p className="text-sm text-texto-suave">
@@ -95,12 +149,25 @@ export default function ConexaoOlx() {
               Conectado
             </span>
 
-            <a
-              href="/api/olx/login"
-              className="rounded-lg border border-grafite-claro px-3 py-2 text-xs font-semibold text-texto-suave transition hover:border-dourado hover:text-dourado"
-            >
-              Conectar de novo
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={baixando}
+                onClick={baixarTabelas}
+                className="rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:opacity-90 disabled:opacity-50"
+              >
+                {baixando
+                  ? "Baixando..."
+                  : "Baixar tabelas da OLX"}
+              </button>
+
+              <a
+                href="/api/olx/login"
+                className="rounded-lg border border-grafite-claro px-3 py-2 text-xs font-semibold text-texto-suave transition hover:border-dourado hover:text-dourado"
+              >
+                Conectar de novo
+              </a>
+            </div>
           </div>
         ) : (
           <a
