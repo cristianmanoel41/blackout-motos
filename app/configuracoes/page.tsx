@@ -1,5 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
+import ConexaoOlx from "@/components/ConexaoOlx";
+
 import { useEffect, useState } from "react";
 import {
   Store,
@@ -341,6 +344,18 @@ export default function ConfiguracoesPage() {
               computador ou celular.
             </p>
           </section>
+
+          {/* OLX */}
+
+          <Suspense
+            fallback={
+              <section className="rounded-2xl border border-grafite-claro bg-grafite p-6 text-sm text-texto-suave">
+                Carregando...
+              </section>
+            }
+          >
+            <ConexaoOlx />
+          </Suspense>
 
           {/* SALVAR */}
 
