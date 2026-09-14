@@ -30,44 +30,52 @@ function chave(valor: unknown) {
     .toLowerCase();
 }
 
-/* A OLX devolve listas em formatos diferentes por endpoint. */
-function normalizar(resposta: any): any[] {
-  if (Array.isArray(resposta)) return resposta;
-
-  for (const campo of ["data", "list", "result"]) {
-    if (Array.isArray(resposta?.[campo])) {
-      return resposta[campo];
-    }
-  }
-
-  /* Objeto no formato { "1": "Honda", "2": "Yamaha" }. */
-  if (resposta && typeof resposta === "object") {
-    return Object.entries(resposta).map(
-      ([codigo, nome]) => ({ id: codigo, name: nome })
-    );
-  }
-
-  return [];
-}
-
-function leCodigo(item: any) {
-  return String(
-    item?.id ?? item?.codigo ?? item?.value ?? ""
-  );
-}
-
-function leNome(item: any) {
-  return String(
-    item?.name ?? item?.nome ?? item?.label ?? ""
-  );
-}
-
 /*
- * Modo de conferencia pelo navegador: abrir a rota com
- * ?conferir=1 mostra a resposta crua da OLX. Serve para
- * descobrir o formato real quando o que chega nao bate com o
- * esperado - melhor do que adivinhar.
+ * A OLX embrulha tudo em "data" e devolve objeto, nao lista -
+ * e os dois lados trocam de lugar conforme a tabela:
+ *
+ *   marcas:      { "Honda": 15, "Yamaha": 7 }   nome -> codigo
+ *   cilindradas: { "3": "250", "9": "300" }     codigo -> nome
+ *
+ * Quem decide e a chave: se todas forem numero, a chave e o
+ * codigo; senao, a chave e o nome.
  */
+function normalizar(resposta: any): Array<{
+  codigo: string;
+  nome: string;
+}> {
+  const conteudo = resposta?.data ?? resposta;
+
+  if (!conteudo || typeof conteudo !== "object") return [];
+
+  if (Array.isArray(conteudo)) {
+    return conteudo
+      .map((item: any) => ({
+        codigo: String(
+          item?.id ?? item?.codigo ?? item?.value ?? ""
+        ),
+        nome: String(
+          item?.name ?? item?.nome ?? item?.label ?? ""
+        ),
+      }))
+      .filter((item) => item.codigo && item.nome);
+  }
+
+  const entradas = Object.entries(conteudo);
+
+  const chavesSaoNumeros = entradas.every(([chave]) =>
+    /^\d+$/.test(chave)
+  );
+
+  return entradas
+    .map(([chave, valor]) =>
+      chavesSaoNumeros
+        ? { codigo: chave, nome: String(valor) }
+        : { codigo: String(valor), nome: chave }
+    )
+    .filter((item) => item.codigo && item.nome);
+}
+
 export async function GET(requisicao: Request) {
   if (
     !new URL(requisicao.url).searchParams.has("conferir")
@@ -101,23 +109,11 @@ export async function GET(requisicao: Request) {
   }
 }
 
-export async function POST(requisicao: Request) {
+export async function POST() {
   const supabase = await createClient();
-
-  const conferir = new URL(requisicao.url).searchParams.has(
-    "conferir"
-  );
 
   try {
     const token = await tokenSalvo();
-
-    if (conferir) {
-      const cru = await marcasDeMoto(token);
-
-      return Response.json({
-        formato: JSON.stringify(cru).slice(0, 1200),
-      });
-    }
 
     /* Marcas que a loja realmente tem. */
     const { data: motos } = await supabase
@@ -140,12 +136,7 @@ export async function POST(requisicao: Request) {
     const casadas: Array<{ codigo: string; nome: string }> =
       [];
 
-    for (const item of listaMarcas) {
-      const codigo = leCodigo(item);
-      const nome = leNome(item);
-
-      if (!codigo || !nome) continue;
-
+    for (const { codigo, nome } of listaMarcas) {
       linhas.push({
         tipo: "marca",
         nosso_nome: chave(nome),
@@ -164,12 +155,7 @@ export async function POST(requisicao: Request) {
         await modelosDaMarca(token, marca.codigo)
       );
 
-      for (const item of listaModelos) {
-        const codigo = leCodigo(item);
-        const nome = leNome(item);
-
-        if (!codigo || !nome) continue;
-
+      for (const { codigo, nome } of listaModelos) {
         linhas.push({
           tipo: "modelo",
           nosso_nome: chave(nome),
@@ -185,12 +171,7 @@ export async function POST(requisicao: Request) {
       await cilindradas(token)
     );
 
-    for (const item of listaCilindradas) {
-      const codigo = leCodigo(item);
-      const nome = leNome(item);
-
-      if (!codigo || !nome) continue;
-
+    for (const { codigo, nome } of listaCilindradas) {
       linhas.push({
         tipo: "cilindrada",
         nosso_nome: chave(nome),
