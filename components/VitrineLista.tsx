@@ -221,11 +221,12 @@ export default function VitrineLista({
                               .join(" ")}
                           </p>
 
-                          {moto.codigo && (
-                            <p className="text-xs text-black/45">
-                              {moto.codigo}
-                            </p>
-                          )}
+                          {/*
+                            * O código da moto é controle
+                            * interno da loja; para quem abre
+                            * o link ele não diz nada e ainda
+                            * expõe o tamanho do estoque.
+                            */}
                         </div>
                       </div>
                     </td>

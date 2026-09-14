@@ -190,7 +190,7 @@ function FormularioNovaDespesa() {
   const [form, setForm] =
     useState({
       data: hoje(),
-      categoria: "Aluguel",
+      categoria: categoriasLoja[0],
       descricao: "",
       valor: "",
       forma_pagamento:
@@ -831,6 +831,27 @@ function FormularioNovaDespesa() {
       return;
     }
 
+    /*
+     * A categoria ja vem preenchida para o caso comum, e e por
+     * isso que passa batido: sem parar para perguntar, salario
+     * do mes acaba lancado como gasto do dia.
+     */
+    if (tipoLancamento === "loja") {
+      const confirmado = window.confirm(
+        `Salvar esta despesa na categoria "${form.categoria}"?\n\n` +
+          `${form.descricao.trim() || "Sem descrição"} — ` +
+          `${
+            Number(form.valor).toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }) || ""
+          }\n\n` +
+          `Se a categoria estiver errada, cancele e troque antes de salvar.`
+      );
+
+      if (!confirmado) return;
+    }
+
     setSalvando(true);
 
     try {
@@ -1226,6 +1247,18 @@ function FormularioNovaDespesa() {
                   )
                 )}
               </select>
+
+              {/*
+                * O campo ja vem preenchido para o caso comum,
+                * e e justamente por isso que passa batido: sem
+                * o aviso, salario do mes acaba lancado como
+                * gasto do dia.
+                */}
+              <p className="mt-2 text-xs text-yellow-300">
+                Confira a categoria antes de salvar — ela vem
+                preenchida com &ldquo;
+                {categoriasLoja[0]}&rdquo;.
+              </p>
             </div>
           ) : (
             <div>

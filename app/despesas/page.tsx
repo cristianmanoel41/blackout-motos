@@ -13,7 +13,7 @@ export default async function DespesasPage() {
   const { data: despesas, error } = await supabase
     .from("store_expenses")
     .select(
-      "id, data, categoria, descricao, valor, forma_pagamento, pago, data_pagamento, observacoes"
+      "id, data, categoria, descricao, valor, forma_pagamento, pago, data_pagamento, observacoes, criado_em"
     )
     .order("data", { ascending: false });
 

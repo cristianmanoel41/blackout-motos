@@ -37,6 +37,8 @@ export type Despesa = {
   pago: boolean;
   data_pagamento: string | null;
   observacoes: string | null;
+  /* Quando a despesa foi cadastrada no sistema. */
+  criado_em?: string | null;
 };
 
 /* As mesmas do cadastro de despesa. */
@@ -120,6 +122,70 @@ export default function DespesasLista({
     );
   }, [despesas, mes, ano, periodoTodo]);
 
+  /*
+   * Por qual coluna a lista esta ordenada. Comeca pela data da
+   * despesa, da mais recente para a mais antiga - que e como
+   * se olha a lista no dia a dia.
+   */
+  const [ordem, setOrdem] = useState<{
+    campo: string;
+    crescente: boolean;
+  }>({ campo: "data", crescente: false });
+
+  function ordenarPor(campo: string) {
+    setOrdem((atual) =>
+      atual.campo === campo
+        ? { campo, crescente: !atual.crescente }
+        : {
+            campo,
+            /* Texto começa de A a Z; número e data, do maior. */
+            crescente: !["data", "criado_em", "valor"].includes(
+              campo
+            ),
+          }
+    );
+  }
+
+  /* A seta diz por onde está ordenado e para que lado. */
+  function Seta({ campo }: { campo: string }) {
+    if (ordem.campo !== campo) {
+      return (
+        <span className="ml-1 text-texto-suave/40">
+          ↕
+        </span>
+      );
+    }
+
+    return (
+      <span className="ml-1 text-dourado">
+        {ordem.crescente ? "↑" : "↓"}
+      </span>
+    );
+  }
+
+  function Coluna({
+    campo,
+    children,
+    direita,
+  }: {
+    campo: string;
+    children: React.ReactNode;
+    direita?: boolean;
+  }) {
+    return (
+      <th className={`px-4 py-3 ${direita ? "text-right" : ""}`}>
+        <button
+          type="button"
+          onClick={() => ordenarPor(campo)}
+          className="inline-flex items-center uppercase tracking-wide transition hover:text-dourado"
+        >
+          {children}
+          <Seta campo={campo} />
+        </button>
+      </th>
+    );
+  }
+
   const filtradas = useMemo(() => {
     const termo = semAcento(busca);
 
@@ -146,6 +212,42 @@ export default function DespesasLista({
       ).includes(termo);
     });
   }, [doPeriodo, situacao, busca]);
+
+  const ordenadas = useMemo(() => {
+    const lado = ordem.crescente ? 1 : -1;
+
+    const valorDe = (despesa: Despesa) => {
+      switch (ordem.campo) {
+        case "valor":
+          return Number(despesa.valor) || 0;
+        case "situacao":
+          return despesa.pago ? 1 : 0;
+        case "criado_em":
+          return despesa.criado_em || "";
+        case "categoria":
+          return semAcento(despesa.categoria || "");
+        case "descricao":
+          return semAcento(despesa.descricao || "");
+        case "forma_pagamento":
+          return semAcento(
+            despesa.forma_pagamento || ""
+          );
+        default:
+          return despesa.data || "";
+      }
+    };
+
+    return [...filtradas].sort((a, b) => {
+      const um = valorDe(a);
+      const outro = valorDe(b);
+
+      if (typeof um === "number" && typeof outro === "number") {
+        return (um - outro) * lado;
+      }
+
+      return String(um).localeCompare(String(outro)) * lado;
+    });
+  }, [filtradas, ordem]);
 
   const totais = useMemo(() => {
     const referencia = hojeISO();
@@ -659,20 +761,23 @@ export default function DespesasLista({
           <table className="w-full min-w-[820px] text-sm">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Categoria</th>
-                <th className="px-4 py-3">Descrição</th>
-                <th className="px-4 py-3">Pagamento</th>
-                <th className="px-4 py-3 text-right">
+                <Coluna campo="data">Data</Coluna>
+                <Coluna campo="criado_em">Lançada em</Coluna>
+                <Coluna campo="categoria">Categoria</Coluna>
+                <Coluna campo="descricao">Descrição</Coluna>
+                <Coluna campo="forma_pagamento">
+                  Pagamento
+                </Coluna>
+                <Coluna campo="valor" direita>
                   Valor
-                </th>
-                <th className="px-4 py-3">Situação</th>
+                </Coluna>
+                <Coluna campo="situacao">Situação</Coluna>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
 
             <tbody>
-              {filtradas.map((despesa) => {
+              {ordenadas.map((despesa) => {
                 const vencida =
                   !despesa.pago &&
                   despesa.data < hojeISO();
@@ -682,6 +787,21 @@ export default function DespesasLista({
                   <tr className="border-b border-grafite-claro/60">
                     <td className="whitespace-nowrap px-4 py-2.5 text-texto-suave">
                       {formatarData(despesa.data)}
+                    </td>
+
+                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-texto-suave">
+                      {despesa.criado_em
+                        ? new Date(
+                            despesa.criado_em
+                          ).toLocaleString("pt-BR", {
+                            timeZone: "America/Sao_Paulo",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
                     </td>
 
                     <td className="px-4 py-2.5 font-medium text-texto">
@@ -771,7 +891,7 @@ export default function DespesasLista({
 
                   {editandoId === despesa.id && (
                     <tr className="border-b border-grafite-claro/60">
-                      <td colSpan={7} className="px-4 py-4">
+                      <td colSpan={8} className="px-4 py-4">
                         <div className="rounded-xl border border-dourado/30 bg-preto/20 p-4">
                           <div className="grid gap-3 md:grid-cols-4">
                             <div>
