@@ -62,11 +62,62 @@ function leNome(item: any) {
   );
 }
 
-export async function POST() {
-  const supabase = await createClient();
+/*
+ * Modo de conferencia pelo navegador: abrir a rota com
+ * ?conferir=1 mostra a resposta crua da OLX. Serve para
+ * descobrir o formato real quando o que chega nao bate com o
+ * esperado - melhor do que adivinhar.
+ */
+export async function GET(requisicao: Request) {
+  if (
+    !new URL(requisicao.url).searchParams.has("conferir")
+  ) {
+    return Response.json(
+      { error: "Use POST para baixar as tabelas." },
+      { status: 405 }
+    );
+  }
 
   try {
     const token = await tokenSalvo();
+
+    const marcas = await marcasDeMoto(token);
+    const cc = await cilindradas(token);
+
+    return Response.json({
+      marcas: JSON.stringify(marcas).slice(0, 1500),
+      cilindradas: JSON.stringify(cc).slice(0, 600),
+    });
+  } catch (falha) {
+    return Response.json(
+      {
+        error:
+          falha instanceof Error
+            ? falha.message
+            : "erro",
+      },
+      { status: 502 }
+    );
+  }
+}
+
+export async function POST(requisicao: Request) {
+  const supabase = await createClient();
+
+  const conferir = new URL(requisicao.url).searchParams.has(
+    "conferir"
+  );
+
+  try {
+    const token = await tokenSalvo();
+
+    if (conferir) {
+      const cru = await marcasDeMoto(token);
+
+      return Response.json({
+        formato: JSON.stringify(cru).slice(0, 1200),
+      });
+    }
 
     /* Marcas que a loja realmente tem. */
     const { data: motos } = await supabase
