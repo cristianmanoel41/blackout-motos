@@ -146,9 +146,9 @@ export default function VitrineLista({
       </div>
 
       {filtradas.length === 0 && (
-        <div className="rounded-2xl border border-black/10 bg-white p-10 text-center text-sm text-black/60">
+        <article className="rounded-2xl border border-black/10 bg-white p-10 text-center text-sm text-black/60">
           Nenhuma moto encontrada com esse termo.
-        </div>
+        </article>
       )}
 
       {filtradas.length > 0 && (
@@ -210,7 +210,7 @@ export default function VitrineLista({
                     {nome || "Moto"}
                   </h3>
 
-                  <p className="mt-2 text-xl font-bold text-black">
+                  <p className="mt-2 text-2xl font-bold tracking-tight text-[#0b0b0d]">
                     {moto.preco_anunciado
                       ? formatarMoeda(moto.preco_anunciado)
                       : "Consultar"}

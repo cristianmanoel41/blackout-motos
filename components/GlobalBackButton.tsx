@@ -9,7 +9,12 @@ export default function GlobalBackButton() {
   if (
     pathname === "/" ||
     pathname === "/login" ||
-    pathname === "/dashboard"
+    pathname === "/dashboard" ||
+    /*
+     * A vitrine é do cliente, não da loja: ele não tem para
+     * onde voltar, e o botão levaria ao painel interno.
+     */
+    pathname.startsWith("/vitrine/")
   ) {
     return null;
   }

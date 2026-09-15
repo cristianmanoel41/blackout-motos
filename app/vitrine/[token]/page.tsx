@@ -85,7 +85,7 @@ export default async function VitrinePage({
   if (!compartilhamento || error) {
     return (
       <main className="min-h-screen bg-[#f5f6f8] px-4 py-16">
-        <div className="mx-auto max-w-md rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
+        <article className="mx-auto max-w-md rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
           <h1 className="text-lg font-bold text-black">
             Link indisponível
           </h1>
@@ -94,41 +94,55 @@ export default async function VitrinePage({
             Este link de estoque não existe mais ou foi
             desativado pela loja. Peça um link novo.
           </p>
-        </div>
+        </article>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f6f8] px-3 py-6 sm:px-4 sm:py-10">
+    <main className="vitrine-clara min-h-screen bg-[#f5f6f8] px-3 py-6 sm:px-4 sm:py-10">
       <div className="mx-auto max-w-6xl">
         {/* CABEÇALHO */}
 
-        <div className="mb-6 flex flex-col items-center text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-blackout-menu.png"
-            alt="Blackout Motos"
-            className="h-[70px] w-[180px] object-contain"
-          />
+        <header className="mb-6 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+          {/* Faixa dourada da marca. */}
+          <div className="h-1.5 bg-gradient-to-r from-[#bd8700] via-[#e0b129] to-[#bd8700]" />
 
-          <h1 className="mt-3 text-xl font-bold text-black">
-            Estoque disponível
-          </h1>
+          <div className="flex flex-col items-center px-5 py-7 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-blackout-menu.png"
+              alt="Blackout Motos"
+              className="h-16 w-auto object-contain sm:h-20"
+            />
 
-          <p className="mt-1 text-sm text-black/60">
-            {lista.length} moto
-            {lista.length === 1 ? "" : "s"} à pronta entrega
-            {compartilhamento.loja
-              ? ` · compartilhado com ${compartilhamento.loja}`
-              : ""}
-          </p>
-        </div>
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#a97800]">
+              Estoque disponível
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold text-[#0b0b0d] sm:text-3xl">
+              {lista.length} moto
+              {lista.length === 1 ? "" : "s"} à pronta
+              entrega
+            </h1>
+
+            <p className="mt-2 text-sm text-black/55">
+              São José dos Campos/SP · entrada, troca e
+              financiamento
+            </p>
+          </div>
+
+          {compartilhamento.loja && (
+            <p className="border-t border-black/10 bg-black/[.02] px-5 py-2.5 text-center text-xs text-black/50">
+              Compartilhado com {compartilhamento.loja}
+            </p>
+          )}
+        </header>
 
         {lista.length === 0 ? (
-          <div className="rounded-2xl border border-black/10 bg-white p-10 text-center text-sm text-black/60">
+          <article className="rounded-2xl border border-black/10 bg-white p-10 text-center text-sm text-black/60">
             Nenhuma moto disponível no momento.
-          </div>
+          </article>
         ) : (
           <VitrineLista
             motos={lista}
@@ -137,8 +151,15 @@ export default async function VitrinePage({
           />
         )}
 
-        <div className="mt-8 rounded-2xl border border-black/10 bg-white p-5 text-center">
-          <p className="text-sm font-semibold text-black">
+        <footer className="mt-8 overflow-hidden rounded-2xl border border-black/10 bg-white p-6 text-center shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-blackout-menu.png"
+            alt="Blackout Motos"
+            className="mx-auto h-12 w-auto object-contain"
+          />
+
+          <p className="mt-4 text-sm font-semibold text-[#0b0b0d]">
             Gostou de alguma? Chama a gente.
           </p>
 
@@ -151,12 +172,12 @@ export default async function VitrinePage({
             Falar no WhatsApp
           </a>
 
-          <p className="mt-4 text-xs leading-5 text-black/50">
-            Blackout Motos · Avenida Andrômeda, 3521
+          <p className="mt-5 text-xs leading-5 text-black/50">
+            Avenida Andrômeda, 3521
             <br />
             São José dos Campos/SP · (12) 3917-3777
           </p>
-        </div>
+        </footer>
       </div>
     </main>
   );
