@@ -100,8 +100,8 @@ export default async function VitrinePage({
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f6f8] px-4 py-10">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-[#f5f6f8] px-3 py-6 sm:px-4 sm:py-10">
+      <div className="mx-auto max-w-6xl">
         {/* CABEÇALHO */}
 
         <div className="mb-6 flex flex-col items-center text-center">
@@ -137,10 +137,26 @@ export default async function VitrinePage({
           />
         )}
 
-        <p className="mt-6 text-center text-xs text-black/45">
-          Blackout Motos · Avenida Andrômeda, 3521 - São José
-          dos Campos/SP · (12) 3917-3777
-        </p>
+        <div className="mt-8 rounded-2xl border border-black/10 bg-white p-5 text-center">
+          <p className="text-sm font-semibold text-black">
+            Gostou de alguma? Chama a gente.
+          </p>
+
+          <a
+            href="https://wa.me/5512996626666"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
+          >
+            Falar no WhatsApp
+          </a>
+
+          <p className="mt-4 text-xs leading-5 text-black/50">
+            Blackout Motos · Avenida Andrômeda, 3521
+            <br />
+            São José dos Campos/SP · (12) 3917-3777
+          </p>
+        </div>
       </div>
     </main>
   );

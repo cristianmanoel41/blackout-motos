@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { Bike, Search } from "lucide-react";
 
@@ -152,152 +152,130 @@ export default function VitrineLista({
       )}
 
       {filtradas.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead className="border-b border-black/10 bg-[#f7f8fa] text-left text-xs uppercase tracking-wide text-black/50">
-                <tr>
-                  <th className="px-4 py-3">Moto</th>
-                  <th className="px-4 py-3">Cor</th>
-                  <th className="px-4 py-3">Ano</th>
-                  <th className="px-4 py-3 text-right">Km</th>
-                  <th className="px-4 py-3 text-right">
-                    Valor
-                  </th>
-                </tr>
-              </thead>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtradas.map((moto) => {
+            const fotos = galerias?.[moto.id] || [];
+            const capa = capas?.[moto.id] || fotos[0];
+            const abertaAgora = aberta === moto.id;
 
-              <tbody>
-                {filtradas.map((moto) => {
-                  const fotos = galerias?.[moto.id] || [];
-                  const abertaAgora = aberta === moto.id;
+            const nome = [
+              moto.marca,
+              moto.modelo,
+              moto.versao,
+            ]
+              .filter(Boolean)
+              .join(" ");
 
-                  return (
-                  <Fragment key={moto.id}>
-                  <tr
-                    onClick={() =>
-                      fotos.length > 0 &&
-                      setAberta(
-                        abertaAgora ? "" : moto.id
-                      )
-                    }
-                    className={`border-b border-black/[.06] last:border-0 ${
-                      fotos.length > 0
-                        ? "cursor-pointer hover:bg-black/[.02]"
-                        : ""
-                    }`}
-                    title={
-                      fotos.length > 0
-                        ? "Clique para ver as fotos"
-                        : ""
-                    }
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {capas?.[moto.id] ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={capas[moto.id]}
-                            alt=""
-                            className="h-12 w-16 shrink-0 rounded-md border border-black/10 object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-md border border-dashed border-black/15">
-                            <Bike
-                              size={16}
-                              className="text-black/25"
-                            />
-                          </div>
-                        )}
-
-                        <div>
-                          <p className="font-semibold text-black">
-                            {[
-                              moto.marca,
-                              moto.modelo,
-                              moto.versao,
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                          </p>
-
-                          {/*
-                            * O código da moto é controle
-                            * interno da loja; para quem abre
-                            * o link ele não diz nada e ainda
-                            * expõe o tamanho do estoque.
-                            */}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3 text-black/70">
-                      {moto.cor || "—"}
-                    </td>
-
-                    <td className="whitespace-nowrap px-4 py-3 text-black/70">
-                      {anos(moto)}
-                    </td>
-
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-black/70">
-                      {quilometragem(moto.quilometragem)}
-                    </td>
-
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-black">
-                      {moto.preco_anunciado
-                        ? formatarMoeda(
-                            moto.preco_anunciado
-                          )
-                        : "Consultar"}
+            return (
+              <article
+                key={moto.id}
+                className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:shadow-md"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    fotos.length > 0 &&
+                    setAmpliada({ fotos, indice: 0 })
+                  }
+                  className="block w-full"
+                  aria-label={`Ver fotos de ${nome}`}
+                >
+                  {capa ? (
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={capa}
+                        alt={nome}
+                        className="aspect-[4/3] w-full object-cover"
+                      />
 
                       {fotos.length > 1 && (
-                        <span className="mt-1 block text-[11px] font-normal text-black/45">
-                          {abertaAgora
-                            ? "fechar fotos"
-                            : `ver ${fotos.length} fotos`}
+                        <span className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white">
+                          {fotos.length} fotos
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[4/3] w-full items-center justify-center bg-black/[.03]">
+                      <Bike
+                        size={40}
+                        className="text-black/20"
+                      />
+                    </div>
+                  )}
+                </button>
+
+                <div className="p-4">
+                  <h3 className="text-base font-bold leading-tight text-black">
+                    {nome || "Moto"}
+                  </h3>
+
+                  <p className="mt-2 text-xl font-bold text-black">
+                    {moto.preco_anunciado
+                      ? formatarMoeda(moto.preco_anunciado)
+                      : "Consultar"}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-black/60">
+                    <span className="rounded-full bg-black/[.05] px-2.5 py-1">
+                      {anos(moto)}
+                    </span>
+
+                    <span className="rounded-full bg-black/[.05] px-2.5 py-1">
+                      {quilometragem(moto.quilometragem)}
+                    </span>
+
+                    {moto.cor && (
+                      <span className="rounded-full bg-black/[.05] px-2.5 py-1">
+                        {moto.cor}
+                      </span>
+                    )}
+                  </div>
+
+                  {fotos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAberta(
+                          abertaAgora ? "" : moto.id
+                        )
+                      }
+                      className="mt-3 text-sm font-semibold text-black/70 underline underline-offset-4 hover:text-black"
+                    >
+                      {abertaAgora
+                        ? "Esconder fotos"
+                        : "Ver todas as fotos"}
+                    </button>
+                  )}
 
                   {abertaAgora && fotos.length > 0 && (
-                    <tr className="border-b border-black/[.06]">
-                      <td colSpan={5} className="bg-black/[.02] p-3">
-                        <div className="flex gap-2 overflow-x-auto">
-                          {fotos.map((endereco, indice) => (
-                            <button
-                              key={endereco}
-                              type="button"
-                              onClick={(evento) => {
-                                evento.stopPropagation();
-                                setAmpliada({
-                                  fotos,
-                                  indice,
-                                });
-                              }}
-                              className="shrink-0"
-                              aria-label={`Abrir foto ${
-                                indice + 1
-                              }`}
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={endereco}
-                                alt={`Foto ${indice + 1}`}
-                                className="h-48 w-auto rounded-lg border border-black/10 object-cover transition hover:brightness-110"
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
+                    <div className="mt-3 flex gap-2 overflow-x-auto">
+                      {fotos.map((endereco, indice) => (
+                        <button
+                          key={endereco}
+                          type="button"
+                          onClick={() =>
+                            setAmpliada({ fotos, indice })
+                          }
+                          className="shrink-0"
+                          aria-label={`Abrir foto ${
+                            indice + 1
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={endereco}
+                            alt={`Foto ${indice + 1}`}
+                            className="h-24 w-32 rounded-lg border border-black/10 object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
                   )}
-                  </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
 
