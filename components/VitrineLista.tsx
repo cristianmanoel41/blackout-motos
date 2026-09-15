@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { Bike, Search } from "lucide-react";
 
@@ -73,6 +73,37 @@ export default function VitrineLista({
     fotos: string[];
     indice: number;
   } | null>(null);
+
+  /*
+   * Onde o dedo tocou. No celular ninguem procura seta: passa
+   * a foto arrastando, como em qualquer galeria.
+   */
+  const toqueX = useRef<number | null>(null);
+
+  function comecouToque(
+    evento: React.TouchEvent
+  ) {
+    toqueX.current =
+      evento.touches[0]?.clientX ?? null;
+  }
+
+  function terminouToque(
+    evento: React.TouchEvent
+  ) {
+    const inicio = toqueX.current;
+    const fim = evento.changedTouches[0]?.clientX;
+
+    toqueX.current = null;
+
+    if (inicio === null || fim === undefined) return;
+
+    const distancia = fim - inicio;
+
+    /* Menos de 50px é toque, não arrasto. */
+    if (Math.abs(distancia) < 50) return;
+
+    passar(distancia < 0 ? 1 : -1);
+  }
 
   function passar(quanto: number) {
     setAmpliada((atual) => {
@@ -282,13 +313,15 @@ export default function VitrineLista({
       {ampliada && (
         <div
           onClick={() => setAmpliada(null)}
+          onTouchStart={comecouToque}
+          onTouchEnd={terminouToque}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
         >
           <button
             type="button"
             onClick={() => setAmpliada(null)}
             aria-label="Fechar"
-            className="absolute right-4 top-4 rounded-full bg-white/10 px-4 py-2 text-lg font-bold text-white hover:bg-white/20"
+            className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-bold text-black shadow-lg transition hover:bg-white/90"
           >
             ✕
           </button>
@@ -301,7 +334,7 @@ export default function VitrineLista({
                 passar(-1);
               }}
               aria-label="Foto anterior"
-              className="absolute left-2 rounded-full bg-white/10 px-4 py-3 text-2xl text-white hover:bg-white/20 sm:left-6"
+              className="absolute left-2 flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-bold text-black shadow-lg transition hover:bg-white/90 sm:left-6"
             >
               ‹
             </button>
@@ -323,15 +356,18 @@ export default function VitrineLista({
                 passar(1);
               }}
               aria-label="Próxima foto"
-              className="absolute right-2 rounded-full bg-white/10 px-4 py-3 text-2xl text-white hover:bg-white/20 sm:right-6"
+              className="absolute right-2 flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-bold text-black shadow-lg transition hover:bg-white/90 sm:right-6"
             >
               ›
             </button>
           )}
 
-          <span className="absolute bottom-5 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white">
-            {ampliada.indice + 1} de {ampliada.fotos.length}
-          </span>
+          {ampliada.fotos.length > 1 && (
+            <span className="absolute bottom-5 rounded-full bg-black/60 px-4 py-1.5 text-sm text-white ring-1 ring-white/20">
+              {ampliada.indice + 1} de{" "}
+              {ampliada.fotos.length} · arraste para o lado
+            </span>
+          )}
         </div>
       )}
     </>
