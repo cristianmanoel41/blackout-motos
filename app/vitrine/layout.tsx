@@ -22,6 +22,16 @@ export default function VitrineLayout({
           color-scheme: only light;
           background-color: #f5f6f8;
         }
+
+        /*
+         * O tema do painel redefine "text-white" como escuro,
+         * porque la o fundo e claro. Na vitrine ha texto branco
+         * de verdade - sobre foto, sobre o verde do WhatsApp,
+         * sobre o preto do contador - e ali branco e branco.
+         */
+        main .text-white {
+          color: #ffffff !important;
+        }
       `}</style>
 
       {children}
