@@ -27,6 +27,10 @@ import {
   versoesDoModelo,
 } from "@/lib/dados/motos";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import {
+  formatarPlaca,
+  limparPlaca,
+} from "@/lib/formatadores/placa";
 import CampoMoeda from "@/components/CampoMoeda";
 
 /*
@@ -570,9 +574,7 @@ export default function NovaMotoPage() {
   }
 
   async function buscarPlaca() {
-    const placa = form.placa
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
+    const placa = limparPlaca(form.placa);
 
     setMensagemBuscaPlaca("");
     setErroBuscaPlaca("");
@@ -608,9 +610,9 @@ export default function NovaMotoPage() {
 
       setForm((anterior) => ({
         ...anterior,
-        placa:
-          resultado.placa ||
-          placa,
+        placa: formatarPlaca(
+          resultado.placa || placa
+        ),
         marca:
           resultado.marca ||
           anterior.marca,
@@ -965,9 +967,7 @@ export default function NovaMotoPage() {
             null,
 
           placa:
-            form.placa
-              .trim()
-              .toUpperCase() ||
+            formatarPlaca(form.placa) ||
             null,
 
           renavam:
@@ -1394,7 +1394,7 @@ export default function NovaMotoPage() {
         const identificacaoDebito = [
           motoCriada.codigo,
           `${form.marca} ${form.modelo}`.trim(),
-          form.placa.trim().toUpperCase(),
+          formatarPlaca(form.placa),
         ]
           .filter(Boolean)
           .join(" · ");
@@ -1920,13 +1920,9 @@ export default function NovaMotoPage() {
                     value={form.placa}
                     onChange={(event) => {
                       const valor =
-                        event.target.value
-                          .toUpperCase()
-                          .replace(
-                            /[^A-Z0-9]/g,
-                            ""
-                          )
-                          .slice(0, 7);
+                        formatarPlaca(
+                          event.target.value
+                        );
 
                       atualizarCampo(
                         "placa",

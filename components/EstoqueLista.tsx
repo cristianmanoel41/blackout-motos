@@ -82,6 +82,8 @@ function textoDaMoto(moto: Moto) {
     moto.versao,
     moto.cor,
     moto.placa,
+    /* Sem o hifen: quem digita FYQ9C76 tambem acha. */
+    (moto.placa || "").replace(/-/g, ""),
     moto.ano_fabricacao,
     moto.ano_modelo,
     statusLabel[moto.status] ||

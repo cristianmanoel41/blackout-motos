@@ -4,6 +4,7 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
 import { comLogradouro } from "@/lib/formatadores/endereco";
+import { formatarPlaca } from "@/lib/formatadores/placa";
 
 export const runtime = "nodejs";
 
@@ -184,7 +185,7 @@ export async function GET(
         moto.fornecedor_cep || "",
 
       moto_placa:
-        moto.placa || "",
+        formatarPlaca(moto.placa),
 
       moto_marca_modelo:
         `${moto.marca || ""} / ${moto.modelo || ""}${

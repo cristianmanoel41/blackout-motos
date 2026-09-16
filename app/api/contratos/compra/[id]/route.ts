@@ -9,6 +9,7 @@ import {
 } from "@/lib/formatadores/moeda";
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { comLogradouro } from "@/lib/formatadores/endereco";
+import { formatarPlaca } from "@/lib/formatadores/placa";
 
 export const runtime = "nodejs";
 
@@ -478,7 +479,7 @@ export async function GET(
         }`.trim(),
 
       moto_placa:
-        moto.placa || "",
+        formatarPlaca(moto.placa),
 
       moto_cor:
         moto.cor || "",
