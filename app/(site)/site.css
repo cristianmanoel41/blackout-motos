@@ -1,0 +1,177 @@
+/*
+ * Tema do site público.
+ *
+ * O painel interno é claro e tem um tema que pinta card de
+ * preto e inverte texto branco. Aqui é o contrário: fundo
+ * grafite, detalhe dourado, texto claro. Estas regras vêm
+ * depois do tema do painel e desfazem o que ele imporia.
+ */
+
+.site-blackout {
+  --ouro: #e0b129;
+  --ouro-escuro: #bd8700;
+  --ouro-claro: #f3cf6a;
+  --grafite: #121215;
+  --grafite-claro: #1b1b20;
+  --borda: rgba(224, 177, 41, 0.16);
+
+  background: #0a0a0c;
+  color: #f2f3f5;
+}
+
+/*
+ * O tema do painel tem `main { background: ...; color: ... }`
+ * com !important, para pintar o fundo claro das telas de
+ * gestão. Aqui dentro o fundo é do site, não do painel.
+ */
+.site-blackout main {
+  background: transparent !important;
+  color: inherit !important;
+  isolation: auto !important;
+}
+
+/* O tema do painel força cor escura em texto claro. */
+.site-blackout,
+.site-blackout h1,
+.site-blackout h2,
+.site-blackout h3,
+.site-blackout p,
+.site-blackout span,
+.site-blackout li,
+.site-blackout a,
+.site-blackout strong,
+.site-blackout dt,
+.site-blackout dd {
+  color: inherit;
+}
+
+/*
+ * O tema do painel redefine text-white como escuro, porque
+ * la o fundo e claro. Aqui branco e branco: sobre foto,
+ * sobre o contador da galeria, sobre o verde do WhatsApp.
+ */
+.site-blackout .text-white { color: #ffffff !important; }
+
+.site-blackout .texto-claro { color: #f2f3f5 !important; }
+.site-blackout .texto-suave { color: #9ea3ab !important; }
+.site-blackout .texto-ouro  { color: var(--ouro) !important; }
+
+/*
+ * Campo dentro de <main> é pintado de preto pelo tema, o que
+ * aqui até serve - mas a borda e o texto precisam combinar.
+ */
+.site-blackout input,
+.site-blackout select {
+  background: #141418 !important;
+  color: #f2f3f5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+.site-blackout input::placeholder {
+  color: #6b7079 !important;
+}
+
+.site-blackout input:focus,
+.site-blackout select:focus {
+  border-color: var(--ouro) !important;
+  box-shadow: 0 0 0 3px rgba(224, 177, 41, 0.12) !important;
+}
+
+/*
+ * Card com profundidade.
+ *
+ * A borda dourada é discreta e só acende no hover; a sombra
+ * faz o card descolar do fundo, que é o que dá o aspecto 3D
+ * sem precisar de transformação pesada no celular.
+ */
+.cartao-3d {
+  background: linear-gradient(
+    160deg,
+    var(--grafite-claro) 0%,
+    var(--grafite) 100%
+  );
+  border: 1px solid var(--borda);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.cartao-3d:hover {
+  transform: translateY(-6px);
+  border-color: rgba(224, 177, 41, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 28px 55px -20px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(224, 177, 41, 0.12);
+}
+
+/* Quem prefere menos movimento não recebe o salto. */
+@media (prefers-reduced-motion: reduce) {
+  .cartao-3d,
+  .cartao-3d:hover {
+    transform: none;
+    transition: none;
+  }
+}
+
+.botao-ouro {
+  background: linear-gradient(
+    180deg,
+    var(--ouro-claro) 0%,
+    var(--ouro) 45%,
+    var(--ouro-escuro) 100%
+  ) !important;
+  color: #17140a !important;
+  border: 1px solid rgba(0, 0, 0, 0.25) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 10px 24px -12px rgba(224, 177, 41, 0.75) !important;
+  transition: filter 0.25s ease, transform 0.25s ease;
+}
+
+.botao-ouro:hover {
+  filter: brightness(1.07);
+}
+
+.botao-vidro {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #f2f3f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.botao-vidro:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(224, 177, 41, 0.5) !important;
+}
+
+/* Risco dourado que separa as seções. */
+.faixa-ouro {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ouro-escuro) 20%,
+    var(--ouro) 50%,
+    var(--ouro-escuro) 80%,
+    transparent
+  );
+}
+
+/* Brilho de fundo atrás da moto da capa. */
+.brilho-capa::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 120%;
+  background: radial-gradient(
+    60% 60% at 70% 40%,
+    rgba(224, 177, 41, 0.16) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}

@@ -208,7 +208,7 @@ export default function DetalheMotoPage() {
       return;
     }
 
-    window.location.href = "/estoque";
+    window.location.href = "/admin/estoque";
   }
 
   function alterarCampo(

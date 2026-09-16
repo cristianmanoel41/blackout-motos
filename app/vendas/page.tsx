@@ -2421,7 +2421,7 @@ export default function VendasPage() {
             </Link>
 
             <Link
-              href="/estoque"
+              href="/admin/estoque"
               className="rounded-lg border border-zinc-700 px-4 py-2 font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
             >
               Voltar ao Estoque

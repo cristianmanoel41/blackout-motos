@@ -30,19 +30,39 @@ export async function middleware(request: NextRequest) {
   const rotaEhLogin = request.nextUrl.pathname.startsWith('/login')
 
   /*
-   * Duas telas abrem sem login, cada uma com o seu dono:
-   * /vitrine e o link que vai para outra loja, e so responde
-   * com token valido; /loja e o site aberto ao cliente final.
+   * O que abre sem login.
    *
-   * Nas duas, o que aparece e decidido por funcao no banco,
-   * que devolve so moto disponivel e so as colunas de
-   * vitrine - valor de compra, fornecedor e placa nao saem
-   * de la.
+   * O site da loja (/, /estoque, /financiamento, /sobre,
+   * /contato) e a vitrine por link. Documento e recibo
+   * tambem, porque sao abertos para imprimir.
+   *
+   * O que aparece nessas telas e decidido por funcao no
+   * banco, que devolve so moto disponivel e so as colunas
+   * de vitrine - valor de compra, fornecedor e placa nao
+   * saem de la.
+   *
+   * O sistema continua atras do login: /admin/estoque,
+   * /dashboard, /vendas, /caixa e o resto.
    */
-  const rotaEhPublica =
-    request.nextUrl.pathname.startsWith('/vitrine') ||
-    request.nextUrl.pathname.startsWith('/loja')
+  const caminho = request.nextUrl.pathname
 
+  const SITE = [
+    '/',
+    '/estoque',
+    '/financiamento',
+    '/sobre',
+    '/contato',
+    /* Buscador le estes dois sem login. */
+    '/robots.txt',
+    '/sitemap.xml',
+  ]
+
+  const rotaEhPublica =
+    SITE.includes(caminho) ||
+    caminho.startsWith('/estoque/') ||
+    caminho.startsWith('/vitrine') ||
+    caminho.startsWith('/documentos/') ||
+    caminho.startsWith('/recibos/')
   if (!user && !rotaEhLogin && !rotaEhPublica) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

@@ -2,10 +2,13 @@
  * As fotos das motos do site.
  *
  * Fica separado dos ajudantes de texto de propósito: aqui se
- * usa o cliente de servidor do Supabase, e o componente da
- * lista é de cliente. Se as duas coisas morassem no mesmo
- * arquivo, o código de servidor iria parar no pacote do
- * navegador e a página nem carregaria.
+ * usa o cliente de servidor do Supabase, e os componentes de
+ * lista e galeria são de cliente. Se as duas coisas morassem
+ * no mesmo arquivo, o código de servidor iria parar no pacote
+ * do navegador e a página nem carregaria.
+ *
+ * A tabela é a mesma galeria do sistema (motorcycle_photos),
+ * que já libera leitura pública. Nada de foto é duplicado.
  */
 
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +24,15 @@ function ehVideo(foto: any) {
   );
 }
 
-export async function fotosDasMotos(ids: string[]) {
+export type Fotos = {
+  /* A capa marcada na ficha; sem marcação, a primeira. */
+  capas: Record<string, string>;
+  galerias: Record<string, string[]>;
+};
+
+export async function fotosDasMotos(
+  ids: string[]
+): Promise<Fotos> {
   const capas: Record<string, string> = {};
   const galerias: Record<string, string[]> = {};
 
@@ -50,5 +61,23 @@ export async function fotosDasMotos(ids: string[]) {
     ];
   });
 
+  /* Sem capa marcada, a primeira da ordem serve. */
+  Object.keys(galerias).forEach((moto) => {
+    if (!capas[moto]) capas[moto] = galerias[moto][0];
+  });
+
   return { capas, galerias };
+}
+
+/* A galeria com a capa na frente. */
+export function galeriaOrdenada(
+  fotos: Fotos,
+  id: string
+) {
+  const todas = fotos.galerias[id] || [];
+  const capa = fotos.capas[id];
+
+  if (!capa) return todas;
+
+  return [capa, ...todas.filter((f) => f !== capa)];
 }

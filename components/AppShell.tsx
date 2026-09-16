@@ -8,23 +8,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   /*
-   * Telas que nao sao do sistema: documento para imprimir, a
-   * vitrine da outra loja e o site da loja.
+   * Telas que nao sao do sistema: o site da loja, a vitrine
+   * por link e os documentos para imprimir.
    *
    * Nelas nao entra menu, nem o <main> do painel - e dentro
    * dele que o tema pinta card de preto e inverte texto
-   * branco, o que numa pagina clara sai errado.
+   * branco, o que fora do painel sai errado.
    */
-  const foraDoPainel =
-    pathname.startsWith('/recibos/') ||
-    pathname.startsWith('/documentos/') ||
-    pathname.startsWith('/vitrine/') ||
-    pathname === '/loja' ||
-    pathname.startsWith('/loja/')
+  const SITE = [
+    '/',
+    '/estoque',
+    '/financiamento',
+    '/sobre',
+    '/contato',
+  ]
 
+  const foraDoPainel =
+    SITE.includes(pathname) ||
+    pathname.startsWith('/estoque/') ||
+    pathname.startsWith('/vitrine/') ||
+    pathname.startsWith('/documentos/') ||
+    pathname.startsWith('/recibos/')
   if (foraDoPainel) return <>{children}</>
 
-  if (pathname === '/' || pathname === '/login') {
+  if (pathname === '/login') {
     return (
       <div className={`${styles.legibilidade} ${styles.loginComLogo}`}>
         <div className={styles.fundoLogin} aria-hidden="true" />

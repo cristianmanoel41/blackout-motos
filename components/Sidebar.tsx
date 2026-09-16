@@ -26,7 +26,7 @@ import {
 
 const menuItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Estoque', href: '/estoque', icon: Warehouse },
+  { label: 'Estoque', href: '/admin/estoque', icon: Warehouse },
   { label: 'Comprar / Cadastrar Moto', href: '/motos/nova', icon: PlusCircle },
   { label: 'Vendas', href: '/vendas', icon: ShoppingCart },
   { label: 'Clientes', href: '/clientes', icon: Users },

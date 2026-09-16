@@ -692,7 +692,7 @@ export default function EstoquePage() {
 
           <div className="flex flex-wrap gap-2">
             <Link
-              href="/estoque/compartilhar"
+              href="/admin/estoque/compartilhar"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto transition hover:border-dourado hover:text-dourado"
             >
               <Link2 size={18} />

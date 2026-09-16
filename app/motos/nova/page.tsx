@@ -1663,7 +1663,7 @@ export default function NovaMotoPage() {
           </div>
 
           <Link
-            href="/estoque"
+            href="/admin/estoque"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-4 py-3 font-semibold text-texto transition hover:border-dourado hover:text-dourado"
           >
             <Warehouse size={18} />

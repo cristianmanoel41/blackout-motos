@@ -1,21 +1,17 @@
 /*
  * O que o site mostra de uma moto.
  *
- * A lista e a página da moto escrevem km, ano e nome do mesmo
- * jeito, então isso mora aqui.
- *
  * Só texto e conta: este arquivo é lido também pelo navegador,
- * na lista, então nada de servidor entra nele. As fotos, que
- * precisam do banco, ficam em fotos-site.ts.
+ * nos filtros do estoque, então nada de servidor entra nele.
+ * As fotos, que precisam do banco, ficam em fotos-site.ts.
  */
 
+import { formatarMoeda } from "@/lib/formatadores/moeda";
+
 /*
- * Numero pode chegar como texto.
- *
- * As funcoes do banco devolvem as colunas com cast, e o
- * PostgREST entrega numeric ora como numero, ora como string,
- * dependendo da precisao. Aceitar os dois aqui evita NaN na
- * tela por causa disso.
+ * Número pode chegar como texto: as funções do banco devolvem
+ * as colunas com cast, e o PostgREST entrega numeric ora como
+ * número, ora como string. Aceitar os dois evita NaN na tela.
  */
 type Numerico = number | string | null;
 
@@ -25,6 +21,8 @@ export type MotoSite = {
   modelo: string | null;
   versao: string | null;
   cor: string | null;
+  categoria: string | null;
+  descricao: string | null;
   ano_fabricacao: Numerico;
   ano_modelo: Numerico;
   quilometragem: Numerico;
@@ -52,10 +50,11 @@ export function nomeDaMoto(moto: MotoSite) {
   );
 }
 
-export function anosDaMoto(moto: MotoSite) {
-  const { ano_fabricacao: fab, ano_modelo: mod } = moto;
+export function anoDaMoto(moto: MotoSite) {
+  const fab = numero(moto.ano_fabricacao);
+  const mod = numero(moto.ano_modelo);
 
-  if (fab && mod) return `${fab}/${mod}`;
+  if (fab && mod && fab !== mod) return `${fab}/${mod}`;
 
   return String(fab || mod || "—");
 }
@@ -65,7 +64,68 @@ export function kmDaMoto(valor: Numerico) {
 
   if (km === null) return "—";
 
-  return `${new Intl.NumberFormat("pt-BR").format(
-    km
-  )} km`;
+  return `${new Intl.NumberFormat("pt-BR").format(km)} km`;
+}
+
+export function precoDaMoto(moto: MotoSite) {
+  const preco = numero(moto.preco_anunciado);
+
+  return preco ? formatarMoeda(preco) : "Consultar";
+}
+
+/*
+ * Endereço da moto no site.
+ *
+ * Vira /estoque/honda-cg-160-fan-2022. Duas motos iguais dariam
+ * o mesmo endereço, então quem repete ganha um pedaço do id no
+ * fim - só quem repete, para o endereço continuar limpo no caso
+ * comum.
+ */
+function base(moto: MotoSite) {
+  return [
+    moto.marca,
+    moto.modelo,
+    moto.versao,
+    numero(moto.ano_modelo) || numero(moto.ano_fabricacao),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function slugsDoEstoque(motos: MotoSite[]) {
+  const quantos: Record<string, number> = {};
+
+  motos.forEach((moto) => {
+    const chave = base(moto);
+    quantos[chave] = (quantos[chave] || 0) + 1;
+  });
+
+  const slugs: Record<string, string> = {};
+
+  motos.forEach((moto) => {
+    const chave = base(moto);
+
+    slugs[moto.id] =
+      quantos[chave] > 1
+        ? `${chave}-${moto.id.slice(0, 6)}`
+        : chave;
+  });
+
+  return slugs;
+}
+
+/* A mensagem que chega no WhatsApp da loja. */
+export function convitePelaMoto(moto: MotoSite) {
+  const preco = numero(moto.preco_anunciado);
+
+  return `Olá, tenho interesse na ${nomeDaMoto(
+    moto
+  )} ${anoDaMoto(moto)}${
+    preco ? ` anunciada por ${formatarMoeda(preco)}` : ""
+  }.`;
 }

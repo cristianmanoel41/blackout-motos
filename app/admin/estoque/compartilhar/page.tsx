@@ -172,7 +172,7 @@ export default function CompartilharEstoquePage() {
         </div>
 
         <Link
-          href="/estoque"
+          href="/admin/estoque"
           className="rounded-lg border border-grafite-claro px-4 py-2 text-sm font-semibold text-texto-suave transition hover:border-dourado hover:text-dourado"
         >
           Voltar ao estoque
