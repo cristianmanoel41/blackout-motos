@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import {
   CONVITE_GERAL,
@@ -47,15 +47,7 @@ export default function ContatoPage() {
         href: linkWhatsApp(CONVITE_GERAL),
       },
     },
-    {
-      Icone: Mail,
-      titulo: "E-mail",
-      linhas: [LOJA.email],
-      acao: {
-        nome: "Escrever",
-        href: `mailto:${LOJA.email}`,
-      },
-    },
+
   ];
 
   return (
@@ -77,7 +69,7 @@ export default function ContatoPage() {
         </p>
       </header>
 
-      <section className="mt-10 grid gap-4 sm:grid-cols-3">
+      <section className="mt-10 grid gap-4 sm:grid-cols-2">
         {canais.map(({ Icone, titulo, linhas, acao }) => (
           <article
             key={titulo}

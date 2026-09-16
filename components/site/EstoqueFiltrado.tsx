@@ -72,7 +72,6 @@ export default function EstoqueFiltrado({
   const [preco, setPreco] = useState("");
   const [km, setKm] = useState("");
   const [cilindrada, setCilindrada] = useState("");
-  const [categoria, setCategoria] = useState("");
   const [abertos, setAbertos] = useState(false);
 
   const opcoes = useMemo(() => {
@@ -99,8 +98,6 @@ export default function EstoqueFiltrado({
       cilindradas: unicos(
         motos.map((m) => numero(m.cilindrada))
       ).sort((a, b) => Number(a) - Number(b)),
-
-      categorias: unicos(motos.map((m) => m.categoria)),
     };
   }, [motos]);
 
@@ -116,7 +113,6 @@ export default function EstoqueFiltrado({
           moto.modelo,
           moto.versao,
           moto.cor,
-          moto.categoria,
         ]
           .filter(Boolean)
           .join(" ")
@@ -129,13 +125,6 @@ export default function EstoqueFiltrado({
       if (
         marca &&
         semAcento(moto.marca) !== semAcento(marca)
-      ) {
-        return false;
-      }
-
-      if (
-        categoria &&
-        semAcento(moto.categoria) !== semAcento(categoria)
       ) {
         return false;
       }
@@ -176,7 +165,6 @@ export default function EstoqueFiltrado({
     preco,
     km,
     cilindrada,
-    categoria,
   ]);
 
   const temFiltro =
@@ -185,8 +173,7 @@ export default function EstoqueFiltrado({
     !!ano ||
     !!preco ||
     !!km ||
-    !!cilindrada ||
-    !!categoria;
+    !!cilindrada;
 
   function limpar() {
     setBusca("");
@@ -195,7 +182,6 @@ export default function EstoqueFiltrado({
     setPreco("");
     setKm("");
     setCilindrada("");
-    setCategoria("");
   }
 
   const seletor =
@@ -309,26 +295,7 @@ export default function EstoqueFiltrado({
               </select>
             )}
 
-            {opcoes.categorias.length > 0 && (
-              <select
-                value={categoria}
-                onChange={(e) =>
-                  setCategoria(e.target.value)
-                }
-                className={seletor}
-                aria-label="Categoria"
-              >
-                <option value="">
-                  Todas as categorias
-                </option>
 
-                {opcoes.categorias.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
+import { IconeRede } from "@/components/site/IconeRede";
 import {
   LOJA,
   MAPA,
@@ -101,19 +102,7 @@ export default function Rodape() {
               </a>
             </li>
 
-            <li className="flex items-center gap-2.5">
-              <Mail
-                size={17}
-                className="shrink-0 texto-ouro"
-              />
 
-              <a
-                href={`mailto:${LOJA.email}`}
-                className="break-all transition hover:text-white"
-              >
-                {LOJA.email}
-              </a>
-            </li>
           </ul>
         </div>
 
@@ -123,16 +112,18 @@ export default function Rodape() {
           </p>
 
           {redes.length > 0 ? (
-            <ul className="mt-4 space-y-2.5">
+            <ul className="mt-4 flex flex-wrap gap-2.5">
               {redes.map((rede) => (
                 <li key={rede.nome}>
                   <a
                     href={rede.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm texto-suave transition hover:text-white"
+                    aria-label={rede.nome}
+                    title={rede.nome}
+                    className="botao-vidro flex h-11 w-11 items-center justify-center rounded-xl"
                   >
-                    {rede.nome}
+                    <IconeRede nome={rede.nome} />
                   </a>
                 </li>
               ))}

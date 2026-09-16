@@ -86,7 +86,6 @@ function Ficha({ moto }: { moto: MotoSite }) {
       rotulo: "Cilindrada",
       valor: cilindrada ? `${cilindrada} cc` : null,
     },
-    { rotulo: "Categoria", valor: moto.categoria },
   ].filter((item) => item.valor);
 
   return (
@@ -194,17 +193,21 @@ export default async function MotoPage({
                 Tenho interesse
               </a>
 
-              <a
-                href={linkWhatsApp(
-                  `${convite} Gostaria de simular um financiamento.`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
+              {/*
+                * Leva ao formulario com a moto ja preenchida,
+                * em vez de abrir o WhatsApp sem os dados - a
+                * proposta sai mais rapido quando a mensagem
+                * chega completa.
+                */}
+              <Link
+                href={`/financiamento?moto=${encodeURIComponent(
+                  `${nome} ${anoDaMoto(moto)}`
+                )}`}
                 className="botao-vidro flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold"
               >
                 <Wallet size={16} />
                 Simular financiamento
-              </a>
+              </Link>
 
               <a
                 href={`tel:${LOJA.telefoneLink}`}
@@ -216,17 +219,6 @@ export default async function MotoPage({
 
             <Ficha moto={moto} />
 
-            {moto.descricao && (
-              <div className="mt-6 border-t border-white/[.07] pt-5">
-                <p className="text-sm font-bold texto-claro">
-                  Sobre esta moto
-                </p>
-
-                <p className="mt-2 whitespace-pre-line text-sm leading-6 texto-suave">
-                  {moto.descricao}
-                </p>
-              </div>
-            )}
           </article>
         </section>
       </div>

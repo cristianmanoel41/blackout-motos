@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
-  ArrowRight,
   BadgeCheck,
   FileText,
   Repeat2,
   Wallet,
 } from "lucide-react";
-import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
-import { linkWhatsApp, LOJA } from "@/lib/dados/loja";
+import SimuladorFinanciamento from "@/components/site/SimuladorFinanciamento";
+import { LOJA } from "@/lib/dados/loja";
 
 /*
  * Página de financiamento.
  *
- * Sem simulador de parcela: taxa e aprovação dependem do banco
- * e do perfil de cada cliente, e mostrar um número na tela que
- * depois não se confirma queima a loja. O caminho aqui é levar
- * a conversa para o WhatsApp, onde a proposta é real.
+ * A simulação recolhe os dados e monta a mensagem de
+ * WhatsApp - não calcula parcela. Taxa e aprovação dependem do
+ * banco e do perfil de cada cliente; número na tela que depois
+ * não se confirma queima a loja.
+ *
+ * Quando a pessoa vem de um anúncio, a moto chega pela URL
+ * (?moto=...) e o campo já aparece preenchido.
  */
 
 export const metadata: Metadata = {
@@ -51,7 +52,13 @@ const PASSOS = [
   },
 ];
 
-export default function FinanciamentoPage() {
+export default async function FinanciamentoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ moto?: string }>;
+}) {
+  const { moto } = await searchParams;
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
       <header className="text-center">
@@ -93,39 +100,8 @@ export default function FinanciamentoPage() {
         ))}
       </section>
 
-      <section className="cartao-3d mt-8 rounded-2xl p-6 text-center sm:p-9">
-        <h2 className="text-xl font-black texto-claro sm:text-2xl">
-          Quer saber quanto fica a parcela?
-        </h2>
-
-        <p className="mx-auto mt-3 max-w-lg text-sm leading-6 texto-suave">
-          A taxa e o prazo dependem do banco e do seu perfil,
-          então não colocamos número aqui na tela para depois
-          não bater. Mande uma mensagem com a moto que você
-          quer e a gente traz a condição real.
-        </p>
-
-        <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-          <a
-            href={linkWhatsApp(
-              "Olá! Quero simular o financiamento de uma moto da Blackout Motos."
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="botao-ouro flex items-center justify-center gap-2 rounded-full px-7 py-4 text-sm font-bold"
-          >
-            <IconeWhatsApp className="h-4 w-4" />
-            Simular no WhatsApp
-          </a>
-
-          <Link
-            href="/estoque"
-            className="botao-vidro flex items-center justify-center gap-2 rounded-full px-7 py-4 text-sm font-bold"
-          >
-            Ver estoque
-            <ArrowRight size={15} />
-          </Link>
-        </div>
+      <section className="mt-8">
+        <SimuladorFinanciamento moto={moto} />
       </section>
     </main>
   );

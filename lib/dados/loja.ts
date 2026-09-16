@@ -17,7 +17,6 @@ export const LOJA = {
   telefoneLink: "+551239173777",
   whatsapp: "5512996626666",
   whatsappExibicao: "(12) 99662-6666",
-  email: "contato@blackoutmotos.com.br",
 };
 
 export const ENDERECO_COMPLETO = `${LOJA.endereco} · ${LOJA.bairro} · ${LOJA.cidade}/${LOJA.estado}`;
@@ -29,17 +28,31 @@ export const MAPA = `https://www.google.com/maps/search/?api=1&query=${encodeURI
 /*
  * Redes sociais.
  *
- * Só entra no rodapé a que tiver endereço preenchido: ícone que
- * não leva a lugar nenhum passa a impressão de site abandonado.
- * Quando a loja mandar os links, é só preencher aqui.
+ * Só entra no rodapé a que tiver endereço preenchido: ícone
+ * que não leva a lugar nenhum passa a impressão de site
+ * abandonado. O YouTube fica em branco até a loja abrir o
+ * canal - basta preencher aqui que ele aparece.
  */
 export const REDES = [
-  { nome: "Instagram", url: "" },
-  { nome: "Facebook", url: "" },
-  { nome: "TikTok", url: "" },
+  {
+    nome: "Instagram",
+    url: "https://www.instagram.com/blackoutmotos_/",
+  },
+  {
+    /*
+     * Endereço do perfil, sem o "sk=directory_links" do fim:
+     * aquele pedaço abre uma aba interna do Facebook e some
+     * quando eles mudam a interface.
+     */
+    nome: "Facebook",
+    url: "https://www.facebook.com/profile.php?id=100095473686769",
+  },
+  {
+    nome: "TikTok",
+    url: "https://www.tiktok.com/@blackout.motos",
+  },
   { nome: "YouTube", url: "" },
 ];
-
 /* Link do WhatsApp já com a mensagem escrita. */
 export function linkWhatsApp(mensagem: string) {
   return `https://wa.me/${

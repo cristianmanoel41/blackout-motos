@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -27,6 +27,29 @@ export default function Galeria({
   const [ampliada, setAmpliada] = useState(false);
 
   const toqueX = useRef<number | null>(null);
+
+  /*
+   * Com a foto aberta, Esc fecha e a rolagem da pagina
+   * trava - sem isso a pagina corre atras da foto quando se
+   * arrasta no celular.
+   */
+  useEffect(() => {
+    if (!ampliada) return;
+
+    function noTeclado(evento: KeyboardEvent) {
+      if (evento.key === "Escape") setAmpliada(false);
+    }
+
+    const rolagem = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", noTeclado);
+
+    return () => {
+      document.body.style.overflow = rolagem;
+      window.removeEventListener("keydown", noTeclado);
+    };
+  }, [ampliada]);
 
   function comecouToque(evento: React.TouchEvent) {
     toqueX.current = evento.touches[0]?.clientX ?? null;
@@ -143,28 +166,37 @@ export default function Galeria({
           onTouchEnd={terminouToque}
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4"
         >
-          <button
-            type="button"
-            onClick={() => setAmpliada(false)}
-            aria-label="Fechar"
-            className="botao-vidro absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full"
-          >
-            <X size={20} />
-          </button>
-
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={fotos[indice]}
-            alt=""
+          {/*
+            * O X acompanha a foto, nao o canto da tela: numa
+            * tela larga a foto fica no meio, e um botao la no
+            * canto da janela parece de outra coisa.
+            */}
+          <div
             onClick={(evento) => evento.stopPropagation()}
-            className="max-h-[85vh] max-w-full rounded-xl object-contain"
-          />
+            className="relative inline-block"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={fotos[indice]}
+              alt=""
+              className="block max-h-[85vh] max-w-full rounded-xl object-contain"
+            />
 
-          {fotos.length > 1 && (
-            <span className="absolute bottom-6 rounded-full bg-black/70 px-4 py-1.5 text-xs text-white ring-1 ring-white/15">
-              {indice + 1} de {fotos.length}
+            <button
+              type="button"
+              onClick={() => setAmpliada(false)}
+              aria-label="Fechar foto"
+              className="absolute right-3 top-3 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-xl transition hover:bg-white/90"
+            >
+              <X size={24} strokeWidth={2.5} />
+            </button>
+
+            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/70 px-4 py-2 text-xs text-white ring-1 ring-white/15">
+              {fotos.length > 1
+                ? `${indice + 1} de ${fotos.length} · toque no X para voltar`
+                : "Toque no X para voltar"}
             </span>
-          )}
+          </div>
         </div>
       )}
     </>

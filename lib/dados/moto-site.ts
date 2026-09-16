@@ -21,8 +21,6 @@ export type MotoSite = {
   modelo: string | null;
   versao: string | null;
   cor: string | null;
-  categoria: string | null;
-  descricao: string | null;
   ano_fabricacao: Numerico;
   ano_modelo: Numerico;
   quilometragem: Numerico;
