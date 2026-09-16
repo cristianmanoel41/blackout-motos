@@ -82,6 +82,18 @@ export default async function VitrinePage({
     });
   }
 
+  /*
+   * So vai para a vitrine moto com foto.
+   *
+   * Card sem imagem nao vende - e, no meio dos outros, passa
+   * a impressao de estoque malcuidado para quem abriu o link.
+   * Video nao conta: a faixa da vitrine e de foto, e o video
+   * ja fica de fora la em cima.
+   */
+  const comFoto = lista.filter(
+    (moto) => (galerias[moto.id] || []).length > 0
+  );
+
   if (!compartilhamento || error) {
     return (
       <main className="min-h-screen bg-[#f5f6f8] px-4 py-16">
@@ -121,8 +133,8 @@ export default async function VitrinePage({
             </p>
 
             <h1 className="mt-1 text-2xl font-bold text-[#0b0b0d] sm:text-3xl">
-              {lista.length} moto
-              {lista.length === 1 ? "" : "s"} à pronta
+              {comFoto.length} moto
+              {comFoto.length === 1 ? "" : "s"} à pronta
               entrega
             </h1>
 
@@ -139,13 +151,13 @@ export default async function VitrinePage({
           )}
         </header>
 
-        {lista.length === 0 ? (
+        {comFoto.length === 0 ? (
           <article className="rounded-2xl border border-black/10 bg-white p-10 text-center text-sm text-black/60">
             Nenhuma moto disponível no momento.
           </article>
         ) : (
           <VitrineLista
-            motos={lista}
+            motos={comFoto}
             capas={capas}
             galerias={galerias}
           />

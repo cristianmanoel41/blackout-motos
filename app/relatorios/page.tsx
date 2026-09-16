@@ -239,22 +239,43 @@ export default async function RelatorioMensalPage({
       return soma + Math.min(0, recebido - custos)
     }, 0) ?? 0
 
-  const totalRecebidoDocumentacao =
-    vendasMes?.reduce(
-      (soma, venda) =>
-        soma +
-        Number(venda.transferencia_cliente || 0),
-      0
-    ) ?? 0
+  /*
+   * Recebido e custo separados por situacao.
+   *
+   * Somados num numero so eles enganavam: a linha do lucro
+   * conta apenas a documentacao concluida, mas os totais
+   * juntavam tambem as vendas em aberto - dava a impressao de
+   * uma sobra que na verdade ainda vai virar conta do
+   * despachante.
+   */
+  const documentacao = (vendasMes ?? []).reduce(
+    (conta, venda) => {
+      const onde = venda.documentacao_concluida
+        ? conta.concluida
+        : conta.aberta
 
-  const totalCustosDocumentacao = Object.values(
-    custosDocPorVenda
-  ).reduce((soma, valor) => soma + valor, 0)
+      onde.recebido += Number(
+        venda.transferencia_cliente || 0
+      )
 
-  const documentacaoEmAberto =
-    vendasMes?.filter(
-      (venda) => !venda.documentacao_concluida
-    ).length ?? 0
+      onde.custos +=
+        custosDocPorVenda[String(venda.id)] || 0
+
+      onde.vendas += 1
+
+      return conta
+    },
+    {
+      concluida: { recebido: 0, custos: 0, vendas: 0 },
+      aberta: { recebido: 0, custos: 0, vendas: 0 },
+    }
+  )
+
+  const documentacaoEmAberto = documentacao.aberta.vendas
+
+  const totalCustosDocumentacao =
+    documentacao.concluida.custos +
+    documentacao.aberta.custos
 
   // =========================================================
   // CUSTO DAS MOTOS VENDIDAS
@@ -1020,28 +1041,47 @@ export default async function RelatorioMensalPage({
           {linha(
             'Documentação recebida',
             formatarMoeda(
-              totalRecebidoDocumentacao
+              documentacao.concluida.recebido +
+                documentacao.aberta.recebido
             )
           )}
 
-          {linha(
-            'Custos da documentação',
-            formatarMoeda(
-              totalCustosDocumentacao
-            )
-          )}
-
-          {linha(
-            documentacaoEmAberto > 0
-              ? `Documentação no lucro (${documentacaoEmAberto} em aberto, fora da conta)`
-              : 'Documentação no lucro',
-            resultadoDocumentacao === 0
-              ? 'R$ 0,00 · o cliente cobriu'
-              : formatarMoeda(
-                  resultadoDocumentacao
+          {/*
+            * A loja nao lanca mais vistoria e despachante
+            * venda a venda - as contas entram como despesa
+            * da loja, do jeito que chegam. O detalhe abaixo
+            * so aparece nos meses que ainda tem custo
+            * lancado por venda, para o historico nao mudar.
+            */}
+          {totalCustosDocumentacao > 0 && (
+            <>
+              {linha(
+                'Documentação concluída · custos',
+                formatarMoeda(
+                  documentacao.concluida.custos
                 )
-          )}
+              )}
 
+              {linha(
+                'Documentação concluída · no lucro',
+                resultadoDocumentacao === 0
+                  ? 'R$ 0,00 · o cliente cobriu'
+                  : formatarMoeda(
+                      resultadoDocumentacao
+                    )
+              )}
+
+              {documentacaoEmAberto > 0 &&
+                linha(
+                  `Documentação em aberto · custos já pagos (${documentacaoEmAberto} venda${
+                    documentacaoEmAberto === 1 ? '' : 's'
+                  })`,
+                  formatarMoeda(
+                    documentacao.aberta.custos
+                  )
+                )}
+            </>
+          )}
           {linha(
             'Lucro bruto',
             formatarMoeda(
