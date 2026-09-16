@@ -154,6 +154,8 @@ function rotuloStatus(status?: string | null) {
       return "Em manutenção";
     case "vendida":
       return "Vendida";
+    case "arquivada":
+      return "Arquivada";
     default:
       return status || "Não informado";
   }
@@ -169,6 +171,8 @@ function classeStatus(status?: string | null) {
       return "border-orange-300 bg-orange-100 text-black";
     case "vendida":
       return "border-indigo-300 bg-indigo-100 text-black";
+    case "arquivada":
+      return "border-zinc-400 bg-zinc-200 text-black";
     default:
       return "border-zinc-300 bg-zinc-100 text-black";
   }
@@ -893,6 +897,9 @@ export default function EstoquePage() {
               <option value="reservada">Reservada</option>
               <option value="manutencao">Em manutenção</option>
               <option value="vendida">Vendida</option>
+              <option value="arquivada">
+                Arquivada
+              </option>
             </select>
 
             <select
