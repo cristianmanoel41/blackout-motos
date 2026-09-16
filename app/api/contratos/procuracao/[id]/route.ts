@@ -3,6 +3,7 @@ import path from "node:path";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
+import { comLogradouro } from "@/lib/formatadores/endereco";
 
 export const runtime = "nodejs";
 
@@ -162,7 +163,7 @@ export async function GET(
         formatarCPF(moto.fornecedor_cpf),
 
       outorgante_rua:
-        moto.fornecedor_rua || "",
+        comLogradouro(moto.fornecedor_rua),
 
       outorgante_numero:
         moto.fornecedor_numero || "",

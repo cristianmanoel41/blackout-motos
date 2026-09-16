@@ -5,6 +5,7 @@ import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
+import { comLogradouro } from "@/lib/formatadores/endereco";
 
 export const runtime = "nodejs";
 
@@ -569,7 +570,7 @@ export async function GET(
         formatarCPF(cliente?.cpf),
 
       cliente_rua:
-        cliente?.rua || "",
+        comLogradouro(cliente?.rua),
 
       cliente_numero:
         cliente?.numero || "",

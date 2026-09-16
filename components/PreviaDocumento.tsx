@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -119,6 +119,7 @@ export default function PreviaDocumento({
   voltarPara,
   voltarRotulo = "Voltar",
   espalhar = false,
+  fonte,
 }: {
   url: string;
   titulo: string;
@@ -126,10 +127,14 @@ export default function PreviaDocumento({
   voltarRotulo?: string;
   /* Documento com pouco texto: espalha para encher a folha. */
   espalhar?: boolean;
+  /* Maior corpo aceito, em pt. Encolhe se nao couber. */
+  fonte?: number;
 }) {
   const [html, setHtml] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+
+  const folhaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -190,6 +195,43 @@ export default function PreviaDocumento({
     };
   }, [url]);
 
+  /*
+   * Quanto o corpo pode crescer depende do texto: o mesmo
+   * tamanho que enche a folha de um documento joga o outro
+   * para a pagina 2. Em vez de calibrar na mao documento por
+   * documento, a folha se mede.
+   *
+   * Comeca no maior corpo aceito e vai descendo de meio em
+   * meio ponto ate a folha voltar para 29,7cm. Ler
+   * offsetHeight forca o navegador a recalcular, entao cada
+   * passo ja enxerga o tamanho anterior.
+   *
+   * Na impressao a folha e um pouco mais larga que na tela -
+   * margem de 15mm contra 2cm -, entao o que coube aqui cabe
+   * la tambem.
+   */
+  useEffect(() => {
+    const folha = folhaRef.current;
+
+    if (!espalhar || !html || !folha) return;
+
+    /* 29,7cm em pixel de CSS: 1cm vale 96/2,54 px. */
+    const alturaDaFolha = (29.7 * 96) / 2.54;
+
+    let tamanho = fonte || 15;
+
+    while (tamanho >= 9) {
+      folha.style.setProperty(
+        "--corpo-fonte",
+        `${tamanho}pt`
+      );
+
+      if (folha.offsetHeight <= alturaDaFolha + 1) break;
+
+      tamanho -= 0.5;
+    }
+  }, [html, espalhar, fonte]);
+
   return (
     <>
       <style>{`
@@ -215,8 +257,8 @@ export default function PreviaDocumento({
         }
 
         .documento-espalhado .documento-word {
-          font-size: 15pt !important;
-          line-height: 1.7 !important;
+          font-size: var(--corpo-fonte, 15pt) !important;
+          line-height: 1.65 !important;
         }
 
         /*
@@ -347,13 +389,39 @@ export default function PreviaDocumento({
           margin-bottom: 2mm !important;
         }
 
+        /*
+         * A linha e desenhada com borda, entao ela pega a
+         * largura toda da coluna - trocar o tanto de
+         * underscore no Word nao muda nada aqui. Quem manda no
+         * comprimento e esta largura.
+         */
         .documento-word .linha-assinatura-doc {
+          width: 8cm !important;
+          max-width: 100% !important;
           margin-top: 0 !important;
+          margin-right: auto !important;
           margin-bottom: 2mm !important;
+          margin-left: 0 !important;
         }
 
+        /*
+         * Nos contratos as assinaturas ficam lado a lado numa
+         * tabela; ali a linha acompanha a coluna, que ja e
+         * estreita.
+         */
+        .documento-word
+          .assinaturas-documento
+          .linha-assinatura-doc {
+          width: auto !important;
+        }
+
+        /* O rotulo acompanha a linha, no canto de baixo. */
         .documento-word .rotulo-assinatura-doc {
+          width: 8cm !important;
+          max-width: 100% !important;
           margin-top: 0 !important;
+          margin-right: auto !important;
+          margin-left: 0 !important;
         }
 
         @media print {
@@ -488,6 +556,7 @@ export default function PreviaDocumento({
         )}
 
         <div
+          ref={folhaRef}
           className={`folha-documento mx-auto min-h-[29.7cm] w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl${
             espalhar ? " documento-espalhado" : ""
           }`}

@@ -15,6 +15,15 @@ type Documento = {
   url: (id: string) => string;
   voltar: (id: string) => string;
   voltarRotulo: string;
+  /*
+   * Documento curto para uma folha A4 inteira: o corpo se
+   * distribui entre o timbre e a data em vez de empilhar no
+   * alto. A fonte vai junto porque cada um tem um tanto de
+   * texto - o que enche a folha num deixa o outro passar
+   * para a pagina 2.
+   */
+  espalhar?: boolean;
+  fonte?: number;
 };
 
 const documentos: Record<string, Documento> = {
@@ -30,6 +39,8 @@ const documentos: Record<string, Documento> = {
     url: (id) => `/api/contratos/compra/${id}`,
     voltar: (id) => `/motos/${id}`,
     voltarRotulo: "Voltar para a moto",
+    espalhar: true,
+    fonte: 15,
   },
 
   procuracao: {
@@ -37,6 +48,8 @@ const documentos: Record<string, Documento> = {
     url: (id) => `/api/contratos/procuracao/${id}`,
     voltar: (id) => `/motos/${id}`,
     voltarRotulo: "Voltar para a moto",
+    espalhar: true,
+    fonte: 12,
   },
 };
 
@@ -59,7 +72,8 @@ export default async function DocumentoPage({
       titulo={documento.titulo}
       voltarPara={documento.voltar(id)}
       voltarRotulo={documento.voltarRotulo}
-      espalhar={tipo === "contrato-compra"}
+      espalhar={!!documento.espalhar}
+      fonte={documento.fonte}
     />
   );
 }

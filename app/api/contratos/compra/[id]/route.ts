@@ -8,6 +8,7 @@ import {
   formatarNumero,
 } from "@/lib/formatadores/moeda";
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
+import { comLogradouro } from "@/lib/formatadores/endereco";
 
 export const runtime = "nodejs";
 
@@ -428,8 +429,7 @@ export async function GET(
         formatarCPF(moto.fornecedor_cpf),
 
       fornecedor_rua:
-        moto.fornecedor_rua ||
-        "",
+        comLogradouro(moto.fornecedor_rua),
 
       fornecedor_numero:
         moto.fornecedor_numero ||
