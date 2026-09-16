@@ -45,6 +45,63 @@ function prepararHtmlDocumento(valor: string) {
     }
   }
 
+  /*
+   * Tudo que esta entre o timbre e a data e o corpo do
+   * contrato. Agrupado, ele pode ocupar o meio da folha
+   * sozinho - o cabecalho continua junto no alto e a
+   * assinatura, no pe.
+   */
+  const filhos = Array.from(documento.body.children);
+
+  const inicio = filhos.findIndex(
+    (item) =>
+      !item.classList.contains("cabecalho-loja") &&
+      item.tagName === "P" &&
+      (item.textContent || "").trim().length > 0 &&
+      !item.querySelector("img")
+  );
+
+  const fim = filhos.findIndex((item) =>
+    item.classList.contains("data-documento")
+  );
+
+  if (inicio >= 0 && fim > inicio) {
+    const corpo = documento.createElement("div");
+    corpo.className = "corpo-documento";
+
+    filhos[inicio].before(corpo);
+
+    /*
+     * O corpo vai em blocos, nao em paragrafos soltos.
+     *
+     * Linha em branco no Word fecha um bloco; linhas coladas
+     * continuam coladas. Assim "Ano de fabricacao", que e
+     * continuacao da descricao da moto, nao se afasta dela
+     * quando a folha distribui o espaco.
+     */
+    let bloco: HTMLDivElement | null = null;
+
+    for (const item of filhos.slice(inicio, fim)) {
+      const vazio =
+        (item.textContent || "").trim().length === 0 &&
+        !item.querySelector("img");
+
+      if (vazio) {
+        bloco = null;
+        item.remove();
+        continue;
+      }
+
+      if (!bloco) {
+        bloco = documento.createElement("div");
+        bloco.className = "bloco-documento";
+        corpo.appendChild(bloco);
+      }
+
+      bloco.appendChild(item);
+    }
+  }
+
   const tabelas = Array.from(
     documento.body.querySelectorAll("table")
   );
@@ -61,11 +118,14 @@ export default function PreviaDocumento({
   titulo,
   voltarPara,
   voltarRotulo = "Voltar",
+  espalhar = false,
 }: {
   url: string;
   titulo: string;
   voltarPara: string;
   voltarRotulo?: string;
+  /* Documento com pouco texto: espalha para encher a folha. */
+  espalhar?: boolean;
 }) {
   const [html, setHtml] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -140,6 +200,64 @@ export default function PreviaDocumento({
 
         .folha-documento {
           position: relative;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .folha-documento .documento-word {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+        }
+
+        .documento-word .data-documento {
+          margin-top: auto !important;
+        }
+
+        .documento-espalhado .documento-word {
+          font-size: 15pt !important;
+          line-height: 1.7 !important;
+        }
+
+        /*
+         * O corpo toma a folha entre o timbre e a data, e
+         * distribui os blocos por ela - em vez de empilhar no
+         * alto e deixar um buraco unico no meio.
+         *
+         * "space-between", nao "space-evenly": o primeiro
+         * bloco encosta no timbre e o ultimo encosta na data.
+         * Com folga nas pontas o texto vira um miolo
+         * centralizado, que nao e o que se quer.
+         */
+        .documento-espalhado .corpo-documento {
+          display: flex !important;
+          flex: 1 1 auto !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          padding: 0.7em 0 !important;
+        }
+
+        /* Alinhado dos dois lados, como esta no Word. */
+        .documento-espalhado .corpo-documento p {
+          text-align: justify !important;
+        }
+
+        .documento-espalhado .corpo-documento p {
+          margin: 0 !important;
+        }
+
+        /* Dentro do bloco as linhas ficam juntas. */
+        .documento-espalhado .bloco-documento p + p {
+          margin-top: 0.15em !important;
+        }
+
+        /* O timbre da loja fica no tamanho de cabecalho. */
+        .documento-espalhado
+          .documento-word
+          .cabecalho-loja {
+          font-size: 11pt !important;
+          line-height: 1.15 !important;
+          margin-bottom: 0 !important;
         }
 
         .marca-dagua-documento {
@@ -276,6 +394,13 @@ export default function PreviaDocumento({
             background: #ffffff !important;
             box-shadow: none !important;
             overflow: visible !important;
+            /*
+             * Na impressao a folha tambem e coluna, senao a
+             * assinatura volta a subir e o vazio reaparece no
+             * pe da pagina.
+             */
+            display: flex !important;
+            flex-direction: column !important;
           }
 
           .documento-word {
@@ -362,7 +487,11 @@ export default function PreviaDocumento({
           </div>
         )}
 
-        <div className="folha-documento mx-auto w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl">
+        <div
+          className={`folha-documento mx-auto min-h-[29.7cm] w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl${
+            espalhar ? " documento-espalhado" : ""
+          }`}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo-blackout-menu.png"

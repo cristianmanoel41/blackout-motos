@@ -59,6 +59,7 @@ export default async function DocumentoPage({
       titulo={documento.titulo}
       voltarPara={documento.voltar(id)}
       voltarRotulo={documento.voltarRotulo}
+      espalhar={tipo === "contrato-compra"}
     />
   );
 }

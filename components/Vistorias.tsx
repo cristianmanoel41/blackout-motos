@@ -20,10 +20,36 @@ export const TIPOS_VISTORIA = [
     chave: "transferencia",
     nome: "Vistoria de transferência",
   },
+  { chave: "crlv", nome: "CRLV" },
 ] as const;
 
 export type TipoVistoria =
   (typeof TIPOS_VISTORIA)[number]["chave"];
+
+/*
+ * O CRLV nao e vistoria, mas e o papel que se procura junto
+ * com ela na hora de transferir. Fica na mesma tela para nao
+ * ter que abrir dois lugares.
+ */
+const ETIQUETA: Record<
+  TipoVistoria,
+  { rotulo: string; classe: string }
+> = {
+  cautelar: {
+    rotulo: "Cautelar",
+    classe:
+      "border-purple-700 bg-purple-950/40 text-purple-300",
+  },
+  transferencia: {
+    rotulo: "Transferência",
+    classe: "border-sky-700 bg-sky-950/40 text-sky-300",
+  },
+  crlv: {
+    rotulo: "CRLV",
+    classe:
+      "border-amber-700 bg-amber-950/40 text-amber-300",
+  },
+};
 
 /* 20 MB: acima disso o arquivo quase sempre é foto sem compressão. */
 const TAMANHO_MAXIMO = 20 * 1024 * 1024;
@@ -154,8 +180,8 @@ export async function enviarVistoria({
 export default function Vistorias({
   motorcycleId,
   saleId,
-  titulo = "Vistorias",
-  descricao = "Guarde aqui a vistoria cautelar e a de transferência desta moto.",
+  titulo = "Vistorias e CRLV",
+  descricao = "Guarde aqui a vistoria cautelar, a de transferência e o CRLV desta moto.",
 }: {
   motorcycleId: string;
   saleId?: string | null;
@@ -212,7 +238,7 @@ export default function Vistorias({
     setErro("");
 
     if (!arquivo) {
-      setErro("Escolha o arquivo da vistoria.");
+      setErro("Escolha o arquivo.");
       return;
     }
 
@@ -234,7 +260,7 @@ export default function Vistorias({
     } catch (e: any) {
       console.error(e);
       setErro(
-        e?.message || "Não foi possível anexar a vistoria."
+        e?.message || "Não foi possível anexar o arquivo."
       );
     } finally {
       setEnviando(false);
@@ -269,10 +295,9 @@ export default function Vistorias({
 
   async function excluir(vistoria: Vistoria) {
     const confirmar = window.confirm(
-      `Excluir a ${
-        vistoria.tipo === "cautelar"
-          ? "vistoria cautelar"
-          : "vistoria de transferência"
+      `Excluir o anexo de ${
+        (ETIQUETA[vistoria.tipo] || ETIQUETA.cautelar)
+          .rotulo
       } de ${formatarData(vistoria.data)}?`
     );
 
@@ -334,7 +359,7 @@ export default function Vistorias({
 
       {!carregando && vistorias.length === 0 && (
         <div className="rounded-xl border border-grafite-claro bg-preto/40 p-5 text-sm text-texto-suave">
-          Nenhuma vistoria anexada nesta moto.
+          Nenhum arquivo anexado nesta moto.
         </div>
       )}
 
@@ -348,6 +373,10 @@ export default function Vistorias({
               ehTransferencia &&
               ultimaTransferencia?.id === vistoria.id;
 
+            const etiqueta =
+              ETIQUETA[vistoria.tipo] ||
+              ETIQUETA.cautelar;
+
             return (
               <div
                 key={vistoria.id}
@@ -356,15 +385,9 @@ export default function Vistorias({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`rounded-lg border px-2 py-1 text-xs font-semibold ${
-                        ehTransferencia
-                          ? "border-sky-700 bg-sky-950/40 text-sky-300"
-                          : "border-purple-700 bg-purple-950/40 text-purple-300"
-                      }`}
+                      className={`rounded-lg border px-2 py-1 text-xs font-semibold ${etiqueta.classe}`}
                     >
-                      {ehTransferencia
-                        ? "Transferência"
-                        : "Cautelar"}
+                      {etiqueta.rotulo}
                     </span>
 
                     {ehUltima && (
@@ -429,7 +452,7 @@ export default function Vistorias({
 
       <div className="mt-6 rounded-xl border border-grafite-claro bg-preto/40 p-4">
         <p className="mb-4 text-sm font-semibold text-texto">
-          Anexar vistoria
+          Anexar arquivo
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -456,7 +479,9 @@ export default function Vistorias({
 
           <div>
             <label className={labelClass}>
-              Data da vistoria
+              {tipo === "crlv"
+                ? "Data do documento"
+                : "Data da vistoria"}
             </label>
 
             <input
@@ -503,7 +528,7 @@ export default function Vistorias({
           className="mt-4 inline-flex items-center gap-2 rounded-lg bg-dourado px-6 py-3 text-sm font-semibold text-preto transition hover:bg-dourado-claro disabled:opacity-50"
         >
           <Upload size={16} />
-          {enviando ? "Enviando..." : "Anexar vistoria"}
+          {enviando ? "Enviando..." : "Anexar arquivo"}
         </button>
       </div>
     </section>
