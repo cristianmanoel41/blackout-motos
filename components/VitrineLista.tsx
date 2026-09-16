@@ -164,7 +164,9 @@ export default function VitrineLista({
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Procurar por marca, modelo, cor ou ano"
-            className="w-full rounded-xl border border-black/10 bg-white py-2.5 pl-10 pr-4 text-sm text-black outline-none transition focus:border-black/40"
+            /* campo-claro: sem ela o tema pinta todo input
+               dentro de <main> de preto. */
+            className="campo-claro w-full rounded-xl border border-black/10 bg-white py-2.5 pl-10 pr-4 text-sm text-black outline-none transition focus:border-black/40"
           />
         </div>
 

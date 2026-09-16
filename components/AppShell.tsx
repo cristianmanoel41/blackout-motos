@@ -7,12 +7,22 @@ import styles from './AppShell.module.css'
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  const paginaDocumento =
+  /*
+   * Telas que nao sao do sistema: documento para imprimir, a
+   * vitrine da outra loja e o site da loja.
+   *
+   * Nelas nao entra menu, nem o <main> do painel - e dentro
+   * dele que o tema pinta card de preto e inverte texto
+   * branco, o que numa pagina clara sai errado.
+   */
+  const foraDoPainel =
     pathname.startsWith('/recibos/') ||
     pathname.startsWith('/documentos/') ||
-    pathname.startsWith('/vitrine/')
+    pathname.startsWith('/vitrine/') ||
+    pathname === '/loja' ||
+    pathname.startsWith('/loja/')
 
-  if (paginaDocumento) return <>{children}</>
+  if (foraDoPainel) return <>{children}</>
 
   if (pathname === '/' || pathname === '/login') {
     return (

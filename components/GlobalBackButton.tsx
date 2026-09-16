@@ -14,7 +14,11 @@ export default function GlobalBackButton() {
      * A vitrine é do cliente, não da loja: ele não tem para
      * onde voltar, e o botão levaria ao painel interno.
      */
-    pathname.startsWith("/vitrine/")
+    pathname.startsWith("/vitrine/") ||
+    /* O site e do cliente: ele chegou pelo Google, nao de outra
+       tela do sistema. */
+    pathname === "/loja" ||
+    pathname.startsWith("/loja/")
   ) {
     return null;
   }
