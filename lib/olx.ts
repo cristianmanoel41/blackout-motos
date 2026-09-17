@@ -251,8 +251,18 @@ async function buscarTabela(
   });
 
   if (!resposta.ok) {
+    /*
+     * O que a OLX escreveu vai junto no erro. So o numero do
+     * status nao diz nada: eles respondem 500 tanto para token
+     * vencido quanto para pedido malformado, e sem o texto
+     * deles a investigacao vira adivinhacao.
+     */
+    const texto = await resposta.text().catch(() => "");
+
     throw new Error(
-      `A OLX não devolveu a tabela (${resposta.status}).`
+      `A OLX não devolveu a tabela (${resposta.status}).${
+        texto ? ` Resposta: ${texto.slice(0, 300)}` : ""
+      }`
     );
   }
 
