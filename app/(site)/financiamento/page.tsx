@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   BadgeCheck,
+  ChevronDown,
   FileText,
   Repeat2,
   Wallet,
@@ -11,10 +12,15 @@ import { LOJA } from "@/lib/dados/loja";
 /*
  * Página de financiamento.
  *
- * A simulação recolhe os dados e monta a mensagem de
- * WhatsApp - não calcula parcela. Taxa e aprovação dependem do
- * banco e do perfil de cada cliente; número na tela que depois
- * não se confirma queima a loja.
+ * O formulário vem primeiro, antes de qualquer explicação:
+ * quem abre esta tela já quer simular, e ler quatro passos
+ * antes de achar o campo é o caminho mais curto para desistir.
+ * Como funciona fica logo abaixo, recolhido, para quem quiser.
+ *
+ * A simulação recolhe os dados e monta a mensagem de WhatsApp -
+ * não calcula parcela. Taxa e aprovação dependem do banco e do
+ * perfil de cada cliente; número na tela que depois não se
+ * confirma queima a loja.
  *
  * Quando a pessoa vem de um anúncio, a moto chega pela URL
  * (?moto=...) e o campo já aparece preenchido.
@@ -79,30 +85,45 @@ export default async function FinanciamentoPage({
         </p>
       </header>
 
-      <section className="mt-10 grid gap-4 sm:grid-cols-2">
-        {PASSOS.map(({ Icone, titulo, texto }) => (
-          <article
-            key={titulo}
-            className="cartao-3d rounded-2xl p-5"
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
-              <Icone size={20} className="texto-ouro" />
-            </span>
-
-            <h2 className="mt-4 text-base font-bold texto-claro">
-              {titulo}
-            </h2>
-
-            <p className="mt-1.5 text-sm leading-6 texto-suave">
-              {texto}
-            </p>
-          </article>
-        ))}
-      </section>
-
       <section className="mt-8">
         <SimuladorFinanciamento moto={moto} />
       </section>
+
+      {/*
+        * <details> abre e fecha sem script nenhum: a página
+        * continua leve e funciona mesmo se o JavaScript
+        * demorar a carregar no celular.
+        */}
+      <details className="cartao-3d group mt-6 rounded-2xl">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
+          <span className="text-base font-bold texto-claro">
+            Como funciona o financiamento
+          </span>
+
+          <ChevronDown
+            size={20}
+            className="shrink-0 texto-ouro transition group-open:rotate-180"
+          />
+        </summary>
+
+        <div className="grid gap-4 border-t border-white/[.07] p-5 sm:grid-cols-2">
+          {PASSOS.map(({ Icone, titulo, texto }) => (
+            <article key={titulo}>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
+                <Icone size={20} className="texto-ouro" />
+              </span>
+
+              <h2 className="mt-4 text-base font-bold texto-claro">
+                {titulo}
+              </h2>
+
+              <p className="mt-1.5 text-sm leading-6 texto-suave">
+                {texto}
+              </p>
+            </article>
+          ))}
+        </div>
+      </details>
     </main>
   );
 }

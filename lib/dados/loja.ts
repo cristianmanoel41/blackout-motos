@@ -53,6 +53,49 @@ export const REDES = [
   },
   { nome: "YouTube", url: "" },
 ];
+/*
+ * Avaliações no Google.
+ *
+ * O site não copia as avaliações: ele manda o cliente ler
+ * no próprio Google, onde ele confia mais e onde elas estão
+ * sempre atualizadas. Sem chave de API, sem conta de
+ * cobrança e sem serviço de terceiro para pagar.
+ *
+ * `perfil` abre a ficha da loja; `avaliar` abre a caixa de
+ * escrever avaliação. Enquanto não vierem os endereços
+ * curtos do Perfil da Empresa, os dois caem numa busca pelo
+ * nome e endereço da loja, que chega na ficha do mesmo
+ * jeito.
+ */
+export const GOOGLE = {
+  /*
+   * O endereço curto do Perfil da Empresa. Sem o /review no
+   * fim ele abre a ficha da loja; com o /review, abre direto
+   * a caixa de escrever - é o link que a loja já manda para
+   * o cliente depois da venda.
+   */
+  /*
+   * O identificador da loja no Google. Com ele o site pede a
+   * ficha direto, sem antes procurar pelo nome - uma consulta
+   * a menos, e consulta ao Google e paga.
+   */
+  placeId: "ChIJJQFbMn9LzJQR7m8nkBQoDUM",
+
+  perfil: "https://g.page/r/Ce5vJ5AUKA1DEAI",
+  avaliar: "https://g.page/r/Ce5vJ5AUKA1DEAI/review",
+
+  /*
+   * Nota e total só aparecem na tela quando preenchidos - e
+   * só devem ser preenchidos com o que está no Google de
+   * verdade. Número inventado aqui vira propaganda enganosa
+   * e o cliente confere em dois toques.
+   *
+   * Fica fixo no código: quando a nota mudar, muda aqui.
+   */
+  nota: "",
+  avaliacoes: "",
+};
+
 /* Link do WhatsApp já com a mensagem escrita. */
 export function linkWhatsApp(mensagem: string) {
   return `https://wa.me/${

@@ -6,6 +6,7 @@ import Beneficios from "@/components/site/Beneficios";
 import CardMoto from "@/components/site/CardMoto";
 import Institucional from "@/components/site/Institucional";
 import Marcas from "@/components/site/Marcas";
+import Avaliacoes from "@/components/site/Avaliacoes";
 import { nomeDaMoto } from "@/lib/dados/moto-site";
 
 /*
@@ -81,6 +82,8 @@ export default async function HomePage() {
       </section>
 
       <Institucional />
+
+      <Avaliacoes />
 
       <Marcas />
     </>
