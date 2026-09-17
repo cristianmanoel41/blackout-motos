@@ -132,12 +132,51 @@ export async function salvarConta(dados: any) {
   if (error) throw error;
 }
 
+/*
+ * Renova o acesso com o refresh_token.
+ *
+ * O token da OLX vence. Quando vence, as chamadas passam a
+ * falhar com 500 - a OLX nao diz "token expirado", devolve
+ * erro de servidor -, e ate agora a unica saida era reconectar
+ * a conta a mao, sem ninguem entender o motivo.
+ */
+async function renovarToken(refresh: string) {
+  const { id, segredo } = credenciais();
+
+  const resposta = await fetch(TOKEN, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0",
+    },
+    body: JSON.stringify({
+      refresh_token: refresh,
+      client_id: id,
+      client_secret: segredo,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  const dados = await resposta.json().catch(() => null);
+
+  if (!resposta.ok || !dados?.access_token) {
+    throw new Error(
+      "O acesso à OLX expirou e não foi possível renovar. Conecte a conta de novo em Configurações."
+    );
+  }
+
+  await salvarConta(dados);
+
+  return dados.access_token as string;
+}
+
 export async function tokenSalvo() {
   const supabase = await createClient();
 
   const { data: conta } = await supabase
     .from("olx_conta")
-    .select("access_token")
+    .select("access_token, refresh_token, expira_em")
     .eq("id", "principal")
     .maybeSingle();
 
@@ -145,6 +184,19 @@ export async function tokenSalvo() {
     throw new Error(
       "A OLX ainda não está conectada. Conecte em Configurações."
     );
+  }
+
+  /*
+   * Renova cinco minutos antes de vencer: token que expira no
+   * meio do envio derruba a publicacao pela metade.
+   */
+  const vencido =
+    conta.expira_em &&
+    new Date(conta.expira_em).getTime() - 5 * 60 * 1000 <
+      Date.now();
+
+  if (vencido && conta.refresh_token) {
+    return renovarToken(conta.refresh_token as string);
   }
 
   return conta.access_token as string;
