@@ -17,26 +17,26 @@ const AUTORIZAR = "https://auth.olx.com.br/oauth";
 const TOKEN = "https://auth.olx.com.br/oauth/token";
 
 /*
- * Todos os enderecos da OLX levam /v1/.
+ * O envio de anuncio e PUT, nao POST.
  *
- * Eles moveram a API: o caminho antigo, sem o v1, responde
- * 404 - e nao "mudou de lugar". Em 17/09/2026 publicar parou
- * de funcionar por isso, e as tabelas de codigo, que antes
- * respondiam no caminho antigo, tambem tinham parado.
+ * Com POST a OLX responde "Cannot POST /autoupload/import" -
+ * o caminho existe, so nao atende aquele metodo. Esta na
+ * documentacao deles; eu e que tinha assumido POST por ser o
+ * que o resto da API usa.
  */
 const IMPORTAR =
-  "https://apps.olx.com.br/autoupload/v1/import";
+  "https://apps.olx.com.br/autoupload/import";
 
 /* O que esta no ar agora, direto da OLX. */
 const PUBLICADOS =
-  "https://apps.olx.com.br/autoupload/v1/published";
+  "https://apps.olx.com.br/autoupload/published";
 
 /* Tabelas de codigo da OLX: marca, modelo e cilindrada. */
 const MOTO_INFO =
-  "https://apps.olx.com.br/autoupload/v1/moto_info";
+  "https://apps.olx.com.br/autoupload/moto_info";
 
 const CILINDRADAS =
-  "https://apps.olx.com.br/autoupload/v1/moto_cubiccms_info";
+  "https://apps.olx.com.br/autoupload/moto_cubiccms_info";
 
 /* autoupload publica; basic_user_info diz quem autorizou. */
 const ESCOPOS = "basic_user_info autoupload";
@@ -339,7 +339,7 @@ export async function importarAnuncios(
   anuncios: any[]
 ) {
   const resposta = await fetch(IMPORTAR, {
-    method: "POST",
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
