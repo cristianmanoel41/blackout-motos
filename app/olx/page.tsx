@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
-import { formatarData } from "@/lib/formatadores/data";
+import { formatarDataHora } from "@/lib/formatadores/data";
 import { Megaphone, RefreshCcw } from "lucide-react";
 
 /*
@@ -312,7 +312,7 @@ export default function SituacaoOlxPage() {
                 <div className="flex items-center gap-3">
                   {linha.enviado_em && (
                     <span className="text-xs text-texto-suave">
-                      {formatarData(linha.enviado_em)}
+                      {formatarDataHora(linha.enviado_em)}
                     </span>
                   )}
 

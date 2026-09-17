@@ -281,13 +281,16 @@ export async function POST(requisicao: Request) {
    * O km vai exato de proposito - em anuncio, numero redondo
    * levanta duvida, e o formulario da OLX ja pede o valor
    * certo.
+   *
+   * A cilindrada nao entra no titulo: ela ja esta no nome do
+   * modelo (CG 160, XTZ 250, MT-03), e repetir vira
+   * "CG 160 160CC".
    */
   if (estilo === "olx") {
     /* YAMAHA MT-03 321cc ABS 2019 */
     const titulo = [
       moto.marca,
       moto.modelo,
-      moto.cilindrada ? `${moto.cilindrada}cc` : "",
       moto.versao,
       ano,
     ]

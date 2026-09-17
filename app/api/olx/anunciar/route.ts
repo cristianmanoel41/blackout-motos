@@ -275,14 +275,41 @@ export async function POST(requisicao: Request) {
       )
     );
 
+    /*
+     * A versao NAO pode cair na primeira da lista.
+     *
+     * Era o que acontecia: quando a versao da ficha nao batia
+     * com nenhuma da OLX, o sistema pegava versoes[0] - e para
+     * a Honda CG a primeira e uma 125. A moto do cliente era
+     * 160 e foi anunciada como 125, com preco de 160.
+     *
+     * Anunciar a moto errada e pior que nao anunciar. Entao,
+     * se o nome nao bater, tenta pela cilindrada; se nem isso,
+     * recusa e diz quais existem.
+     */
+    const cilindradaDaMoto = String(
+      moto.cilindrada || ""
+    ).replace(/D/g, "");
+
+    const pelaCilindrada = cilindradaDaMoto
+      ? versoes.find((item: any) =>
+          String(item.nome).includes(cilindradaDaMoto)
+        )
+      : null;
+
     const versao =
-      acharNaTabela(moto.versao, versoes) || versoes[0];
+      acharNaTabela(moto.versao, versoes) ||
+      pelaCilindrada;
 
     if (!versao) {
       return Response.json(
         {
-          error:
-            "A OLX não devolveu nenhuma versão para esse modelo.",
+          error: `A OLX não tem a versão "${
+            moto.versao || "(vazia)"
+          }" para ${marca.nome} ${modelo.nome}. Versões que ela aceita: ${versoes
+            .map((item: any) => item.nome)
+            .slice(0, 12)
+            .join(", ")}. Ajuste a versão na ficha da moto.`,
         },
         { status: 400 }
       );
@@ -365,7 +392,7 @@ export async function POST(requisicao: Request) {
       ok: true,
       token: tokenProcesso,
       fotos: imagens.length,
-      anunciadoComo: `${marca.nome} ${modelo.nome}`,
+      anunciadoComo: `${marca.nome} ${modelo.nome} ${versao.nome}`,
     });
   } catch (falha) {
     const mensagem =

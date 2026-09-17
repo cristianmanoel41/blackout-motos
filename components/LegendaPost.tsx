@@ -179,7 +179,9 @@ export default function LegendaPost({
       setAviso(
         `Enviado para a OLX como ${dados.anunciadoComo}, com ${
           dados.fotos
-        } foto${dados.fotos === 1 ? "" : "s"}. A OLX leva alguns minutos para publicar.`
+        } foto${dados.fotos === 1 ? "" : "s"}, como ${
+          dados.anunciadoComo
+        }. Confira se é essa a moto. A OLX leva alguns minutos para publicar.`
       );
     } catch {
       setErro("Não foi possível falar com o servidor.");
@@ -442,6 +444,18 @@ export default function LegendaPost({
               })}
             </p>
           </div>
+
+          {previa.fotos?.length > 0 && (
+            <p className="border-b border-grafite-claro px-3 pt-3 text-xs text-texto-suave">
+              <strong className="text-dourado">
+                {previa.fotos.length}
+              </strong>{" "}
+              foto{previa.fotos.length === 1 ? "" : "s"} 
+              {previa.fotos.length === 1 ? "será" : "serão"} enviada
+              {previa.fotos.length === 1 ? "" : "s"} · a primeira vira a
+              principal do anúncio
+            </p>
+          )}
 
           {previa.fotos?.length > 0 && (
             <div className="flex gap-2 overflow-x-auto border-b border-grafite-claro p-3">
