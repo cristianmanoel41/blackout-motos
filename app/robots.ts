@@ -15,7 +15,7 @@ import type { MetadataRoute } from "next";
 
 const ENDERECO =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://blackout-motos-amber.vercel.app";
+  "https://blackoutmotos.com.br";
 
 export default function robots(): MetadataRoute.Robots {
   return {

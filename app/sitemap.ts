@@ -14,9 +14,17 @@ import { estoqueDoSite } from "@/lib/dados/estoque-site";
 
 export const dynamic = "force-dynamic";
 
+/*
+ * O endereço do site. A variável manda; o valor abaixo é o
+ * domínio da loja, usado quando ela não está definida.
+ *
+ * Ele precisa bater com o domínio que o visitante digitou:
+ * endereço errado aqui faz o Google indexar um site que
+ * ninguém acessa.
+ */
 const ENDERECO =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://blackout-motos-amber.vercel.app";
+  "https://blackoutmotos.com.br";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const fixas = [

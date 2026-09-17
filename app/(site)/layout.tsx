@@ -25,7 +25,7 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://blackout-motos-amber.vercel.app"
+      "https://blackoutmotos.com.br"
   ),
   title: {
     default: `${LOJA.nome.toUpperCase()} | Motos Seminovas em ${LOJA.cidade}`,
