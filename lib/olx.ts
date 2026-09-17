@@ -16,8 +16,16 @@ const AUTORIZAR = "https://auth.olx.com.br/oauth";
 
 const TOKEN = "https://auth.olx.com.br/oauth/token";
 
+/*
+ * Todos os enderecos da OLX levam /v1/.
+ *
+ * Eles moveram a API: o caminho antigo, sem o v1, responde
+ * 404 - e nao "mudou de lugar". Em 17/09/2026 publicar parou
+ * de funcionar por isso, e as tabelas de codigo, que antes
+ * respondiam no caminho antigo, tambem tinham parado.
+ */
 const IMPORTAR =
-  "https://apps.olx.com.br/autoupload/import";
+  "https://apps.olx.com.br/autoupload/v1/import";
 
 /* O que esta no ar agora, direto da OLX. */
 const PUBLICADOS =
@@ -25,10 +33,10 @@ const PUBLICADOS =
 
 /* Tabelas de codigo da OLX: marca, modelo e cilindrada. */
 const MOTO_INFO =
-  "https://apps.olx.com.br/autoupload/moto_info";
+  "https://apps.olx.com.br/autoupload/v1/moto_info";
 
 const CILINDRADAS =
-  "https://apps.olx.com.br/autoupload/moto_cubiccms_info";
+  "https://apps.olx.com.br/autoupload/v1/moto_cubiccms_info";
 
 /* autoupload publica; basic_user_info diz quem autorizou. */
 const ESCOPOS = "basic_user_info autoupload";
