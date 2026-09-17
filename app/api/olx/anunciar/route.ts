@@ -156,18 +156,34 @@ export async function POST(requisicao: Request) {
 
   const { data: fotos } = await supabase
     .from("motorcycle_photos")
-    .select("url, arquivo_tipo, arquivo_nome")
+    .select(
+      "url, principal, arquivo_tipo, arquivo_nome"
+    )
     .eq("motorcycle_id", motorcycleId)
     .order("ordem", { ascending: true });
 
-  const imagens = (fotos || [])
+  const aceitas = (fotos || [])
     .filter(
       (foto: any) =>
         foto.url &&
         !(foto.arquivo_tipo || "").startsWith("video/") &&
         !/\.(mp4|mov|webm)$/i.test(foto.arquivo_nome || "")
-    )
-    .map((foto: any) => foto.url);
+    );
+
+  /*
+   * A capa vai na frente: para a OLX, a primeira imagem da
+   * lista e a principal do anuncio - a que o cliente ve na
+   * busca. Sem isto valia a ordem da galeria, e a capa
+   * escolhida na ficha nao significava nada la.
+   */
+  const capa = aceitas.find(
+    (foto: any) => foto.principal
+  );
+
+  const imagens = [
+    ...(capa ? [capa] : []),
+    ...aceitas.filter((foto: any) => foto !== capa),
+  ].map((foto: any) => foto.url);
 
   if (imagens.length === 0) {
     return Response.json(
