@@ -291,11 +291,39 @@ export async function POST(requisicao: Request) {
       moto.cilindrada || ""
     ).replace(/D/g, "");
 
-    const pelaCilindrada = cilindradaDaMoto
-      ? versoes.find((item: any) =>
+    const palavras = String(moto.versao || "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toUpperCase()
+      .split(/[^A-Z0-9]+/)
+      .filter((parte) => parte.length > 1);
+
+    const candidatas = cilindradaDaMoto
+      ? versoes.filter((item: any) =>
           String(item.nome).includes(cilindradaDaMoto)
         )
-      : null;
+      : [];
+
+    /*
+     * Entre as da cilindrada certa, a que divide mais
+     * palavras com a ficha: "Fan CBS" tem que achar
+     * "160 FAN CBS", nao a primeira 160 da lista.
+     */
+    const pelaCilindrada = candidatas
+      .map((item: any) => {
+        const nome = String(item.nome)
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .toUpperCase();
+
+        return {
+          item,
+          pontos: palavras.filter((parte) =>
+            nome.includes(parte)
+          ).length,
+        };
+      })
+      .sort((a, b) => b.pontos - a.pontos)[0]?.item;
 
     const versao =
       acharNaTabela(moto.versao, versoes) ||
