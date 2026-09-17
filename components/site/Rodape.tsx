@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Phone } from "lucide-react";
+import { Clock, MapPin, Phone } from "lucide-react";
 import { IconeRede } from "@/components/site/IconeRede";
 import {
+  HORARIOS,
   LOJA,
   MAPA,
   MENU,
@@ -100,6 +101,21 @@ export default function Rodape() {
               >
                 {LOJA.whatsappExibicao}
               </a>
+            </li>
+
+            <li className="flex gap-2.5">
+              <Clock
+                size={17}
+                className="mt-0.5 shrink-0 texto-ouro"
+              />
+
+              <span className="leading-6">
+                {HORARIOS.map((item) => (
+                  <span key={item.texto} className="block">
+                    {item.texto}: {item.horas}
+                  </span>
+                ))}
+              </span>
             </li>
 
 

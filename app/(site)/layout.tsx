@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import "./site.css";
 import Cabecalho from "@/components/site/Cabecalho";
 import Rodape from "@/components/site/Rodape";
-import { ENDERECO_COMPLETO, LOJA } from "@/lib/dados/loja";
+import {
+  ENDERECO_COMPLETO,
+  GOOGLE,
+  HORARIOS,
+  LOJA,
+  REDES,
+} from "@/lib/dados/loja";
 
 /*
  * Moldura do site público.
@@ -48,6 +54,41 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+/*
+ * A ficha da loja em linguagem de buscador.
+ *
+ * É por aqui que o Google entende endereço, telefone e
+ * horário de funcionamento - e pode mostrar "aberto agora"
+ * direto no resultado da busca, sem a pessoa entrar no site.
+ */
+const FICHA_DA_LOJA = {
+  "@context": "https://schema.org",
+  "@type": "MotorcycleDealer",
+  name: LOJA.nome,
+  image: "/logo-blackout-site.png",
+  telephone: LOJA.whatsappExibicao,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: LOJA.endereco,
+    addressLocality: LOJA.cidade,
+    addressRegion: LOJA.estado,
+    postalCode: LOJA.cep,
+    addressCountry: "BR",
+  },
+  openingHoursSpecification: HORARIOS.filter(
+    (item) => item.dias.length > 0
+  ).map((item) => ({
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: item.dias,
+    opens: item.abre,
+    closes: item.fecha,
+  })),
+  sameAs: REDES.filter((rede) => rede.url).map(
+    (rede) => rede.url
+  ),
+  hasMap: GOOGLE.perfil,
+};
+
 export default function SiteLayout({
   children,
 }: {
@@ -61,6 +102,13 @@ export default function SiteLayout({
           color-scheme: dark;
         }
       `}</style>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(FICHA_DA_LOJA),
+        }}
+      />
 
       <Cabecalho />
 

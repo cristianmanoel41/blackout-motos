@@ -45,10 +45,19 @@ export default function Galeria({
     const rolagem = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
+
+    /*
+     * O menu do site fica grudado no topo. Com a foto
+     * aberta ele nao serve para nada e ainda aparece por
+     * tras do fundo escuro, entao some enquanto isso.
+     */
+    document.body.classList.add("foto-aberta");
+
     window.addEventListener("keydown", noTeclado);
 
     return () => {
       document.body.style.overflow = rolagem;
+      document.body.classList.remove("foto-aberta");
       window.removeEventListener("keydown", noTeclado);
     };
   }, [ampliada]);
@@ -166,7 +175,7 @@ export default function Galeria({
           onClick={() => setAmpliada(false)}
           onTouchStart={comecouToque}
           onTouchEnd={terminouToque}
-          className="fixed inset-0 z-[60] grid place-items-center bg-black/95 p-4"
+          className="fixed inset-0 z-[70] grid place-items-center bg-black p-4"
         >
           {/*
             * O X acompanha a foto, nao o canto da tela: numa

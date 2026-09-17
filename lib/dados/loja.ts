@@ -19,6 +19,46 @@ export const LOJA = {
   whatsappExibicao: "(12) 99662-6666",
 };
 
+/*
+ * Horário de atendimento.
+ *
+ * Fica em dados, não escrito na tela, porque aparece em
+ * três lugares - rodapé, página de contato e os dados que o
+ * Google lê - e mudar em um só deixaria os outros mentindo.
+ *
+ * `dias` é o que o Google entende (Mo, Tu...); `texto` é o
+ * que o cliente lê.
+ */
+export const HORARIOS = [
+  {
+    texto: "Segunda a sexta",
+    horas: "09h às 18h",
+    dias: [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ],
+    abre: "09:00",
+    fecha: "18:00",
+  },
+  {
+    texto: "Sábado",
+    horas: "09h às 14h",
+    dias: ["Saturday"],
+    abre: "09:00",
+    fecha: "14:00",
+  },
+  {
+    texto: "Domingo",
+    horas: "Fechado",
+    dias: [],
+    abre: "",
+    fecha: "",
+  },
+];
+
 export const ENDERECO_COMPLETO = `${LOJA.endereco} · ${LOJA.bairro} · ${LOJA.cidade}/${LOJA.estado}`;
 
 export const MAPA = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

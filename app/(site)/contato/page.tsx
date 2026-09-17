@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import { MapPin, Phone } from "lucide-react";
+import { Clock, MapPin, Phone } from "lucide-react";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import Avaliacoes from "@/components/site/Avaliacoes";
-import { CONVITE_GERAL, linkWhatsApp, LOJA, MAPA } from "@/lib/dados/loja";
+import {
+  CONVITE_GERAL,
+  HORARIOS,
+  linkWhatsApp,
+  LOJA,
+  MAPA,
+} from "@/lib/dados/loja";
 
 /*
  * Página de contato.
@@ -40,6 +46,15 @@ export default function ContatoPage() {
         href: linkWhatsApp(CONVITE_GERAL),
       },
     },
+    {
+      Icone: Clock,
+      titulo: "Horário de atendimento",
+      linhas: HORARIOS.map(
+        (item) => `${item.texto}: ${item.horas}`
+      ),
+      /* Horário não tem para onde clicar. */
+      acao: null as { nome: string; href: string } | null,
+    },
   ];
 
   return (
@@ -60,7 +75,7 @@ export default function ContatoPage() {
           </p>
         </header>
 
-        <section className="mt-10 grid gap-4 sm:grid-cols-2">
+        <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {canais.map(({ Icone, titulo, linhas, acao }) => (
             <article
               key={titulo}
@@ -83,14 +98,16 @@ export default function ContatoPage() {
                 ))}
               </div>
 
-              <a
-                href={acao.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="botao-vidro mt-5 flex items-center justify-center rounded-xl px-4 py-3 text-sm font-bold"
-              >
-                {acao.nome}
-              </a>
+              {acao && (
+                <a
+                  href={acao.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="botao-vidro mt-5 flex items-center justify-center rounded-xl px-4 py-3 text-sm font-bold"
+                >
+                  {acao.nome}
+                </a>
+              )}
             </article>
           ))}
         </section>

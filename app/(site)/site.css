@@ -138,6 +138,17 @@
   filter: brightness(1.07);
 }
 
+/*
+ * Foto ampliada aberta: o cabecalho sai da tela.
+ *
+ * Ele e grudado no topo e, mesmo coberto, aparecia por
+ * tras do fundo escuro. Com a foto aberta ele nao tem
+ * serventia - o X e as setas fazem tudo.
+ */
+body.foto-aberta header {
+  display: none !important;
+}
+
 .botao-vidro {
   background: rgba(255, 255, 255, 0.04) !important;
   color: #f2f3f5 !important;
