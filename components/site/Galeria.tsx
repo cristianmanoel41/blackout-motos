@@ -38,6 +38,8 @@ export default function Galeria({
 
     function noTeclado(evento: KeyboardEvent) {
       if (evento.key === "Escape") setAmpliada(false);
+      if (evento.key === "ArrowRight") passar(1);
+      if (evento.key === "ArrowLeft") passar(-1);
     }
 
     const rolagem = document.body.style.overflow;
@@ -111,7 +113,7 @@ export default function Galeria({
               type="button"
               onClick={() => passar(-1)}
               aria-label="Foto anterior"
-              className="botao-vidro absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full backdrop-blur"
+              className="absolute left-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-black shadow-lg backdrop-blur transition hover:bg-white"
             >
               <ChevronLeft size={20} />
             </button>
@@ -120,7 +122,7 @@ export default function Galeria({
               type="button"
               onClick={() => passar(1)}
               aria-label="Próxima foto"
-              className="botao-vidro absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full backdrop-blur"
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-black shadow-lg backdrop-blur transition hover:bg-white"
             >
               <ChevronRight size={20} />
             </button>
@@ -164,7 +166,7 @@ export default function Galeria({
           onClick={() => setAmpliada(false)}
           onTouchStart={comecouToque}
           onTouchEnd={terminouToque}
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4"
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/95 p-4"
         >
           {/*
             * O X acompanha a foto, nao o canto da tela: numa
@@ -173,13 +175,13 @@ export default function Galeria({
             */}
           <div
             onClick={(evento) => evento.stopPropagation()}
-            className="relative inline-block"
+            className="relative"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={fotos[indice]}
               alt=""
-              className="block max-h-[85vh] max-w-full rounded-xl object-contain"
+              className="block max-h-[85vh] max-w-[calc(100vw-2rem)] rounded-xl object-contain"
             />
 
             <button
@@ -191,9 +193,36 @@ export default function Galeria({
               <X size={24} strokeWidth={2.5} />
             </button>
 
+            {/*
+              * No computador nao da para arrastar: sem as
+              * setas aqui dentro, a unica saida era fechar a
+              * foto para trocar de imagem.
+              */}
+            {fotos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => passar(-1)}
+                  aria-label="Foto anterior"
+                  className="absolute left-3 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-black shadow-lg transition hover:bg-white"
+                >
+                  <ChevronLeft size={24} strokeWidth={2.5} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => passar(1)}
+                  aria-label="Próxima foto"
+                  className="absolute right-3 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-black shadow-lg transition hover:bg-white"
+                >
+                  <ChevronRight size={24} strokeWidth={2.5} />
+                </button>
+              </>
+            )}
+
             <span className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/70 px-4 py-2 text-xs text-white ring-1 ring-white/15">
               {fotos.length > 1
-                ? `${indice + 1} de ${fotos.length} · toque no X para voltar`
+                ? `${indice + 1} de ${fotos.length} · use as setas ou arraste`
                 : "Toque no X para voltar"}
             </span>
           </div>
