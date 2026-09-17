@@ -273,6 +273,13 @@ export async function importarAnuncios(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      /*
+       * Sem User-Agent de navegador a OLX responde 404, como
+       * se o endereco nao existisse - o mesmo que acontecia
+       * com as tabelas de codigo. Publicar e remover anuncio
+       * passam por aqui, entao os dois quebravam.
+       */
+      "User-Agent": "Mozilla/5.0",
     },
     body: JSON.stringify({
       access_token: token,
