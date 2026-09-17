@@ -107,7 +107,7 @@ export default function CardMoto({
           </ul>
         )}
 
-        <div className="mt-4 flex flex-col gap-2 pt-1">
+        <div className="mt-auto flex flex-col gap-2 pt-4">
           <Link
             href={`/estoque/${slug}`}
             className="botao-ouro flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold"

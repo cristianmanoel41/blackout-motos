@@ -306,7 +306,7 @@ export async function POST(requisicao: Request) {
       subject: titulo,
       body:
         descricao ||
-        `${titulo}. Fale com a Blackout Motos.`,
+        `${titulo}. Fale com a Blackout Motos. Veja todo o estoque em blackoutmotos.com.br`,
       phone: TELEFONE_DA_LOJA,
       type: "s",
       price: Number(moto.preco_anunciado),

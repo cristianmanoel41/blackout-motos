@@ -318,6 +318,14 @@ export async function POST(requisicao: Request) {
       TELEFONE_FIXO,
       TELEFONE_CELULAR,
       "",
+      /*
+       * O site vai junto: quem está na OLX vê uma moto e
+       * pode querer ver o resto do pátio. Fica depois do
+       * telefone porque contato é o que a OLX quer primeiro.
+       */
+      "Veja todo o estoque no nosso site:",
+      "blackoutmotos.com.br",
+      "",
       "Financiamos em até 48x.",
       "Cartão de crédito até 24x.",
       "",

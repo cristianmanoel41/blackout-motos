@@ -7,7 +7,6 @@ import CardMoto from "@/components/site/CardMoto";
 import Institucional from "@/components/site/Institucional";
 import Marcas from "@/components/site/Marcas";
 import Avaliacoes from "@/components/site/Avaliacoes";
-import { nomeDaMoto } from "@/lib/dados/moto-site";
 
 /*
  * A home.
@@ -23,15 +22,10 @@ export default async function HomePage() {
   const { motos, fotos, slugs } = await estoqueDoSite();
 
   const destaques = motos.slice(0, 4);
-  const primeira = motos[0];
 
   return (
     <>
-      <Capa
-        foto={primeira ? fotos.capas[primeira.id] : undefined}
-        nome={primeira ? nomeDaMoto(primeira) : undefined}
-        motos={motos.length}
-      />
+      <Capa motos={motos.length} />
 
       <Beneficios />
 

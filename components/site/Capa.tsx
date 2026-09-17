@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
@@ -10,46 +9,21 @@ import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 /*
  * A capa do site.
  *
- * A moto do fundo é a capa de uma moto real do estoque, não
- * uma foto de banco de imagens: o cliente vê no topo o que
- * pode comprar embaixo. Quando não há foto, o fundo fica só
- * com o degradê, sem buraco.
+ * Fundo preto, sem foto. A moto de fundo competia com os
+ * cards logo abaixo, que são o que interessa - e foto atrás
+ * de texto sempre custa legibilidade.
+ *
+ * Fica só o brilho dourado suave, que dá profundidade sem
+ * disputar atenção.
  */
 
 export default function Capa({
-  foto,
-  nome,
   motos,
 }: {
-  foto?: string;
-  nome?: string;
   motos: number;
 }) {
   return (
     <section className="brilho-capa relative isolate overflow-hidden border-b border-white/[.07] bg-[#0a0a0c]">
-      {foto && (
-        <>
-          <Image
-            src={foto}
-            alt={nome || ""}
-            fill
-            priority
-            sizes="100vw"
-            className="-z-10 object-cover object-right opacity-40 lg:opacity-60"
-          />
-
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0a0a0c] via-[#0a0a0c]/85 to-transparent"
-          />
-
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0a0a0c] via-transparent to-transparent"
-          />
-        </>
-      )}
-
       <div className="mx-auto max-w-7xl px-4 py-16 sm:py-24 lg:py-32">
         <div className="max-w-xl">
           <h1 className="text-4xl font-black uppercase leading-[1.05] tracking-tight texto-claro sm:text-6xl">

@@ -65,7 +65,16 @@ const FICHA_DA_LOJA = {
   "@context": "https://schema.org",
   "@type": "MotorcycleDealer",
   name: LOJA.nome,
+  /*
+   * O endereço do site e a ficha no Google, juntos: é assim
+   * que o buscador entende que o site e a loja do mapa são
+   * a mesma empresa, e não dois resultados concorrendo.
+   */
+  url:
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://blackoutmotos.com.br",
   image: "/logo-blackout-site.png",
+  priceRange: "$",
   telephone: LOJA.whatsappExibicao,
   address: {
     "@type": "PostalAddress",
