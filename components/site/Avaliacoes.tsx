@@ -10,6 +10,11 @@ import { avaliacoesDoGoogle } from "@/lib/dados/avaliacoes-google";
  * Google - que é o que a licença do Google exige: mostrar de
  * onde veio e deixar chegar na origem.
  *
+ * O texto não promete imparcialidade nem explica como as
+ * avaliações são escolhidas: quem lê no Google já sabe que a
+ * loja não controla aquilo, e falar disso levanta uma dúvida
+ * que ninguém tinha.
+ *
  * Quando não responde - chave faltando, API desligada, Google
  * fora do ar -, a seção continua no lugar com os dois botões.
  * Site no ar vale mais que avaliação na tela.
@@ -75,9 +80,9 @@ export default async function Avaliacoes() {
           </h2>
 
           <p className="mx-auto mt-3 max-w-lg text-sm leading-7 texto-suave">
-            Quem comprou na {LOJA.nome} conta como foi no
-            Google. São avaliações de verdade, escritas por
-            clientes da loja — não escolhemos quais aparecem.
+            A confiança de quem já comprou é o que nos move.
+            Veja no Google a experiência de quem passou pela{" "}
+            {LOJA.nome}.
           </p>
         </div>
 
