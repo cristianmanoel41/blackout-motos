@@ -60,6 +60,8 @@ export async function middleware(request: NextRequest) {
   const rotaEhPublica =
     SITE.includes(caminho) ||
     caminho.startsWith('/estoque/') ||
+    /* Versao nova, so no localhost. */
+    caminho.startsWith('/novo') ||
     caminho.startsWith('/vitrine') ||
     caminho.startsWith('/documentos/') ||
     caminho.startsWith('/recibos/')

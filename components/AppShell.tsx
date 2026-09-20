@@ -26,6 +26,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const foraDoPainel =
     SITE.includes(pathname) ||
     pathname.startsWith('/estoque/') ||
+    pathname.startsWith('/novo') ||
     pathname.startsWith('/vitrine/') ||
     pathname.startsWith('/documentos/') ||
     pathname.startsWith('/recibos/')

@@ -1,0 +1,332 @@
+/*
+ * Tema da versão nova do site - só no localhost, em /novo.
+ *
+ * O site no ar continua como está. Aqui é o campo de provas:
+ * cards com profundidade de verdade, brilho que passa, entrada
+ * suave ao rolar a página.
+ *
+ * Quase tudo é CSS puro, sem biblioteca de animação: no celular
+ * da loja e do cliente, efeito bonito que trava vale menos que
+ * efeito simples que corre liso.
+ */
+
+.novo {
+  --ouro: #e0b129;
+  --ouro-claro: #f7dd8a;
+  --ouro-escuro: #a97800;
+  --tinta: #08080a;
+  --carvao: #131318;
+  --carvao-claro: #1c1c23;
+
+  background: var(--tinta);
+  color: #f2f3f5;
+}
+
+.novo .claro {
+  color: #f4f5f7 !important;
+}
+.novo .suave {
+  color: #9aa0a9 !important;
+}
+.novo .ouro {
+  color: var(--ouro) !important;
+}
+.novo .text-white {
+  color: #fff !important;
+}
+
+.novo main {
+  background: transparent !important;
+  color: inherit !important;
+  isolation: auto !important;
+}
+
+.novo input,
+.novo select {
+  background: #101014 !important;
+  color: #f2f3f5 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.novo input::placeholder {
+  color: #6a7079 !important;
+}
+
+/* ---------- fundo vivo ---------- */
+
+/*
+ * Dois halos dourados girando bem devagar atrás do conteúdo.
+ * Dão a sensação de profundidade sem imagem nenhuma - e imagem
+ * de fundo era justamente o que competia com as motos.
+ */
+.aurora {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 60vw;
+  height: 60vw;
+  max-width: 820px;
+  max-height: 820px;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.aurora::before {
+  top: -22%;
+  right: -12%;
+  background: radial-gradient(
+    circle,
+    rgba(224, 177, 41, 0.42),
+    transparent 68%
+  );
+  animation: vagar 26s ease-in-out infinite alternate;
+}
+
+.aurora::after {
+  bottom: -30%;
+  left: -18%;
+  background: radial-gradient(
+    circle,
+    rgba(169, 120, 0, 0.3),
+    transparent 70%
+  );
+  animation: vagar 34s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes vagar {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-8%, 10%, 0) scale(1.18);
+  }
+}
+
+/* ---------- entrada ao rolar ---------- */
+
+/*
+ * A peça sobe e aparece quando entra na tela. Sem JavaScript:
+ * `animation-timeline: view()` faz isso no próprio navegador.
+ * Onde não houver suporte, o bloco já nasce visível - nunca
+ * fica invisível por falta de recurso.
+ */
+.sobe {
+  animation: surgir both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 28%;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- cartão ---------- */
+
+.cartao {
+  position: relative;
+  border-radius: 20px;
+  background: linear-gradient(
+    158deg,
+    var(--carvao-claro) 0%,
+    var(--carvao) 62%,
+    #0f0f13 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 24px 48px -28px rgba(0, 0, 0, 1);
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.25, 1),
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+/*
+ * A borda dourada acende no hover com um degradê que vem do
+ * canto - um risco de luz, não um contorno inteiro, que
+ * pareceria botão selecionado.
+ */
+.cartao::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(224, 177, 41, 0.8),
+    transparent 42%,
+    transparent 62%,
+    rgba(224, 177, 41, 0.35)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+.cartao:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 36px 64px -30px rgba(0, 0, 0, 1),
+    0 0 44px -18px rgba(224, 177, 41, 0.45);
+}
+
+.cartao:hover::after {
+  opacity: 1;
+}
+
+/* A foto respira devagar quando o cartão é apontado. */
+.cartao .foto {
+  transition: transform 0.75s cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+
+.cartao:hover .foto {
+  transform: scale(1.07);
+}
+
+/*
+ * Brilho que atravessa a foto no hover. É o detalhe que dá
+ * aparência de vitrine, e custa uma transformação só.
+ */
+.cartao .reflexo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 36%,
+    rgba(255, 255, 255, 0.16) 48%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.85s ease;
+  pointer-events: none;
+}
+
+.cartao:hover .reflexo {
+  transform: translateX(120%);
+}
+
+/* ---------- botões ---------- */
+
+.ouro-cheio {
+  background: linear-gradient(
+    180deg,
+    var(--ouro-claro) 0%,
+    var(--ouro) 46%,
+    var(--ouro-escuro) 100%
+  ) !important;
+  color: #17140a !important;
+  border: 1px solid rgba(0, 0, 0, 0.3) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 12px 28px -14px rgba(224, 177, 41, 0.85) !important;
+  transition:
+    filter 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.ouro-cheio:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 18px 34px -14px rgba(224, 177, 41, 0.95) !important;
+}
+
+.vidro {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: #f2f3f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(6px);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.vidro:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(224, 177, 41, 0.55) !important;
+  transform: translateY(-2px);
+}
+
+/* ---------- marcas correndo ---------- */
+
+.esteira {
+  display: flex;
+  width: max-content;
+  animation: correr 32s linear infinite;
+}
+
+.esteira:hover {
+  animation-play-state: paused;
+}
+
+@keyframes correr {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- risco dourado ---------- */
+
+.risco {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ouro-escuro) 18%,
+    var(--ouro) 50%,
+    var(--ouro-escuro) 82%,
+    transparent
+  );
+}
+
+/*
+ * Quem pediu menos movimento no sistema não recebe nenhum.
+ * Vale para o fundo, para a esteira e para a entrada dos
+ * blocos - acessibilidade não é opcional.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before,
+  .aurora::after,
+  .esteira {
+    animation: none;
+  }
+
+  .sobe {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .cartao,
+  .cartao:hover,
+  .ouro-cheio:hover,
+  .vidro:hover {
+    transform: none;
+  }
+}
