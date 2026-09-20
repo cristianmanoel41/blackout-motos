@@ -3,10 +3,15 @@ import Link from "next/link";
 import { Clock, MapPin, Phone } from "lucide-react";
 import { IconeRede } from "@/components/site/IconeRede";
 import {
+  IconeGoogleMaps,
+  IconeWaze,
+} from "@/components/site/IconeMapa";
+import {
   HORARIOS,
   LOJA,
   MAPA,
   MENU,
+  WAZE,
   REDES,
 } from "@/lib/dados/loja";
 
@@ -73,18 +78,33 @@ export default function Rodape() {
                 className="mt-0.5 shrink-0 texto-ouro"
               />
 
-              <a
-                href={MAPA}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="leading-6 transition hover:text-white"
-              >
+              <span className="leading-6">
                 {LOJA.endereco}
                 <br />
                 {LOJA.bairro}
                 <br />
                 {LOJA.cidade} - {LOJA.estado}
-              </a>
+                <br />
+                <a
+                  href={MAPA}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold texto-ouro transition hover:text-white"
+                >
+                  <IconeGoogleMaps className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                  Google Maps
+                </a>
+                {" · "}
+                <a
+                  href={WAZE}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold texto-ouro transition hover:text-white"
+                >
+                  <IconeWaze className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                  Waze
+                </a>
+              </span>
             </li>
 
             <li className="flex items-center gap-2.5">

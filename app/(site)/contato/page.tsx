@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Clock, MapPin, Phone } from "lucide-react";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
+import {
+  IconeGoogleMaps,
+  IconeWaze,
+} from "@/components/site/IconeMapa";
 import Avaliacoes from "@/components/site/Avaliacoes";
 import {
   CONVITE_GERAL,
@@ -8,6 +12,7 @@ import {
   linkWhatsApp,
   LOJA,
   MAPA,
+  WAZE,
 } from "@/lib/dados/loja";
 
 /*
@@ -35,16 +40,26 @@ export default function ContatoPage() {
         `${LOJA.cidade} - ${LOJA.estado}`,
         `CEP ${LOJA.cep}`,
       ],
-      acao: { nome: "Abrir no mapa", href: MAPA },
+      acoes: [
+        {
+          nome: "Google Maps",
+          href: MAPA,
+          Icone: IconeGoogleMaps,
+        },
+        { nome: "Waze", href: WAZE, Icone: IconeWaze },
+      ],
     },
     {
       Icone: Phone,
       titulo: "Telefone e WhatsApp",
       linhas: [`WhatsApp ${LOJA.whatsappExibicao}`, `Loja ${LOJA.telefone}`],
-      acao: {
-        nome: "Chamar no WhatsApp",
-        href: linkWhatsApp(CONVITE_GERAL),
-      },
+      acoes: [
+        {
+          nome: "Chamar no WhatsApp",
+          href: linkWhatsApp(CONVITE_GERAL),
+          Icone: IconeWhatsApp,
+        },
+      ],
     },
     {
       Icone: Clock,
@@ -53,7 +68,11 @@ export default function ContatoPage() {
         (item) => `${item.texto}: ${item.horas}`
       ),
       /* Horário não tem para onde clicar. */
-      acao: null as { nome: string; href: string } | null,
+      acoes: [] as Array<{
+        nome: string;
+        href: string;
+        Icone: (props: { className?: string }) => React.ReactElement;
+      }>,
     },
   ];
 
@@ -76,7 +95,7 @@ export default function ContatoPage() {
         </header>
 
         <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {canais.map(({ Icone, titulo, linhas, acao }) => (
+          {canais.map(({ Icone, titulo, linhas, acoes }) => (
             <article
               key={titulo}
               className="cartao-3d flex flex-col rounded-2xl p-5"
@@ -98,15 +117,21 @@ export default function ContatoPage() {
                 ))}
               </div>
 
-              {acao && (
-                <a
-                  href={acao.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="botao-vidro mt-5 flex items-center justify-center rounded-xl px-4 py-3 text-sm font-bold"
-                >
-                  {acao.nome}
-                </a>
+              {acoes.length > 0 && (
+                <div className="mt-5 grid gap-2">
+                  {acoes.map((item) => (
+                    <a
+                      key={item.nome}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="botao-vidro flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold"
+                    >
+                      <item.Icone className="h-4 w-4" />
+                      {item.nome}
+                    </a>
+                  ))}
+                </div>
               )}
             </article>
           ))}

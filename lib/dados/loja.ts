@@ -61,9 +61,27 @@ export const HORARIOS = [
 
 export const ENDERECO_COMPLETO = `${LOJA.endereco} · ${LOJA.bairro} · ${LOJA.cidade}/${LOJA.estado}`;
 
+/*
+ * Como chegar na loja.
+ *
+ * Dois aplicativos porque as pessoas usam os dois: quem já
+ * conhece a cidade costuma abrir o Waze pelo trânsito; quem
+ * é de fora abre o Maps. Oferecer só um manda metade dos
+ * clientes copiar o endereço na mão.
+ *
+ * Os dois buscam pelo nome e endereço, não por coordenada -
+ * assim o pino continua certo mesmo se a loja mudar de
+ * ponto e alguém esquecer de atualizar aqui.
+ */
+const ONDE = `${LOJA.nome} ${LOJA.endereco} ${LOJA.cidade} ${LOJA.estado}`;
+
 export const MAPA = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-  `${LOJA.endereco}, ${LOJA.cidade} ${LOJA.estado}`
+  ONDE
 )}`;
+
+export const WAZE = `https://waze.com/ul?q=${encodeURIComponent(
+  ONDE
+)}&navigate=yes`;
 
 /*
  * Redes sociais.
