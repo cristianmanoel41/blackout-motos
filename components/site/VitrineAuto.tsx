@@ -30,11 +30,21 @@ import {
  * moto comprido estouraria.
  *
  * Passar o dedo ou o mouse em cima segura a troca: ninguém
- * perde a moto que estava olhando. Quem pediu menos animação
- * no sistema vê a primeira e troca no ponto, se quiser.
+ * perde a moto que estava olhando. Arrastar para o lado passa
+ * a moto, como se faz em qualquer álbum de fotos - e o card
+ * acompanha o dedo, senão a pessoa não sabe se pegou.
+ *
+ * Quem pediu menos animação no sistema vê a primeira e troca
+ * no ponto, se quiser.
  */
 
 const TEMPO = 5000;
+
+/* Quanto o dedo precisa andar para valer como "passou". */
+const LIMITE = 55;
+
+/* O card não foge mais que isso, por mais que se arraste. */
+const TETO = 110;
 
 export default function VitrineAuto({
   motos,
@@ -47,6 +57,22 @@ export default function VitrineAuto({
 }) {
   const [atual, setAtual] = useState(0);
   const [parado, setParado] = useState(false);
+
+  /*
+   * Celular com "reduzir animações" ligado - e muito celular
+   * liga isso sozinho no modo economia de bateria. Antes a
+   * vitrine simplesmente não andava nesses aparelhos. Agora
+   * ela troca de moto do mesmo jeito; o que sai é a passagem
+   * suave, que é a animação de fato.
+   */
+  const [semEfeito, setSemEfeito] = useState(false);
+
+  useEffect(() => {
+    setSemEfeito(
+      window.matchMedia("(prefers-reduced-motion: reduce)")
+        .matches
+    );
+  }, []);
 
   const voltaSozinho = useRef(0);
 
@@ -81,14 +107,90 @@ export default function VitrineAuto({
     segurarUmPouco();
   }
 
+  /*
+   * Arrastar para o lado.
+   *
+   * Vale para dedo e para mouse, porque é o mesmo evento de
+   * ponteiro. O card anda junto enquanto se arrasta e volta
+   * sozinho se o movimento foi curto demais - sem isso o dedo
+   * some e nada acontece, e a pessoa acha que travou.
+   */
+  const partida = useRef<{ x: number; y: number } | null>(
+    null
+  );
+
+  const andou = useRef(false);
+
+  const [desvio, setDesvio] = useState(0);
+
+  function aoPegar(evento: React.PointerEvent) {
+    /* Botão do meio e da direita não arrastam nada. */
+    if (evento.pointerType === "mouse" && evento.button !== 0) {
+      return;
+    }
+
+    partida.current = {
+      x: evento.clientX,
+      y: evento.clientY,
+    };
+
+    andou.current = false;
+
+    /*
+     * Encostar não segura a vitrine. No celular, rolar a
+     * página passa o dedo por cima do card o tempo todo - se
+     * cada esbarrão pausasse, ela nunca mais trocaria de moto
+     * sozinha. Quem segura é o arrasto de verdade, lá embaixo.
+     */
+  }
+
+  function aoMover(evento: React.PointerEvent) {
+    if (!partida.current) return;
+
+    const dx = evento.clientX - partida.current.x;
+    const dy = evento.clientY - partida.current.y;
+
+    /*
+     * Mais para cima ou para baixo que para o lado: a pessoa
+     * está rolando a página, não passando moto. Larga o
+     * arrasto para não trancar a rolagem no celular.
+     */
+    if (!andou.current && Math.abs(dy) > Math.abs(dx)) {
+      partida.current = null;
+      setDesvio(0);
+      return;
+    }
+
+    if (Math.abs(dx) > 6 && !andou.current) {
+      andou.current = true;
+
+      /* Agora sim: a pessoa está passando moto na mão. */
+      segurarUmPouco();
+
+      /* Segura o ponteiro, senão o movimento se perde ao
+         sair de cima do card. */
+      evento.currentTarget.setPointerCapture(
+        evento.pointerId
+      );
+    }
+
+    setDesvio(Math.max(-TETO, Math.min(TETO, dx)));
+  }
+
+  function aoSoltar() {
+    const andado = desvio;
+
+    partida.current = null;
+    setDesvio(0);
+
+    if (Math.abs(andado) < LIMITE) return;
+
+    /* Arrastou para a esquerda: a próxima moto entra. */
+    irPara(andado < 0 ? atual + 1 : atual - 1);
+  }
+
   useEffect(() => {
     if (motos.length < 2 || parado) return;
-
-    const calmo = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    if (calmo) return;
 
     const relogio = window.setInterval(() => {
       setAtual((posicao) => (posicao + 1) % motos.length);
@@ -101,14 +203,36 @@ export default function VitrineAuto({
 
   return (
     <div
-      className="w-full"
+      className="w-full select-none touch-pan-y"
       onMouseEnter={() => setParado(true)}
       onMouseLeave={() => setParado(false)}
-      onTouchStart={segurarUmPouco}
       onFocusCapture={() => setParado(true)}
       onBlurCapture={() => setParado(false)}
+      onPointerDown={aoPegar}
+      onPointerMove={aoMover}
+      onPointerUp={aoSoltar}
+      onPointerCancel={aoSoltar}
+      onDragStart={(evento) => evento.preventDefault()}
+      /*
+       * Quem arrastou não quis clicar: sem isto, soltar o dedo
+       * em cima da foto abriria a ficha da moto.
+       */
+      onClickCapture={(evento) => {
+        if (!andou.current) return;
+
+        evento.preventDefault();
+        evento.stopPropagation();
+        andou.current = false;
+      }}
     >
-      <div className="grid">
+      <div
+        className={`grid ${
+          desvio === 0 ? "transition-transform duration-300" : ""
+        }`}
+        style={{
+          transform: `translateX(${desvio}px)`,
+        }}
+      >
         {motos.map((moto, posicao) => {
           const nome = nomeDaMoto(moto);
           const capa = capas[moto.id];
@@ -118,7 +242,11 @@ export default function VitrineAuto({
             <article
               key={moto.id}
               aria-hidden={!aberta}
-              className={`cartao-3d col-start-1 row-start-1 overflow-hidden rounded-3xl transition-opacity duration-700 ${
+              className={`cartao-3d col-start-1 row-start-1 overflow-hidden rounded-3xl ${
+                semEfeito
+                  ? ""
+                  : "transition-opacity duration-700"
+              } ${
                 aberta
                   ? "opacity-100"
                   : "pointer-events-none opacity-0"
