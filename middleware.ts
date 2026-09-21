@@ -60,6 +60,8 @@ export async function middleware(request: NextRequest) {
   const rotaEhPublica =
     SITE.includes(caminho) ||
     caminho.startsWith('/estoque/') ||
+    /* O cadastro da lista de interesse vem de visitante. */
+    caminho.startsWith('/api/interesse') ||
     /* Versao nova, so no localhost. */
     caminho.startsWith('/novo') ||
     caminho.startsWith('/diagnostico') ||

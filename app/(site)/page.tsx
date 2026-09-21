@@ -7,6 +7,8 @@ import CardMoto from "@/components/site/CardMoto";
 import Institucional from "@/components/site/Institucional";
 import Marcas from "@/components/site/Marcas";
 import Avaliacoes from "@/components/site/Avaliacoes";
+import AvisarNovidades from "@/components/site/AvisarNovidades";
+import { modelosDoEstoque } from "@/lib/dados/moto-site";
 
 /*
  * A home.
@@ -74,6 +76,11 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      <AvisarNovidades
+        origem="home"
+        sugestoes={modelosDoEstoque(motos)}
+      />
 
       <Institucional />
 

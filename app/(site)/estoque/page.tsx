@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import EstoqueFiltrado from "@/components/site/EstoqueFiltrado";
 import { LOJA } from "@/lib/dados/loja";
+import AvisarNovidades from "@/components/site/AvisarNovidades";
+import { modelosDoEstoque } from "@/lib/dados/moto-site";
 
 /*
  * O estoque completo.
@@ -30,36 +32,43 @@ export default async function EstoquePage() {
   });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:py-14">
-      <header className="mb-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.3em] texto-ouro">
-          Estoque disponível
-        </p>
+    <>
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:py-14">
+        <header className="mb-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em] texto-ouro">
+            Estoque disponível
+          </p>
 
-        <h1 className="mt-2 text-3xl font-black texto-claro sm:text-4xl">
-          {motos.length} moto
-          {motos.length === 1 ? "" : "s"} à pronta entrega
-        </h1>
+          <h1 className="mt-2 text-3xl font-black texto-claro sm:text-4xl">
+            {motos.length} moto
+            {motos.length === 1 ? "" : "s"} à pronta entrega
+          </h1>
 
-        <p className="mt-2 text-sm texto-suave">
-          Todas com foto, preço e ficha. Clique na moto para
-          ver a galeria completa.
-        </p>
-      </header>
+          <p className="mt-2 text-sm texto-suave">
+            Todas com foto, preço e ficha. Clique na moto para
+            ver a galeria completa.
+          </p>
+        </header>
 
-      {motos.length === 0 ? (
-        <article className="cartao-3d rounded-2xl p-10 text-center text-sm texto-suave">
-          Estamos renovando o estoque. Fale com a gente no
-          WhatsApp: chega moto nova toda semana.
-        </article>
-      ) : (
-        <EstoqueFiltrado
-          motos={motos}
-          slugs={slugs}
-          capas={fotos.capas}
-          totalFotos={totalFotos}
-        />
-      )}
-    </main>
+        {motos.length === 0 ? (
+          <article className="cartao-3d rounded-2xl p-10 text-center text-sm texto-suave">
+            Estamos renovando o estoque. Fale com a gente no
+            WhatsApp: chega moto nova toda semana.
+          </article>
+        ) : (
+          <EstoqueFiltrado
+            motos={motos}
+            slugs={slugs}
+            capas={fotos.capas}
+            totalFotos={totalFotos}
+          />
+        )}
+      </main>
+
+      <AvisarNovidades
+        origem="estoque"
+        sugestoes={modelosDoEstoque(motos)}
+      />
+    </>
   );
 }

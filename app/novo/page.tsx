@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import CardNovo from "@/components/novo/CardNovo";
+import AvisarNovidades from "@/components/site/AvisarNovidades";
+import { modelosDoEstoque } from "@/lib/dados/moto-site";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import {
   IconeGoogleMaps,
@@ -405,6 +407,11 @@ export default async function NovoPage() {
           </div>
         </section>
       </main>
+
+      <AvisarNovidades
+        origem="novo"
+        sugestoes={modelosDoEstoque(motos)}
+      />
 
       {/* ---------- RODAPÉ ---------- */}
 

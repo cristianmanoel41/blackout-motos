@@ -127,3 +127,50 @@ export function convitePelaMoto(moto: MotoSite) {
     preco ? ` anunciada por ${formatarMoeda(preco)}` : ""
   }.`;
 }
+
+/*
+ * Os modelos que a loja tem hoje, sem repetir.
+ *
+ * Serve de sugestão para quem escreve a moto que procura: a
+ * pessoa vê "Honda CG 160" e escreve o nome que a loja também
+ * usa, em vez de "cg 160 preta" - assim a procura casa com a
+ * moto quando ela chega.
+ */
+export function modelosDoEstoque(motos: MotoSite[]) {
+  const nomes = motos
+    .map((moto) =>
+      [moto.marca, moto.modelo].filter(Boolean).join(" ")
+    )
+    .filter(Boolean);
+
+  return Array.from(new Set(nomes)).sort();
+}
+
+function semAcento(texto: string) {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/*
+ * Se a moto que a pessoa procura tem a ver com esta moto.
+ *
+ * Compara palavra a palavra, sem acento e sem caixa: "cg 160"
+ * casa com "Honda CG 160 Fan". Letra solta fica de fora, senão
+ * um "a" perdido casaria com o estoque inteiro.
+ */
+export function procuraCombina(
+  procura: string | null,
+  moto: MotoSite
+) {
+  const termos = semAcento(procura || "")
+    .split(/[^a-z0-9]+/)
+    .filter((palavra) => palavra.length > 1);
+
+  if (termos.length === 0) return false;
+
+  const nome = semAcento(nomeDaMoto(moto));
+
+  return termos.every((palavra) => nome.includes(palavra));
+}
