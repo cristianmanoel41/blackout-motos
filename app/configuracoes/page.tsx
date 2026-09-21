@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import ConexaoOlx from "@/components/ConexaoOlx";
+import ConexaoTikTok from "@/components/ConexaoTikTok";
 
 import { useEffect, useState } from "react";
 import {
@@ -355,6 +356,16 @@ export default function ConfiguracoesPage() {
             }
           >
             <ConexaoOlx />
+          </Suspense>
+
+          <Suspense
+            fallback={
+              <section className="rounded-2xl border border-grafite-claro bg-grafite p-6 text-sm text-texto-suave">
+                Carregando...
+              </section>
+            }
+          >
+            <ConexaoTikTok />
           </Suspense>
 
           {/* SALVAR */}

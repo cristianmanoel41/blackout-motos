@@ -10,6 +10,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Camera,
+  Check,
+  Send,
   Star,
   Trash2,
   Upload,
@@ -316,6 +318,45 @@ export default function FotosMoto({
     await carregar();
   }
 
+  /*
+   * Mandar o vídeo para o rascunho do TikTok.
+   *
+   * Vai só o arquivo: som, capa e texto se escolhem no
+   * aplicativo, que é onde o post de fato acontece. A legenda
+   * continua no bloco de baixo, para copiar e colar.
+   */
+  const [mandando, setMandando] = useState("");
+  const [mandado, setMandado] = useState<string[]>([]);
+
+  async function mandarParaOTikTok(foto: Foto) {
+    setErro("");
+    setMandando(foto.id);
+
+    try {
+      const resposta = await fetch("/api/tiktok/rascunho", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fotoId: foto.id }),
+      });
+
+      const dados = await resposta.json().catch(() => null);
+
+      if (!resposta.ok || dados?.ok !== true) {
+        throw new Error(
+          dados?.error || "Não deu para mandar o vídeo."
+        );
+      }
+
+      setMandado((antes) => [...antes, foto.id]);
+    } catch (e: any) {
+      setErro(
+        e?.message || "Não deu para mandar o vídeo ao TikTok."
+      );
+    } finally {
+      setMandando("");
+    }
+  }
+
   return (
     <div className="rounded-xl border border-grafite-claro bg-grafite p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -436,6 +477,30 @@ export default function FotosMoto({
                 </div>
 
                 <div className="flex items-center gap-1">
+                  {ehVideo(foto) && (
+                    <button
+                      type="button"
+                      disabled={mandando === foto.id}
+                      onClick={() => mandarParaOTikTok(foto)}
+                      title="Manda o arquivo para os rascunhos do TikTok da loja. O post você termina no aplicativo."
+                      className="inline-flex items-center gap-1.5 rounded border border-grafite-claro px-2 py-1.5 text-[11px] font-semibold text-texto-suave transition hover:border-dourado hover:text-dourado disabled:opacity-50"
+                    >
+                      {mandado.includes(foto.id) ? (
+                        <>
+                          <Check size={12} />
+                          No rascunho
+                        </>
+                      ) : (
+                        <>
+                          <Send size={12} />
+                          {mandando === foto.id
+                            ? "Mandando..."
+                            : "Mandar ao TikTok"}
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   {!foto.principal && !ehVideo(foto) && (
                     <button
                       type="button"
