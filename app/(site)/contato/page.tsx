@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Clock, MapPin, Phone } from "lucide-react";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
-import {
-  IconeGoogleMaps,
-  IconeWaze,
-} from "@/components/site/IconeMapa";
+import { IconeGoogleMaps, IconeWaze } from "@/components/site/IconeMapa";
 import Avaliacoes from "@/components/site/Avaliacoes";
 import {
   CONVITE_GERAL,
@@ -64,9 +61,7 @@ export default function ContatoPage() {
     {
       Icone: Clock,
       titulo: "Horário de atendimento",
-      linhas: HORARIOS.map(
-        (item) => `${item.texto}: ${item.horas}`
-      ),
+      linhas: HORARIOS.map((item) => `${item.texto}: ${item.horas}`),
       /* Horário não tem para onde clicar. */
       acoes: [] as Array<{
         nome: string;
@@ -98,19 +93,38 @@ export default function ContatoPage() {
           {canais.map(({ Icone, titulo, linhas, acoes }) => (
             <article
               key={titulo}
+              /*
+               * Cartão enxuto: o ícone fica na mesma linha do
+               * título, e não acima dele. Poupa uma faixa de
+               * altura e deixa a informação subir - o que
+               * importa aqui é o endereço, não a moldura.
+               */
               className="cartao-3d flex flex-col rounded-2xl p-5"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
-                <Icone size={20} className="texto-ouro" />
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
+                  <Icone size={18} className="texto-ouro" />
+                </span>
 
-              <h2 className="mt-4 text-base font-bold texto-claro">{titulo}</h2>
+                <h2 className="text-[15px] font-bold uppercase tracking-wide texto-claro">
+                  {titulo}
+                </h2>
+              </div>
 
-              <div className="mt-2 flex-1 space-y-0.5">
-                {linhas.map((linha) => (
+              {/*
+               * A primeira linha é a que a pessoa procura -
+               * a rua, o WhatsApp, o dia de semana -, então
+               * vem maior e mais clara que o resto.
+               */}
+              <div className="mt-4 flex-1 space-y-1">
+                {linhas.map((linha, ordem) => (
                   <p
                     key={linha}
-                    className="break-words text-sm leading-6 texto-suave"
+                    className={`break-words leading-6 ${
+                      ordem === 0
+                        ? "text-[17px] font-semibold texto-claro"
+                        : "text-[15px] texto-suave"
+                    }`}
                   >
                     {linha}
                   </p>
@@ -118,14 +132,18 @@ export default function ContatoPage() {
               </div>
 
               {acoes.length > 0 && (
-                <div className="mt-5 grid gap-2">
+                <div
+                  className={`mt-5 grid gap-2 ${
+                    acoes.length > 1 ? "grid-cols-2" : ""
+                  }`}
+                >
                   {acoes.map((item) => (
                     <a
                       key={item.nome}
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="botao-vidro flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold"
+                      className="botao-vidro flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-bold"
                     >
                       <item.Icone className="h-4 w-4" />
                       {item.nome}
