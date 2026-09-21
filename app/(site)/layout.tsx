@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./site.css";
 import { fonteSite } from "@/lib/fonte-site";
+import { Analytics } from "@vercel/analytics/next";
 import Cabecalho from "@/components/site/Cabecalho";
 import Rodape from "@/components/site/Rodape";
 import {
@@ -127,6 +128,19 @@ export default function SiteLayout({
       {children}
 
       <Rodape />
+
+      {/*
+        * A contagem de acessos, da propria Vercel.
+        *
+        * So no site: o sistema da loja fica de fora, senao o
+        * dia inteiro de trabalho de voces entraria na conta e
+        * o numero de visitante deixaria de valer.
+        *
+        * Nao usa cookie e nao segue ninguem de site em site,
+        * entao nao pede aviso de cookies. Nada roda no
+        * localhost - so no que esta publicado.
+        */}
+      <Analytics />
     </div>
   );
 }
