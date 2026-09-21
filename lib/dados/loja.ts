@@ -139,7 +139,7 @@ export const GOOGLE = {
    */
   placeId: "ChIJJQFbMn9LzJQR7m8nkBQoDUM",
 
-  perfil: "https://g.page/r/Ce5vJ5AUKA1DEAI",
+  perfil: `https://search.google.com/local/reviews?placeid=ChIJJQFbMn9LzJQR7m8nkBQoDUM`,
   avaliar: "https://g.page/r/Ce5vJ5AUKA1DEAI/review",
 
   /*
