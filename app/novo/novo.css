@@ -330,3 +330,31 @@
     transform: none;
   }
 }
+
+/*
+ * A letra do site.
+ *
+ * Uma família só, do título ao rodapé, com o peso fazendo a
+ * hierarquia - é assim que as vitrines grandes fazem, e é o
+ * que dá o ar de loja e não de planilha.
+ *
+ * Título grande pede letra mais junta: no tamanho de manchete,
+ * o espaço que serve para ler um parágrafo vira buraco entre
+ * as letras. Quem já tem tracking escolhido na tela fica como
+ * está - lá o espaçamento largo é de propósito.
+ */
+
+.novo {
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.novo :is(h1, h2, h3):not([class*="tracking"]) {
+  letter-spacing: -0.03em;
+}
+
+/* Preço e número de destaque também são manchete. */
+.novo :is(.tabular-nums, .preco):not([class*="tracking"]) {
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}

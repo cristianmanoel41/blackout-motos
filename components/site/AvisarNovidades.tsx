@@ -128,7 +128,22 @@ export default function AvisarNovidades({
           </span>
 
           <h2 className="mt-5 text-2xl font-black uppercase leading-tight texto-claro sm:text-3xl">
-            Não achou a moto <span className="texto-ouro">certa?</span>
+            {/*
+             * No estoque a pergunta cabe: a pessoa acabou de
+             * procurar. Na home ela ainda não procurou nada, e
+             * perguntar se não achou soaria estranho.
+             */}
+            {origem === "estoque" ? (
+              <>
+                Não achou a moto{" "}
+                <span className="texto-ouro">certa?</span>
+              </>
+            ) : (
+              <>
+                Saiba antes de{" "}
+                <span className="texto-ouro">todo mundo</span>
+              </>
+            )}
           </h2>
 
           <p className="mt-3 max-w-md text-sm leading-7 texto-suave">

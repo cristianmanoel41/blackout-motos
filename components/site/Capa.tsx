@@ -5,13 +5,17 @@ import {
   linkWhatsApp,
 } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
+import TituloAnimado from "@/components/site/TituloAnimado";
+import VitrineAuto from "@/components/site/VitrineAuto";
+import { type MotoSite } from "@/lib/dados/moto-site";
 
 /*
  * A capa do site.
  *
- * Fundo preto, sem foto. A moto de fundo competia com os
- * cards logo abaixo, que são o que interessa - e foto atrás
- * de texto sempre custa legibilidade.
+ * Fundo preto, sem foto de banner. A moto de fundo competia
+ * com o texto, e foto atrás de letra sempre custa leitura.
+ * O que se mexe aqui é o estoque de verdade: à direita as
+ * últimas motos que entraram, passando sozinhas.
  *
  * Fica só o brilho dourado suave, que dá profundidade sem
  * disputar atenção.
@@ -19,18 +23,34 @@ import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 
 export default function Capa({
   motos,
+  destaques = [],
+  slugs = {},
+  capas = {},
 }: {
   motos: number;
+  destaques?: MotoSite[];
+  slugs?: Record<string, string>;
+  capas?: Record<string, string>;
 }) {
   return (
     <section className="brilho-capa relative isolate overflow-hidden border-b border-white/[.07] bg-[#0a0a0c]">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:py-24 lg:py-32">
+      {/*
+        * Avisa a página que tem JS antes do primeiro quadro,
+        * para o título não aparecer escrito e sumir um
+        * instante depois para ser digitado.
+        */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.dataset.js="sim"`,
+        }}
+      />
+
+      <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:py-28">
         <div className="max-w-xl">
           <h1 className="text-4xl font-black uppercase leading-[1.05] tracking-tight texto-claro sm:text-6xl">
             Sua próxima
             <br />
-            <span className="texto-ouro">moto</span> está
-            aqui
+            <TituloAnimado />
           </h1>
 
           <p className="mt-5 max-w-md text-sm leading-7 texto-suave sm:text-base">
@@ -68,6 +88,20 @@ export default function Capa({
             </p>
           )}
         </div>
+
+        {destaques.length > 0 ? (
+          <VitrineAuto
+            motos={destaques}
+            slugs={slugs}
+            capas={capas}
+          />
+        ) : (
+          /* Sem moto com foto, a capa nao fica com um buraco. */
+          <article className="cartao-3d rounded-3xl p-10 text-center text-sm leading-7 texto-suave">
+            Estamos renovando o estoque. Fale com a gente no
+            WhatsApp: chega moto nova toda semana.
+          </article>
+        )}
       </div>
     </section>
   );

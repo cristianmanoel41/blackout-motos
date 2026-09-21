@@ -197,3 +197,77 @@ body.foto-aberta header {
   );
   pointer-events: none;
 }
+
+/*
+ * A letra do site.
+ *
+ * Uma família só, do título ao rodapé, com o peso fazendo a
+ * hierarquia - é assim que as vitrines grandes fazem, e é o
+ * que dá o ar de loja e não de planilha.
+ *
+ * Título grande pede letra mais junta: no tamanho de manchete,
+ * o espaço que serve para ler um parágrafo vira buraco entre
+ * as letras. Quem já tem tracking escolhido na tela fica como
+ * está - lá o espaçamento largo é de propósito.
+ */
+
+.site-blackout {
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.site-blackout :is(h1, h2, h3):not([class*="tracking"]) {
+  letter-spacing: -0.03em;
+}
+
+/* Preço e número de destaque também são manchete. */
+.site-blackout :is(.tabular-nums, .preco):not([class*="tracking"]) {
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * O título que se escreve sozinho.
+ *
+ * Enquanto a página não sabe que tem JS, a frase fica escrita:
+ * é o que o buscador lê e o que aparece se o script não
+ * carregar. Assim que o JS se anuncia, ela some por um
+ * instante e volta com a classe "pronto", já sendo digitada.
+ *
+ * É visibility, não display: a linha continua ocupando o
+ * lugar dela e nada pula quando o texto começa.
+ */
+
+html[data-js="sim"] .titulo-escreve {
+  visibility: hidden;
+}
+
+html[data-js="sim"] .titulo-escreve.pronto {
+  visibility: visible;
+}
+
+/* O risco que acompanha a escrita, como numa máquina. */
+.cursor-escrita {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.82em;
+  margin-left: 0.06em;
+  vertical-align: -0.06em;
+  background: var(--ouro);
+}
+
+.cursor-escrita.piscando {
+  animation: pisca-cursor 1.1s steps(1, end) infinite;
+}
+
+@keyframes pisca-cursor {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-escrita {
+    display: none;
+  }
+}

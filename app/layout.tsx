@@ -25,8 +25,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  /*
+   * A capa do site marca aqui que a pagina tem JS, antes do
+   * primeiro quadro, para o titulo nao aparecer escrito e ser
+   * apagado em seguida para ser digitado. Isso acontece antes
+   * da hidratacao, entao o React veria uma etiqueta a mais no
+   * <html> e acusaria diferenca - so nesta etiqueta.
+   */
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
         className={`
           ${geistSans.variable}

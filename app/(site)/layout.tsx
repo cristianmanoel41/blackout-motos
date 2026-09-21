@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./site.css";
+import { fonteSite } from "@/lib/fonte-site";
 import Cabecalho from "@/components/site/Cabecalho";
 import Rodape from "@/components/site/Rodape";
 import {
@@ -104,7 +105,9 @@ export default function SiteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="site-blackout min-h-screen">
+    <div
+      className={`${fonteSite.variable} site-blackout min-h-screen`}
+    >
       <style>{`
         html, body {
           background-color: #0a0a0c;
