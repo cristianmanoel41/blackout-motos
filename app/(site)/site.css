@@ -161,6 +161,17 @@ body.foto-aberta header {
   border-color: rgba(224, 177, 41, 0.5) !important;
 }
 
+/* Fio discreto acima da linha de direitos autorais. */
+.risco-rodape {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(224, 177, 41, 0.35) 30%,
+    rgba(224, 177, 41, 0.35) 70%,
+    transparent
+  );
+}
+
 /* Risco dourado que separa as seções. */
 .faixa-ouro {
   background: linear-gradient(
