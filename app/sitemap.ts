@@ -33,6 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: "/financiamento", prioridade: 0.7 },
     { url: "/sobre", prioridade: 0.6 },
     { url: "/contato", prioridade: 0.6 },
+    { url: "/privacidade", prioridade: 0.2 },
+    { url: "/termos", prioridade: 0.2 },
   ].map((pagina) => ({
     url: `${ENDERECO}${pagina.url}`,
     lastModified: new Date(),

@@ -52,6 +52,10 @@ export async function middleware(request: NextRequest) {
     '/financiamento',
     '/sobre',
     '/contato',
+    /* Privacidade e termos: o TikTok e o Google leem estas
+       paginas de fora, sem login. */
+    '/privacidade',
+    '/termos',
     /* Buscador le estes dois sem login. */
     '/robots.txt',
     '/sitemap.xml',

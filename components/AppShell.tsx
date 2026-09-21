@@ -21,6 +21,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     '/financiamento',
     '/sobre',
     '/contato',
+    '/privacidade',
+    '/termos',
   ]
 
   const foraDoPainel =

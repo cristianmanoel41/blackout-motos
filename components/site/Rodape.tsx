@@ -201,6 +201,24 @@ export default function Rodape() {
           © {ANO} {LOJA.nome}. Todos os direitos reservados.
         </p>
 
+        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
+          <Link
+            href="/privacidade"
+            className="transition hover:texto-ouro"
+          >
+            Privacidade
+          </Link>
+
+          <span aria-hidden="true">·</span>
+
+          <Link
+            href="/termos"
+            className="transition hover:texto-ouro"
+          >
+            Termos de uso
+          </Link>
+        </p>
+
         <p className="texto-ouro">
           Qualidade hoje. Liberdade sempre.
         </p>
