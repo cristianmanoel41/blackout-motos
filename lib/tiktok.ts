@@ -53,11 +53,26 @@ export type Conta = {
   conectado_em: string | null;
 };
 
+/*
+ * Chave copiada da tela do TikTok costuma vir com espaço ou
+ * quebra de linha grudada. O TikTok recusa a autorização
+ * dizendo só "client_key", sem contar o motivo - então a
+ * limpeza acontece aqui, uma vez, para todo mundo.
+ */
+function doAmbiente(nome: string) {
+  return String(process.env[nome] || "").trim();
+}
+
+export function chave() {
+  return doAmbiente("TIKTOK_CLIENT_KEY");
+}
+
+export function segredo() {
+  return doAmbiente("TIKTOK_CLIENT_SECRET");
+}
+
 export function configurado() {
-  return Boolean(
-    process.env.TIKTOK_CLIENT_KEY &&
-      process.env.TIKTOK_CLIENT_SECRET
-  );
+  return Boolean(chave() && segredo());
 }
 
 /*
@@ -75,7 +90,7 @@ export function enderecoDeVolta() {
 
 export function enderecoDeAutorizacao(estado: string) {
   const busca = new URLSearchParams({
-    client_key: process.env.TIKTOK_CLIENT_KEY || "",
+    client_key: chave(),
     scope: ESCOPO,
     response_type: "code",
     redirect_uri: enderecoDeVolta(),
@@ -97,8 +112,8 @@ async function pedirToken(campos: Record<string, string>) {
       "Cache-Control": "no-cache",
     },
     body: new URLSearchParams({
-      client_key: process.env.TIKTOK_CLIENT_KEY || "",
-      client_secret: process.env.TIKTOK_CLIENT_SECRET || "",
+      client_key: chave(),
+      client_secret: segredo(),
       ...campos,
     }),
   });
