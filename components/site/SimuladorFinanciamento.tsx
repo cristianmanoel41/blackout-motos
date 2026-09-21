@@ -3,6 +3,9 @@
 import { useState } from "react";
 import CampoMoeda from "@/components/CampoMoeda";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
+import EscolherMoto, {
+  type MotoDaLista,
+} from "@/components/site/EscolherMoto";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { linkWhatsApp } from "@/lib/dados/loja";
 
@@ -79,9 +82,12 @@ const vazio = {
 
 export default function SimuladorFinanciamento({
   moto,
+  estoque = [],
 }: {
   /* Vem preenchido quando a pessoa clica numa moto. */
   moto?: string;
+  /* O que está no pátio hoje, para escolher da lista. */
+  estoque?: MotoDaLista[];
 }) {
   const [form, setForm] = useState({
     ...vazio,
@@ -276,17 +282,15 @@ export default function SimuladorFinanciamento({
         </div>
 
         <div className="sm:col-span-2">
-          <label className={rotulo} htmlFor="moto">
+          <span className={rotulo}>
             Moto de interesse{" "}
             <span className="font-normal">(opcional)</span>
-          </label>
+          </span>
 
-          <input
-            id="moto"
-            value={form.moto}
-            onChange={(e) => mudar("moto", e.target.value)}
-            placeholder="Ex.: Honda CG 160 Fan 2022"
-            className={campo}
+          <EscolherMoto
+            valor={form.moto}
+            aoEscolher={(nome) => mudar("moto", nome)}
+            estoque={estoque}
           />
         </div>
       </div>

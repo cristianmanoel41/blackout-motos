@@ -7,6 +7,12 @@ import {
   Wallet,
 } from "lucide-react";
 import SimuladorFinanciamento from "@/components/site/SimuladorFinanciamento";
+import { estoqueDoSite } from "@/lib/dados/estoque-site";
+import {
+  anoDaMoto,
+  nomeDaMoto,
+  precoDaMoto,
+} from "@/lib/dados/moto-site";
 import { LOJA } from "@/lib/dados/loja";
 
 /*
@@ -25,6 +31,8 @@ import { LOJA } from "@/lib/dados/loja";
  * Quando a pessoa vem de um anúncio, a moto chega pela URL
  * (?moto=...) e o campo já aparece preenchido.
  */
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Financiamento de motos",
@@ -65,6 +73,19 @@ export default async function FinanciamentoPage({
 }) {
   const { moto } = await searchParams;
 
+  /*
+   * A lista sai do estoque de verdade. Escolher da lista
+   * evita o que mais atrapalha na proposta: nome de moto
+   * escrito pela metade ou modelo que a loja nao tem.
+   */
+  const { motos, fotos } = await estoqueDoSite();
+
+  const doEstoque = motos.map((item) => ({
+    nome: `${nomeDaMoto(item)} ${anoDaMoto(item)}`,
+    preco: precoDaMoto(item),
+    capa: fotos.capas[item.id] || "",
+  }));
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
       <header className="text-center">
@@ -86,7 +107,10 @@ export default async function FinanciamentoPage({
       </header>
 
       <section className="mt-8">
-        <SimuladorFinanciamento moto={moto} />
+        <SimuladorFinanciamento
+          moto={moto}
+          estoque={doEstoque}
+        />
       </section>
 
       {/*

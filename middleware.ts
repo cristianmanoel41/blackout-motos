@@ -62,6 +62,7 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/estoque/') ||
     /* Versao nova, so no localhost. */
     caminho.startsWith('/novo') ||
+    caminho.startsWith('/diagnostico') ||
     caminho.startsWith('/vitrine') ||
     caminho.startsWith('/documentos/') ||
     caminho.startsWith('/recibos/')
