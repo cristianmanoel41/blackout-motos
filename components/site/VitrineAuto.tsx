@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   anoDaMoto,
   kmDaMoto,
@@ -67,6 +71,15 @@ export default function VitrineAuto({
     () => () => window.clearTimeout(voltaSozinho.current),
     []
   );
+
+  function irPara(posicao: number) {
+    const quantas = motos.length;
+
+    /* Passar da ultima volta para a primeira, e vice-versa. */
+    setAtual(((posicao % quantas) + quantas) % quantas);
+
+    segurarUmPouco();
+  }
 
   useEffect(() => {
     if (motos.length < 2 || parado) return;
@@ -167,15 +180,21 @@ export default function VitrineAuto({
       </div>
 
       {motos.length > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => irPara(atual - 1)}
+            aria-label="Moto anterior"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[.04] texto-claro transition hover:border-white/30 hover:bg-white/[.09]"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
           {motos.map((moto, posicao) => (
             <button
               key={moto.id}
               type="button"
-              onClick={() => {
-                setAtual(posicao);
-                segurarUmPouco();
-              }}
+              onClick={() => irPara(posicao)}
               aria-label={`Ver ${nomeDaMoto(moto)}`}
               aria-current={posicao === atual}
               className={`h-1.5 rounded-full transition-all duration-500 ${
@@ -185,6 +204,15 @@ export default function VitrineAuto({
               }`}
             />
           ))}
+
+          <button
+            type="button"
+            onClick={() => irPara(atual + 1)}
+            aria-label="Próxima moto"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[.04] texto-claro transition hover:border-white/30 hover:bg-white/[.09]"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       )}
     </div>
