@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Camera,
   Check,
+  ClipboardCopy,
   Send,
   Star,
   Trash2,
@@ -328,9 +329,64 @@ export default function FotosMoto({
   const [mandando, setMandando] = useState("");
   const [mandado, setMandado] = useState<string[]>([]);
 
+  /*
+   * A legenda não viaja com o arquivo: o TikTok só aceita
+   * texto no caminho que publica direto, que exige auditoria
+   * deles. Então ela vai pela área de transferência - no
+   * aplicativo é segurar o campo e colar.
+   *
+   * Se o navegador não deixar copiar (acontece no iPhone
+   * quando o clique já "esfriou"), o texto aparece na tela
+   * com um botão de copiar, em vez de sumir sem aviso.
+   */
+  const [legendaPronta, setLegendaPronta] = useState("");
+  const [legendaCopiada, setLegendaCopiada] = useState(false);
+
+  async function copiarTexto(texto: string) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function legendaDaMoto() {
+    try {
+      const resposta = await fetch("/api/legenda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          motorcycleId,
+          estilo: "chamada",
+        }),
+      });
+
+      const dados = await resposta.json().catch(() => null);
+
+      return String(dados?.legenda || "");
+    } catch {
+      return "";
+    }
+  }
+
   async function mandarParaOTikTok(foto: Foto) {
     setErro("");
     setMandando(foto.id);
+    setLegendaPronta("");
+    setLegendaCopiada(false);
+
+    /*
+     * A legenda é buscada e copiada ANTES do envio: o arquivo
+     * demora, e navegador nenhum deixa copiar muito tempo
+     * depois do clique.
+     */
+    const legenda = await legendaDaMoto();
+
+    if (legenda) {
+      setLegendaPronta(legenda);
+      setLegendaCopiada(await copiarTexto(legenda));
+    }
 
     try {
       const resposta = await fetch("/api/tiktok/rascunho", {
@@ -523,6 +579,35 @@ export default function FotosMoto({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {legendaPronta && (
+        <div className="mt-4 rounded-lg border border-dourado/40 bg-preto/40 p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-dourado">
+            <ClipboardCopy size={15} />
+            {legendaCopiada
+              ? "Legenda copiada - é só colar no TikTok"
+              : "Legenda pronta para copiar"}
+          </p>
+
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-texto-suave">
+            {legendaPronta}
+          </p>
+
+          {!legendaCopiada && (
+            <button
+              type="button"
+              onClick={async () =>
+                setLegendaCopiada(
+                  await copiarTexto(legendaPronta)
+                )
+              }
+              className="mt-3 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:opacity-90"
+            >
+              Copiar legenda
+            </button>
+          )}
         </div>
       )}
     </div>
