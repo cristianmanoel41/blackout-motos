@@ -295,7 +295,11 @@ export function respostaXml(xml: string) {
 
   return new Response(corpo, {
     headers: {
-      "Content-Type": "application/xml; charset=utf-8",
+      /*
+       * O tipo proprio de RSS, nao o generico de XML: e o
+       * que o leitor do Meta espera ver.
+       */
+      "Content-Type": "application/rss+xml; charset=utf-8",
       "Content-Length": String(corpo.byteLength),
       "Cache-Control":
         "public, max-age=600, s-maxage=600",
