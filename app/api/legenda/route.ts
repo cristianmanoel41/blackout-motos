@@ -18,11 +18,21 @@ export const dynamic = "force-dynamic";
 
 const QUEBRA = "\n";
 
-/* Sorteia um item da lista. */
-function sortear(opcoes: string[]) {
-  return opcoes[
-    Math.floor(Math.random() * opcoes.length)
-  ];
+/*
+ * Sorteia um item da lista, fugindo do que veio antes.
+ *
+ * Clicar de novo tem de trazer outra frase: se o sorteio
+ * repetir o que já estava na tela, o botão parece quebrado.
+ * Com uma opção só, não há o que fugir.
+ */
+function sortear(opcoes: string[], anterior = "") {
+  const livres = anterior
+    ? opcoes.filter((opcao) => !anterior.includes(opcao))
+    : opcoes;
+
+  const de = livres.length > 0 ? livres : opcoes;
+
+  return de[Math.floor(Math.random() * de.length)];
 }
 
 function moeda(valor: unknown) {
@@ -109,46 +119,198 @@ function tag(valor: unknown) {
   return texto ? `#${texto}` : "";
 }
 
+/*
+ * A que "família" a moto pertence, pelo nome do modelo.
+ *
+ * Não é classificação técnica: é o jeito como o cliente pensa
+ * a moto. Quem procura CG quer trabalhar; quem procura MT
+ * quer passear no fim de semana. A abertura muda conforme
+ * isso, senão toda moto vira "olha o que chegou".
+ */
+function familia(moto: any) {
+  const nome = [moto.marca, moto.modelo, moto.versao]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    /(pcx|nmax|n-max|burgman|elite|biz|pop|dafra|citycom|adv 150)/.test(
+      nome
+    )
+  ) {
+    return "scooter";
+  }
+
+  if (/(xre|lander|xtz|bros|falcon|tenere|himalayan|sahara)/.test(nome)) {
+    return "trail";
+  }
+
+  if (
+    /(mt-|mt 0|cb 5|cb 6|cb 3|twister|fazer|ninja|r3|z400|z900|hornet|xj6|srad|gsx|duke)/.test(
+      nome
+    )
+  ) {
+    return "esportiva";
+  }
+
+  if (/(cg|titan|fan|factor|ybr|start|sport 160|cargo)/.test(nome)) {
+    return "trabalho";
+  }
+
+  return "";
+}
+
+/*
+ * As aberturas do post.
+ *
+ * A lista é montada por moto: o que é verdade sobre ela entra,
+ * o resto fica de fora. Quanto mais coisa a ficha tem
+ * preenchida, mais variada fica a abertura - e é por isso que
+ * vale preencher km, único dono e chave reserva no cadastro.
+ *
+ * As frases genéricas ficam por último e são muitas de
+ * propósito: são elas que seguram a variedade quando a moto
+ * não tem nenhum destaque forte.
+ */
 function ganchos(moto: any, nome: string) {
   const km = Number(moto.quilometragem) || 0;
   const anoModelo = Number(moto.ano_modelo) || 0;
+  const cilindrada = Number(moto.cilindrada) || 0;
   const agora = new Date().getFullYear();
 
+  const modelo = moto.modelo || "dessas";
+  const cor = (moto.cor || "").toLowerCase();
+
   const lista: string[] = [];
+
+  /* ---------- quilometragem ---------- */
 
   if (km > 0 && km < 1500) {
     lista.push(
       "Essa aqui é praticamente zero.",
       `${km.toLocaleString("pt-BR")} km. Só isso.`,
-      "Nem amaciou direito e já tá aqui."
+      "Nem amaciou direito e já tá aqui.",
+      "Cheiro de nova ainda.",
+      "Zero de uso, preço de seminova."
     );
   } else if (km > 0 && km < 15000) {
     lista.push(
       "Rodou pouco e tá no ponto.",
-      "Pouquíssimo km pra idade dela."
+      "Pouquíssimo km pra idade dela.",
+      `Só ${km.toLocaleString("pt-BR")} km rodados.`,
+      "Andou o suficiente pra amaciar, e só."
+    );
+  } else if (km >= 15000 && km < 40000) {
+    lista.push(
+      "Km honesta e manutenção em dia.",
+      "Rodada na medida, sem susto."
     );
   }
+
+  /* ---------- ano ---------- */
 
   if (anoModelo >= agora) {
     lista.push(
       `${anoModelo} na loja. Sim, ${anoModelo}.`,
-      "Modelo novo, sem fila e sem espera."
+      "Modelo novo, sem fila e sem espera.",
+      "Zero quilômetro tem fila. Essa aqui, não.",
+      `Modelo ${anoModelo} disponível agora.`
+    );
+  } else if (anoModelo > 0 && agora - anoModelo <= 3) {
+    lista.push(
+      `${anoModelo} e conservada como se fosse de hoje.`,
+      "Novinha, e já sem o preço de novinha."
     );
   }
+
+  /* ---------- o que a ficha garante ---------- */
 
   if (moto.unico_dono) {
     lista.push(
       "Um dono só. Daqueles que cuidam.",
-      "Dono único, história inteira conhecida."
+      "Dono único, história inteira conhecida.",
+      "Primeiro dono, e dá pra ver."
     );
   }
 
-  /* Vale para qualquer moto, quando nada acima se aplica. */
+  if (moto.possui_manual && moto.possui_chave_reserva) {
+    lista.push(
+      "Com manual e chave reserva. Do jeito que tem que ser.",
+      "Completa: manual, chave reserva, tudo certo."
+    );
+  }
+
+  /* ---------- para que ela serve ---------- */
+
+  const tipo = familia(moto);
+
+  if (tipo === "trabalho") {
+    lista.push(
+      "Essa é pra trabalhar e não dar dor de cabeça.",
+      "Econômica, peça em qualquer canto, roda o dia todo.",
+      "A moto que paga ela mesma.",
+      "Pra quem precisa rodar todo dia."
+    );
+  } else if (tipo === "esportiva") {
+    lista.push(
+      "Essa é pra quem gosta de andar de moto.",
+      "Pro fim de semana valer a pena.",
+      "Barulho bom, postura boa.",
+      "Não é só transporte. É passeio."
+    );
+  } else if (tipo === "trail") {
+    lista.push(
+      "Asfalto, terra, buraco. Pra ela tanto faz.",
+      "Pra quem não escolhe caminho.",
+      "Alta, firme e sem medo de rua ruim."
+    );
+  } else if (tipo === "scooter") {
+    lista.push(
+      "Automática: só acelerar e ir.",
+      "Sem marcha, sem embreagem, sem stress no trânsito.",
+      "A mais prática que existe pra cidade."
+    );
+  }
+
+  if (cilindrada > 0 && cilindrada <= 160) {
+    lista.push(
+      "Primeira moto sem susto no bolso.",
+      "Gasta pouco e é fácil de pilotar."
+    );
+  } else if (cilindrada >= 300) {
+    lista.push(
+      `${cilindrada}cc pra estrada não ser sacrifício.`,
+      "Aguenta estrada sem reclamar."
+    );
+  }
+
+  /* ---------- cor, quando é cor que chama ---------- */
+
+  if (/(vermelh|azul|amarel|verde|laranja)/.test(cor)) {
+    lista.push(`Essa ${cor} não passa despercebida.`);
+  } else if (/(preta|preto)/.test(cor)) {
+    lista.push("Preta. Sempre funciona.");
+  }
+
+  /* ---------- servem para qualquer moto ---------- */
+
   lista.push(
-    `Quem tava esperando uma ${moto.modelo || "dessas"}, chegou.`,
+    `Quem tava esperando uma ${modelo}, chegou.`,
+    `Chegou ${modelo} no pátio.`,
     "Entrou hoje e já tá disponível.",
     "Essa não costuma ficar muito tempo parada.",
-    "Olha o que apareceu no pátio."
+    "Olha o que apareceu no pátio.",
+    "Novidade no pátio.",
+    "Entrou agora. Aproveita antes de sair.",
+    "Chegou, passou pela revisão e já tá pronta.",
+    "Pronta pra sair rodando hoje.",
+    "Documentação em dia, cautelar aprovada.",
+    "Dessas que a gente segura pouco tempo.",
+    "Se você tava procurando, é essa.",
+    "Deu entrada hoje e já tá disponível.",
+    "Tá no pátio e tá pronta.",
+    `Olha essa ${modelo} que entrou.`,
+    "Essa aqui vale a visita."
   );
 
   return lista;
@@ -185,6 +347,13 @@ export async function POST(requisicao: Request) {
   ].includes(corpo?.estilo)
     ? corpo.estilo
     : "chamada";
+
+  /*
+   * O que já estava na tela. Serve para o sorteio fugir do
+   * que a pessoa acabou de ler - é isso que faz clicar de
+   * novo valer a pena.
+   */
+  const anterior = String(corpo?.anterior || "");
 
   if (!motorcycleId) {
     return Response.json(
@@ -344,7 +513,7 @@ export async function POST(requisicao: Request) {
 
   if (estilo === "story") {
     const bloco = [
-      sortear(ganchos(moto, nome)),
+      sortear(ganchos(moto, nome), anterior),
       `${nome}${ano ? ` ${ano}` : ""}`,
     ];
 
@@ -389,7 +558,7 @@ export async function POST(requisicao: Request) {
     }
 
     const bloco = [
-      `🏍️ ${sortear(ganchos(moto, nome))}`,
+      `🏍️ ${sortear(ganchos(moto, nome), anterior)}`,
       "",
       `${nome}${ano ? ` ${ano}` : ""}`,
       ...itens,
@@ -412,7 +581,7 @@ export async function POST(requisicao: Request) {
   const linhas: string[] = [];
 
   if (estilo === "chamada") {
-    linhas.push(sortear(ganchos(moto, nome)));
+    linhas.push(sortear(ganchos(moto, nome), anterior));
     linhas.push(`${nome}${ano ? ` ${ano}` : ""}.`);
 
     /* Km baixa é argumento; km alta não precisa virar manchete. */
@@ -431,7 +600,7 @@ export async function POST(requisicao: Request) {
       linhas.push(`${destaque.join(" · ")}.`);
     }
 
-    linhas.push(sortear(FECHOS));
+    linhas.push(sortear(FECHOS, anterior));
   } else {
     linhas.push(`${nome}${ano ? ` ${ano}` : ""}`);
 
@@ -463,7 +632,7 @@ export async function POST(requisicao: Request) {
     if (preco) linhas.push(preco);
 
     linhas.push("");
-    linhas.push(sortear(FECHOS));
+    linhas.push(sortear(FECHOS, anterior));
   }
 
   const corpoTexto = linhas

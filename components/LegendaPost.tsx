@@ -212,6 +212,8 @@ export default function LegendaPost({
         body: JSON.stringify({
           motorcycleId,
           estilo,
+          /* O que está na tela, para não sortear igual. */
+          anterior: legenda,
         }),
       });
 
