@@ -34,6 +34,21 @@ export const metadata: Metadata = {
     default: `${LOJA.nome.toUpperCase()} | Motos Seminovas em ${LOJA.cidade}`,
     template: `%s | ${LOJA.nome.toUpperCase()}`,
   },
+
+  /*
+   * Prova ao Meta que este domínio é da loja.
+   *
+   * Sem isso ele recusa o catálogo inteiro: entende que os
+   * links das motos não são "do domínio da sua empresa" e não
+   * carrega item nenhum. Também é o que libera anúncio com
+   * link para o site.
+   */
+  verification: {
+    other: {
+      "facebook-domain-verification":
+        "y375blqoxqyb5qrls92mo7ssk6m187",
+    },
+  },
   description: `Motos selecionadas, financiamento e troca em ${LOJA.cidade}. Confira o estoque da ${LOJA.nome.toUpperCase()}.`,
   keywords: [
     "motos seminovas",
