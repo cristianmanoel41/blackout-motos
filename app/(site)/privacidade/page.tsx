@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ENDERECO_COMPLETO, LOJA } from "@/lib/dados/loja";
+import EscolhaCookies from "@/components/site/EscolhaCookies";
 
 /*
  * Política de privacidade.
@@ -107,6 +108,36 @@ export default function PrivacidadePage() {
           ninguém e não segue você por outros sites. Serve
           para sabermos se as motos estão sendo vistas.
         </p>
+      </Bloco>
+
+      <Bloco titulo="Cookies e anúncios">
+        <p>
+          Anunciamos no Facebook e no Instagram. Para saber
+          se o anúncio deu certo — e para não mostrar moto a
+          quem já comprou — usamos o{" "}
+          <strong className="texto-claro">
+            pixel do Meta
+          </strong>
+          , que grava um cookie e registra o que você fez
+          aqui: quais motos abriu, se clicou no WhatsApp, se
+          deixou contato.
+        </p>
+
+        <p>
+          <strong className="texto-claro">
+            Ele só entra em ação se você aceitar.
+          </strong>{" "}
+          Enquanto você não responde à tarja, e se você
+          recusar, nada é carregado e nada é medido — o site
+          funciona igual.
+        </p>
+
+        <p>
+          Mudou de ideia? O botão abaixo apaga sua resposta e
+          pergunta de novo.
+        </p>
+
+        <EscolhaCookies />
       </Bloco>
 
       <Bloco titulo="Com quem os dados ficam">

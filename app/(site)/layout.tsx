@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./site.css";
 import { fonteSite } from "@/lib/fonte-site";
 import { Analytics } from "@vercel/analytics/next";
+import Pixel from "@/components/site/Pixel";
 import Cabecalho from "@/components/site/Cabecalho";
 import Rodape from "@/components/site/Rodape";
 import {
@@ -141,6 +142,12 @@ export default function SiteLayout({
         * localhost - so no que esta publicado.
         */}
       <Analytics />
+
+      {/*
+        * O pixel do Meta e o aviso de cookies. Sem a
+        * variavel de ambiente, nao renderiza nada.
+        */}
+      <Pixel />
     </div>
   );
 }

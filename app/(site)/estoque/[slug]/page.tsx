@@ -9,6 +9,7 @@ import {
 import { motoPorSlug } from "@/lib/dados/estoque-site";
 import { galeriaOrdenada } from "@/lib/dados/fotos-site";
 import Galeria from "@/components/site/Galeria";
+import EventoMoto from "@/components/site/EventoMoto";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { linkWhatsApp, LOJA } from "@/lib/dados/loja";
 import {
@@ -143,6 +144,12 @@ export default async function MotoPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="min-w-0 lg:col-span-2">
+          <EventoMoto
+            id={moto.id}
+            nome={nome}
+            preco={numero(moto.preco_anunciado)}
+          />
+
           <Galeria fotos={fotos} nome={nome} />
         </section>
 

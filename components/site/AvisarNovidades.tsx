@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BellRing, Check } from "lucide-react";
+import { rastrear } from "@/components/site/Pixel";
 
 /*
  * Cadastro para ser avisado quando chega moto nova.
@@ -86,6 +87,14 @@ export default function AvisarNovidades({
       if (!resposta.ok || dados?.ok !== true) {
         throw new Error(dados?.error || "Não foi possível cadastrar.");
       }
+
+      /*
+       * Cadastro na lista e o evento mais valioso do site:
+       * e dele que o Meta aprende quem vale perseguir.
+       */
+      rastrear("Lead", {
+        content_name: procura.trim() || "moto nova",
+      });
 
       setPronto(true);
     } catch (e: any) {
