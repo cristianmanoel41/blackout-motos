@@ -68,6 +68,7 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/api/interesse') ||
     /* O Meta busca o catalogo sozinho, sem login. */
     caminho.startsWith('/api/meta/catalogo') ||
+    caminho === '/catalogo.xml' ||
     /* Versao nova, so no localhost. */
     caminho.startsWith('/novo') ||
     caminho.startsWith('/diagnostico') ||
