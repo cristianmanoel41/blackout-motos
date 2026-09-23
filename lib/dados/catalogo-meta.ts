@@ -163,9 +163,20 @@ export async function csvDoCatalogo() {
  * outro fica de pé para não quebrar quem já o usa.
  */
 export function respostaCsv(csv: string) {
-  return new Response(csv, {
+  const corpo = Buffer.from(csv, "utf8");
+
+  return new Response(corpo, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
+
+      /*
+       * Tamanho declarado, em vez de resposta em pedaços.
+       * Leitor de feed simples costuma recusar o que chega
+       * sem saber o tamanho, e o do Meta parece ser um
+       * deles.
+       */
+      "Content-Length": String(corpo.byteLength),
+
       "Content-Disposition":
         'inline; filename="catalogo-blackout.csv"',
       /*
