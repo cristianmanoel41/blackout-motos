@@ -236,18 +236,18 @@ export async function xmlDoCatalogo() {
     return [
       "    <item>",
       `      <g:id>${texto(moto.id)}</g:id>`,
-      `      <g:title>${texto(
+      `      <title>${texto(
         `${nomeDaMoto(moto)} ${anoDaMoto(moto)}`
-      )}</g:title>`,
-      `      <g:description>${texto(
+      )}</title>`,
+      `      <description>${texto(
         descricao(moto)
-      )}</g:description>`,
+      )}</description>`,
       `      <g:availability>in stock</g:availability>`,
       `      <g:condition>used</g:condition>`,
       `      <g:price>${texto(preco(moto))}</g:price>`,
-      `      <g:link>${texto(
+      `      <link>${texto(
         `${SITE}/estoque/${slugs[moto.id]}`
-      )}</g:link>`,
+      )}</link>`,
       `      <g:image_link>${texto(
         fotos.capas[moto.id] || ""
       )}</g:image_link>`,
