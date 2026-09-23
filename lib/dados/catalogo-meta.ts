@@ -188,3 +188,117 @@ export function respostaCsv(csv: string) {
     },
   });
 }
+
+/* ---------------------------------------------------------- */
+/* XML                                                         */
+/* ---------------------------------------------------------- */
+
+/*
+ * O mesmo catálogo em RSS.
+ *
+ * O leitor de CSV do Meta ignora as aspas e quebra a linha na
+ * primeira vírgula da descrição - o resultado é que link e
+ * foto vão parar na coluna errada e ele recusa tudo dizendo
+ * que "falta o link". Em XML cada campo é uma etiqueta, e não
+ * existe separador para errar.
+ */
+
+function texto(valor: unknown) {
+  return String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\r?\n/g, " ")
+    .trim();
+}
+
+export async function xmlDoCatalogo() {
+  const { motos, fotos, slugs } = await estoqueDoSite();
+
+  const itens = motos.map((moto) => {
+    const galeria = (fotos.galerias[moto.id] || []).filter(
+      (url) => url !== fotos.capas[moto.id]
+    );
+
+    const cilindrada = numero(moto.cilindrada);
+
+    const extras = galeria
+      .slice(0, 10)
+      .map(
+        (url) =>
+          `      <g:additional_image_link>${texto(
+            url
+          )}</g:additional_image_link>`
+      )
+      .join("\n");
+
+    return [
+      "    <item>",
+      `      <g:id>${texto(moto.id)}</g:id>`,
+      `      <g:title>${texto(
+        `${nomeDaMoto(moto)} ${anoDaMoto(moto)}`
+      )}</g:title>`,
+      `      <g:description>${texto(
+        descricao(moto)
+      )}</g:description>`,
+      `      <g:availability>in stock</g:availability>`,
+      `      <g:condition>used</g:condition>`,
+      `      <g:price>${texto(preco(moto))}</g:price>`,
+      `      <g:link>${texto(
+        `${SITE}/estoque/${slugs[moto.id]}`
+      )}</g:link>`,
+      `      <g:image_link>${texto(
+        fotos.capas[moto.id] || ""
+      )}</g:image_link>`,
+      extras,
+      `      <g:brand>${texto(
+        moto.marca || "Moto"
+      )}</g:brand>`,
+      `      <g:product_type>Motos</g:product_type>`,
+      `      <g:quantity_to_sell_on_facebook>1</g:quantity_to_sell_on_facebook>`,
+      `      <g:custom_label_0>${texto(
+        cilindrada ? `${cilindrada}cc` : ""
+      )}</g:custom_label_0>`,
+      `      <g:custom_label_1>${texto(
+        anoDaMoto(moto)
+      )}</g:custom_label_1>`,
+      `      <g:custom_label_2>${texto(
+        moto.marca || ""
+      )}</g:custom_label_2>`,
+      "    </item>",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">',
+    "  <channel>",
+    `    <title>${texto(
+      `${LOJA.nome.toUpperCase()} - estoque`
+    )}</title>`,
+    `    <link>${SITE}</link>`,
+    `    <description>${texto(
+      `Motos seminovas disponíveis na ${LOJA.nome}, ${LOJA.cidade}/${LOJA.estado}.`
+    )}</description>`,
+    ...itens,
+    "  </channel>",
+    "</rss>",
+    "",
+  ].join("\n");
+}
+
+export function respostaXml(xml: string) {
+  const corpo = Buffer.from(xml, "utf8");
+
+  return new Response(corpo, {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Content-Length": String(corpo.byteLength),
+      "Cache-Control":
+        "public, max-age=600, s-maxage=600",
+    },
+  });
+}
