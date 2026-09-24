@@ -21,6 +21,7 @@ import { nomeCurtoVendedor } from '@/lib/dados/vendedores'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import GraficoValores from '@/components/GraficoValores'
 import AcessosDoSite from './AcessosDoSite'
+import AnunciosMeta from './AnunciosMeta'
 import styles from './dashboard.module.css'
 
 type MotoParada = MotoResumo & {
@@ -467,6 +468,8 @@ export default async function DashboardPage() {
       </section>
 
       <AcessosDoSite />
+
+      <AnunciosMeta />
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.65fr_1fr]">
         <div className={styles.panel}>
