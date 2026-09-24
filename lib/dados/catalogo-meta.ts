@@ -39,6 +39,15 @@ function campo(valor: unknown) {
   const texto = String(valor ?? "")
     .replace(/\r?\n/g, " ")
     .replace(/"/g, '""')
+    /*
+     * Vírgula vira ponto médio.
+     *
+     * O leitor do Meta ignora as aspas e quebra a linha na
+     * primeira vírgula: o relatório de erro dele mostrou id
+     * e título certos e todo o resto deslocado uma coluna.
+     * Sem vírgula dentro do campo, não há como errar.
+     */
+    .replace(/,/g, " ·")
     .trim();
 
   return `"${texto}"`;
@@ -139,8 +148,14 @@ export async function csvDoCatalogo() {
         campo(preco(moto)),
         campo(`${SITE}/estoque/${slugs[moto.id]}`),
         campo(fotos.capas[moto.id] || ""),
-        /* Até 10 fotos extras, separadas por vírgula. */
-        campo(galeria.slice(0, 10).join(",")),
+        /*
+         * No CSV vai só a capa.
+         *
+         * As fotos extras seriam unidas por vírgula, e é
+         * justamente a vírgula que o leitor deles não sabe
+         * tratar. O XML leva todas.
+         */
+        campo(""),
         campo(moto.marca || "Moto"),
         campo("Motos"),
         /* Uma moto, uma unidade: não é loja de peça. */
@@ -236,18 +251,18 @@ export async function xmlDoCatalogo() {
     return [
       "    <item>",
       `      <g:id>${texto(moto.id)}</g:id>`,
-      `      <title>${texto(
+      `      <g:title>${texto(
         `${nomeDaMoto(moto)} ${anoDaMoto(moto)}`
-      )}</title>`,
-      `      <description>${texto(
+      )}</g:title>`,
+      `      <g:description>${texto(
         descricao(moto)
-      )}</description>`,
+      )}</g:description>`,
       `      <g:availability>in stock</g:availability>`,
       `      <g:condition>used</g:condition>`,
       `      <g:price>${texto(preco(moto))}</g:price>`,
-      `      <link>${texto(
+      `      <g:link>${texto(
         `${SITE}/estoque/${slugs[moto.id]}`
-      )}</link>`,
+      )}</g:link>`,
       `      <g:image_link>${texto(
         fotos.capas[moto.id] || ""
       )}</g:image_link>`,
