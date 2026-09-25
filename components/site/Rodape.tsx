@@ -121,6 +121,8 @@ export default function Rodape() {
                 <p className="text-[13px] leading-5 texto-suave">
                   {LOJA.bairro} · {LOJA.cidade}/
                   {LOJA.estado}
+                  <br />
+                  CEP {LOJA.cep}
                 </p>
 
                 <p className="mt-2 flex items-center gap-3">

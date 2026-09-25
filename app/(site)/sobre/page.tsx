@@ -275,8 +275,6 @@ export default function SobrePage() {
 
             <p className="mt-4 text-sm leading-7 texto-suave">
               {ENDERECO_COMPLETO}
-              <br />
-              CEP {LOJA.cep}
             </p>
 
             <div className="mt-6 border-t border-white/[.07] pt-5">

@@ -59,7 +59,13 @@ export const HORARIOS = [
   },
 ];
 
-export const ENDERECO_COMPLETO = `${LOJA.endereco} · ${LOJA.bairro} · ${LOJA.cidade}/${LOJA.estado}`;
+/*
+ * O endereco como se escreve num documento: com CEP.
+ *
+ * Ele aparece na privacidade, nos termos e nos dados que o
+ * Google le - lugares onde endereco pela metade nao serve.
+ */
+export const ENDERECO_COMPLETO = `${LOJA.endereco} · ${LOJA.bairro} · ${LOJA.cidade}/${LOJA.estado} · CEP ${LOJA.cep}`;
 
 /*
  * Como chegar na loja.
