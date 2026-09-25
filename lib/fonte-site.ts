@@ -37,7 +37,7 @@ export const fonteSite = Inter({
 });
 
 /*
- * A letra de cartaz, usada só na versão em provas.
+ * A letra de cartaz, do que grita na capa.
  *
  * Estreita e pesada, de placa de oficina: cabe mais palavra
  * na linha e dá presença ao nome da moto sem precisar de

@@ -1,5 +1,5 @@
 /*
- * A versão trabalhada - só no localhost, em /novo.
+ * O desenho da capa.
  *
  * O que dá ao site aquele ar de modelo pronto não é a fonte:
  * é tudo começar igual. Card com a mesma borda, seção atrás
@@ -31,12 +31,6 @@
 
   font-family: var(--fonte-site), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-.novo main {
-  background: transparent !important;
-  color: inherit !important;
-  isolation: auto !important;
 }
 
 /* ---------------------------------------------------------- */

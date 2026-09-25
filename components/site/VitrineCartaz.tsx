@@ -15,11 +15,9 @@ import {
 } from "@/lib/dados/moto-site";
 
 /*
- * A vitrine da versão trabalhada: um card só, as motos
- * passando sozinhas.
+ * A vitrine da capa: um card só, as motos passando sozinhas.
  *
- * Mesma ideia da capa do site no ar, com a roupa daqui -
- * moldura dourada, letra de cartaz no nome e no preço, foto
+ * Moldura dourada, letra de cartaz no nome e no preço, foto
  * de corte reto.
  *
  * Os cards ficam todos na mesma célula da grade, um por cima
@@ -35,7 +33,7 @@ const TEMPO = 5000;
 const LIMITE = 55;
 const TETO = 110;
 
-export default function VitrineNovo({
+export default function VitrineCartaz({
   motos,
   slugs,
   capas,

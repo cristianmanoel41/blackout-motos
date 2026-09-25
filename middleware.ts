@@ -70,7 +70,7 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/api/meta/catalogo') ||
     caminho === '/catalogo.xml' ||
     caminho === '/catalogo-minimo.csv' ||
-    /* Versao nova do site: no ar, mas fora do buscador. */
+    /* Endereco antigo da capa: entra e e mandado para "/". */
     caminho.startsWith('/novo') ||
     caminho.startsWith('/diagnostico') ||
     caminho.startsWith('/vitrine') ||

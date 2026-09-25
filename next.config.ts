@@ -30,6 +30,15 @@ const nextConfig: NextConfig = {
     "*.tail309103.ts.net",
   ],
 
+  /*
+   * A versao trabalhada morou em /novo enquanto era teste.
+   * Agora ela e a capa, e quem guardou o endereco antigo cai
+   * no lugar certo em vez de dar em pagina inexistente.
+   */
+  async redirects() {
+    return [{ source: "/novo", destination: "/", permanent: false }];
+  },
+
   images: {
     remotePatterns: hostSupabase
       ? [

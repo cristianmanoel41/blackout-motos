@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./site.css";
+import "./novo.css";
 import {
+  fonteCartaz,
   fonteSite,
   fonteTitulo,
 } from "@/lib/fonte-site";
@@ -126,7 +128,7 @@ export default function SiteLayout({
 }) {
   return (
     <div
-      className={`${fonteSite.variable} ${fonteTitulo.variable} site-blackout min-h-screen`}
+      className={`${fonteSite.variable} ${fonteTitulo.variable} ${fonteCartaz.variable} site-blackout min-h-screen`}
     >
       <style>{`
         html, body {
