@@ -17,6 +17,7 @@ export default function GlobalBackButton() {
     pathname.startsWith("/vitrine/") ||
     /* O site e do cliente: ele chegou pelo Google, nao de outra
        tela do sistema, e tem o proprio menu. */
+    pathname === "/novo" ||
     pathname === "/estoque" ||
     pathname.startsWith("/estoque/") ||
     pathname === "/financiamento" ||

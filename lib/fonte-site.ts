@@ -1,4 +1,4 @@
-import { Archivo, Inter } from "next/font/google";
+import { Anton, Archivo, Inter } from "next/font/google";
 
 /*
  * A letra do site: duas fontes, cada uma no seu trabalho.
@@ -34,4 +34,19 @@ export const fonteSite = Inter({
   weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--fonte-site",
+});
+
+/*
+ * A letra de cartaz, usada só na versão em provas.
+ *
+ * Estreita e pesada, de placa de oficina: cabe mais palavra
+ * na linha e dá presença ao nome da moto sem precisar de
+ * corpo gigante. Tem um peso só - é assim que ela foi
+ * desenhada.
+ */
+export const fonteCartaz = Anton({
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+  variable: "--fonte-cartaz",
 });

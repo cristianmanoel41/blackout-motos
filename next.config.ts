@@ -15,6 +15,21 @@ const hostSupabase = supabase
   : undefined;
 
 const nextConfig: NextConfig = {
+  /*
+   * Em desenvolvimento o Next só atende o endereço com que
+   * subiu. Para abrir o site do celular ou do notebook da loja
+   * - pela rede daqui ou pelo Tailscale - esses endereços
+   * precisam estar liberados, senão o CSS e o JS não chegam e
+   * a página aparece sem forma nenhuma.
+   *
+   * Vale só no dev: em produção o Next ignora esta lista.
+   */
+  allowedDevOrigins: [
+    "192.168.15.11",
+    "desktop-fap6db3.tail309103.ts.net",
+    "*.tail309103.ts.net",
+  ],
+
   images: {
     remotePatterns: hostSupabase
       ? [

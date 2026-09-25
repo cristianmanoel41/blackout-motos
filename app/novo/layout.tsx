@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import "./novo.css";
 import {
+  fonteCartaz,
   fonteSite,
   fonteTitulo,
 } from "@/lib/fonte-site";
 
 /*
- * Moldura da versão nova - só no localhost, em /novo.
+ * Moldura da versão nova, em /novo.
  *
- * Fora do buscador de propósito: enquanto ela é campo de
- * provas, não pode competir com o site de verdade nos
- * resultados de busca nem aparecer para cliente.
+ * Ela fica no ar junto com o site de sempre, mas fora do
+ * buscador de propósito: enquanto as duas existirem, a versão
+ * nova não pode disputar com a capa de verdade nos resultados
+ * de busca nem chegar ao cliente por acaso. Quem entra aqui
+ * entra pelo endereço, e ninguém mais.
  */
 
 export const metadata: Metadata = {
@@ -25,7 +28,7 @@ export default function NovoLayout({
 }) {
   return (
     <div
-      className={`${fonteSite.variable} ${fonteTitulo.variable} novo min-h-screen`}
+      className={`${fonteSite.variable} ${fonteTitulo.variable} ${fonteCartaz.variable} novo min-h-screen`}
     >
       <style>{`
         html, body {

@@ -1,38 +1,36 @@
 /*
- * Tema da versão nova do site - só no localhost, em /novo.
+ * A versão trabalhada - só no localhost, em /novo.
  *
- * O site no ar continua como está. Aqui é o campo de provas:
- * cards com profundidade de verdade, brilho que passa, entrada
- * suave ao rolar a página.
+ * O que dá ao site aquele ar de modelo pronto não é a fonte:
+ * é tudo começar igual. Card com a mesma borda, seção atrás
+ * de seção, tudo centralizado, espaçamento sempre o mesmo.
  *
- * Quase tudo é CSS puro, sem biblioteca de animação: no celular
- * da loja e do cliente, efeito bonito que trava vale menos que
- * efeito simples que corre liso.
+ * Aqui a régua é outra:
+ *
+ * - a foto sangra para fora do bloco, em vez de ficar presa
+ *   dentro de um cartão arredondado;
+ * - o preço manda na tela, com corpo de manchete;
+ * - as motos são numeradas, como peça de catálogo impresso;
+ * - o fundo tem grão, porque preto liso é tela de sistema;
+ * - a linha dourada corta, em vez de contornar.
+ *
+ * Nada de biblioteca de animação: no celular do cliente,
+ * efeito bonito que trava vale menos que efeito simples que
+ * corre liso.
  */
 
 .novo {
   --ouro: #e0b129;
   --ouro-claro: #f7dd8a;
-  --ouro-escuro: #a97800;
   --tinta: #08080a;
-  --carvao: #131318;
-  --carvao-claro: #1c1c23;
+  --carvao: #121216;
+  --fumaca: #9aa0a9;
 
   background: var(--tinta);
   color: #f2f3f5;
-}
 
-.novo .claro {
-  color: #f4f5f7 !important;
-}
-.novo .suave {
-  color: #9aa0a9 !important;
-}
-.novo .ouro {
-  color: var(--ouro) !important;
-}
-.novo .text-white {
-  color: #fff !important;
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .novo main {
@@ -41,95 +39,166 @@
   isolation: auto !important;
 }
 
-.novo input,
-.novo select {
-  background: #101014 !important;
-  color: #f2f3f5 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
-}
-
-.novo input::placeholder {
-  color: #6a7079 !important;
-}
-
-/* ---------- fundo vivo ---------- */
+/* ---------------------------------------------------------- */
+/* O QUE SE LÊ                                                 */
+/* ---------------------------------------------------------- */
 
 /*
- * Dois halos dourados girando bem devagar atrás do conteúdo.
- * Dão a sensação de profundidade sem imagem nenhuma - e imagem
- * de fundo era justamente o que competia com as motos.
+ * Cartaz para o que grita, texto para o que se lê. A de
+ * cartaz é estreita: aguenta manchete comprida sem quebrar a
+ * linha em celular.
  */
-.aurora {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
+.novo .cartaz {
+  font-family: var(--fonte-cartaz), Impact, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  line-height: 0.92;
 }
 
-.aurora::before,
-.aurora::after {
+.novo .rotulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: var(--ouro);
+}
+
+.novo .claro { color: #f4f5f7; }
+.novo .suave { color: var(--fumaca); }
+.novo .ouro { color: var(--ouro); }
+
+/*
+ * Número de peça de catálogo: grande, vazado, atrás do
+ * conteúdo. É o que dá ar de impresso e quebra a repetição
+ * dos cards.
+ */
+.novo .numero {
+  font-family: var(--fonte-cartaz), Impact, sans-serif;
+  font-size: clamp(3.5rem, 9vw, 7rem);
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(224, 177, 41, 0.35);
+  user-select: none;
+}
+
+/* ---------------------------------------------------------- */
+/* O FUNDO                                                     */
+/* ---------------------------------------------------------- */
+
+/*
+ * Grão por cima do preto.
+ *
+ * Preto liso é tela de sistema; papel e fotografia têm ruído.
+ * O grão é um SVG minúsculo repetido - não pesa nada e tira o
+ * aspecto de plástico do fundo.
+ */
+.novo .grao::before {
   content: "";
   position: absolute;
-  z-index: -1;
-  width: 60vw;
-  height: 60vw;
-  max-width: 820px;
-  max-height: 820px;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.5;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23r)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* O brilho dourado que sai de um canto só, nunca do meio. */
+.novo .brasa {
+  position: absolute;
+  width: 46rem;
+  height: 46rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(224, 177, 41, 0.16),
+    transparent 62%
+  );
+  filter: blur(10px);
   pointer-events: none;
 }
 
-.aurora::before {
-  top: -22%;
-  right: -12%;
-  background: radial-gradient(
-    circle,
-    rgba(224, 177, 41, 0.42),
-    transparent 68%
-  );
-  animation: vagar 26s ease-in-out infinite alternate;
-}
-
-.aurora::after {
-  bottom: -30%;
-  left: -18%;
-  background: radial-gradient(
-    circle,
-    rgba(169, 120, 0, 0.3),
-    transparent 70%
-  );
-  animation: vagar 34s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes vagar {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(-8%, 10%, 0) scale(1.18);
-  }
-}
-
-/* ---------- entrada ao rolar ---------- */
+/* ---------------------------------------------------------- */
+/* AS PEÇAS                                                    */
+/* ---------------------------------------------------------- */
 
 /*
- * A peça sobe e aparece quando entra na tela. Sem JavaScript:
- * `animation-timeline: view()` faz isso no próprio navegador.
- * Onde não houver suporte, o bloco já nasce visível - nunca
- * fica invisível por falta de recurso.
+ * A linha dourada corta, não contorna. Borda em volta fecha;
+ * risco embaixo conduz o olho para a próxima coisa.
  */
-.sobe {
-  animation: surgir both;
-  animation-timeline: view();
-  animation-range: entry 0% cover 28%;
+.novo .risco {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--ouro),
+    rgba(224, 177, 41, 0)
+  );
+}
+
+/*
+ * A foto sangra: sem borda arredondada, sem moldura. O corte
+ * reto é o que faz parecer página de revista em vez de card
+ * de biblioteca.
+ */
+.novo .sangra img {
+  transition: transform 0.7s ease;
+}
+
+.novo .sangra:hover img {
+  transform: scale(1.04);
+}
+
+.novo .botao {
+  background: linear-gradient(
+    180deg,
+    var(--ouro-claro),
+    var(--ouro)
+  );
+  color: #0b0b0d;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.novo .botao:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.novo .botao-linha {
+  border-bottom: 2px solid var(--ouro);
+  color: #f4f5f7;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+.novo .botao-linha:hover {
+  color: var(--ouro);
+}
+
+/* Campo de formulário combinando com o resto. */
+.novo input,
+.novo select {
+  background: #16161b !important;
+  color: #f2f3f5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.novo input::placeholder {
+  color: #6b7079 !important;
+}
+
+/* ---------------------------------------------------------- */
+/* ENTRADA                                                     */
+/* ---------------------------------------------------------- */
+
+.novo .sobe {
+  animation: surgir 0.7s ease both;
 }
 
 @keyframes surgir {
   from {
     opacity: 0;
-    transform: translateY(26px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -137,224 +206,195 @@
   }
 }
 
-/* ---------- cartão ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .novo .sobe {
+    animation: none;
+  }
 
-.cartao {
-  position: relative;
-  border-radius: 20px;
-  background: linear-gradient(
-    158deg,
-    var(--carvao-claro) 0%,
-    var(--carvao) 62%,
-    #0f0f13 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 24px 48px -28px rgba(0, 0, 0, 1);
-  transition:
-    transform 0.45s cubic-bezier(0.2, 0.7, 0.25, 1),
-    border-color 0.45s ease,
-    box-shadow 0.45s ease;
+  .novo .sangra:hover img {
+    transform: none;
+  }
 }
 
 /*
- * A borda dourada acende no hover com um degradê que vem do
- * canto - um risco de luz, não um contorno inteiro, que
- * pareceria botão selecionado.
+ * Moldura dourada, para o card da vitrine.
+ *
+ * O degradê é desenhado atrás e recortado na espessura da
+ * borda - é o jeito de ter borda com degradê, que o CSS não
+ * faz direto.
+ *
+ * A moldura é larga de propósito: 4px. Fio fino some contra o
+ * preto e no celular vira um risco sujo. Largura é o que faz a
+ * foto virar peça emoldurada, e é onde a luz tem espaço para
+ * correr e ser vista.
+ *
+ * Fica por cima da foto de propósito: a imagem ocupa o topo do
+ * card e, sem isso, tapa justamente o pedaço mais claro.
  */
-.cartao::after {
+
+/*
+ * O relevo.
+ *
+ * Sombra sozinha é mancha; o que levanta o card do fundo são
+ * três em cima da outra, como acontece com objeto de verdade:
+ * a de contato, escura e curta, logo embaixo da borda; a do
+ * meio, que dá o volume; e a longa e aberta, que é a peça
+ * pesando sobre a mesa. Mais o anel preto, que separa o ouro
+ * do fundo, e o halo dourado que a moldura devolve.
+ */
+.novo .moldura-ouro {
+  position: relative;
+  background: linear-gradient(160deg, #17171c 0%, #0d0d10 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.65),
+    0 3px 6px -1px rgba(0, 0, 0, 0.9),
+    0 16px 28px -12px rgba(0, 0, 0, 0.95),
+    0 46px 84px -34px rgba(0, 0, 0, 0.98),
+    0 0 80px -32px rgba(224, 177, 41, 0.5);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.35s ease;
+}
+
+.novo .moldura-ouro::before {
   content: "";
   position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
+  inset: 0;
+  padding: 4px;
+
+  /*
+   * A faixa é maior que o card e anda de um lado ao outro:
+   * é o reflexo passando pela borda, como em metal polido.
+   * Um degradê parado é adesivo; este tem hora clara e hora
+   * apagada, e é isso que faz parecer luz.
+   */
   background: linear-gradient(
-    135deg,
-    rgba(224, 177, 41, 0.8),
-    transparent 42%,
-    transparent 62%,
-    rgba(224, 177, 41, 0.35)
+    115deg,
+    rgba(224, 177, 41, 0.5) 0%,
+    rgba(250, 232, 170, 1) 16%,
+    rgba(224, 177, 41, 0.72) 32%,
+    rgba(224, 177, 41, 0.42) 50%,
+    rgba(250, 232, 170, 0.95) 68%,
+    rgba(224, 177, 41, 0.68) 84%,
+    rgba(224, 177, 41, 0.5) 100%
   );
+  background-size: 260% 260%;
+  animation: luz-na-borda 9s ease-in-out infinite;
+
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.45s ease;
   pointer-events: none;
-}
-
-.cartao:hover {
-  transform: translateY(-8px);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.07) inset,
-    0 36px 64px -30px rgba(0, 0, 0, 1),
-    0 0 44px -18px rgba(224, 177, 41, 0.45);
-}
-
-.cartao:hover::after {
-  opacity: 1;
-}
-
-/* A foto respira devagar quando o cartão é apontado. */
-.cartao .foto {
-  transition: transform 0.75s cubic-bezier(0.2, 0.7, 0.25, 1);
-}
-
-.cartao:hover .foto {
-  transform: scale(1.07);
+  z-index: 2;
 }
 
 /*
- * Brilho que atravessa a foto no hover. É o detalhe que dá
- * aparência de vitrine, e custa uma transformação só.
+ * O fio branco por dentro, encostado na moldura.
+ *
+ * Objeto real tem uma quina que pega a luz. Um fio de 1px
+ * basta: uma camada clara por cima da foto inteira lavaria a
+ * imagem, que é o que tem de ser visto aqui.
  */
-.cartao .reflexo {
+.novo .moldura-ouro::after {
+  content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 36%,
-    rgba(255, 255, 255, 0.16) 48%,
-    transparent 60%
-  );
-  transform: translateX(-120%);
-  transition: transform 0.85s ease;
+  inset: 4px 4px auto 4px;
+  height: 1px;
   pointer-events: none;
-}
-
-.cartao:hover .reflexo {
-  transform: translateX(120%);
-}
-
-/* ---------- botões ---------- */
-
-.ouro-cheio {
-  background: linear-gradient(
-    180deg,
-    var(--ouro-claro) 0%,
-    var(--ouro) 46%,
-    var(--ouro-escuro) 100%
-  ) !important;
-  color: #17140a !important;
-  border: 1px solid rgba(0, 0, 0, 0.3) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 12px 28px -14px rgba(224, 177, 41, 0.85) !important;
-  transition:
-    filter 0.3s ease,
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
-.ouro-cheio:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.45) inset,
-    0 18px 34px -14px rgba(224, 177, 41, 0.95) !important;
-}
-
-.vidro {
-  background: rgba(255, 255, 255, 0.045) !important;
-  color: #f2f3f5 !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  backdrop-filter: blur(6px);
-  transition:
-    background 0.3s ease,
-    border-color 0.3s ease,
-    transform 0.3s ease;
-}
-
-.vidro:hover {
-  background: rgba(255, 255, 255, 0.09) !important;
-  border-color: rgba(224, 177, 41, 0.55) !important;
-  transform: translateY(-2px);
-}
-
-/* ---------- marcas correndo ---------- */
-
-.esteira {
-  display: flex;
-  width: max-content;
-  animation: correr 32s linear infinite;
-}
-
-.esteira:hover {
-  animation-play-state: paused;
-}
-
-@keyframes correr {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/* ---------- risco dourado ---------- */
-
-.risco {
+  z-index: 2;
   background: linear-gradient(
     90deg,
-    transparent,
-    var(--ouro-escuro) 18%,
-    var(--ouro) 50%,
-    var(--ouro-escuro) 82%,
-    transparent
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0)
   );
 }
 
+@keyframes luz-na-borda {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 /*
- * Quem pediu menos movimento no sistema não recebe nenhum.
- * Vale para o fundo, para a esteira e para a entrada dos
- * blocos - acessibilidade não é opcional.
+ * No computador o card salta, como o do site antigo: sobe
+ * seis pontos e a sombra se abre junto - sombra parada com
+ * card subindo é o que denuncia efeito falso.
  */
+@media (hover: hover) {
+  .novo .moldura-ouro:hover {
+    transform: translateY(-6px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      0 0 0 1px rgba(0, 0, 0, 0.65),
+      0 5px 10px -2px rgba(0, 0, 0, 0.9),
+      0 26px 44px -16px rgba(0, 0, 0, 0.95),
+      0 64px 110px -38px rgba(0, 0, 0, 0.98),
+      0 0 90px -24px rgba(224, 177, 41, 0.75);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .aurora::before,
-  .aurora::after,
-  .esteira {
+  .novo .moldura-ouro::before {
     animation: none;
+    background-position: 30% 50%;
   }
 
-  .sobe {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-
-  .cartao,
-  .cartao:hover,
-  .ouro-cheio:hover,
-  .vidro:hover {
+  .novo .moldura-ouro:hover {
     transform: none;
   }
 }
 
 /*
- * A letra do site.
+ * Card com relevo - o mesmo que o site antigo tinha.
  *
- * Uma família só, do título ao rodapé, com o peso fazendo a
- * hierarquia - é assim que as vitrines grandes fazem, e é o
- * que dá o ar de loja e não de planilha.
+ * O relevo vem de três sombras somadas, não de uma: a curta e
+ * escura encosta o card no fundo, a do meio dá o volume e a
+ * longa é o peso. O fio branco no alto faz a borda de cima
+ * pegar luz, como quina de objeto de verdade.
  *
- * Título grande pede letra mais junta: no tamanho de manchete,
- * o espaço que serve para ler um parágrafo vira buraco entre
- * as letras. Quem já tem tracking escolhido na tela fica como
- * está - lá o espaçamento largo é de propósito.
+ * Canto reto, porque aqui é página de revista, não biblioteca
+ * de cards arredondados.
  */
-
-.novo {
-  font-family: var(--fonte-site), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+.novo .cartao-relevo {
+  position: relative;
+  background: linear-gradient(160deg, #17171c 0%, #0e0e12 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 3px 6px -1px rgba(0, 0, 0, 0.85),
+    0 16px 28px -12px rgba(0, 0, 0, 0.9),
+    0 40px 70px -32px rgba(0, 0, 0, 0.95);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
-.novo :is(h1, h2, h3):not([class*="tracking"]) {
-  letter-spacing: -0.03em;
+@media (hover: hover) {
+  .novo .cartao-relevo:hover {
+    transform: translateY(-6px);
+    border-color: rgba(224, 177, 41, 0.45);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.09) inset,
+      0 5px 10px -2px rgba(0, 0, 0, 0.85),
+      0 26px 44px -16px rgba(0, 0, 0, 0.92),
+      0 56px 96px -34px rgba(0, 0, 0, 0.96),
+      0 0 70px -30px rgba(224, 177, 41, 0.55);
+  }
 }
 
-/* Preço e número de destaque também são manchete. */
-.novo :is(.tabular-nums, .preco):not([class*="tracking"]) {
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
+@media (prefers-reduced-motion: reduce) {
+  .novo .cartao-relevo,
+  .novo .cartao-relevo:hover {
+    transform: none;
+    transition: none;
+  }
 }
