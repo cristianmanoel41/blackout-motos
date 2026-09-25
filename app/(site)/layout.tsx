@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./site.css";
-import { fonteSite } from "@/lib/fonte-site";
+import {
+  fonteSite,
+  fonteTitulo,
+} from "@/lib/fonte-site";
 import { Analytics } from "@vercel/analytics/next";
 import Pixel from "@/components/site/Pixel";
 import Cabecalho from "@/components/site/Cabecalho";
@@ -123,7 +126,7 @@ export default function SiteLayout({
 }) {
   return (
     <div
-      className={`${fonteSite.variable} site-blackout min-h-screen`}
+      className={`${fonteSite.variable} ${fonteTitulo.variable} site-blackout min-h-screen`}
     >
       <style>{`
         html, body {

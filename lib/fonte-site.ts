@@ -1,26 +1,37 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Archivo, Inter } from "next/font/google";
 
 /*
- * A letra do site.
+ * A letra do site: duas fontes, cada uma no seu trabalho.
  *
- * O painel interno continua na fonte do sistema - lá o que
- * importa é ler número e tabela. No site é diferente: a letra
- * é metade da impressão que a loja passa, e a do sistema
- * operacional deixa tudo com cara de documento.
+ * Fonte única fazendo tudo é o que dá ao site aquele ar de
+ * modelo pronto. Loja de verdade separa: uma família firme e
+ * larga para o que grita - nome da moto, preço, manchete - e
+ * outra sóbria e legível para o que se lê com calma.
  *
- * Plus Jakarta Sans é geométrica, de traço grosso no peso
- * alto, e é o mais perto que se acha em fonte aberta do que
- * as lojas grandes usam. Vem servida pelo próprio site, não
- * pelo Google: uma ida a menos a servidor de fora, e nada de
- * texto piscando ao carregar.
+ * ARCHIVO nos títulos: desenhada para cartaz e placa, tem
+ * peso sem ficar pesada e não se desmancha em caixa alta, que
+ * é como o site escreve os títulos.
  *
- * Os pesos são só os que o site usa. Cada peso a mais é
- * arquivo a mais para o celular do cliente baixar.
+ * INTER no texto: feita para tela, com letras que não se
+ * confundem entre si no tamanho pequeno. É o que a pessoa lê
+ * na rua, no meio do sol, decidindo comprar moto.
+ *
+ * As duas vêm servidas pelo próprio site, não pelo Google:
+ * uma ida a menos a servidor de fora e nada de texto piscando
+ * ao carregar. Só os pesos que o site usa - cada peso a mais
+ * é arquivo a mais para o celular do cliente baixar.
  */
 
-export const fonteSite = Plus_Jakarta_Sans({
+export const fonteTitulo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["600", "700", "800"],
+  display: "swap",
+  variable: "--fonte-titulo",
+});
+
+export const fonteSite = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--fonte-site",
 });

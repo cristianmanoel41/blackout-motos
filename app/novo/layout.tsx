@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./novo.css";
-import { fonteSite } from "@/lib/fonte-site";
+import {
+  fonteSite,
+  fonteTitulo,
+} from "@/lib/fonte-site";
 
 /*
  * Moldura da versão nova - só no localhost, em /novo.
@@ -21,7 +24,9 @@ export default function NovoLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${fonteSite.variable} novo min-h-screen`}>
+    <div
+      className={`${fonteSite.variable} ${fonteTitulo.variable} novo min-h-screen`}
+    >
       <style>{`
         html, body {
           background-color: #08080a;

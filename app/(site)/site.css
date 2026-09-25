@@ -201,14 +201,15 @@ body.foto-aberta header {
 /*
  * A letra do site.
  *
- * Uma família só, do título ao rodapé, com o peso fazendo a
- * hierarquia - é assim que as vitrines grandes fazem, e é o
- * que dá o ar de loja e não de planilha.
+ * Duas famílias, cada uma no seu trabalho: ARCHIVO no que
+ * grita - manchete, nome de moto, preço - e INTER no que se
+ * lê com calma. Uma família só fazendo tudo é o que dá ao
+ * site cara de modelo pronto.
  *
- * Título grande pede letra mais junta: no tamanho de manchete,
- * o espaço que serve para ler um parágrafo vira buraco entre
- * as letras. Quem já tem tracking escolhido na tela fica como
- * está - lá o espaçamento largo é de propósito.
+ * Título grande pede letra mais junta: no tamanho de
+ * manchete, o espaço que serve para ler um parágrafo vira
+ * buraco entre as letras. Quem já tem tracking escolhido na
+ * tela fica como está - lá o espaçamento largo é de propósito.
  */
 
 .site-blackout {
@@ -216,100 +217,63 @@ body.foto-aberta header {
   -webkit-font-smoothing: antialiased;
 }
 
-.site-blackout :is(h1, h2, h3):not([class*="tracking"]) {
-  letter-spacing: -0.03em;
+.site-blackout :is(h1, h2, h3),
+.site-blackout .fonte-titulo {
+  font-family: var(--fonte-titulo), var(--fonte-site), sans-serif;
 }
 
-/* Preço e número de destaque também são manchete. */
-.site-blackout :is(.tabular-nums, .preco):not([class*="tracking"]) {
+.site-blackout :is(h1, h2, h3):not([class*="tracking"]) {
   letter-spacing: -0.02em;
+}
+
+/*
+ * Preço e número de destaque também são manchete: entram na
+ * fonte de título, com dígito de largura fixa para a coluna
+ * de preços não dançar entre um card e outro.
+ */
+.site-blackout :is(.tabular-nums, .preco) {
+  font-family: var(--fonte-titulo), var(--fonte-site), sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
 /*
- * O título que se escreve sozinho.
+ * O tamanho.
  *
- * Enquanto a página não sabe que tem JS, a frase fica escrita:
- * é o que o buscador lê e o que aparece se o script não
- * carregar. Assim que o JS se anuncia, ela some por um
- * instante e volta com a classe "pronto", já sendo digitada.
+ * Um degrau acima do padrão do Tailwind, com a entrelinha
+ * junto - aumentar a letra sem abrir o espaço entre linhas
+ * aperta o parágrafo e piora o que se queria melhorar.
  *
- * É visibility, não display: a linha continua ocupando o
- * lugar dela e nada pula quando o texto começa.
- */
-
-html[data-js="sim"] .titulo-escreve {
-  visibility: hidden;
-}
-
-html[data-js="sim"] .titulo-escreve.pronto {
-  visibility: visible;
-}
-
-/* O risco que acompanha a escrita, como numa máquina. */
-.cursor-escrita {
-  display: inline-block;
-  width: 0.06em;
-  height: 0.82em;
-  margin-left: 0.06em;
-  vertical-align: -0.06em;
-  background: var(--ouro);
-}
-
-.cursor-escrita.piscando {
-  animation: pisca-cursor 1.1s steps(1, end) infinite;
-}
-
-@keyframes pisca-cursor {
-  0%, 45% { opacity: 1; }
-  50%, 95% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cursor-escrita {
-    display: none;
-  }
-}
-
-/*
- * Um ponto a mais em tudo que se lê.
- *
- * O texto do site estava pequeno para quem olha no celular,
- * no meio da rua, decidindo compra de moto. Aqui as medidas
- * do Tailwind ganham cerca de 8%, junto com a entrelinha -
- * aumentar a letra sem aumentar o espaço entre linhas deixa o
- * parágrafo apertado e piora a leitura.
- *
- * Só vale dentro do site: o painel da loja continua como
- * está, porque lá o que importa é caber tabela na tela.
- *
- * Os títulos não entram: já são grandes, e crescer mais
- * quebraria linha em celular pequeno.
+ * Só dentro do site: o painel da loja continua como está,
+ * porque lá o que importa é caber tabela na tela.
  */
 
 .site-blackout .text-xs {
-  font-size: 0.8125rem;
-  line-height: 1.15rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .site-blackout .text-sm {
-  font-size: 0.9375rem;
-  line-height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.6rem;
 }
 
 .site-blackout .text-base {
-  font-size: 1.0625rem;
-  line-height: 1.65rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
 }
 
 .site-blackout .text-lg {
-  font-size: 1.1875rem;
-  line-height: 1.8rem;
+  font-size: 1.25rem;
+  line-height: 1.85rem;
+}
+
+.site-blackout .text-xl {
+  font-size: 1.4rem;
+  line-height: 1.9rem;
 }
 
 /* As medidas escritas à mão, uma a uma. */
-.site-blackout [class*="text-[11px]"] { font-size: 12px; }
-.site-blackout [class*="text-[13px]"] { font-size: 14px; }
-.site-blackout [class*="text-[15px]"] { font-size: 16px; }
-.site-blackout [class*="text-[17px]"] { font-size: 18px; }
+.site-blackout [class*="text-[11px]"] { font-size: 13px; }
+.site-blackout [class*="text-[13px]"] { font-size: 15px; }
+.site-blackout [class*="text-[15px]"] { font-size: 17px; }
+.site-blackout [class*="text-[17px]"] { font-size: 19px; }
