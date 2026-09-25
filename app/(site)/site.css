@@ -248,23 +248,23 @@ body.foto-aberta header {
  */
 
 .site-blackout .text-xs {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.35rem;
 }
 
 .site-blackout .text-sm {
-  font-size: 1rem;
-  line-height: 1.6rem;
+  font-size: 1.0625rem;
+  line-height: 1.7rem;
 }
 
 .site-blackout .text-base {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  font-size: 1.1875rem;
+  line-height: 1.85rem;
 }
 
 .site-blackout .text-lg {
-  font-size: 1.25rem;
-  line-height: 1.85rem;
+  font-size: 1.35rem;
+  line-height: 1.95rem;
 }
 
 .site-blackout .text-xl {
@@ -273,7 +273,86 @@ body.foto-aberta header {
 }
 
 /* As medidas escritas à mão, uma a uma. */
-.site-blackout [class*="text-[11px]"] { font-size: 13px; }
-.site-blackout [class*="text-[13px]"] { font-size: 15px; }
-.site-blackout [class*="text-[15px]"] { font-size: 17px; }
-.site-blackout [class*="text-[17px]"] { font-size: 19px; }
+.site-blackout [class*="text-[11px]"] { font-size: 14px; }
+.site-blackout [class*="text-[13px]"] { font-size: 16px; }
+.site-blackout [class*="text-[15px]"] { font-size: 18px; }
+.site-blackout [class*="text-[17px]"] { font-size: 20px; }
+
+/*
+ * O card da moto em destaque, na capa.
+ *
+ * É a primeira coisa que a pessoa vê, então ele não pode ter
+ * a mesma borda cinza dos outros. A moldura dourada vem de um
+ * degradê - mais forte em cima, onde a luz bateria, e
+ * apagando para baixo. Borda dourada chapada nos quatro lados
+ * fica com cara de moldura de diploma.
+ *
+ * O brilho por trás é o mesmo ouro, bem aberto e fraco: dá a
+ * impressão de que o card está aceso, sem manchar a foto.
+ */
+
+.site-blackout .cartao-ouro {
+  position: relative;
+  background:
+    linear-gradient(160deg, #17171c 0%, #0d0d10 100%);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 30px 70px -28px rgba(0, 0, 0, 0.95),
+    0 0 60px -24px rgba(224, 177, 41, 0.45);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.35s ease;
+}
+
+/*
+ * A moldura propriamente dita: um degradê desenhado atrás do
+ * card e recortado na espessura da borda. É o jeito de ter
+ * borda com degradê, que o CSS não faz direto.
+ */
+.site-blackout .cartao-ouro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    160deg,
+    rgba(250, 232, 170, 1) 0%,
+    rgba(224, 177, 41, 0.95) 28%,
+    rgba(224, 177, 41, 0.5) 62%,
+    rgba(224, 177, 41, 0.85) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+
+  /*
+   * Por cima de tudo.
+   *
+   * A foto ocupa o topo do card e, sem isto, tapa justamente
+   * o pedaço mais claro da moldura - que é onde ela deveria
+   * aparecer mais.
+   */
+  z-index: 2;
+}
+
+.site-blackout .cartao-ouro:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 36px 80px -30px rgba(0, 0, 0, 0.95),
+    0 0 80px -20px rgba(224, 177, 41, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-blackout .cartao-ouro,
+  .site-blackout .cartao-ouro:hover {
+    transform: none;
+    transition: none;
+  }
+}

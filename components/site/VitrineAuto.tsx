@@ -242,7 +242,7 @@ export default function VitrineAuto({
             <article
               key={moto.id}
               aria-hidden={!aberta}
-              className={`cartao-3d col-start-1 row-start-1 overflow-hidden rounded-3xl ${
+              className={`cartao-ouro col-start-1 row-start-1 overflow-hidden rounded-3xl ${
                 semEfeito
                   ? ""
                   : "transition-opacity duration-700"

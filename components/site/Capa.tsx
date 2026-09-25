@@ -90,11 +90,13 @@ export default function Capa({
         </div>
 
         {destaques.length > 0 ? (
-          <VitrineAuto
-            motos={destaques}
-            slugs={slugs}
-            capas={capas}
-          />
+          <div className="order-first lg:order-none">
+            <VitrineAuto
+              motos={destaques}
+              slugs={slugs}
+              capas={capas}
+            />
+          </div>
         ) : (
           /* Sem moto com foto, a capa nao fica com um buraco. */
           <article className="cartao-3d rounded-3xl p-10 text-center text-sm leading-7 texto-suave">
