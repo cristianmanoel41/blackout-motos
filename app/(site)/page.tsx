@@ -24,7 +24,17 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const { motos, fotos, slugs } = await estoqueDoSite();
 
-  const destaques = motos.slice(0, 4);
+  /*
+   * Quem manda na capa é a marcação da ficha. Sem nenhuma
+   * marcada, valem as quatro que entraram por último - assim
+   * a capa nunca fica vazia por esquecimento.
+   */
+  const escolhidas = motos.filter((moto) => moto.na_capa);
+
+  const destaques =
+    escolhidas.length > 0
+      ? escolhidas.slice(0, 6)
+      : motos.slice(0, 4);
 
   return (
     <>

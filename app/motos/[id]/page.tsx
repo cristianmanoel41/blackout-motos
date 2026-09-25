@@ -8,6 +8,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import Vistorias from "@/components/Vistorias";
 import FotosMoto from "@/components/FotosMoto";
+import MotoNaCapa from "@/components/MotoNaCapa";
 import LegendaPost from "@/components/LegendaPost";
 import RegistradoPor from "@/components/RegistradoPor";
 import CampoMoeda from "@/components/CampoMoeda";
@@ -940,6 +941,12 @@ export default function DetalheMotoPage() {
 
       <div className="mt-6">
         <FotosMoto motorcycleId={String(id)} />
+      </div>
+
+      {/* CAPA DO SITE */}
+
+      <div className="mt-6">
+        <MotoNaCapa motorcycleId={String(id)} />
       </div>
 
       {/* LEGENDA DO POST */}

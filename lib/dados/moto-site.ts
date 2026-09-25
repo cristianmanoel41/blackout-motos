@@ -30,6 +30,8 @@ export type MotoSite = {
   possui_chave_reserva: boolean | null;
   unico_dono: boolean | null;
   data_entrada: string | null;
+  /* Marcada na ficha para aparecer na capa do site. */
+  na_capa?: boolean | null;
 };
 
 export function numero(valor: Numerico) {
@@ -173,4 +175,59 @@ export function procuraCombina(
   const nome = semAcento(nomeDaMoto(moto));
 
   return termos.every((palavra) => nome.includes(palavra));
+}
+
+/*
+ * Para o que esta moto é boa.
+ *
+ * Quem compra moto usada quase nunca pergunta cilindrada:
+ * pergunta se aguenta trabalhar, se gasta pouco, se vai para
+ * a estrada. É essa a frase que falta no anúncio.
+ *
+ * Sai do modelo primeiro - scooter e trail se reconhecem pelo
+ * nome, não pelo motor - e só depois do tamanho do motor.
+ * Sem cilindrada e sem nome conhecido, devolve nada: melhor
+ * calar do que prometer o que a moto não faz.
+ */
+
+const AUTOMATICAS =
+  /\b(biz|pop|pcx|nmax|adv|sh|elite|burgman|lead|dafra|citycom|n-?max)\b/;
+
+const TRILHA =
+  /\b(bros|xre|lander|tenere|ténéré|xtz|crosser|dr|xr|himalayan|falcon|sahara)\b/;
+
+export function paraQueServe(moto: MotoSite) {
+  const nome = semAcento(
+    [moto.modelo, moto.versao].filter(Boolean).join(" ")
+  );
+
+  if (AUTOMATICAS.test(nome)) {
+    return "Automática: sem marcha, boa para ir e voltar do trabalho todo dia";
+  }
+
+  if (TRILHA.test(nome)) {
+    return "Aguenta rua esburacada e estrada de terra sem reclamar";
+  }
+
+  const cc = numero(moto.cilindrada);
+
+  if (cc === null) return null;
+
+  if (cc <= 125) {
+    return "Econômica: boa para a cidade e para quem está começando";
+  }
+
+  if (cc <= 180) {
+    return "Boa para trabalhar o dia inteiro na cidade sem cansar";
+  }
+
+  if (cc <= 300) {
+    return "Dá conta da cidade e ainda sobra fôlego para a estrada";
+  }
+
+  if (cc <= 500) {
+    return "Feita para estrada e viagem de fim de semana";
+  }
+
+  return "Estrada e viagem longa, com motor sobrando";
 }
