@@ -271,3 +271,45 @@ html[data-js="sim"] .titulo-escreve.pronto {
     display: none;
   }
 }
+
+/*
+ * Um ponto a mais em tudo que se lê.
+ *
+ * O texto do site estava pequeno para quem olha no celular,
+ * no meio da rua, decidindo compra de moto. Aqui as medidas
+ * do Tailwind ganham cerca de 8%, junto com a entrelinha -
+ * aumentar a letra sem aumentar o espaço entre linhas deixa o
+ * parágrafo apertado e piora a leitura.
+ *
+ * Só vale dentro do site: o painel da loja continua como
+ * está, porque lá o que importa é caber tabela na tela.
+ *
+ * Os títulos não entram: já são grandes, e crescer mais
+ * quebraria linha em celular pequeno.
+ */
+
+.site-blackout .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.15rem;
+}
+
+.site-blackout .text-sm {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+}
+
+.site-blackout .text-base {
+  font-size: 1.0625rem;
+  line-height: 1.65rem;
+}
+
+.site-blackout .text-lg {
+  font-size: 1.1875rem;
+  line-height: 1.8rem;
+}
+
+/* As medidas escritas à mão, uma a uma. */
+.site-blackout [class*="text-[11px]"] { font-size: 12px; }
+.site-blackout [class*="text-[13px]"] { font-size: 14px; }
+.site-blackout [class*="text-[15px]"] { font-size: 16px; }
+.site-blackout [class*="text-[17px]"] { font-size: 18px; }
