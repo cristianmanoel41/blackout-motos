@@ -50,7 +50,7 @@ const PASSOS = [
     Icone: BadgeCheck,
     titulo: "2. Mande seus dados",
     texto:
-      "RG, CPF e comprovante de renda. A análise sai rápido, sem você sair de casa.",
+      "RG, CPF e o valor da sua renda. A análise sai rápido, sem você sair de casa.",
   },
   {
     Icone: Wallet,
