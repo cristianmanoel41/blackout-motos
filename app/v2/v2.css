@@ -1,0 +1,379 @@
+/*
+ * O desenho da versão 2 - por enquanto só em /v2.
+ *
+ * A referência é escura, com ouro em fio fino e acabamento de
+ * peça automotiva: vidro fumê, metal escovado, luz que vem de
+ * uma quina só. Tudo aqui está preso ao .v2 para não vazar
+ * para o site no ar nem para o painel da loja.
+ *
+ * Três regras que sustentam o resto:
+ *
+ * - o ouro é acento, nunca área. Fundo dourado grande vira
+ *   banner de promoção e come a sofisticação;
+ * - profundidade vem de sombras somadas, não de uma só. Objeto
+ *   real tem sombra de contato, de volume e de peso;
+ * - movimento é lento. Animação rápida chama atenção para si;
+ *   lenta faz o site parecer caro.
+ */
+
+.v2 {
+  --ouro: #e0b129;
+  --ouro-claro: #f7dd8a;
+  --ouro-fundo: rgba(224, 177, 41, 0.08);
+  --tinta: #08080a;
+  --grafite: #121216;
+  --grafite-claro: #1b1b21;
+  --fumaca: #9aa0a9;
+  --linha: rgba(255, 255, 255, 0.08);
+
+  background: var(--tinta);
+  color: #f2f3f5;
+
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * O tema do painel pinta <main> de cinza claro e o texto de
+ * preto, com !important, porque lá dentro o fundo é branco.
+ * Aqui é o contrário, e sem estas três linhas a página inteira
+ * aparece clara com letra branca em cima - invisível.
+ */
+.v2 main {
+  background: transparent !important;
+  color: inherit !important;
+  isolation: auto !important;
+}
+
+/* ---------------------------------------------------------- */
+/* O QUE SE LÊ                                                 */
+/* ---------------------------------------------------------- */
+
+.v2 .titulo {
+  font-family: var(--fonte-titulo), system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+}
+
+.v2 .rotulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--ouro);
+}
+
+.v2 .claro {
+  color: #f4f5f7;
+}
+.v2 .suave {
+  color: var(--fumaca);
+}
+.v2 .ouro {
+  color: var(--ouro);
+}
+
+/* ---------------------------------------------------------- */
+/* PEÇAS                                                       */
+/* ---------------------------------------------------------- */
+
+/*
+ * O card de vidro fumê.
+ *
+ * O fundo é quase preto com um degradê curto; a borda tem um
+ * fio claro só no alto, que é onde a luz bateria. Sem esse
+ * fio, card escuro sobre fundo escuro vira mancha.
+ */
+.v2 .vidro {
+  background: linear-gradient(
+    160deg,
+    rgba(28, 28, 34, 0.95) 0%,
+    rgba(14, 14, 18, 0.95) 100%
+  );
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 2px 4px -1px rgba(0, 0, 0, 0.8),
+    0 14px 26px -12px rgba(0, 0, 0, 0.9),
+    0 36px 64px -32px rgba(0, 0, 0, 0.95);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+@media (hover: hover) {
+  .v2 .vidro-sobe:hover {
+    transform: translateY(-6px);
+    border-color: rgba(224, 177, 41, 0.45);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.09) inset,
+      0 5px 10px -2px rgba(0, 0, 0, 0.85),
+      0 26px 44px -16px rgba(0, 0, 0, 0.92),
+      0 56px 96px -34px rgba(0, 0, 0, 0.96),
+      0 0 70px -28px rgba(224, 177, 41, 0.6);
+  }
+
+  .v2 .zoom img {
+    transition: transform 0.7s ease;
+  }
+
+  .v2 .zoom:hover img {
+    transform: scale(1.06);
+  }
+}
+
+/* O fio dourado que corta, no lugar de moldura que fecha. */
+.v2 .risco {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--ouro),
+    rgba(224, 177, 41, 0)
+  );
+}
+
+/* A luz dourada que sai de um canto, nunca do meio. */
+.v2 .brasa {
+  position: absolute;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(224, 177, 41, 0.18),
+    transparent 62%
+  );
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+/*
+ * Grão por cima do preto: papel e fotografia têm ruído, tela
+ * de sistema não. O SVG é minúsculo e se repete.
+ */
+.v2 .grao::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23r)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* ---------------------------------------------------------- */
+/* BOTÕES                                                      */
+/* ---------------------------------------------------------- */
+
+.v2 .botao-ouro {
+  background: linear-gradient(
+    180deg,
+    var(--ouro-claro) 0%,
+    var(--ouro) 55%,
+    #c9971d 100%
+  );
+  color: #17140a;
+  font-weight: 800;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 10px 24px -12px rgba(224, 177, 41, 0.8);
+  transition:
+    filter 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.v2 .botao-ouro:hover {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 16px 30px -12px rgba(224, 177, 41, 0.9);
+}
+
+.v2 .botao-vidro {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f2f3f5;
+  font-weight: 700;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    transform 0.25s ease;
+}
+
+.v2 .botao-vidro:hover {
+  border-color: rgba(224, 177, 41, 0.55);
+  background: rgba(224, 177, 41, 0.08);
+  transform: translateY(-1px);
+}
+
+/* A pílula dos filtros. */
+.v2 .pilula {
+  border: 1px solid var(--linha);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fumaca);
+  font-weight: 700;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.v2 .pilula:hover {
+  color: #fff;
+  border-color: rgba(224, 177, 41, 0.45);
+}
+
+.v2 .pilula-ligada {
+  background: linear-gradient(
+    180deg,
+    var(--ouro-claro),
+    var(--ouro)
+  );
+  color: #17140a;
+  border-color: transparent;
+}
+
+/* Campo de busca e de formulário. */
+.v2 main :is(input, select, textarea),
+.v2 input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--linha) !important;
+  color: #f2f3f5 !important;
+  box-shadow: none !important;
+}
+
+.v2 main :is(input, textarea)::placeholder,
+.v2 input::placeholder {
+  color: #6b7079 !important;
+}
+
+.v2 main :is(input, select, textarea):focus,
+.v2 input:focus {
+  outline: none;
+  border-color: rgba(224, 177, 41, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(224, 177, 41, 0.12) !important;
+}
+
+/* ---------------------------------------------------------- */
+/* A FAIXA DE MARCAS                                           */
+/* ---------------------------------------------------------- */
+
+/*
+ * A faixa anda sozinha, sem JavaScript.
+ *
+ * A lista é escrita duas vezes, lado a lado, e a animação
+ * arrasta exatamente metade da largura - quando chega lá, a
+ * segunda cópia está no lugar onde a primeira começou e o
+ * salto de volta não aparece.
+ */
+.v2 .esteira {
+  display: flex;
+  width: max-content;
+  animation: andar 42s linear infinite;
+}
+
+.v2 .esteira:hover {
+  animation-play-state: paused;
+}
+
+@keyframes andar {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* O CARROSSEL                                                 */
+/* ---------------------------------------------------------- */
+
+/*
+ * A rolagem é a do próprio navegador, com encaixe.
+ *
+ * Carrossel feito na mão com transform perde o arrasto natural
+ * do celular, a inércia e a barra de rolagem do teclado. Aqui
+ * o dedo empurra a lista de verdade; as setas e os pontinhos
+ * só mandam o navegador rolar até o card certo.
+ */
+.v2 .trilho {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 0.25rem;
+}
+
+.v2 .trilho::-webkit-scrollbar {
+  display: none;
+}
+
+.v2 .trilho > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/*
+ * O mapa do Google vem branco e, no meio do preto, vira um
+ * quadrado aceso que puxa o olho para o lugar errado. Inverter
+ * e girar o matiz devolve um mapa escuro com as cores no lugar
+ * - é o mesmo truque que os mapas noturnos usam, e não custa
+ * nenhuma chamada a mais de API.
+ */
+.v2 .mapa-escuro {
+  filter: invert(91%) hue-rotate(180deg) brightness(0.95)
+    contrast(0.9);
+}
+
+/* ---------------------------------------------------------- */
+/* ENTRADA NA TELA                                             */
+/* ---------------------------------------------------------- */
+
+.v2 .surgir {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.v2 .surgir-pronto {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+ * Quem pediu menos movimento no aparelho recebe o site
+ * parado - mas inteiro. Esconder conteúdo porque a animação
+ * não roda seria trocar um incômodo por uma tela vazia.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .v2 .esteira {
+    animation: none;
+  }
+
+  .v2 .trilho {
+    scroll-behavior: auto;
+  }
+
+  .v2 .surgir {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .v2 .vidro,
+  .v2 .vidro-sobe:hover,
+  .v2 .zoom:hover img {
+    transform: none;
+    transition: none;
+  }
+}

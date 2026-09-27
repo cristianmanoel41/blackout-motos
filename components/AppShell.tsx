@@ -29,6 +29,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     SITE.includes(pathname) ||
     pathname.startsWith('/estoque/') ||
     pathname.startsWith('/novo') ||
+    /* A versao 2, em provas. */
+    pathname.startsWith('/v2') ||
     pathname.startsWith('/diagnostico') ||
     pathname.startsWith('/vitrine/') ||
     pathname.startsWith('/documentos/') ||

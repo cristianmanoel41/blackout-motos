@@ -231,3 +231,45 @@ export function paraQueServe(moto: MotoSite) {
 
   return "Estrada e viagem longa, com motor sobrando";
 }
+
+/*
+ * Em que prateleira a moto entra.
+ *
+ * O banco não guarda categoria - e criar a coluna obrigaria
+ * alguém a preencher moto por moto, para sempre. O nome do
+ * modelo já diz: quem procura scooter reconhece Biz e PCX,
+ * quem procura trail reconhece Bros e XRE.
+ *
+ * Errar aqui não quebra nada: a moto aparece na prateleira
+ * vizinha, e "Todas" continua mostrando o pátio inteiro.
+ */
+
+const ESPORTIVAS =
+  /\b(r3|r15|ninja|cbr|yzf|gsx-?r|zx-?\d|rr|panigale|s1000|hayabusa|busa|speed\s?triple|daytona)\b/;
+
+export type Categoria =
+  | "todas"
+  | "street"
+  | "trail"
+  | "scooter"
+  | "esportiva";
+
+export function categoriaDaMoto(moto: MotoSite): Categoria {
+  const nome = semAcento(
+    [moto.modelo, moto.versao].filter(Boolean).join(" ")
+  );
+
+  if (AUTOMATICAS.test(nome)) return "scooter";
+  if (TRILHA.test(nome)) return "trail";
+  if (ESPORTIVAS.test(nome)) return "esportiva";
+
+  return "street";
+}
+
+export const CATEGORIAS: { chave: Categoria; nome: string }[] = [
+  { chave: "todas", nome: "Todas" },
+  { chave: "street", nome: "Street" },
+  { chave: "trail", nome: "Trail" },
+  { chave: "scooter", nome: "Scooter" },
+  { chave: "esportiva", nome: "Esportivas" },
+];

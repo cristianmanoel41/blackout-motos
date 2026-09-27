@@ -1,0 +1,133 @@
+import Image from "next/image";
+import Link from "next/link";
+import {
+  ENDERECO_COMPLETO,
+  LOJA,
+  MENU,
+  REDES,
+  linkWhatsApp,
+  CONVITE_GERAL,
+} from "@/lib/dados/loja";
+import { IconeRede } from "@/components/site/IconeRede";
+import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
+
+/*
+ * O rodapé da versão 2.
+ *
+ * Só entra a rede que tem endereço preenchido: ícone que não
+ * leva a lugar nenhum passa a impressão de loja abandonada. O
+ * YouTube fica de fora até a loja abrir o canal - basta
+ * preencher em lib/dados/loja.ts que ele aparece aqui e no
+ * site no ar de uma vez.
+ *
+ * Endereço, telefone e menu saem do mesmo arquivo que o
+ * cabeçalho e os dados que o Google lê.
+ */
+
+/* Enquanto a versão 2 mora em /v2, o "Início" volta para cá. */
+const INICIO = "/v2";
+
+export default function Rodape() {
+  const redes = REDES.filter((rede) => rede.url);
+
+  return (
+    <footer className="border-t border-white/[.07] bg-[#0a0a0d]">
+      <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_1fr]">
+          <div>
+            <Image
+              src="/logo-blackout-site.png"
+              alt={LOJA.nome}
+              width={1774}
+              height={887}
+              className="h-12 w-auto"
+            />
+
+            <p className="mt-5 max-w-xs text-[13px] leading-7 suave">
+              {ENDERECO_COMPLETO}
+            </p>
+
+            {redes.length > 0 && (
+              <ul className="mt-5 flex gap-2">
+                {redes.map((rede) => (
+                  <li key={rede.nome}>
+                    <a
+                      href={rede.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={rede.nome}
+                      title={rede.nome}
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[.04] transition hover:border-white/25 hover:bg-white/[.09]"
+                    >
+                      <IconeRede
+                        nome={rede.nome}
+                        className="h-[22px] w-[22px]"
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <nav>
+            <p className="rotulo">Navegação</p>
+
+            <ul className="mt-4 space-y-2.5">
+              {MENU.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href === "/" ? INICIO : item.href}
+                    className="text-[14px] font-medium suave transition hover:text-white"
+                  >
+                    {item.nome}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div>
+            <p className="rotulo">Fale com a gente</p>
+
+            <p className="titulo mt-4 text-[1.6rem] claro">
+              {LOJA.whatsappExibicao}
+            </p>
+
+            <a
+              href={linkWhatsApp(CONVITE_GERAL)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="botao-ouro mt-5 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm"
+            >
+              <IconeWhatsApp className="h-4 w-4" />
+              Fale no WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.07] pt-6 text-[12px] suave">
+          <p>
+            © {new Date().getFullYear()} {LOJA.nome}. Todos os
+            direitos reservados.
+          </p>
+
+          <div className="flex gap-4">
+            <Link
+              href="/privacidade"
+              className="transition hover:text-white"
+            >
+              Privacidade
+            </Link>
+            <Link
+              href="/termos"
+              className="transition hover:text-white"
+            >
+              Termos
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
