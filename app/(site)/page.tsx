@@ -33,22 +33,19 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const { motos, fotos, slugs } = await estoqueDoSite();
 
+  /*
+   * A moto que ilustra o financiamento é a marcada na ficha;
+   * sem marcação, a última que entrou. É a única foto de moto
+   * fora do estoque, e ela não leva nome nem preço - está ali
+   * como imagem, não como oferta.
+   */
   const escolhidas = motos.filter((moto) => moto.na_capa);
 
-  const daCapa = escolhidas[0] || motos[0];
-
-  /* A segunda moto ilustra o financiamento - nunca a da capa. */
-  const doFinanciamento =
-    motos.find((moto) => moto.id !== daCapa?.id) || daCapa;
+  const doFinanciamento = escolhidas[0] || motos[0];
 
   return (
     <main>
-      <Hero
-        moto={daCapa}
-        foto={daCapa ? fotos.capas[daCapa.id] : undefined}
-        slug={daCapa ? slugs[daCapa.id] : undefined}
-        quantas={motos.length}
-      />
+      <Hero quantas={motos.length} />
 
       <FaixaMarcas />
 

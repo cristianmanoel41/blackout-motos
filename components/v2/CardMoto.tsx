@@ -44,7 +44,7 @@ export default function CardMoto({
   const nome = nomeDaMoto(moto);
 
   return (
-    <article className="vidro vidro-sobe relative overflow-hidden">
+    <article className="vidro vidro-sobe relative flex h-full flex-col overflow-hidden">
       <Link
         href={`/estoque/${slug}`}
         className="zoom block"
@@ -73,7 +73,11 @@ export default function CardMoto({
         </div>
       </Link>
 
-      <div className={compacto ? "p-4" : "p-5"}>
+      <div
+        className={`flex flex-1 flex-col ${
+          compacto ? "p-4" : "p-5"
+        }`}
+      >
         <Link href={`/estoque/${slug}`} className="block">
           <h3 className="titulo text-[1.05rem] claro">
             {nome}
@@ -89,10 +93,10 @@ export default function CardMoto({
         </Link>
 
         {!compacto && (
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
             <Link
               href={`/estoque/${slug}`}
-              className="botao-vidro flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-[13px]"
+              className="botao-vidro flex items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-[12px]"
             >
               Ver detalhes
               <ArrowUpRight size={14} />
@@ -102,7 +106,7 @@ export default function CardMoto({
               href={linkWhatsApp(convitePelaMoto(moto))}
               target="_blank"
               rel="noopener noreferrer"
-              className="botao-ouro flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-[13px]"
+              className="botao-ouro flex items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-[12px]"
             >
               <IconeWhatsApp className="h-3.5 w-3.5" />
               WhatsApp

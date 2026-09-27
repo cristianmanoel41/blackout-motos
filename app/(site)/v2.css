@@ -46,6 +46,58 @@
 }
 
 /* ---------------------------------------------------------- */
+/* O TAMANHO DA LETRA                                          */
+/* ---------------------------------------------------------- */
+
+/*
+ * Um degrau acima do padrão do Tailwind, com a entrelinha
+ * junto - aumentar a letra sem abrir o espaço entre linhas
+ * aperta o parágrafo e piora o que se queria melhorar.
+ *
+ * Quem lê este site lê no celular, no meio da rua, decidindo
+ * compra de moto. O desenho nasceu com medidas de tela grande
+ * e ficou apertado para esse uso.
+ *
+ * As medidas escritas à mão nos componentes entram por aqui
+ * também, uma a uma: no Tailwind elas viram nome de classe, e
+ * mudar em 14 arquivos deixaria uma para trás.
+ */
+
+.v2 .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.2rem;
+}
+
+.v2 .text-sm {
+  font-size: 0.9688rem;
+  line-height: 1.6rem;
+}
+
+.v2 .text-base {
+  font-size: 1.0938rem;
+  line-height: 1.75rem;
+}
+
+.v2 .text-lg {
+  font-size: 1.1875rem;
+  line-height: 1.8rem;
+}
+
+.v2 [class*="text-[11px]"] { font-size: 12.5px; }
+.v2 [class*="text-[12px]"] { font-size: 13.5px; }
+.v2 [class*="text-[13px]"] { font-size: 14.5px; }
+.v2 [class*="text-[14px]"] { font-size: 15.5px; }
+
+/* O nome da moto, o preço e os títulos de bloco. */
+.v2 [class*="text-[1rem]"] { font-size: 1.1rem; }
+.v2 [class*="text-[1.05rem]"] { font-size: 1.16rem; }
+.v2 [class*="text-[1.1rem]"] { font-size: 1.22rem; }
+.v2 [class*="text-[1.3rem]"] { font-size: 1.42rem; }
+.v2 [class*="text-[1.45rem]"] { font-size: 1.6rem; }
+.v2 [class*="text-[1.6rem]"] { font-size: 1.75rem; }
+.v2 [class*="text-[2.2rem]"] { font-size: 2.4rem; }
+
+/* ---------------------------------------------------------- */
 /* O QUE SE LÊ                                                 */
 /* ---------------------------------------------------------- */
 
