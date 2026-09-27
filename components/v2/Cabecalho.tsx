@@ -26,8 +26,7 @@ import Busca, { type MotoBusca } from "@/components/v2/Busca";
  * nova entra nas duas versões de uma vez.
  */
 
-/* Enquanto a versão 2 mora em /v2, o "Início" volta para cá. */
-const INICIO = "/v2";
+const INICIO = "/";
 
 function endereco(href: string) {
   return href === "/" ? INICIO : href;

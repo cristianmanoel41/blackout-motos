@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import "./site.css";
-import "./novo.css";
+import "./v2.css";
 import {
-  fonteCartaz,
   fonteSite,
   fonteTitulo,
 } from "@/lib/fonte-site";
 import { Analytics } from "@vercel/analytics/next";
 import Pixel from "@/components/site/Pixel";
-import Cabecalho from "@/components/site/Cabecalho";
-import Rodape from "@/components/site/Rodape";
+import Cabecalho from "@/components/v2/Cabecalho";
+import Rodape from "@/components/v2/Rodape";
+import { estoqueDoSite } from "@/lib/dados/estoque-site";
+import { anoDaMoto, nomeDaMoto } from "@/lib/dados/moto-site";
+import type { MotoBusca } from "@/components/v2/Busca";
 import {
   ENDERECO_COMPLETO,
   GOOGLE,
@@ -24,6 +26,11 @@ import {
  * O AppShell já deixa estas rotas passarem sem o menu do
  * sistema; aqui entra a moldura do site: cabeçalho fixo,
  * rodapé e o tema escuro.
+ *
+ * O cabeçalho traz a busca, e a busca precisa saber o que a
+ * loja tem hoje - por isso a moldura carrega o estoque. A
+ * função é envolvida em cache(), então a capa pede o mesmo
+ * estoque sem custar uma segunda ida ao banco.
  *
  * "only light" do painel não vale aqui - este é o único canto
  * escuro de propósito, e color-scheme dark evita que o
@@ -121,14 +128,35 @@ const FICHA_DA_LOJA = {
   hasMap: GOOGLE.perfil,
 };
 
-export default function SiteLayout({
+export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  /*
+   * Agora TODA página do site passa por aqui, inclusive as que
+   * não dependem de banco - privacidade, termos, contato. Se o
+   * estoque falhar, o cabeçalho fica sem busca e o resto da
+   * página continua de pé: site no ar vale mais que caixa de
+   * procura na tela.
+   */
+  let paraBusca: MotoBusca[] = [];
+
+  try {
+    const { motos, slugs } = await estoqueDoSite();
+
+    paraBusca = motos.map((moto) => ({
+      nome: nomeDaMoto(moto),
+      slug: slugs[moto.id],
+      ano: anoDaMoto(moto),
+    }));
+  } catch {
+    paraBusca = [];
+  }
+
   return (
     <div
-      className={`${fonteSite.variable} ${fonteTitulo.variable} ${fonteCartaz.variable} site-blackout min-h-screen`}
+      className={`${fonteSite.variable} ${fonteTitulo.variable} site-blackout v2 min-h-screen`}
     >
       <style>{`
         html, body {
@@ -137,6 +165,18 @@ export default function SiteLayout({
         }
       `}</style>
 
+      {/*
+        * Avisa a página que tem JS antes do primeiro quadro.
+        * As seções que sobem ao entrar na tela só se escondem
+        * quando esta etiqueta existe - sem script, elas
+        * aparecem normalmente em vez de ficarem invisíveis.
+        */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.dataset.js="sim"`,
+        }}
+      />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -144,7 +184,7 @@ export default function SiteLayout({
         }}
       />
 
-      <Cabecalho />
+      <Cabecalho motos={paraBusca} />
 
       {children}
 

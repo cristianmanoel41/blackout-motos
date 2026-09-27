@@ -36,7 +36,10 @@ const nextConfig: NextConfig = {
    * no lugar certo em vez de dar em pagina inexistente.
    */
   async redirects() {
-    return [{ source: "/novo", destination: "/", permanent: false }];
+    return [
+      { source: "/novo", destination: "/", permanent: false },
+      { source: "/v2", destination: "/", permanent: false },
+    ];
   },
 
   images: {

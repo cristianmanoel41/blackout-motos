@@ -24,8 +24,7 @@ import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
  * cabeçalho e os dados que o Google lê.
  */
 
-/* Enquanto a versão 2 mora em /v2, o "Início" volta para cá. */
-const INICIO = "/v2";
+const INICIO = "/";
 
 export default function Rodape() {
   const redes = REDES.filter((rede) => rede.url);

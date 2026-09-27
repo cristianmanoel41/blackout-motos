@@ -245,38 +245,42 @@ body.foto-aberta header {
  *
  * Só dentro do site: o painel da loja continua como está,
  * porque lá o que importa é caber tabela na tela.
+ *
+ * E só nas telas do desenho antigo, por isso o :not(.v2). No
+ * desenho novo cada medida foi escolhida junto com o espaço em
+ * volta - crescer 8% por fora rebentaria card e botão.
  */
 
-.site-blackout .text-xs {
+.site-blackout:not(.v2) .text-xs {
   font-size: 0.9375rem;
   line-height: 1.35rem;
 }
 
-.site-blackout .text-sm {
+.site-blackout:not(.v2) .text-sm {
   font-size: 1.0625rem;
   line-height: 1.7rem;
 }
 
-.site-blackout .text-base {
+.site-blackout:not(.v2) .text-base {
   font-size: 1.1875rem;
   line-height: 1.85rem;
 }
 
-.site-blackout .text-lg {
+.site-blackout:not(.v2) .text-lg {
   font-size: 1.35rem;
   line-height: 1.95rem;
 }
 
-.site-blackout .text-xl {
+.site-blackout:not(.v2) .text-xl {
   font-size: 1.4rem;
   line-height: 1.9rem;
 }
 
 /* As medidas escritas à mão, uma a uma. */
-.site-blackout [class*="text-[11px]"] { font-size: 14px; }
-.site-blackout [class*="text-[13px]"] { font-size: 16px; }
-.site-blackout [class*="text-[15px]"] { font-size: 18px; }
-.site-blackout [class*="text-[17px]"] { font-size: 20px; }
+.site-blackout:not(.v2) [class*="text-[11px]"] { font-size: 14px; }
+.site-blackout:not(.v2) [class*="text-[13px]"] { font-size: 16px; }
+.site-blackout:not(.v2) [class*="text-[15px]"] { font-size: 18px; }
+.site-blackout:not(.v2) [class*="text-[17px]"] { font-size: 20px; }
 
 /*
  * O card da moto em destaque, na capa.

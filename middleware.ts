@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
     caminho === '/catalogo-minimo.csv' ||
     /* Endereco antigo da capa: entra e e mandado para "/". */
     caminho.startsWith('/novo') ||
-    /* A versao 2, em provas. */
+    /* Endereco antigo da versao 2: entra e e mandado para "/". */
     caminho.startsWith('/v2') ||
     caminho.startsWith('/diagnostico') ||
     caminho.startsWith('/vitrine') ||

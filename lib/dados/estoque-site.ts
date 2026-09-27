@@ -11,6 +11,7 @@
  * malcuidado.
  */
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import {
   slugsDoEstoque,
@@ -27,7 +28,14 @@ export type EstoqueDoSite = {
   slugs: Record<string, string>;
 };
 
-export async function estoqueDoSite(): Promise<EstoqueDoSite> {
+/*
+ * Envolvido em cache() porque agora duas partes da mesma
+ * página pedem o estoque: a busca do cabeçalho, que mora na
+ * moldura, e a capa. Sem isso seriam duas idas ao banco para
+ * montar uma tela só. O cache vale por requisição - a página
+ * seguinte pergunta de novo, e moto vendida some na hora.
+ */
+export const estoqueDoSite = cache(async function estoqueDoSite(): Promise<EstoqueDoSite> {
   const supabase = await createClient();
 
   const { data } = await supabase.rpc("estoque_publico");
@@ -47,7 +55,7 @@ export async function estoqueDoSite(): Promise<EstoqueDoSite> {
     fotos,
     slugs: slugsDoEstoque(motos),
   };
-}
+});
 
 /*
  * Acha a moto pelo endereço.
