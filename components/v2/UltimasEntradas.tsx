@@ -1,23 +1,56 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import Carrossel from "@/components/v2/Carrossel";
 import CardMoto from "@/components/v2/CardMoto";
 import { type MotoSite } from "@/lib/dados/moto-site";
 
 /*
- * As últimas entradas.
+ * As últimas entradas, numa esteira que anda sozinha.
  *
- * A ordem vem do banco - a função pública já devolve o estoque
- * da mais nova para a mais velha -, então aqui é só cortar as
- * primeiras. Sem data inventada e sem "novidade" que ficou
- * novidade por seis meses.
+ * Mesma mecânica da faixa de marcas: a fileira é escrita duas
+ * vezes e a animação arrasta metade da largura, então o laço
+ * fecha sem salto e sem JavaScript nenhum. Para quando o mouse
+ * encosta, para quem quiser ler com calma.
  *
- * Os cards são os mesmos do estoque, na versão curta: quem
- * chega aqui já rolou meia página e não vai decidir nesta
- * seção - vai clicar para ver.
+ * Aqui a esteira cabe porque esta seção é de passear o olho -
+ * quem quer escolher usa o carrossel do estoque, logo acima,
+ * que tem seta, pontinho e arrasto. Duas fileiras andando do
+ * mesmo jeito na mesma página seria enjoativo; uma de cada
+ * tipo dá ritmo.
+ *
+ * A ordem vem do banco: a função pública já devolve o estoque
+ * da mais nova para a mais velha.
  */
+
+function Fileira({
+  motos,
+  slugs,
+  capas,
+  escondida,
+}: {
+  motos: MotoSite[];
+  slugs: Record<string, string>;
+  capas: Record<string, string>;
+  escondida?: boolean;
+}) {
+  return (
+    <ul
+      aria-hidden={escondida}
+      inert={escondida}
+      className="flex shrink-0 items-stretch"
+    >
+      {motos.map((moto) => (
+        <li key={moto.id} className="w-[16rem] px-2.5">
+          <CardMoto
+            moto={moto}
+            slug={slugs[moto.id]}
+            foto={capas[moto.id]}
+            compacto
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function UltimasEntradas({
   motos,
@@ -31,8 +64,8 @@ export default function UltimasEntradas({
   if (motos.length === 0) return null;
 
   return (
-    <section className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
-      <div className="flex flex-wrap items-end justify-between gap-5">
+    <section className="relative py-16 lg:py-20">
+      <div className="mx-auto flex max-w-[1400px] flex-wrap items-end justify-between gap-5 px-4 sm:px-6">
         <div>
           <h2 className="titulo text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
             Últimas <span className="ouro">entradas</span>
@@ -52,22 +85,25 @@ export default function UltimasEntradas({
         </Link>
       </div>
 
-      <div className="mt-8">
-        <Carrossel rotulo="Últimas entradas" tempo={6200}>
-          {motos.map((moto) => (
-            <div
-              key={moto.id}
-              className="w-[62%] sm:w-[38%] lg:w-[24%] xl:w-[19%]"
-            >
-              <CardMoto
-                moto={moto}
-                slug={slugs[moto.id]}
-                foto={capas[moto.id]}
-                compacto
-              />
-            </div>
-          ))}
-        </Carrossel>
+      {/*
+        * A esteira ocupa a largura inteira da tela, sem a
+        * margem das outras seções: fileira que anda e para
+        * numa borda invisível parece travada.
+        */}
+      <div className="mt-8 overflow-hidden">
+        <div className="esteira-cards">
+          <Fileira
+            motos={motos}
+            slugs={slugs}
+            capas={capas}
+          />
+          <Fileira
+            motos={motos}
+            slugs={slugs}
+            capas={capas}
+            escondida
+          />
+        </div>
       </div>
     </section>
   );

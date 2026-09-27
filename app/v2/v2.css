@@ -147,6 +147,25 @@
   );
   filter: blur(14px);
   pointer-events: none;
+
+  /*
+   * A luz respira: quatorze segundos para ir e voltar, e a
+   * diferença é pequena. Quem olha não vê piscar - vê a tela
+   * viva.
+   */
+  animation: respirar 14s ease-in-out infinite;
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
 }
 
 /*
@@ -191,6 +210,52 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.45) inset,
     0 16px 30px -12px rgba(224, 177, 41, 0.9);
+}
+
+/*
+ * O brilho que atravessa o botão quando o mouse chega.
+ *
+ * É uma faixa clara e inclinada que cruza uma vez e some -
+ * o reflexo que passa numa peça polida quando ela se move.
+ * Uma vez por hover, não em laço: brilho piscando sozinho é
+ * anúncio de liquidação.
+ */
+.v2 .botao-ouro {
+  position: relative;
+  overflow: hidden;
+}
+
+.v2 .botao-ouro::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+
+.v2 .botao-ouro:hover::after {
+  animation: lustrar 0.9s ease-out;
+}
+
+@keyframes lustrar {
+  from {
+    left: -60%;
+    opacity: 0.9;
+  }
+  to {
+    left: 120%;
+    opacity: 0;
+  }
 }
 
 .v2 .botao-vidro {
@@ -276,7 +341,28 @@
   animation: andar 42s linear infinite;
 }
 
-.v2 .esteira:hover {
+/*
+ * A mesma esteira em dois outros tamanhos.
+ *
+ * Card é maior que nome de marca, então anda mais devagar -
+ * velocidade igual faria a fileira de motos passar voando. A
+ * das frases é a mais lenta de todas: ali se lê.
+ */
+.v2 .esteira-cards {
+  display: flex;
+  width: max-content;
+  animation: andar 64s linear infinite;
+}
+
+.v2 .esteira-frases {
+  display: flex;
+  width: max-content;
+  animation: andar 58s linear infinite;
+}
+
+.v2 .esteira:hover,
+.v2 .esteira-cards:hover,
+.v2 .esteira-frases:hover {
   animation-play-state: paused;
 }
 
@@ -356,7 +442,11 @@
  * não roda seria trocar um incômodo por uma tela vazia.
  */
 @media (prefers-reduced-motion: reduce) {
-  .v2 .esteira {
+  .v2 .esteira,
+  .v2 .esteira-cards,
+  .v2 .esteira-frases,
+  .v2 .brasa,
+  .v2 .botao-ouro:hover::after {
     animation: none;
   }
 

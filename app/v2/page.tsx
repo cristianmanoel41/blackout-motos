@@ -3,6 +3,7 @@ import { anoDaMoto, nomeDaMoto } from "@/lib/dados/moto-site";
 import Cabecalho from "@/components/v2/Cabecalho";
 import Hero from "@/components/v2/Hero";
 import FaixaMarcas from "@/components/v2/FaixaMarcas";
+import FaixaFrases from "@/components/v2/FaixaFrases";
 import Estoque from "@/components/v2/Estoque";
 import Financiamento from "@/components/v2/Financiamento";
 import Diferenciais from "@/components/v2/Diferenciais";
@@ -73,6 +74,8 @@ export default async function V2Page() {
         />
 
         <Diferenciais />
+
+        <FaixaFrases />
 
         <UltimasEntradas
           motos={motos.slice(0, 8)}
