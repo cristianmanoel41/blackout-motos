@@ -5,10 +5,15 @@ import {
   Phone,
 } from "lucide-react";
 import {
-  GOOGLE,
   HORARIOS,
   LOJA,
+  MAPA,
+  WAZE,
 } from "@/lib/dados/loja";
+import {
+  IconeGoogleMaps,
+  IconeWaze,
+} from "@/components/site/IconeMapa";
 import AoEntrar from "@/components/v2/AoEntrar";
 
 /*
@@ -25,7 +30,7 @@ import AoEntrar from "@/components/v2/AoEntrar";
  * chega perto da tela.
  */
 
-const MAPA = `https://www.google.com/maps?q=${encodeURIComponent(
+const MAPA_EMBUTIDO = `https://www.google.com/maps?q=${encodeURIComponent(
   `${LOJA.endereco}, ${LOJA.bairro}, ${LOJA.cidade} - ${LOJA.estado}`
 )}&output=embed`;
 
@@ -46,7 +51,7 @@ export default function VisiteALoja() {
         <AoEntrar>
           <div className="vidro overflow-hidden">
             <iframe
-              src={MAPA}
+              src={MAPA_EMBUTIDO}
               title={`Mapa até a ${LOJA.nome}`}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -118,15 +123,29 @@ export default function VisiteALoja() {
               </li>
             </ul>
 
-            <a
-              href={GOOGLE.perfil}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="botao-ouro mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm"
-            >
-              Ver no mapa
-              <ArrowUpRight size={16} />
-            </a>
+<div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <a
+                href={MAPA}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="botao-ouro inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm"
+              >
+                <IconeGoogleMaps className="h-4 w-4" />
+                Abrir no Maps
+                <ArrowUpRight size={15} />
+              </a>
+
+              <a
+                href={WAZE}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="botao-vidro inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm"
+              >
+                <IconeWaze className="h-4 w-4" />
+                Abrir no Waze
+                <ArrowUpRight size={15} />
+              </a>
+            </div>
           </div>
         </AoEntrar>
       </div>

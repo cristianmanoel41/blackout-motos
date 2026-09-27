@@ -2,11 +2,9 @@ import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import { modelosDoEstoque } from "@/lib/dados/moto-site";
 import Hero from "@/components/v2/Hero";
 import FaixaMarcas from "@/components/v2/FaixaMarcas";
-import Estoque from "@/components/v2/Estoque";
 import Financiamento from "@/components/v2/Financiamento";
 import Diferenciais from "@/components/v2/Diferenciais";
 import FaixaFrases from "@/components/v2/FaixaFrases";
-import UltimasEntradas from "@/components/v2/UltimasEntradas";
 import CompramosSuaMoto from "@/components/v2/CompramosSuaMoto";
 import AvisarNovidades from "@/components/site/AvisarNovidades";
 import Avaliacoes from "@/components/v2/Avaliacoes";
@@ -14,6 +12,11 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
 
 /*
  * A capa do site.
+ *
+ * A vitrine é uma só: o card da capa, com as três últimas
+ * motos trocando sozinhas. A fileira de cards com filtros que
+ * ficava logo abaixo saiu - repetia o que a página de estoque
+ * já faz melhor, com todas as motos e busca de verdade.
  *
  * O estoque é o mesmo do sistema: sai da função pública do
  * banco, que devolve só coluna de vitrine e só moto
@@ -34,44 +37,27 @@ export default async function HomePage() {
   const { motos, fotos, slugs } = await estoqueDoSite();
 
   /*
-   * A moto que ilustra o financiamento é a marcada na ficha;
-   * sem marcação, a última que entrou. É a única foto de moto
-   * fora do estoque, e ela não leva nome nem preço - está ali
-   * como imagem, não como oferta.
+   * Foto de moto só no estoque: lá ela vem com preço, ano e
+   * km, que é o que faz a pessoa clicar. Solta em outra seção,
+   * vira enfeite e ainda parece a oferta da vez.
    */
-  const escolhidas = motos.filter((moto) => moto.na_capa);
-
-  const doFinanciamento = escolhidas[0] || motos[0];
 
   return (
     <main>
-      <Hero quantas={motos.length} />
+      <Hero
+        motos={motos.slice(0, 3)}
+        slugs={slugs}
+        capas={fotos.capas}
+        quantas={motos.length}
+      />
 
       <FaixaMarcas />
 
-      <Estoque
-        motos={motos}
-        slugs={slugs}
-        capas={fotos.capas}
-      />
-
-      <Financiamento
-        foto={
-          doFinanciamento
-            ? fotos.capas[doFinanciamento.id]
-            : undefined
-        }
-      />
+      <Financiamento />
 
       <Diferenciais />
 
       <FaixaFrases />
-
-      <UltimasEntradas
-        motos={motos.slice(0, 8)}
-        slugs={slugs}
-        capas={fotos.capas}
-      />
 
       <CompramosSuaMoto />
 

@@ -3,12 +3,18 @@ import Link from "next/link";
 import {
   ENDERECO_COMPLETO,
   LOJA,
+  MAPA,
   MENU,
   REDES,
+  WAZE,
   linkWhatsApp,
   CONVITE_GERAL,
 } from "@/lib/dados/loja";
 import { IconeRede } from "@/components/site/IconeRede";
+import {
+  IconeGoogleMaps,
+  IconeWaze,
+} from "@/components/site/IconeMapa";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 
 /*
@@ -44,6 +50,28 @@ export default function Rodape() {
 
             <p className="mt-5 max-w-xs text-[13px] leading-7 suave">
               {ENDERECO_COMPLETO}
+            </p>
+
+            <p className="mt-3 flex items-center gap-4">
+              <a
+                href={MAPA}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] font-bold ouro transition hover:text-white"
+              >
+                <IconeGoogleMaps className="h-3.5 w-3.5" />
+                Maps
+              </a>
+
+              <a
+                href={WAZE}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] font-bold ouro transition hover:text-white"
+              >
+                <IconeWaze className="h-3.5 w-3.5" />
+                Waze
+              </a>
             </p>
 
             {redes.length > 0 && (

@@ -141,8 +141,8 @@
 .v2 .vidro {
   background: linear-gradient(
     160deg,
-    rgba(28, 28, 34, 0.95) 0%,
-    rgba(14, 14, 18, 0.95) 100%
+    #1c1c22 0%,
+    #0e0e12 100%
   );
   border: 1px solid var(--linha);
   border-radius: 14px;
@@ -375,6 +375,95 @@
   box-shadow: 0 0 0 3px rgba(224, 177, 41, 0.12) !important;
 }
 
+/*
+ * A resposta ao toque.
+ *
+ * No celular não existe hover: o dedo encosta e, sem isso, a
+ * tela fica muda entre o toque e a página seguinte. Um
+ * afundadinho de nada já diz "recebi" - é o que separa site
+ * de aplicativo.
+ */
+.v2 .botao-ouro:active,
+.v2 .botao-vidro:active,
+.v2 .pilula:active {
+  transform: scale(0.97);
+}
+
+.v2 .vidro-sobe:active {
+  transform: scale(0.985);
+  border-color: rgba(224, 177, 41, 0.4);
+}
+
+/* ---------------------------------------------------------- */
+/* A ENTRADA DA CAPA                                           */
+/* ---------------------------------------------------------- */
+
+/*
+ * A capa monta sozinha, de cima para baixo.
+ *
+ * Cada pedaço entra um pouco depois do anterior: rótulo,
+ * manchete, texto, botões. É rápido - meio segundo cada um -
+ * e acontece uma vez só, no carregamento, porque quem volta
+ * para o site não precisa assistir de novo.
+ *
+ * Só vale quando há JavaScript para pôr a etiqueta no <html>.
+ * Sem ela, a capa aparece pronta em vez de invisível.
+ */
+html[data-js="sim"] .v2 .entrada > * {
+  animation: montar 0.75s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+html[data-js="sim"] .v2 .entrada > *:nth-child(1) { animation-delay: 0.05s; }
+html[data-js="sim"] .v2 .entrada > *:nth-child(2) { animation-delay: 0.15s; }
+html[data-js="sim"] .v2 .entrada > *:nth-child(3) { animation-delay: 0.3s; }
+html[data-js="sim"] .v2 .entrada > *:nth-child(4) { animation-delay: 0.42s; }
+html[data-js="sim"] .v2 .entrada > *:nth-child(5) { animation-delay: 0.54s; }
+
+@keyframes montar {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* O CABEÇALHO QUE ENCOLHE                                     */
+/* ---------------------------------------------------------- */
+
+/*
+ * Rolou, o cabeçalho se encolhe e escurece.
+ *
+ * No celular a barra come um pedaço grande da tela; depois dos
+ * primeiros quarenta pixels ela cede espaço para o conteúdo e
+ * ganha uma sombra, que é o que faz a página parecer passar
+ * por baixo dela.
+ */
+.v2 .barra {
+  transition:
+    padding 0.35s ease,
+    background-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.v2 .barra img {
+  transition: height 0.35s ease;
+}
+
+html[data-rolou="sim"] .v2 .barra {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  background-color: rgba(8, 8, 10, 0.97);
+  box-shadow: 0 14px 30px -20px rgba(0, 0, 0, 1);
+}
+
+html[data-rolou="sim"] .v2 .barra img {
+  height: 2.1rem;
+}
+
 /* ---------------------------------------------------------- */
 /* A FAIXA DE MARCAS                                           */
 /* ---------------------------------------------------------- */
@@ -412,9 +501,42 @@
   animation: andar 58s linear infinite;
 }
 
+/*
+ * A vitrine da capa usa a mesma esteira, com uma diferença: a
+ * largura de cada card é a da própria vitrine, então se vê uma
+ * moto de cada vez deslizando, e não três lado a lado.
+ *
+ * A largura vem de uma variável porque o card precisa saber o
+ * tamanho do pai - e dentro de uma fila de largura automática
+ * "100%" não quer dizer nada.
+ */
+.v2 .vitrine-capa {
+  --card-capa: calc(100vw - 2rem);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .v2 .vitrine-capa {
+    --card-capa: calc(100vw - 3rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .v2 .vitrine-capa {
+    --card-capa: 25rem;
+  }
+}
+
+.v2 .esteira-capa {
+  display: flex;
+  width: max-content;
+  animation: andar 26s linear infinite;
+}
+
 .v2 .esteira:hover,
 .v2 .esteira-cards:hover,
-.v2 .esteira-frases:hover {
+.v2 .esteira-frases:hover,
+.v2 .esteira-capa:hover {
   animation-play-state: paused;
 }
 
@@ -502,9 +624,21 @@ html[data-js="sim"] .v2 .surgir-pronto {
  * não roda seria trocar um incômodo por uma tela vazia.
  */
 @media (prefers-reduced-motion: reduce) {
+  html[data-js="sim"] .v2 .entrada > * {
+    animation: none;
+  }
+
+  .v2 .botao-ouro:active,
+  .v2 .botao-vidro:active,
+  .v2 .pilula:active,
+  .v2 .vidro-sobe:active {
+    transform: none;
+  }
+
   .v2 .esteira,
   .v2 .esteira-cards,
   .v2 .esteira-frases,
+  .v2 .esteira-capa,
   .v2 .brasa,
   .v2 .botao-ouro:hover::after {
     animation: none;

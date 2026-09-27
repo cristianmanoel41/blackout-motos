@@ -25,6 +25,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
  * quando o mouse está em cima, quando alguém arrasta ou quando
  * a aba sai da frente - mexer na tela enquanto a pessoa lê é o
  * que faz carrossel ser odiado.
+ *
+ * A pausa do mouse olha o pointerType: no celular o navegador
+ * finge um "mouseenter" quando o dedo encosta e não manda o
+ * "mouseleave" depois, porque ali o mouse não sai de lugar
+ * nenhum - e o carrossel ficava parado para sempre.
  */
 
 const TEMPO = 5200;
@@ -152,10 +157,15 @@ export default function Carrossel({
   return (
     <div
       className="relative"
-      onMouseEnter={() => (parado.current = true)}
-      onMouseLeave={() => (parado.current = false)}
+      onPointerEnter={(evento) => {
+        if (evento.pointerType === "mouse") parado.current = true;
+      }}
+      onPointerLeave={(evento) => {
+        if (evento.pointerType === "mouse") parado.current = false;
+      }}
       onPointerDown={() => (parado.current = true)}
       onPointerUp={() => (parado.current = false)}
+      onPointerCancel={() => (parado.current = false)}
     >
       <div
         ref={trilho}

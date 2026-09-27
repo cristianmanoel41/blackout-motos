@@ -9,6 +9,7 @@ import {
 } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import Busca, { type MotoBusca } from "@/components/v2/Busca";
+import AoRolar from "@/components/v2/AoRolar";
 
 /*
  * O cabeçalho da versão 2.
@@ -39,8 +40,10 @@ export default function Cabecalho({
 }) {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[.07] bg-[#08080a]/90 backdrop-blur-md">
+      <AoRolar />
+
       <div className="relative mx-auto max-w-[1400px]">
-        <div className="flex items-center gap-4 px-4 py-3 sm:px-6">
+        <div className="barra flex items-center gap-4 px-4 py-3 sm:px-6">
           <Link
             href={INICIO}
             className="shrink-0"

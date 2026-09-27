@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import AoEntrar from "@/components/v2/AoEntrar";
 import Carrossel from "@/components/v2/Carrossel";
 import CardMoto from "@/components/v2/CardMoto";
 import {
@@ -54,7 +55,7 @@ export default function Estoque({
 
   return (
     <section className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
-      <div className="flex flex-wrap items-end justify-between gap-5">
+      <AoEntrar className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <h2 className="titulo text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
             Estoque em <span className="ouro">tempo real</span>
@@ -87,7 +88,7 @@ export default function Estoque({
             </button>
           ))}
         </div>
-      </div>
+      </AoEntrar>
 
       <div className="mt-8">
         {lista.length > 0 ? (
