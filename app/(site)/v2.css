@@ -512,6 +512,9 @@ html[data-rolou="sim"] .v2 .barra img {
  */
 .v2 .vitrine-capa {
   --card-capa: calc(100vw - 2rem);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
 }
 

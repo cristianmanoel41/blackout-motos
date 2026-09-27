@@ -69,8 +69,8 @@ export default function Hero({
       />
 
       <div className="relative mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:py-20">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_25rem] lg:gap-16">
-          <div className="entrada relative z-10">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_25rem] lg:gap-16">
+          <div className="entrada relative z-10 min-w-0">
             <p className="rotulo">{LOJA.nome}</p>
 
             <h1 className="titulo mt-5 text-[clamp(2.7rem,8vw,4.8rem)]">
@@ -118,7 +118,7 @@ export default function Hero({
             * site de loja quer ver moto, não ler.
             */}
           {motos.length > 0 && (
-            <div className="order-first lg:order-none">
+            <div className="order-first min-w-0 lg:order-none">
               <p className="rotulo mb-4 lg:hidden">
                 Últimas entradas
               </p>
