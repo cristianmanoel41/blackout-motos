@@ -7,6 +7,8 @@ import {
 } from "@/lib/fonte-site";
 import { Analytics } from "@vercel/analytics/next";
 import Pixel from "@/components/site/Pixel";
+import Medidor from "@/components/site/Medidor";
+import { scriptDoWhatsApp } from "@/components/site/medicao";
 import Cabecalho from "@/components/v2/Cabecalho";
 import Rodape from "@/components/v2/Rodape";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
@@ -184,6 +186,24 @@ export default async function SiteLayout({
         }}
       />
 
+      {/*
+        * O clique no WhatsApp, escutado desde o primeiro
+        * instante.
+        *
+        * O botao do WhatsApp e um link comum: funciona assim
+        * que o HTML aparece na tela, bem antes de o React
+        * terminar de carregar. Quem clica rapido - e no
+        * celular, na rua, e quase sempre rapido - cairia numa
+        * fresta onde o WhatsApp abre e o clique nao conta.
+        *
+        * Por isso este vem plantado no HTML, e nao dentro do
+        * <Medidor />. E o unico numero que liga visita a
+        * conversa; nao pode depender de carregamento.
+        */}
+      <script
+        dangerouslySetInnerHTML={{ __html: scriptDoWhatsApp() }}
+      />
+
       <Cabecalho motos={paraBusca} />
 
       {children}
@@ -202,6 +222,19 @@ export default async function SiteLayout({
         * localhost - so no que esta publicado.
         */}
       <Analytics />
+
+      {/*
+        * A nossa propria contagem, do lado da Vercel.
+        *
+        * A dela diz quanta gente entrou; esta diz QUAL MOTO a
+        * pessoa abriu e se ela chamou no WhatsApp - o que a
+        * Vercel nao tem como saber, porque para ela o endereco
+        * da ficha e so um texto.
+        *
+        * Tambem nao usa cookie e tambem nao segue ninguem, por
+        * isso fica fora do aviso. E so mede no site publicado.
+        */}
+      <Medidor />
 
       {/*
         * O pixel do Meta e o aviso de cookies. Sem a

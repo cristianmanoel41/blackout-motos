@@ -66,6 +66,9 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/estoque/') ||
     /* O cadastro da lista de interesse vem de visitante. */
     caminho.startsWith('/api/interesse') ||
+    /* A contagem de visitas tambem: quem e medido nao tem
+       login, e mandar isso para /login perderia a visita. */
+    caminho.startsWith('/api/visita') ||
     /* O Meta busca o catalogo sozinho, sem login. */
     caminho.startsWith('/api/meta/catalogo') ||
     caminho === '/catalogo.xml' ||

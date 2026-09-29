@@ -133,7 +133,18 @@ export default async function MotoPage({
   const convite = convitePelaMoto(moto);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
+    /*
+     * `data-moto` é como a medição do site sabe qual moto está
+     * aberta - inclusive no clique do WhatsApp, que acontece
+     * muito depois de a tela montar. Um atributo no lugar de
+     * recado entre componentes: o navegador monta a tela antes
+     * de rodar qualquer efeito, então quando alguém for ler,
+     * já está aqui.
+     */
+    <main
+      data-moto={moto.id}
+      className="mx-auto max-w-7xl px-4 py-8 sm:py-10"
+    >
       <Link
         href="/estoque"
         className="mb-5 inline-flex items-center gap-2 text-sm font-semibold texto-suave transition hover:text-white"

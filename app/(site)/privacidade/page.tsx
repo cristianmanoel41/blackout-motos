@@ -108,6 +108,24 @@ export default function PrivacidadePage() {
           ninguém e não segue você por outros sites. Serve
           para sabermos se as motos estão sendo vistas.
         </p>
+
+        <p>
+          Guardamos também, no nosso próprio sistema,{" "}
+          <strong>qual moto foi aberta</strong>, se alguém
+          clicou para chamar no WhatsApp, de qual site a
+          pessoa veio (Instagram, Google, OLX) e a hora. É o
+          que nos diz qual moto precisa de foto melhor ou de
+          preço menor.
+        </p>
+
+        <p>
+          Essa contagem também{" "}
+          <strong>não usa cookies</strong> e{" "}
+          <strong>não guarda quem você é</strong>: nada fica
+          salvo no seu aparelho, não gravamos seu IP e não há
+          como ligar uma visita à outra nem a uma pessoa. São
+          números de páginas, não de gente.
+        </p>
       </Bloco>
 
       <Bloco titulo="Cookies e anúncios">
