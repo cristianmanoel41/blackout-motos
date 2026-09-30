@@ -67,25 +67,33 @@ function Resumo({
   comparacao: Comparacao;
   atencao: MotoVista | null;
 }) {
+  /*
+   * A cor vem de CLASSE, nunca de estilo em linha.
+   *
+   * O AppShell pinta de preto, com !important, todo <span> do
+   * sistema - e dentro destes cartões escuros preto é
+   * invisível. Estilo em linha não vence !important de folha
+   * de estilo; classe que o tema conheça, vence.
+   */
   const RUMO = {
     subindo: {
       Icone: TrendingUp,
-      cor: "#34d399",
+      cor: "text-emerald-400",
       texto: `${Math.abs(comparacao.variacao)}% a mais que na semana passada`,
     },
     caindo: {
       Icone: TrendingDown,
-      cor: "#ff7a80",
+      cor: "text-red-400",
       texto: `${Math.abs(comparacao.variacao)}% a menos que na semana passada`,
     },
     parado: {
       Icone: Minus,
-      cor: "#d5d8dd",
+      cor: "text-black/45",
       texto: "no mesmo ritmo da semana passada",
     },
     cedo: {
       Icone: Minus,
-      cor: "#d5d8dd",
+      cor: "text-black/45",
       texto: "ainda sem semana anterior para comparar",
     },
   }[comparacao.rumo];
@@ -122,8 +130,7 @@ function Resumo({
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span
-          className="flex items-center gap-1.5 text-[13px] font-black"
-          style={{ color: RUMO.cor }}
+          className={`flex items-center gap-1.5 text-[13px] font-black ${RUMO.cor}`}
         >
           <RUMO.Icone size={15} />
           {RUMO.texto}
@@ -140,9 +147,9 @@ function Resumo({
 
       {atencao && (
         <p className="mt-4 border-t border-white/10 pt-3 text-[13px] font-bold leading-6 text-black/55">
-          <span style={{ color: "#f3c43d" }}>
-            Vale olhar:
-          </span>{" "}
+          {/* text-[#a97800] é o dourado que o tema do painel
+              reconhece e repinta; cor em linha sumiria. */}
+          <span className="text-[#a97800]">Vale olhar:</span>{" "}
           <strong className="text-black">
             {atencao.nome}
           </strong>{" "}
@@ -170,19 +177,36 @@ function Detalhe({
   valor: number;
   verde?: boolean;
 }) {
+  /*
+   * A cor do número TEM que vir de classe, nunca de estilo.
+   *
+   * O AppShell pinta de preto, com !important, todo <span> do
+   * sistema (`.legibilidade span` em AppShell.module.css).
+   * Dentro destes cartões escuros, preto é invisível - foi
+   * assim que o número do WhatsApp sumiu em 30/09/2026,
+   * enquanto os outros dois apareciam: eles tinham classe de
+   * cor, e este não tinha.
+   *
+   * Escrever a cor no `style` não salva: !important de folha de
+   * estilo ganha de estilo em linha. O que ganha é classe que o
+   * tema do painel conheça - `text-black` (que ele repinta de
+   * dourado) e `text-emerald-*` (que ele repinta de verde).
+   *
+   * `shrink-0` porque "Chamaram no WhatsApp" é o rótulo mais
+   * comprido dos três, e sem isso ele espreme o valor.
+   */
   return (
-    <div className="flex items-baseline gap-2">
+    <div className="flex items-baseline justify-between gap-3">
       <span className="text-[11px] font-bold text-black/45">
         {rotulo}
       </span>
 
       <span
-        className="ml-auto text-sm font-black"
-        style={verde ? { color: "#34d399" } : undefined}
+        className={`shrink-0 text-sm font-black ${
+          verde ? "text-emerald-400" : "text-black"
+        }`}
       >
-        <span className={verde ? "" : "text-black"}>
-          {numero(valor)}
-        </span>
+        {numero(valor)}
       </span>
     </div>
   );
