@@ -17,7 +17,16 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+/*
+ * Os quatro números de um período.
+ *
+ * `visitas` é gente entrando; `telas` é página aberta. Quem
+ * entra e olha cinco motos é UMA visita e seis telas - e é
+ * essa diferença que faz o painel parecer confuso quando os
+ * dois aparecem com o mesmo nome.
+ */
 export type Resumo = {
+  visitas: number;
   telas: number;
   fichas: number;
   whatsapp: number;
@@ -40,10 +49,23 @@ export type Origem = {
   whatsapp: number;
 };
 
+/*
+ * Um dia no gráfico.
+ *
+ * `visitas` é o que a barra desenha, e são PESSOAS: é essa a
+ * pergunta que alguém faz olhando um gráfico por dia. A tela
+ * aberta continua vindo junto e aparece no balão, para quem
+ * quiser saber se a gente daquele dia olhou muita moto ou
+ * entrou e saiu.
+ *
+ * O nome `visitas` é o que o gráfico espera de qualquer série;
+ * daí ele não mudar aqui.
+ */
 export type Dia = {
   dia: string;
   rotulo: string;
   visitas: number;
+  telas: number;
   whatsapp: number;
 };
 
@@ -53,9 +75,39 @@ export type Hora = {
   visitas: number;
 };
 
+/*
+ * O site está subindo ou caindo.
+ *
+ * Número solto não diz nada: 14 pessoas hoje é bom ou ruim
+ * conforme o que vinha sendo. A comparação é de sete dias
+ * contra os sete anteriores - períodos fechados e do mesmo
+ * tamanho, que é a única comparação honesta. Comparar o dia de
+ * hoje, que ainda não acabou, com uma média de dias inteiros
+ * diria "caindo" toda manhã.
+ */
+export type Comparacao = {
+  /* Pessoas por dia, em média, nos últimos 7 dias. */
+  porDia: number;
+  semana: number;
+  semanaAnterior: number;
+  /* `cedo` = ainda não há semana anterior para comparar. */
+  rumo: "subindo" | "caindo" | "parado" | "cedo";
+  /* Quanto mudou, em %, para mais ou para menos. */
+  variacao: number;
+};
+
 export type Visitas = {
   /* A migração 0029 já rodou no banco. */
   instalado: boolean;
+  /*
+   * O banco ainda tem a versão antiga do resumo, de antes da
+   * migração 0030 - a que não sabia contar visita, só tela.
+   *
+   * Sem perceber isso, o painel mostraria "0 visitas" com as
+   * telas certas ao lado, e pareceria defeito em vez de SQL
+   * que falta rodar.
+   */
+  precisaMigrar: boolean;
   /* Instalada, mas ainda sem nenhuma visita registrada. */
   vazio: boolean;
   hoje: Resumo;
@@ -65,12 +117,36 @@ export type Visitas = {
   origens: Origem[];
   dias: Dia[];
   horas: Hora[];
+  comparacao: Comparacao;
+  /*
+   * A moto que mais gente abriu e ninguém chamou.
+   *
+   * É a única linha do painel que pede uma atitude: ou o preço
+   * está alto, ou a descrição promete o que a foto não mostra.
+   * Vem nula quando não há caso claro - inventar alarme todo
+   * dia faz a loja parar de ler o painel.
+   */
+  atencao: MotoVista | null;
 };
 
-const ZERO: Resumo = { telas: 0, fichas: 0, whatsapp: 0 };
+const ZERO: Resumo = {
+  visitas: 0,
+  telas: 0,
+  fichas: 0,
+  whatsapp: 0,
+};
+
+const SEM_RUMO: Comparacao = {
+  porDia: 0,
+  semana: 0,
+  semanaAnterior: 0,
+  rumo: "cedo",
+  variacao: 0,
+};
 
 const VAZIO: Visitas = {
   instalado: false,
+  precisaMigrar: false,
   vazio: true,
   hoje: ZERO,
   semana: ZERO,
@@ -79,7 +155,79 @@ const VAZIO: Visitas = {
   origens: [],
   dias: [],
   horas: [],
+  comparacao: SEM_RUMO,
+  atencao: null,
 };
+
+/*
+ * Quanto o site andou, comparando sete dias com os sete de
+ * antes.
+ *
+ * `dias` chega do mais velho para o mais novo, então os
+ * últimos sete do fim da lista são esta semana, e os sete
+ * anteriores a eles são a semana passada.
+ *
+ * Mudança pequena é ruído, não notícia: abaixo de 15% o rumo é
+ * "parado". Em loja de bairro, três pessoas a mais numa semana
+ * não querem dizer nada, e apontar seta para cima por isso
+ * ensina a loja a não confiar no painel.
+ */
+function compararSemanas(dias: Dia[]): Comparacao {
+  if (dias.length < 8) return SEM_RUMO;
+
+  const somar = (lista: Dia[]) =>
+    lista.reduce((total, dia) => total + dia.visitas, 0);
+
+  const semana = somar(dias.slice(-7));
+  const anterior = somar(dias.slice(-14, -7));
+
+  const porDia = Math.round((semana / 7) * 10) / 10;
+
+  if (anterior === 0) {
+    return {
+      porDia,
+      semana,
+      semanaAnterior: 0,
+      rumo: "cedo",
+      variacao: 0,
+    };
+  }
+
+  const variacao = Math.round(
+    ((semana - anterior) / anterior) * 100
+  );
+
+  return {
+    porDia,
+    semana,
+    semanaAnterior: anterior,
+    rumo:
+      Math.abs(variacao) < 15
+        ? "parado"
+        : variacao > 0
+          ? "subindo"
+          : "caindo",
+    variacao,
+  };
+}
+
+/*
+ * A moto que muita gente abriu e ninguém chamou.
+ *
+ * Cinco visitas é o piso: abaixo disso não é sinal, é acaso -
+ * duas pessoas olharem e não chamarem acontece em qualquer
+ * moto, inclusive na que vai vender amanhã.
+ */
+function motoQuePedeAtencao(motos: MotoVista[]) {
+  return (
+    motos.find(
+      (moto) =>
+        !moto.vendida &&
+        moto.whatsapp === 0 &&
+        moto.visitas >= 5
+    ) || null
+  );
+}
 
 function inteiro(valor: unknown) {
   const numero = Number(valor || 0);
@@ -149,6 +297,7 @@ export async function visitasDoSite(): Promise<Visitas> {
     const dado = Array.isArray(linha) ? linha[0] : linha;
 
     return {
+      visitas: inteiro((dado as Resumo)?.visitas),
       telas: inteiro((dado as Resumo)?.telas),
       fichas: inteiro((dado as Resumo)?.fichas),
       whatsapp: inteiro((dado as Resumo)?.whatsapp),
@@ -157,58 +306,96 @@ export async function visitasDoSite(): Promise<Visitas> {
 
   const doMes = resumo(mes.data);
 
+  /*
+   * A versão antiga do resumo devolve as mesmas linhas, só que
+   * sem a coluna de visita. Olhar se a chave existe é o único
+   * jeito de distinguir "ninguém entrou" de "falta rodar o
+   * SQL" - as duas dariam zero.
+   */
+  const primeira = Array.isArray(hoje.data)
+    ? hoje.data[0]
+    : hoje.data;
+
+  const primeiroDia = Array.isArray(dias.data)
+    ? dias.data[0]
+    : null;
+
+  const tem = (linha: unknown, coluna: string) =>
+    !!linha &&
+    Object.prototype.hasOwnProperty.call(linha, coluna);
+
+  /*
+   * Conferir as duas funções, e não só o resumo: a 0030 mexeu
+   * em três, e quem rodou uma versão anterior dela pode ter o
+   * resumo novo com o gráfico velho. Aí o gráfico mostraria
+   * tela aberta com o rótulo "Pessoas" - errado em silêncio,
+   * que é pior do que não mostrar.
+   */
+  const precisaMigrar =
+    (!!primeira && !tem(primeira, "visitas")) ||
+    (!!primeiroDia && !tem(primeiroDia, "pessoas"));
+
+  const listaMotos: MotoVista[] = (
+    (motos.data || []) as Record<string, unknown>[]
+  ).map((linha) => ({
+    id: String(linha.moto_id || ""),
+    nome:
+      [linha.marca, linha.modelo, linha.versao]
+        .filter(Boolean)
+        .join(" ") || "Moto",
+    ano: String(linha.ano_modelo || "—"),
+    preco:
+      linha.preco_anunciado === null ||
+      linha.preco_anunciado === undefined
+        ? null
+        : Number(linha.preco_anunciado),
+    vendida: String(linha.status || "") === "vendida",
+    diasNoPatio: diasDesde(
+      (linha.data_entrada as string) || null
+    ),
+    visitas: inteiro(linha.visitas),
+    whatsapp: inteiro(linha.whatsapp),
+  }));
+
+  const listaDias: Dia[] = (
+    (dias.data || []) as Record<string, unknown>[]
+  ).map((linha) => ({
+    dia: String(linha.dia || ""),
+    rotulo: diaCurto(String(linha.dia || "")),
+    /* `pessoas` é a coluna nova, da migração 0030. Sem ela o
+       gráfico cai para a contagem de tela, que é o que a versão
+       antiga da função devolvia. */
+    visitas: inteiro(linha.pessoas ?? linha.visitas),
+    telas: inteiro(linha.telas ?? linha.visitas),
+    whatsapp: inteiro(linha.whatsapp),
+  }));
+
   return {
     instalado: true,
+    precisaMigrar,
     vazio: doMes.telas === 0 && doMes.whatsapp === 0,
     hoje: resumo(hoje.data),
     semana: resumo(semana.data),
     mes: doMes,
+    motos: listaMotos,
+    dias: listaDias,
+    comparacao: compararSemanas(listaDias),
+    atencao: motoQuePedeAtencao(listaMotos),
 
-    motos: ((motos.data || []) as Record<string, unknown>[]).map(
-      (linha) => ({
-        id: String(linha.moto_id || ""),
-        nome:
-          [linha.marca, linha.modelo, linha.versao]
-            .filter(Boolean)
-            .join(" ") || "Moto",
-        ano: String(linha.ano_modelo || "—"),
-        preco:
-          linha.preco_anunciado === null ||
-          linha.preco_anunciado === undefined
-            ? null
-            : Number(linha.preco_anunciado),
-        vendida: String(linha.status || "") === "vendida",
-        diasNoPatio: diasDesde(
-          (linha.data_entrada as string) || null
-        ),
-        visitas: inteiro(linha.visitas),
-        whatsapp: inteiro(linha.whatsapp),
-      })
-    ),
+    origens: (
+      (origens.data || []) as Record<string, unknown>[]
+    ).map((linha) => ({
+      origem: String(linha.origem || "Direto"),
+      chegadas: inteiro(linha.chegadas),
+      whatsapp: inteiro(linha.whatsapp),
+    })),
 
-    origens: ((origens.data || []) as Record<string, unknown>[]).map(
-      (linha) => ({
-        origem: String(linha.origem || "Direto"),
-        chegadas: inteiro(linha.chegadas),
-        whatsapp: inteiro(linha.whatsapp),
-      })
-    ),
-
-    dias: ((dias.data || []) as Record<string, unknown>[]).map(
-      (linha) => ({
-        dia: String(linha.dia || ""),
-        rotulo: diaCurto(String(linha.dia || "")),
-        visitas: inteiro(linha.visitas),
-        whatsapp: inteiro(linha.whatsapp),
-      })
-    ),
-
-    horas: ((horas.data || []) as Record<string, unknown>[]).map(
-      (linha) => ({
-        hora: inteiro(linha.hora),
-        rotulo: `${String(inteiro(linha.hora)).padStart(2, "0")}h`,
-        visitas: inteiro(linha.visitas),
-      })
-    ),
+    horas: (
+      (horas.data || []) as Record<string, unknown>[]
+    ).map((linha) => ({
+      hora: inteiro(linha.hora),
+      rotulo: `${String(inteiro(linha.hora)).padStart(2, "0")}h`,
+      visitas: inteiro(linha.visitas),
+    })),
   };
 }

@@ -21,7 +21,6 @@ import { nomeCurtoVendedor } from '@/lib/dados/vendedores'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import GraficoValores from '@/components/GraficoValores'
 import AcessosDoSite from './AcessosDoSite'
-import DetalheDasVisitas from './DetalheDasVisitas'
 import AnunciosMeta from './AnunciosMeta'
 import styles from './dashboard.module.css'
 
@@ -469,8 +468,6 @@ export default async function DashboardPage() {
       </section>
 
       <AcessosDoSite />
-
-      <DetalheDasVisitas />
 
       <AnunciosMeta />
 

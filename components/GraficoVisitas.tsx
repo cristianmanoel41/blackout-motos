@@ -35,8 +35,10 @@ const COR_TEXTO = "#aeb4bd";
 
 export type PontoVisita = {
   rotulo: string;
+  /* A barra: pessoas. */
   visitas: number;
-  /* Só o gráfico por dia tem; o por hora manda sem. */
+  /* Só o gráfico por dia tem os dois; o por hora manda sem. */
+  telas?: number;
   whatsapp?: number;
 };
 
@@ -68,11 +70,21 @@ function ConteudoTooltip({
           className="h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: COR_BARRA }}
         />
-        <span>Telas abertas</span>
+        <span>Pessoas</span>
         <span className={styles.tooltipValue}>
           {ponto.visitas}
         </span>
       </div>
+
+      {ponto.telas !== undefined && (
+        <div className={styles.tooltipRow}>
+          <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
+          <span>Telas abertas</span>
+          <span className={styles.tooltipValue}>
+            {ponto.telas}
+          </span>
+        </div>
+      )}
 
       {ponto.whatsapp !== undefined && (
         <div className={styles.tooltipRow}>

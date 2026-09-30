@@ -67,6 +67,35 @@ let primeiraTela = true;
 
 let ultimaTela: string | null = null;
 
+/*
+ * Se esta carga de página é gente chegando, ou a mesma pessoa
+ * de novo.
+ *
+ * Recarregar com F5 e voltar pelo botão do navegador não são
+ * visitas novas - mas o navegador continua dizendo que a
+ * pessoa veio do Instagram, porque o endereço de origem é
+ * guardado na abertura da aba e sobrevive à recarga. Sem esta
+ * conferência, quem atualiza a página cinco vezes vira cinco
+ * visitas, e a conta que a loja usa para saber quanta gente
+ * entrou deixa de valer.
+ *
+ * `navigate` é chegada de verdade. `reload` e `back_forward`
+ * são a mesma visita continuando.
+ */
+function ehChegada() {
+  try {
+    const carga = performance.getEntriesByType(
+      "navigation"
+    )[0] as PerformanceNavigationTiming | undefined;
+
+    return !carga || carga.type === "navigate";
+  } catch {
+    /* Navegador que não conta isso: trata como chegada, que é
+       o que se supunha antes de existir a conferência. */
+    return true;
+  }
+}
+
 function mandar(dados: Record<string, unknown>) {
   const pacote = JSON.stringify(dados);
 
@@ -110,7 +139,7 @@ export default function Medidor() {
 
     ultimaTela = caminho;
 
-    const entrada = primeiraTela;
+    const entrada = primeiraTela && ehChegada();
 
     primeiraTela = false;
 
