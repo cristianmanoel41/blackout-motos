@@ -42,6 +42,9 @@ type Moto = {
   quilometragem?: number | string | null;
   cilindrada?: number | string | null;
   preco_anunciado?: number | string | null;
+  /* O que a loja pagou. Só sai daqui para a conta de bens - a
+     lista da tela nunca mostra valor de compra moto a moto. */
+  valor_compra?: number | string | null;
   status?: string | null;
   data_entrada?: string | null;
   tipo_entrada?: string | null;
@@ -357,6 +360,7 @@ export default function EstoquePage() {
           "quilometragem",
           "cilindrada",
           "preco_anunciado",
+          "valor_compra",
           "status",
           "data_entrada",
           "tipo_entrada",
@@ -604,6 +608,84 @@ export default function EstoquePage() {
     };
   }, [motos]);
 
+  /*
+   * Quanto a loja tem de moto parada hoje.
+   *
+   * Dois números, porque são duas perguntas diferentes e
+   * misturá-las engana:
+   *
+   *   - PAGO é o que saiu do caixa. É o dinheiro que está
+   *     preso no pátio, e o que vale como bem.
+   *   - ANUNCIADO é o que se espera receber. Só vira dinheiro
+   *     quando vender, e pelo preço que o cliente aceitar.
+   *
+   * "Na loja" é o mesmo critério do card "Total em estoque":
+   * disponível, reservada e em manutenção. Moto vendida sai da
+   * conta - o dinheiro dela já entrou.
+   *
+   * Arquivada vai à parte, e não somada. O sistema não diz se
+   * moto arquivada ainda está no pátio ou se apenas saiu de
+   * circulação, e essa diferença muda o número - então ela
+   * aparece separada, para quem sabe a resposta decidir.
+   */
+  const bens = useMemo(() => {
+    const vazio = { pago: 0, anunciado: 0, motos: 0 };
+
+    const conta = {
+      patio: { ...vazio },
+      arquivadas: { ...vazio },
+    };
+
+    motos.forEach((moto) => {
+      const situacao = normalizarTexto(moto.status);
+
+      const onde =
+        situacao === "disponivel" ||
+        situacao === "reservada" ||
+        situacao === "manutencao"
+          ? conta.patio
+          : situacao === "arquivada"
+            ? conta.arquivadas
+            : null;
+
+      if (!onde) return;
+
+      onde.motos += 1;
+      onde.pago += Number(moto.valor_compra || 0);
+      onde.anunciado += Number(moto.preco_anunciado || 0);
+    });
+
+    /*
+     * As motos sem valor de compra preenchido.
+     *
+     * Vão pelo nome, e não só contadas. Saber que "2 motos
+     * estão sem valor" não resolve nada - quem vai preencher
+     * precisa saber quais são, e o código é o que identifica a
+     * moto na ficha.
+     */
+    const semValor = motos
+      .filter((moto) => {
+        const situacao = normalizarTexto(moto.status);
+
+        return (
+          (situacao === "disponivel" ||
+            situacao === "reservada" ||
+            situacao === "manutencao") &&
+          !Number(moto.valor_compra || 0)
+        );
+      })
+      .map((moto) => ({
+        id: String(moto.id),
+        nome:
+          [moto.marca, moto.modelo, moto.versao]
+            .filter(Boolean)
+            .join(" ") || "Moto sem nome",
+        codigo: moto.codigo || null,
+      }));
+
+    return { ...conta, semValor };
+  }, [motos]);
+
   const motosFiltradas = useMemo(() => {
     const lista = motosBaseFiltradas.filter((moto) => {
 
@@ -738,6 +820,99 @@ export default function EstoquePage() {
                 {situacoes.reservada}
               </p>
             </div>
+          </div>
+
+          {/*
+            * O valor do que está no pátio.
+            *
+            * O que a loja pagou vem em destaque: é o dinheiro
+            * que está preso ali, e é o que responde "quanto eu
+            * tenho de bens". O anunciado vem do lado, menor,
+            * porque é expectativa - só vira dinheiro na venda,
+            * e pelo preço que o cliente aceitar.
+            */}
+          <div className="mt-4 border-t border-grafite-claro pt-4">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs text-texto-suave">
+                  Valor em bens · {bens.patio.motos}{" "}
+                  {bens.patio.motos === 1 ? "moto" : "motos"} na
+                  loja
+                </p>
+
+                <p className="mt-1 text-3xl font-bold text-dourado">
+                  {formatarMoeda(bens.patio.pago)}
+                </p>
+
+                <p className="mt-1 text-xs text-texto-suave">
+                  o que foi pago por elas
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-grafite-claro bg-preto/40 px-4 py-3">
+                <p className="text-xs text-texto-suave">
+                  Anunciado
+                </p>
+
+                <p className="mt-1 text-xl font-bold text-texto">
+                  {formatarMoeda(bens.patio.anunciado)}
+                </p>
+
+                <p className="mt-0.5 text-xs text-texto-suave">
+                  se vender tudo pelo preço de hoje
+                </p>
+              </div>
+            </div>
+
+            {bens.semValor.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs text-texto-suave">
+                  <strong className="text-dourado">
+                    {bens.semValor.length}
+                  </strong>{" "}
+                  {bens.semValor.length === 1
+                    ? "moto está sem valor de compra preenchido e fica fora do total pago:"
+                    : "motos estão sem valor de compra preenchido e ficam fora do total pago:"}
+                </p>
+
+                {/*
+                  * Cada uma vira link para a ficha dela: quem
+                  * lê isto quer preencher o que falta, e o
+                  * caminho mais curto e daqui direto para la.
+                  */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {bens.semValor.map((moto) => (
+                    <Link
+                      key={moto.id}
+                      href={`/motos/${moto.id}`}
+                      className="rounded-lg border border-dourado/40 px-3 py-2 text-xs font-semibold text-dourado transition hover:bg-dourado/10"
+                    >
+                      {moto.codigo
+                        ? `${moto.codigo} · ${moto.nome}`
+                        : moto.nome}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {bens.arquivadas.motos > 0 && (
+              <p className="mt-2 text-xs text-texto-suave">
+                Fora desta conta:{" "}
+                <strong className="text-texto">
+                  {bens.arquivadas.motos}
+                </strong>{" "}
+                {bens.arquivadas.motos === 1
+                  ? "moto arquivada"
+                  : "motos arquivadas"}
+                , somando{" "}
+                <strong className="text-texto">
+                  {formatarMoeda(bens.arquivadas.pago)}
+                </strong>{" "}
+                pagos. Some no total só se elas ainda estiverem
+                na loja.
+              </p>
+            )}
           </div>
 
           {vendasPorMes.length > 0 && (
