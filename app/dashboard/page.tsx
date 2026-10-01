@@ -83,6 +83,22 @@ export default async function DashboardPage() {
     .gte('data_entrada', inicioMes)
     .lte('data_entrada', fimMes)
 
+  /*
+   * Moto recebida na troca de uma venda.
+   *
+   * Entra no patio como qualquer outra, mas nao e compra: nao
+   * houve dinheiro saindo para busca-la. Fica separada para o
+   * numero de compradas nao prometer o que nao foi - e porque
+   * "entraram 5, sairam 3" so fecha se a troca estiver na
+   * conta.
+   */
+  const { count: motosTrocaMes } = await supabase
+    .from('motorcycles')
+    .select('*', { count: 'exact', head: true })
+    .eq('tipo_entrada', 'troca')
+    .gte('data_entrada', inicioMes)
+    .lte('data_entrada', fimMes)
+
   const { data: vendasMes } = await supabase
     .from('sales')
     .select('id, motorcycle_id, valor_total_venda, transferencia_cliente, documentacao_concluida')
@@ -400,6 +416,18 @@ export default async function DashboardPage() {
   const nomeMes = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   const periodoLabel = `${inicioMes.split('-').reverse().join('/')} - ${fimMes.split('-').reverse().join('/')}`
 
+  /*
+   * O patio encheu ou esvaziou no mes.
+   *
+   * Tudo que entrou menos tudo que saiu. A troca entra na
+   * conta porque ela ocupa vaga no patio igual a moto
+   * comprada - deixar de fora faria o saldo nao bater com o
+   * que a loja ve no estoque.
+   */
+  const entradasDoMes = (motosCompradasMes ?? 0) + (motosTrocaMes ?? 0)
+
+  const saldoDoMes = entradasDoMes - motosVendidasMes
+
   const Card = ({
     titulo,
     valor,
@@ -466,6 +494,127 @@ export default async function DashboardPage() {
           destaque={lucroLiquidoMes >= 0 ? 'green' : 'red'}
         />
       </section>
+
+      {/*
+        * Quantas entraram e quantas sairam no mes.
+        *
+        * Os dois numeros ja existiam no painel, mas em
+        * fileiras diferentes - para compara-los era preciso
+        * procurar um e guardar na cabeca ate achar o outro.
+        * Juntos, eles respondem de uma olhada a pergunta que a
+        * loja faz: o patio esta enchendo ou esvaziando?
+        *
+        * O saldo vem escrito por extenso em vez de so o sinal:
+        * "+2" obriga a lembrar o que e positivo aqui.
+        */}
+      <div className={styles.panel}>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-black text-black">Motos no mês</h2>
+            <p className="text-xs font-bold text-black/45">
+              O que entrou e o que saiu do pátio
+            </p>
+          </div>
+
+          <span
+            className={`${styles.dataPill} flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-black/65`}
+          >
+            <CalendarDays size={14} className="text-[#a97800]" />
+            {periodoLabel}
+          </span>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className={styles.miniCard}>
+            <div className="flex items-center gap-3">
+              <div className={styles.icon3d}>
+                <ArrowDownCircle size={20} />
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-black/40">
+                  Compradas
+                </p>
+                <p className="mt-0.5 text-2xl font-black leading-none text-black">
+                  {motosCompradasMes ?? 0}
+                </p>
+                <p className="mt-1 text-[11px] font-bold text-black/45">
+                  {(motosTrocaMes ?? 0) > 0
+                    ? `+ ${motosTrocaMes} na troca`
+                    : 'nenhuma veio de troca'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.miniCard}>
+            <div className="flex items-center gap-3">
+              <div className={styles.icon3d}>
+                <ArrowUpCircle size={20} />
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-black/40">
+                  Vendidas
+                </p>
+                <p className="mt-0.5 text-2xl font-black leading-none text-black">
+                  {motosVendidasMes}
+                </p>
+                <p className="mt-1 text-[11px] font-bold text-black/45">
+                  sem contar moto de outra loja
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.miniCard}>
+            <div className="flex items-center gap-3">
+              <div className={styles.icon3d}>
+                <Warehouse size={20} />
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-black/40">
+                  O pátio
+                </p>
+                {/*
+                  * A cor vem de classe, nunca de estilo: o
+                  * AppShell pinta todo span de preto com
+                  * !important, e preto some no card escuro.
+                  */}
+                <p
+                  className={`mt-0.5 text-2xl font-black leading-none ${
+                    saldoDoMes > 0
+                      ? 'text-emerald-400'
+                      : saldoDoMes < 0
+                        ? 'text-red-400'
+                        : 'text-black'
+                  }`}
+                >
+                  {saldoDoMes > 0 ? `+${saldoDoMes}` : saldoDoMes}
+                </p>
+                {/*
+                  * A conta escrita, e nao so o resultado.
+                  *
+                  * "Saldo -1" fez o Cristian perguntar o que
+                  * era - numero com sinal obriga a lembrar o
+                  * que e positivo aqui. "1 saiu, nenhuma
+                  * entrou" nao precisa de explicacao.
+                  */}
+                <p className="mt-1 text-[11px] font-bold text-black/45">
+                  {entradasDoMes === 0
+                    ? 'nenhuma entrou'
+                    : `${entradasDoMes} ${entradasDoMes === 1 ? 'entrou' : 'entraram'}`}
+                  {', '}
+                  {motosVendidasMes === 0
+                    ? 'nenhuma saiu'
+                    : `${motosVendidasMes} ${motosVendidasMes === 1 ? 'saiu' : 'saíram'}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <AcessosDoSite />
 
