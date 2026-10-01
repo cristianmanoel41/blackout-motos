@@ -102,6 +102,36 @@ function prepararHtmlDocumento(valor: string) {
     }
   }
 
+  /*
+   * As linhas vazias entre a data e as assinaturas.
+   *
+   * No modelo do Word sao sete paragrafos em branco, usados
+   * para empurrar a assinatura para o pe da folha. Na tela
+   * eles viram um buraco entre "Sao Jose dos Campos" e as
+   * linhas - e, pior, ocupam altura que faria falta para a
+   * letra crescer.
+   *
+   * Saem daqui, e quem passa a decidir esse espaco e o CSS:
+   * a sobra da folha vira espaco de carimbo, logo acima das
+   * assinaturas.
+   */
+  const depoisDaData = Array.from(
+    documento.body.children
+  ).slice(
+    Array.from(documento.body.children).findIndex((item) =>
+      item.classList.contains("data-documento")
+    ) + 1
+  );
+
+  for (const item of depoisDaData) {
+    const vazio =
+      (item.textContent || "").trim().length === 0 &&
+      !item.querySelector("img") &&
+      item.tagName === "P";
+
+    if (vazio) item.remove();
+  }
+
   const tabelas = Array.from(
     documento.body.querySelectorAll("table")
   );
@@ -120,6 +150,7 @@ export default function PreviaDocumento({
   voltarRotulo = "Voltar",
   espalhar = false,
   fonte,
+  entrelinha,
 }: {
   url: string;
   titulo: string;
@@ -129,6 +160,16 @@ export default function PreviaDocumento({
   espalhar?: boolean;
   /* Maior corpo aceito, em pt. Encolhe se nao couber. */
   fonte?: number;
+  /*
+   * Espaco entre as linhas do corpo.
+   *
+   * Entrelinha e fonte disputam a mesma folha: apertar um
+   * pouco as linhas sobra altura para a letra crescer. Fica
+   * por documento porque cada um tem um tanto de texto - o
+   * contrato de compra aguenta linha mais junta, a procuracao
+   * nao precisa.
+   */
+  entrelinha?: number;
 }) {
   const [html, setHtml] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -218,6 +259,11 @@ export default function PreviaDocumento({
     /* 29,7cm em pixel de CSS: 1cm vale 96/2,54 px. */
     const alturaDaFolha = (29.7 * 96) / 2.54;
 
+    folha.style.setProperty(
+      "--corpo-entrelinha",
+      String(entrelinha || 1.65)
+    );
+
     let tamanho = fonte || 15;
 
     while (tamanho >= 9) {
@@ -230,7 +276,7 @@ export default function PreviaDocumento({
 
       tamanho -= 0.5;
     }
-  }, [html, espalhar, fonte]);
+  }, [html, espalhar, fonte, entrelinha]);
 
   return (
     <>
@@ -258,7 +304,7 @@ export default function PreviaDocumento({
 
         .documento-espalhado .documento-word {
           font-size: var(--corpo-fonte, 15pt) !important;
-          line-height: 1.65 !important;
+          line-height: var(--corpo-entrelinha, 1.65) !important;
         }
 
         /*
@@ -273,10 +319,26 @@ export default function PreviaDocumento({
          */
         .documento-espalhado .corpo-documento {
           display: flex !important;
-          flex: 1 1 auto !important;
+          flex: 0 0 auto !important;
           flex-direction: column !important;
-          justify-content: space-between !important;
-          padding: 0.7em 0 !important;
+          justify-content: flex-start !important;
+          padding: 0.7em 0 0 !important;
+        }
+
+        /*
+         * Os blocos ficam separados por um respiro fixo.
+         *
+         * Antes quem separava era a distribuicao pela folha, e
+         * o espaco variava com o tamanho do texto. Agora o
+         * corpo nao se espalha mais: ele encosta no timbre e
+         * para, e a sobra da folha vai toda para um lugar so -
+         * logo acima das assinaturas, onde entra o carimbo.
+         */
+        .documento-espalhado
+          .corpo-documento
+          .bloco-documento
+          + .bloco-documento {
+          margin-top: 0.9em !important;
         }
 
         /* Alinhado dos dois lados, como esta no Word. */
@@ -352,8 +414,56 @@ export default function PreviaDocumento({
           margin-top: 1.5em !important;
         }
 
+        /*
+         * O texto comeca mais perto do timbre.
+         *
+         * Era 1,5em; com a letra maior isso virava quase um
+         * centimetro de folha vazia logo abaixo do CNPJ. O
+         * espaco que sai daqui vai parar no pe, como area de
+         * carimbo.
+         */
+        .documento-espalhado
+          .documento-word
+          .cabecalho-loja
+          + *:not(.cabecalho-loja) {
+          margin-top: 0.9em !important;
+        }
+
         .documento-word .data-documento {
           margin-bottom: 15mm !important;
+        }
+
+        /*
+         * A data encosta no texto, e nao flutua.
+         *
+         * Vence a regra de cima, que a empurrava para o pe da
+         * folha com margin-top: auto. Agora quem recebe a
+         * sobra e o bloco das assinaturas.
+         */
+        .documento-espalhado .documento-word .data-documento {
+          margin-top: 1.4em !important;
+          margin-bottom: 0 !important;
+        }
+
+        /*
+         * O espaco do carimbo.
+         *
+         * A sobra da folha para aqui: as assinaturas ficam no
+         * pe e tudo que sobrou vira area livre logo acima
+         * delas - que e onde o carimbo da loja entra, sobre a
+         * assinatura do COMPRADOR.
+         *
+         * O padding e so o minimo garantido, para a folha
+         * cheia em que nao sobra nada. Ele e pequeno de
+         * proposito: cada milimetro fixo aqui e altura que a
+         * folha tira da letra para caber - quem deve dar o
+         * espaco do carimbo e a sobra, que nao custa nada.
+         */
+        .documento-espalhado
+          .documento-word
+          .assinaturas-documento {
+          margin-top: auto !important;
+          padding-top: 10mm !important;
         }
 
         .documento-word .assinaturas-documento {

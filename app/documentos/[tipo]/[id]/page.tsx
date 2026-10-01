@@ -24,6 +24,7 @@ type Documento = {
    */
   espalhar?: boolean;
   fonte?: number;
+  entrelinha?: number;
 };
 
 const documentos: Record<string, Documento> = {
@@ -40,7 +41,22 @@ const documentos: Record<string, Documento> = {
     voltar: (id) => `/motos/${id}`,
     voltarRotulo: "Voltar para a moto",
     espalhar: true,
-    fonte: 15,
+    /*
+     * O teto subiu de 15 para 17, e a entrelinha apertou de
+     * 1,65 para 1,5.
+     *
+     * As duas coisas juntas porque "letra pequena" tinha duas
+     * causas possiveis e nao dava para saber qual: ou o texto
+     * cabia em 15 e 15 era pouco, ou nao cabia e a folha ja
+     * estava encolhendo a letra sozinha. Subir o teto resolve
+     * a primeira; sobrar altura resolve a segunda.
+     *
+     * A medicao da folha continua mandando: se 17 nao couber,
+     * ela desce de meio em meio ponto ate caber. A margem nao
+     * corre risco.
+     */
+    fonte: 17,
+    entrelinha: 1.5,
   },
 
   procuracao: {
@@ -74,6 +90,7 @@ export default async function DocumentoPage({
       voltarRotulo={documento.voltarRotulo}
       espalhar={!!documento.espalhar}
       fonte={documento.fonte}
+      entrelinha={documento.entrelinha}
     />
   );
 }
