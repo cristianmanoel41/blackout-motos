@@ -441,29 +441,28 @@ export default function PreviaDocumento({
          * sobra e o bloco das assinaturas.
          */
         .documento-espalhado .documento-word .data-documento {
-          margin-top: 1.4em !important;
+          margin-top: 0.8em !important;
           margin-bottom: 0 !important;
         }
 
         /*
          * O espaco do carimbo.
          *
-         * A sobra da folha para aqui: as assinaturas ficam no
-         * pe e tudo que sobrou vira area livre logo acima
-         * delas - que e onde o carimbo da loja entra, sobre a
-         * assinatura do COMPRADOR.
+         * Sao 20mm acima das linhas: e onde o carimbo da loja
+         * entra, sobre a assinatura do COMPRADOR.
          *
-         * O padding e so o minimo garantido, para a folha
-         * cheia em que nao sobra nada. Ele e pequeno de
-         * proposito: cada milimetro fixo aqui e altura que a
-         * folha tira da letra para caber - quem deve dar o
-         * espaco do carimbo e a sobra, que nao custa nada.
+         * Medida fixa, e nao "margin-top: auto". Com auto, a
+         * assinatura grudava no pe da folha e toda a sobra se
+         * juntava acima dela - ficava longe demais da data e
+         * colada na borda do papel. Agora ela sobe junto com o
+         * texto, e o que sobrar da folha fica embaixo, vazio,
+         * que e como contrato se parece no papel.
          */
         .documento-espalhado
           .documento-word
           .assinaturas-documento {
-          margin-top: auto !important;
-          padding-top: 10mm !important;
+          margin-top: 0 !important;
+          padding-top: 20mm !important;
         }
 
         .documento-word .assinaturas-documento {
