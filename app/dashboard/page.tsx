@@ -21,7 +21,6 @@ import { nomeCurtoVendedor } from '@/lib/dados/vendedores'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import GraficoValores from '@/components/GraficoValores'
 import AcessosDoSite from './AcessosDoSite'
-import AnunciosMeta from './AnunciosMeta'
 import styles from './dashboard.module.css'
 
 type MotoParada = MotoResumo & {
@@ -618,7 +617,17 @@ export default async function DashboardPage() {
 
       <AcessosDoSite />
 
-      <AnunciosMeta />
+      {/*
+        * O painel de anuncios do Meta saiu daqui em 01/10/2026.
+        *
+        * Sem o token da conta de anuncios ele so sabe dizer o
+        * que falta configurar, e um aviso permanente de algo
+        * que a loja nao vai mexer agora e ruido no painel.
+        *
+        * O componente continua inteiro em ./AnunciosMeta.tsx,
+        * com a leitura em lib/dados/anuncios-meta.ts. Para
+        * trazer de volta: importar e por <AnunciosMeta /> aqui.
+        */}
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.65fr_1fr]">
         <div className={styles.panel}>
