@@ -463,8 +463,15 @@ export default function PreviaDocumento({
         .documento-espalhado
           .documento-word
           .assinaturas-documento {
-          margin-top: 0 !important;
-          padding-top: 20mm !important;
+          /*
+           * MARGEM, nunca padding.
+           *
+           * Esta tabela tem border-collapse: collapse, e com
+           * isso o navegador IGNORA padding no elemento table.
+           * Os 20mm chegaram a ser escritos como padding e nao
+           * faziam nada - a assinatura ficava colada na data.
+           */
+          margin-top: 20mm !important;
         }
 
         .documento-word .assinaturas-documento {
