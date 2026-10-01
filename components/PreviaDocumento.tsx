@@ -247,9 +247,11 @@ export default function PreviaDocumento({
    * offsetHeight forca o navegador a recalcular, entao cada
    * passo ja enxerga o tamanho anterior.
    *
-   * Na impressao a folha e um pouco mais larga que na tela -
-   * margem de 15mm contra 2cm -, entao o que coube aqui cabe
-   * la tambem.
+   * A coluna de texto tem a mesma largura na tela e no papel
+   * (2cm de margem dos dois lados), entao a quebra de linha e
+   * a mesma e o que se ve aqui e o que sai la. Em cima e
+   * embaixo o papel tem 3mm a mais de folga, para o texto que
+   * coube raspando na tela nao estourar na impressora.
    */
   useEffect(() => {
     const folha = folhaRef.current;
@@ -566,7 +568,21 @@ export default function PreviaDocumento({
             max-width: none !important;
             min-height: 297mm !important;
             margin: 0 !important;
-            padding: 12mm 15mm !important;
+            /*
+             * A margem dos lados e a MESMA da previa (2cm).
+             *
+             * Era 15mm, e isso deixava a coluna 1cm mais larga
+             * no papel: o texto quebrava em menos linhas, o
+             * corpo encurtava, tudo subia e a sobra ia para o
+             * pe da pagina. A previa mostrava uma coisa e a
+             * impressora fazia outra.
+             *
+             * Em cima e embaixo fica um pouco menor que a
+             * previa (12mm contra 15mm) de proposito: e folga
+             * para o caso de o texto que coube raspando na
+             * tela precisar de um fio a mais no papel.
+             */
+            padding: 12mm 20mm !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             box-shadow: none !important;
