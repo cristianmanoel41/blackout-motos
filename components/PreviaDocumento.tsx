@@ -756,6 +756,30 @@ export default function PreviaDocumento({
           font-weight: 700 !important;
         }
 
+        /*
+         * KM e valor em vermelho.
+         *
+         * Sao os dois numeros que a conversa procura, e no meio
+         * de uma folha preto no branco eles se acham de
+         * relance.
+         *
+         * A primeira linha fica de fora: ali "KM" e "VALOR" sao
+         * titulo, em branco sobre a faixa preta - vermelho
+         * sobre preto nao se le.
+         */
+        .documento-lista
+          .tabela-documento
+          tr:not(:first-child)
+          td:nth-child(4)
+          p,
+        .documento-lista
+          .tabela-documento
+          tr:not(:first-child)
+          td:nth-child(5)
+          p {
+          color: #b91c1c !important;
+        }
+
         .documento-word .assinaturas-documento {
           width: 100% !important;
           margin: 0 !important;
