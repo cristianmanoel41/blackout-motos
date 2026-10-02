@@ -7,22 +7,38 @@
   --panel-deep: #08090b;
   --muted: #a7adb6;
   min-height: 100vh;
-  color: #0b0c0e;
+  /* O texto base do painel. Era quase preto, do tempo do
+     fundo claro; com a inversao virou quase branco. */
+  color: #e8eaed;
 }
 
 .hero {
   position: relative;
   overflow: hidden;
   min-height: 128px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  /*
+   * A faixa de boas-vindas.
+   *
+   * A foto da moto fica atras de um veu, e o veu era branco -
+   * fazia sentido quando o texto era preto. Com o sistema
+   * invertido o texto ficou claro, e claro sobre claro nao se
+   * le: agora o veu e preto, e a foto aparece do lado direito,
+   * de onde a luz nasce.
+   */
+  border: 1px solid rgba(224, 177, 41, 0.14);
   border-radius: 24px;
   background:
-    linear-gradient(100deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.95) 54%, rgba(255,255,255,.38) 100%),
+    linear-gradient(
+      100deg,
+      rgba(10, 10, 12, 0.98) 0%,
+      rgba(12, 13, 16, 0.94) 48%,
+      rgba(12, 13, 16, 0.55) 100%
+    ),
     url('/login-moto-fundo.png') right center / cover no-repeat;
   box-shadow:
-    inset 0 1px 0 #fff,
-    0 2px 4px rgba(15,23,42,.03),
-    0 18px 42px rgba(15,23,42,.07);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 18px 42px rgba(0, 0, 0, 0.32);
 }
 
 .hero::after {
@@ -226,7 +242,7 @@
 }
 
 .lightAction {
-  color: #111214 !important;
+  color: #e8eaed !important;
   text-shadow: none !important;
 }
 
@@ -244,7 +260,7 @@
 .panel td [class~='text-black'],
 .panel th [class*='text-black/'],
 .panel td [class*='text-black/'] {
-  color: #111214 !important;
+  color: #e8eaed !important;
   text-shadow: none !important;
 }
 
@@ -252,11 +268,11 @@
 .panel thead th,
 .panel thead tr[class*='text-black/'],
 .panel thead th[class*='text-black/'] {
-  color: #3f444b !important;
+  color: #9aa1aa !important;
 }
 
 .panel td span.statusSuccess {
-  color: #1d8a4b !important;
+  color: #34d399 !important;
 }
 
 .metricCard [class~='text-white'],
@@ -283,14 +299,23 @@
 }
 
 .statusSuccess {
-  color: #1d8a4b !important;
+  color: #34d399 !important;
   text-shadow: none !important;
 }
 
+/*
+ * A etiqueta de periodo.
+ *
+ * Era branca, para destacar no painel claro. Com o sistema
+ * invertido ela ficou branca com texto claro em cima - ilegivel.
+ * Agora e escura, igual a que ja existia dentro dos paineis.
+ */
 .dataPill {
-  border: 1px solid #e4e6ea;
-  background: linear-gradient(180deg, #fff, #f6f7f9);
-  box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(15,23,42,.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, #1b1e22, #101214);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .tableWrap {
@@ -307,7 +332,7 @@
 }
 
 .table tbody tr:hover {
-  background: #f1f2f5 !important;
+  background: rgba(224, 177, 41, 0.055) !important;
 }
 
 .rankBar {
@@ -392,7 +417,7 @@
 
 .setaPainel {
   flex: none;
-  color: rgba(0, 0, 0, .35);
+  color: rgba(255, 255, 255, .35);
   transition: transform .2s ease, color .2s ease;
 }
 

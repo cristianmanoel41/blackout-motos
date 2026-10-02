@@ -42,11 +42,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className={`${styles.legibilidade} ${styles.loginComLogo}`}>
         <div className={styles.fundoLogin} aria-hidden="true" />
 
+        {/* Os dois brilhos que vagam pelo fundo. */}
+        <div
+          className={`${styles.brilhoLogin} ${styles.brilhoUm}`}
+          aria-hidden="true"
+        />
+        <div
+          className={`${styles.brilhoLogin} ${styles.brilhoDois}`}
+          aria-hidden="true"
+        />
+
         <div className={styles.logoLogin} aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             data-logo-login-atual="true"
-            src="/logo-blackout-clara.png"
+            src="/logo-blackout-escura.jpg"
             alt=""
           />
         </div>
@@ -57,7 +67,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`${styles.legibilidade} relative min-h-screen bg-[#f7f8fa]`}>
+    <div className={`${styles.legibilidade} relative min-h-screen bg-[#0a0a0c]`}>
       <Sidebar />
 
       <main className="relative z-10 min-h-screen w-full pt-16 md:ml-64 md:w-[calc(100%-16rem)] md:pt-0">

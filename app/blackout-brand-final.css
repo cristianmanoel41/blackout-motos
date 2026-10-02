@@ -1,20 +1,30 @@
 
 :root {
-  --bo-bg: #f5f6f8;
-  --bo-panel: #ffffff;
-  --bo-soft: #f8f9fb;
-  --bo-border: #e4e6ea;
-  --bo-text: #111214;
-  --bo-muted: #111214;
+  /*
+   * As cores da loja: preto, branco e dourado.
+   *
+   * O sistema nasceu claro e foi invertido em 02/10/2026, a
+   * pedido do Cristian. O branco deixou de ser fundo e passou
+   * a ser o texto - que e onde ele rende mais sobre preto.
+   */
+  --bo-bg: #0a0a0c;
+  --bo-panel: #141619;
+  --bo-soft: #1b1e22;
+  --bo-border: #26292e;
+  --bo-text: #f1f3f5;
+  --bo-muted: #a7adb6;
   --bo-black: #0c0d0f;
   --bo-gold: #d4a514;
+  /* O dourado que le sobre preto: o antigo era escuro demais,
+     porque nasceu para contrastar com fundo claro. */
+  --bo-gold-claro: #e0b129;
 }
 
 html,
 body {
   background: var(--bo-bg) !important;
   color: var(--bo-text) !important;
-  color-scheme: light !important;
+  color-scheme: dark !important;
 }
 
 .bg-preto { background-color: var(--bo-bg) !important; }
@@ -25,10 +35,10 @@ body {
 .text-white { color: var(--bo-text) !important; }
 
 .text-texto-suave { color: var(--bo-muted) !important; }
-.text-dourado { color: var(--bo-text) !important; }
+.text-dourado { color: var(--bo-gold-claro) !important; }
 
 .border-grafite-claro { border-color: var(--bo-border) !important; }
-.border-dourado { border-color: #1a1b1e !important; }
+.border-dourado { border-color: rgba(224, 177, 41, 0.45) !important; }
 
 .text-green-300,
 .text-green-400,
@@ -40,14 +50,14 @@ body {
 
 .text-blue-300,
 .text-blue-400,
-.text-blue-500 { color: #2563eb !important; }
+.text-blue-500 { color: #7aa7ff !important; }
 
 .text-purple-300,
 .text-purple-400,
 .text-purple-500,
 .text-indigo-300,
 .text-indigo-400,
-.text-indigo-500 { color: #7c3aed !important; }
+.text-indigo-500 { color: #b89bff !important; }
 
 /*
  * AMARELOS
@@ -62,11 +72,11 @@ body {
  * lido como "atenção" e tem contraste no branco.
  */
 .text-yellow-500,
-.text-yellow-600 { color: var(--bo-text) !important; }
+.text-yellow-600 { color: var(--bo-gold-claro) !important; }
 
 .text-yellow-200,
 .text-yellow-300,
-.text-yellow-400 { color: #9a6206 !important; }
+.text-yellow-400 { color: #ffd166 !important; }
 
 /*
  * CINZAS DO TEMA ESCURO
@@ -91,7 +101,7 @@ body {
  * quase preto. No claro vira um creme com borda suave.
  */
 .bg-yellow-950\/10,
-.bg-yellow-950\/20 { background-color: #fdf7e7 !important; }
+.bg-yellow-950\/20 { background-color: rgba(224,177,41,.12) !important; }
 
 .border-yellow-700,
 .border-yellow-800,
@@ -112,7 +122,7 @@ main > * {
 }
 
 aside {
-  background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%) !important;
+  background: linear-gradient(180deg, #141619 0%, #0b0c0e 100%) !important;
   border-right: 1px solid var(--bo-border) !important;
   box-shadow:
     8px 0 30px rgba(0,0,0,.045),
@@ -123,7 +133,7 @@ aside > div:first-child {
   min-height: 112px !important;
   height: 112px !important;
   padding: 8px 16px !important;
-  background: #ffffff !important;
+  background: #121417 !important;
 }
 
 aside a[href="/dashboard"] {
@@ -151,8 +161,8 @@ aside a[href="/dashboard"] > div:nth-child(2) {
 }
 
 aside nav a {
-  background: linear-gradient(180deg, #ffffff 0%, #f8f8f9 100%) !important;
-  color: #24262a !important;
+  background: linear-gradient(180deg, #1b1e22 0%, #131518 100%) !important;
+  color: #d5d8dd !important;
   border: 1px solid #e7e8eb !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,1),
@@ -165,7 +175,7 @@ aside nav a {
 }
 
 aside nav a svg {
-  color: #52575f !important;
+  color: #a7adb6 !important;
 }
 
 /*
@@ -181,9 +191,11 @@ aside nav a svg {
 aside nav a.menu-item-ativo,
 aside nav a.bg-dourado,
 aside nav a[class*="bg-dourado"] {
-  background: linear-gradient(180deg, #2b2c2f 0%, #0b0c0e 100%) !important;
-  color: #ffffff !important;
-  border-color: #050506 !important;
+  /* Sobre fundo preto quem manda e o dourado: era preto
+     enquanto o fundo era branco, pelo mesmo motivo. */
+  background: linear-gradient(180deg, #f0c640 0%, #c79a12 100%) !important;
+  color: #0b0c0e !important;
+  border-color: rgba(224, 177, 41, 0.5) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.18),
     inset 0 -2px 0 rgba(0,0,0,.32),
@@ -193,7 +205,7 @@ aside nav a[class*="bg-dourado"] {
 
 aside nav a.bg-dourado svg,
 aside nav a[class*="bg-dourado"] svg {
-  color: #ffffff !important;
+  color: #0b0c0e !important;
 }
 
 /* No menu atual o ícone do item ativo é dourado. */
@@ -212,13 +224,104 @@ main div.rounded-xl.border,
 main div.rounded-2xl.border,
 main form.rounded-xl,
 main form.rounded-2xl {
-  background: rgba(255,255,255,.97) !important;
-  border-color: var(--bo-border) !important;
+  /*
+   * O cartao do sistema inteiro.
+   *
+   * O relevo vem de tres coisas juntas: um degrade que escurece
+   * na diagonal, uma luz fina de um pixel no topo e uma sombra
+   * larga embaixo. E a mesma receita do painel e da tela de
+   * estoque - agora valendo para toda tela, sem cada uma
+   * precisar saber disso.
+   *
+   * A luz do topo era branca cheia, do tempo do fundo claro.
+   * Sobre preto ela virava um risco berrante; a 6% ela e so o
+   * brilho da quina.
+   */
+  position: relative;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(224, 177, 41, 0.045), transparent 42%),
+    linear-gradient(160deg, #191c20 0%, #121417 55%, #0b0c0e 100%) !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,1),
-    0 1px 0 rgba(15,23,42,.04),
-    0 3px 5px rgba(15,23,42,.05),
-    0 12px 24px rgba(15,23,42,.08) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 12px 28px rgba(0, 0, 0, 0.3) !important;
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease !important;
+}
+
+/*
+ * O fio dourado no alto de cada cartao.
+ *
+ * E a marca aparecendo sem pintar nada de dourado: some nas
+ * pontas, acende no meio, e so se percebe quando se procura.
+ */
+main .bg-grafite::before,
+main section.rounded-xl::before,
+main section.rounded-2xl::before,
+main div.rounded-xl.border::before,
+main div.rounded-2xl.border::before,
+main form.rounded-xl::before,
+main form.rounded-2xl::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(224, 177, 41, 0.4),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/*
+ * O cartao responde ao mouse.
+ *
+ * So a sombra e a borda - nada se desloca. Em tela cheia de
+ * tabela, cartao que pula atrapalha a leitura; sombra que abre
+ * da a mesma sensacao sem mexer no lugar das coisas.
+ */
+main .bg-grafite:hover,
+main section.rounded-xl:hover,
+main section.rounded-2xl:hover,
+main div.rounded-xl.border:hover,
+main div.rounded-2xl.border:hover {
+  border-color: rgba(224, 177, 41, 0.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 2px 4px rgba(0, 0, 0, 0.45),
+    0 18px 40px rgba(0, 0, 0, 0.38),
+    0 0 26px rgba(224, 177, 41, 0.05) !important;
+}
+
+/* Botao que afunda ao ser pressionado, em toda tela. */
+main button,
+main a[class*='bg-dourado'],
+main a[class*='rounded-xl'] {
+  transition: transform 0.12s ease, box-shadow 0.15s ease !important;
+}
+
+main button:active,
+main a[class*='bg-dourado']:active {
+  transform: translateY(1px) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main .bg-grafite,
+  main section.rounded-xl,
+  main section.rounded-2xl,
+  main div.rounded-xl.border,
+  main div.rounded-2xl.border,
+  main button,
+  main a[class*='bg-dourado'] {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 main section.rounded-xl,
@@ -252,14 +355,14 @@ main form.rounded-2xl::after {
 }
 
 main .bg-grafite-claro {
-  background: #f7f8fa !important;
+  background: #1b1e22 !important;
 }
 
 input,
 select,
 textarea {
-  background: #ffffff !important;
-  color: #111214 !important;
+  background: #15171a !important;
+  color: #f1f3f5 !important;
   border-color: #d7d9de !important;
   box-shadow:
     inset 0 1px 2px rgba(0,0,0,.035),
@@ -289,18 +392,20 @@ th {
   color: var(--bo-text) !important;
 }
 
-thead { background: #f6f7f9 !important; }
+thead { background: #0f1113 !important; }
 
 tbody tr {
-  background: rgba(255,255,255,.96) !important;
+  background: transparent !important;
   border-color: #eceef1 !important;
 }
 
 button.bg-dourado,
 a.bg-dourado {
-  background: linear-gradient(180deg, #2b2c2f 0%, #0b0c0e 100%) !important;
-  color: #ffffff !important;
-  border-color: #050506 !important;
+  /* Sobre fundo preto quem manda e o dourado: era preto
+     enquanto o fundo era branco, pelo mesmo motivo. */
+  background: linear-gradient(180deg, #f0c640 0%, #c79a12 100%) !important;
+  color: #0b0c0e !important;
+  border-color: rgba(224, 177, 41, 0.5) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.18),
     0 3px 6px rgba(0,0,0,.14),
@@ -316,13 +421,13 @@ a.bg-yellow-400 {
 }
 
 .bg-red-950\/30,
-.bg-red-900\/30 { background: #fff1f2 !important; }
+.bg-red-900\/30 { background: rgba(239,68,68,.14) !important; }
 
 .bg-green-950\/30,
-.bg-green-900\/30 { background: #f0fdf4 !important; }
+.bg-green-900\/30 { background: rgba(16,185,129,.14) !important; }
 
 .bg-yellow-950\/30,
-.bg-yellow-900\/30 { background: #fffbeb !important; }
+.bg-yellow-900\/30 { background: rgba(224,177,41,.14) !important; }
 
 @media (hover: hover) {
   aside nav a:hover {
@@ -366,7 +471,7 @@ aside > div:first-child {
   min-height: 112px !important;
   height: 112px !important;
   padding: 10px 18px !important;
-  background: #ffffff !important;
+  background: #121417 !important;
 }
 
 aside a[href="/dashboard"] {
@@ -405,7 +510,9 @@ aside a[href="/dashboard"] > div:nth-child(2) {
  * (text-black/40, /45, /50...). Em fundo branco eles ficavam
  * lavados e dificeis de ler.
  *
- * Aqui todos passam a ser a mesma cor de texto, preta. O
+ * Aqui todos passam a ser a mesma cor de texto suave. Eram
+ * pretos enquanto o fundo era claro; com a inversao de
+ * 02/10/2026 viraram cinza claro, pelo mesmo motivo - o
  * contraste vem do tamanho e do peso da fonte, nao da cor.
  */
 .text-black\/25,
@@ -423,7 +530,7 @@ aside a[href="/dashboard"] > div:nth-child(2) {
 .text-neutral-500,
 .text-neutral-600,
 .text-slate-400,
-.text-slate-500 { color: #111214 !important; }
+.text-slate-500 { color: var(--bo-muted) !important; }
 
 
 /*
@@ -631,7 +738,7 @@ main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.bo
  */
 main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='bg-green-50'], [class~='bg-green-100'], [class~='bg-blue-50'], [class~='bg-blue-100'], [class~='bg-orange-50'], [class~='bg-orange-100'], [class~='bg-indigo-50'], [class~='bg-indigo-100'], [class~='bg-zinc-50'], [class~='bg-zinc-100'], [class~='bg-red-50'], [class~='bg-red-100'], [class~='bg-yellow-50'], [class~='bg-yellow-100'], [class~='bg-emerald-50'], [class~='bg-emerald-100'], [class~='bg-amber-50'], [class~='bg-amber-100'], [class~='bg-purple-50'], [class~='bg-purple-100'], [class~='bg-slate-50'], [class~='bg-slate-100'], [class~='bg-gray-50'], [class~='bg-gray-100'], [class~='bg-neutral-50'], [class~='bg-neutral-100']),
 main :is(.bg-grafite, section.rounded-xl, section.rounded-2xl, div.rounded-xl.border, div.rounded-2xl.border, form.rounded-xl, form.rounded-2xl) :is([class~='bg-green-50'], [class~='bg-green-100'], [class~='bg-blue-50'], [class~='bg-blue-100'], [class~='bg-orange-50'], [class~='bg-orange-100'], [class~='bg-indigo-50'], [class~='bg-indigo-100'], [class~='bg-zinc-50'], [class~='bg-zinc-100'], [class~='bg-red-50'], [class~='bg-red-100'], [class~='bg-yellow-50'], [class~='bg-yellow-100'], [class~='bg-emerald-50'], [class~='bg-emerald-100'], [class~='bg-amber-50'], [class~='bg-amber-100'], [class~='bg-purple-50'], [class~='bg-purple-100'], [class~='bg-slate-50'], [class~='bg-slate-100'], [class~='bg-gray-50'], [class~='bg-gray-100'], [class~='bg-neutral-50'], [class~='bg-neutral-100']) * {
-  color: #111214 !important;
+  color: #e8eaed !important;
 }
 
 
@@ -656,4 +763,109 @@ main .campo-claro::placeholder {
 
 main .campo-claro:focus {
   border-color: #c99712 !important;
+}
+
+
+/*
+ * ============================================================
+ * CAIXAS DE AVISO, NO ESCURO
+ *
+ * Os avisos coloridos do sistema (verde de sucesso, amarelo
+ * de atencao, vermelho de erro) eram caixas claras com texto
+ * preto. Sobre o fundo preto viravam manchas brancas.
+ *
+ * Agora o fundo e a propria cor a 10% e a borda a 30%. A cor
+ * continua dizendo a mesma coisa, so que por dentro do tema.
+ * ============================================================
+ */
+
+main [class~='bg-green-50'],
+main [class~='bg-green-100'],
+main [class~='bg-green-200'] {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+main [class~='bg-emerald-50'],
+main [class~='bg-emerald-100'],
+main [class~='bg-emerald-200'] {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+main [class~='bg-blue-50'],
+main [class~='bg-blue-100'],
+main [class~='bg-blue-200'] {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+main [class~='bg-indigo-50'],
+main [class~='bg-indigo-100'],
+main [class~='bg-indigo-200'] {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+main [class~='bg-purple-50'],
+main [class~='bg-purple-100'],
+main [class~='bg-purple-200'] {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+main [class~='bg-orange-50'],
+main [class~='bg-orange-100'],
+main [class~='bg-orange-200'] {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+main [class~='bg-amber-50'],
+main [class~='bg-amber-100'],
+main [class~='bg-amber-200'] {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+main [class~='bg-yellow-50'],
+main [class~='bg-yellow-100'],
+main [class~='bg-yellow-200'] {
+  background-color: rgba(224, 177, 41, 0.1) !important;
+  border-color: rgba(224, 177, 41, 0.3) !important;
+}
+
+main [class~='bg-red-50'],
+main [class~='bg-red-100'],
+main [class~='bg-red-200'] {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+main [class~='bg-zinc-50'],
+main [class~='bg-zinc-100'],
+main [class~='bg-zinc-200'] {
+  background-color: rgba(161, 161, 170, 0.1) !important;
+  border-color: rgba(161, 161, 170, 0.3) !important;
+}
+
+main [class~='bg-gray-50'],
+main [class~='bg-gray-100'],
+main [class~='bg-gray-200'] {
+  background-color: rgba(161, 161, 170, 0.1) !important;
+  border-color: rgba(161, 161, 170, 0.3) !important;
+}
+
+main [class~='bg-slate-50'],
+main [class~='bg-slate-100'],
+main [class~='bg-slate-200'] {
+  background-color: rgba(148, 163, 184, 0.1) !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+}
+
+main [class~='bg-neutral-50'],
+main [class~='bg-neutral-100'],
+main [class~='bg-neutral-200'] {
+  background-color: rgba(163, 163, 163, 0.1) !important;
+  border-color: rgba(163, 163, 163, 0.3) !important;
 }

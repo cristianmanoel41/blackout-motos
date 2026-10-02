@@ -1,5 +1,12 @@
+/*
+ * O texto da moldura do sistema.
+ *
+ * Era quase preto, para ler sobre o fundo claro. Com o fundo
+ * invertido em 02/10/2026 ele virou quase branco - a regra
+ * continua a mesma, so trocou de lado.
+ */
 .legibilidade {
-  color: #09090b;
+  color: #e8eaed;
   font-weight: 700;
 }
 
@@ -19,20 +26,20 @@
 .legibilidade :global(td),
 .legibilidade :global(caption),
 .legibilidade :global(span) {
-  color: #09090b !important;
+  color: #e8eaed !important;
   font-weight: 700 !important;
 }
 
 .legibilidade :global(input),
 .legibilidade :global(select),
 .legibilidade :global(textarea) {
-  color: #09090b !important;
+  color: #e8eaed !important;
   font-weight: 700 !important;
 }
 
 .legibilidade :global(input::placeholder),
 .legibilidade :global(textarea::placeholder) {
-  color: rgba(9, 9, 11, 0.62) !important;
+  color: rgba(232, 234, 237, 0.45) !important;
   font-weight: 700 !important;
   opacity: 1;
 }
@@ -55,17 +62,171 @@
   isolation: isolate;
 }
 
+/*
+ * O FUNDO DA TELA DE LOGIN
+ *
+ * Preto, com a foto da moto por tras bem apagada e duas coisas
+ * se movendo: brilhos dourados que vagam devagar e uma grade em
+ * perspectiva correndo para o horizonte.
+ *
+ * A grade e o que da a sensacao de 3D, e custa quase nada: e um
+ * fundo listrado deitado com perspective e empurrado por uma
+ * animacao. Nada de biblioteca, nada de canvas - a placa de
+ * video desenha isso dormindo, inclusive no notebook da loja.
+ */
 .fundoLogin {
   pointer-events: none;
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.36)),
-    url('/login-moto-fundo.png');
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 50% 0%,
+      rgba(224, 177, 41, 0.1),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #0c0d10 0%, #08090b 55%, #000 100%);
+}
+
+/* A foto da moto, no limite do que o olho percebe: da textura
+   ao preto sem disputar com o formulario. */
+.fundoLogin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/login-moto-fundo.png');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  opacity: 0.13;
+  filter: grayscale(1) contrast(1.1);
+}
+
+/*
+ * A grade em perspectiva.
+ *
+ * Deitada com rotateX, ela vira chao; a animacao empurra o
+ * desenho para a frente e o chao parece correr. A mascara
+ * apaga o fundo da grade no horizonte, senao as linhas se
+ * acumulam num borrao.
+ */
+.fundoLogin::after {
+  content: '';
+  position: absolute;
+  /* O rodape do elemento tem que coincidir com o rodape da
+     tela: e nele que fica o ponto de giro, e se ele cair fora
+     da janela a grade gira para onde ninguem ve. */
+  left: -60%;
+  right: -60%;
+  bottom: 0;
+  height: 78%;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(224, 177, 41, 0.32) 0 1px,
+      transparent 1px 90px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(224, 177, 41, 0.32) 0 1px,
+      transparent 1px 90px
+    );
+  transform: perspective(520px) rotateX(66deg);
+  transform-origin: 50% 100%;
+  animation: correrGrade 7s linear infinite;
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 38%,
+    #000 72%,
+    #000 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 42%,
+    #000 100%
+  );
+}
+
+@keyframes correrGrade {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 0,
+      0 90px;
+  }
+}
+
+/*
+ * Os brilhos dourados.
+ *
+ * Dois pontos de luz que vagam devagar, em tempos diferentes,
+ * para o fundo nunca repetir o mesmo quadro. Blur alto: e luz,
+ * nao desenho.
+ */
+.brilhoLogin {
+  pointer-events: none;
+  position: fixed;
+  z-index: 1;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.4;
+}
+
+.brilhoUm {
+  top: -16vmax;
+  left: -10vmax;
+  background: radial-gradient(
+    circle,
+    rgba(224, 177, 41, 0.5),
+    transparent 68%
+  );
+  animation: vagarUm 19s ease-in-out infinite alternate;
+}
+
+.brilhoDois {
+  right: -14vmax;
+  bottom: -18vmax;
+  background: radial-gradient(
+    circle,
+    rgba(169, 120, 0, 0.45),
+    transparent 68%
+  );
+  animation: vagarDois 24s ease-in-out infinite alternate;
+}
+
+@keyframes vagarUm {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(14vmax, 9vmax, 0) scale(1.18);
+  }
+}
+
+@keyframes vagarDois {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  to {
+    transform: translate3d(-12vmax, -8vmax, 0) scale(1);
+  }
+}
+
+/* Quem desligou animacao no sistema ve a mesma tela, parada. */
+@media (prefers-reduced-motion: reduce) {
+  .fundoLogin::after,
+  .brilhoLogin {
+    animation: none !important;
+  }
 }
 
 .conteudoLogin {
@@ -91,6 +252,23 @@
   top: 2rem;
   left: 50%;
   z-index: 30;
+  /*
+   * A arte e branca sobre preto, e screen apaga o preto contra
+   * o fundo da tela - sobram as letras e o dourado.
+   *
+   * A mistura vai NO CONTEINER, nunca no <img>: o conteiner
+   * tem z-index, e isso cria um contexto de pintura proprio;
+   * ali dentro o fundo e o nada, e a mistura nao faz efeito.
+   * Foi assim que o retangulo preto do JPEG apareceu.
+   */
+  mix-blend-mode: screen;
+  /*
+   * O preto do JPEG nao e preto puro - a compressao deixou
+   * cinza escuro, e screen clareia por esse tanto, desenhando
+   * um retangulo. O contraste empurra esses cinzas para o zero,
+   * e ai o fundo do arquivo some de verdade.
+   */
+  filter: contrast(1.55) brightness(0.96);
   width: min(72vw, 280px);
   height: 130px;
   transform: translateX(-50%);

@@ -1,26 +1,33 @@
+/*
+ * O nome da cor da moto, na lista.
+ *
+ * Os tons eram fechados para ler no fundo branco. Sobre preto
+ * eles sumiam, entao cada um subiu alguns degraus de claridade
+ * - continua sendo vermelho, azul, verde, so que visivel.
+ */
 .corMoto {
   font-weight: 800 !important;
 }
 
 .vermelha {
-  color: #dc2626 !important;
+  color: #f87171 !important;
 }
 
 .azul {
-  color: #2563eb !important;
+  color: #7aa7ff !important;
 }
 
 .preta,
 .padrao {
-  color: #111111 !important;
+  color: #9aa1aa !important;
 }
 
 .prata {
-  color: #64748b !important;
+  color: #cbd5e1 !important;
 }
 
 .cinza {
-  color: #4b5563 !important;
+  color: #9aa1aa !important;
 }
 
 .branca {
@@ -43,7 +50,7 @@
 }
 
 .verde {
-  color: #15803d !important;
+  color: #4ade80 !important;
 }
 
 .laranja {
@@ -51,30 +58,190 @@
 }
 
 .roxa {
-  color: #7e22ce !important;
+  color: #c084fc !important;
 }
 
 .rosa {
-  color: #db2777 !important;
+  color: #f472b6 !important;
 }
 
 .vinho {
-  color: #881337 !important;
+  color: #fb7185 !important;
 }
 
 .marrom {
-  color: #78350f !important;
+  color: #d99a5b !important;
 }
 
 .bege {
-  color: #a16207 !important;
+  color: #fbbf24 !important;
   text-shadow: 0 1px 1px rgb(255 255 255 / 75%) !important;
 }
 
 .grafite {
-  color: #374151 !important;
+  color: #a7adb6 !important;
 }
 
 .chumbo {
-  color: #475569 !important;
+  color: #94a3b8 !important;
+}
+
+/* ============================================================
+ * SUPERFÍCIES E MOVIMENTO
+ *
+ * Tela piloto do visual novo. A linguagem é a mesma do painel -
+ * preto com relevo, fio dourado, luz vinda de cima - e as cores
+ * são as três da marca: preto, branco e dourado. Nada de cor
+ * nova; o que muda é profundidade e movimento.
+ *
+ * O movimento é curto de propósito: 150ms, e só o que o dedo
+ * pede. Esta é uma tela que a loja abre vinte vezes por dia, e
+ * animação que encanta na primeira vez irrita na décima.
+ * ============================================================ */
+
+.superficie {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(224, 177, 41, 0.05), transparent 38%),
+    linear-gradient(160deg, #191c20 0%, #121417 55%, #0b0c0e 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+/* O fio dourado no topo: a marca aparece sem pintar nada. */
+.superficie::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(224, 177, 41, 0.45),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/*
+ * Cartão que responde ao mouse.
+ *
+ * Sobe um fio de cabelo e a sombra se abre junto - é a sombra
+ * que dá a altura, não o deslocamento. Dois pixels bastam: o
+ * olho percebe, e a tela não balança.
+ */
+.cartao {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  will-change: transform;
+}
+
+.cartao:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224, 177, 41, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 18px 38px rgba(0, 0, 0, 0.38),
+    0 0 26px rgba(224, 177, 41, 0.07);
+}
+
+/*
+ * A linha da tabela.
+ *
+ * Linha de tabela não aceita transform de forma confiável - com
+ * border-collapse o navegador ignora ou desenha torto. Então o
+ * destaque vem de cor e de um fio dourado na borda esquerda,
+ * desenhado com sombra interna na primeira célula.
+ */
+.linha td {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.linha:hover td {
+  background-color: rgba(224, 177, 41, 0.055);
+}
+
+.linha:hover td:first-child {
+  box-shadow: inset 3px 0 0 0 #e0b129;
+}
+
+/* Clique com retorno: a linha afunda por um instante. */
+.linha:active td {
+  background-color: rgba(224, 177, 41, 0.1);
+}
+
+/*
+ * Botão que afunda ao ser pressionado.
+ *
+ * É o único movimento que a mão espera e sente falta quando
+ * não existe: sem ele, o clique parece não ter pegado.
+ */
+.acao {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.acao:hover {
+  transform: translateY(-1px);
+}
+
+.acao:active {
+  transform: translateY(1px);
+}
+
+/*
+ * A entrada da tela.
+ *
+ * Sobe oito pixels e aparece, uma vez só, ao abrir. Serve para
+ * o conteúdo não dar o salto seco de quando a página termina de
+ * carregar.
+ */
+.entrada {
+  animation: surgir 0.28s ease-out both;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Quem pediu para o sistema parar de se mexer, para.
+ *
+ * Vale para quem se incomoda com movimento na tela e para
+ * máquina fraca - e a loja tem as duas coisas.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cartao,
+  .acao,
+  .linha td,
+  .entrada {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .cartao:hover,
+  .acao:hover,
+  .acao:active {
+    transform: none !important;
+  }
 }

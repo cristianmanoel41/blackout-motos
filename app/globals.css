@@ -16,13 +16,30 @@ body {
   font-family: system-ui, sans-serif;
 }
 
+/*
+ * A barra de rolagem.
+ *
+ * Oito pixels de dourado chapado passavam no fundo branco; no
+ * preto viram um risco berrante ao lado do menu. Fica fina e
+ * discreta, e so acende quando o mouse passa por ela.
+ */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-dourado);
+  background-color: rgba(224, 177, 41, 0.28);
+  border: 3px solid transparent;
+  background-clip: content-box;
   border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(224, 177, 41, 0.6);
 }
 /*
  * Texto vindo dos modelos em Word, na tela de prévia.

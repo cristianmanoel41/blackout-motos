@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import estilo from "./estoque.module.css";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 
 const supabase = createClient();
@@ -165,20 +166,30 @@ function rotuloStatus(status?: string | null) {
   }
 }
 
+/*
+ * A etiqueta de situacao da moto.
+ *
+ * Eram fundos claros com texto preto, para ler na tela branca.
+ * Com o sistema invertido o fundo claro ficou e o texto virou
+ * claro junto - "Disponivel" sumia dentro do verde.
+ *
+ * Agora e o contrario: fundo da cor bem apagado e o texto na
+ * cor viva. A cor continua dizendo a mesma coisa.
+ */
 function classeStatus(status?: string | null) {
   switch (normalizarTexto(status)) {
     case "disponivel":
-      return "border-green-300 bg-green-100 text-black";
+      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
     case "reservada":
-      return "border-blue-300 bg-blue-100 text-black";
+      return "border-sky-500/40 bg-sky-500/10 text-sky-300";
     case "manutencao":
-      return "border-orange-300 bg-orange-100 text-black";
+      return "border-orange-500/40 bg-orange-500/10 text-orange-300";
     case "vendida":
-      return "border-indigo-300 bg-indigo-100 text-black";
+      return "border-indigo-500/40 bg-indigo-500/10 text-indigo-300";
     case "arquivada":
-      return "border-zinc-400 bg-zinc-200 text-black";
+      return "border-zinc-500/40 bg-zinc-500/10 text-zinc-300";
     default:
-      return "border-zinc-300 bg-zinc-100 text-black";
+      return "border-zinc-500/40 bg-zinc-500/10 text-zinc-300";
   }
 }
 
@@ -776,7 +787,7 @@ export default function EstoquePage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/admin/estoque/compartilhar"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto transition hover:border-dourado hover:text-dourado"
+              className={`${estilo.acao} inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto hover:border-dourado hover:text-dourado`}
             >
               <Link2 size={18} />
               Compartilhar Estoque
@@ -791,7 +802,7 @@ export default function EstoquePage() {
               */}
             <Link
               href="/documentos/estoque/lista"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto transition hover:border-dourado hover:text-dourado"
+              className={`${estilo.acao} inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto hover:border-dourado hover:text-dourado`}
             >
               <FileDown size={18} />
               Lista do Estoque
@@ -799,7 +810,7 @@ export default function EstoquePage() {
 
             <Link
               href="/motos/nova"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-dourado px-5 py-3 font-bold text-preto transition hover:bg-dourado-claro"
+              className={`${estilo.acao} inline-flex items-center justify-center gap-2 rounded-xl bg-dourado px-5 py-3 font-bold text-preto hover:bg-dourado-claro`}
             >
               <Plus size={18} />
               Cadastrar Moto
@@ -807,30 +818,30 @@ export default function EstoquePage() {
           </div>
         </div>
 
-        <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
+        <section className={`${estilo.superficie} ${estilo.entrada} mb-4 p-4`}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+            <div className={`${estilo.superficie} ${estilo.cartao} p-4`}>
               <p className="text-xs text-texto-suave">Total em estoque</p>
               <p className="mt-1 text-2xl font-bold text-dourado">
                 {situacoes.noPatio}
               </p>
             </div>
 
-            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+            <div className={`${estilo.superficie} ${estilo.cartao} p-4`}>
               <p className="text-xs text-texto-suave">Disponíveis</p>
               <p className="mt-1 text-2xl font-bold text-texto">
                 {situacoes.disponivel}
               </p>
             </div>
 
-            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+            <div className={`${estilo.superficie} ${estilo.cartao} p-4`}>
               <p className="text-xs text-texto-suave">Em manutenção</p>
               <p className="mt-1 text-2xl font-bold text-texto">
                 {situacoes.manutencao}
               </p>
             </div>
 
-            <div className="rounded-xl border border-grafite-claro bg-preto/40 p-4">
+            <div className={`${estilo.superficie} ${estilo.cartao} p-4`}>
               <p className="text-xs text-texto-suave">Reservadas</p>
               <p className="mt-1 text-2xl font-bold text-texto">
                 {situacoes.reservada}
@@ -958,7 +969,7 @@ export default function EstoquePage() {
           )}
         </section>
 
-        <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-4">
+        <section className={`${estilo.superficie} ${estilo.entrada} mb-4 p-4`}>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="font-semibold text-black">
@@ -1150,7 +1161,7 @@ export default function EstoquePage() {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-grafite-claro bg-grafite">
+        <section className={`${estilo.superficie} ${estilo.entrada} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1290px] border-collapse">
               <thead>
@@ -1218,7 +1229,7 @@ export default function EstoquePage() {
                             moto
                           )
                         }
-                        className={`cursor-pointer border-b border-grafite-claro/70 transition hover:bg-white/[0.035] ${
+                        className={`${estilo.linha} cursor-pointer border-b border-grafite-claro/70 ${
                           aberta
                             ? "bg-dourado/[0.035]"
                             : ""

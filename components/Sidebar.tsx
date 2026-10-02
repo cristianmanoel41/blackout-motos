@@ -96,10 +96,10 @@ export default function Sidebar() {
               tratado antes da inversão, senão cada sujeirinha
               do fundo virava um ponto cinza no branco.
             */}
-            <span className="relative block h-[88px] w-[214px]">
+            <span className="relative block h-[88px] w-[214px] mix-blend-screen [filter:contrast(1.55)_brightness(0.96)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-blackout-menu.png"
+                src="/logo-blackout-escura.jpg"
                 alt="Blackout Motos"
                 className="h-full w-full object-contain"
               />
@@ -154,9 +154,9 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className="border-t border-black/[.07] p-3">
-          <div className="mb-3 rounded-2xl border border-[#d7b447]/30 bg-[linear-gradient(145deg,#fffdf7,#f7edcf)] p-3 shadow-[inset_0_1px_0_#fff,0_8px_20px_rgba(169,120,0,.07)]">
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#8a6400]">
+        <div className="border-t border-white/[.07] p-3">
+          <div className="mb-3 rounded-2xl border border-[#a97800]/35 bg-[linear-gradient(145deg,#1d1a12,#141210)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_8px_20px_rgba(0,0,0,.35)]">
+            <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#e0b129]">
               Blackout Motos
             </p>
             <p className="mt-1 text-xs font-bold text-black/50">
@@ -167,7 +167,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-extrabold text-black/60 transition hover:bg-red-50 hover:text-red-700"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-extrabold text-black/60 transition hover:bg-red-500/10 hover:text-red-400"
           >
             <LogOut size={18} />
             Sair
