@@ -60,7 +60,7 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="fixed left-4 top-4 z-[60] rounded-2xl border border-black/10 bg-white p-3 text-black shadow-[0_10px_30px_rgba(0,0,0,.12)] md:hidden"
+        className="fixed left-4 top-4 z-[60] rounded-2xl border border-[#e0b129]/35 bg-gradient-to-b from-[#1b1e22] to-[#101214] p-3 text-[#f0c640] shadow-[0_10px_30px_rgba(0,0,0,.45)] md:hidden"
         aria-label="Abrir menu"
       >
         <Menu size={23} />
@@ -109,7 +109,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => setAberto(false)}
-            className="absolute right-3 top-3 rounded-xl p-2 text-black/55 hover:bg-black/5 hover:text-black md:hidden"
+            className="absolute right-3 top-3 rounded-xl p-2 text-white/55 hover:bg-white/10 hover:text-[#f0c640] md:hidden"
             aria-label="Fechar menu"
           >
             <X size={21} />

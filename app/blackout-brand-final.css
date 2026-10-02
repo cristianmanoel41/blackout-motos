@@ -163,11 +163,13 @@ aside a[href="/dashboard"] > div:nth-child(2) {
 aside nav a {
   background: linear-gradient(180deg, #1b1e22 0%, #131518 100%) !important;
   color: #d5d8dd !important;
-  border: 1px solid #e7e8eb !important;
+  /* A borda e o brilho de cima eram claros, do tempo do fundo
+     branco: sobre o item escuro viravam um contorno aceso. */
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,1),
-    0 2px 4px rgba(0,0,0,.035),
-    0 7px 16px rgba(0,0,0,.025) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 7px 16px rgba(0, 0, 0, 0.22) !important;
   transition:
     transform .18s ease,
     box-shadow .18s ease,
@@ -363,10 +365,13 @@ select,
 textarea {
   background: #15171a !important;
   color: #f1f3f5 !important;
-  border-color: #d7d9de !important;
+  /* A borda e o risco de luz embaixo eram claros, para o
+     campo se destacar no branco. No escuro o risco virava um
+     fio aceso sob cada campo. */
+  border-color: rgba(255, 255, 255, 0.1) !important;
   box-shadow:
-    inset 0 1px 2px rgba(0,0,0,.035),
-    0 1px 0 rgba(255,255,255,.95) !important;
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
 input::placeholder,
@@ -396,7 +401,9 @@ thead { background: #0f1113 !important; }
 
 tbody tr {
   background: transparent !important;
-  border-color: #eceef1 !important;
+  /* A linha que separa as fileiras: era cinza-claro sobre
+     branco, agora e branco bem apagado sobre preto. */
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 button.bg-dourado,
@@ -432,7 +439,7 @@ a.bg-yellow-400 {
 @media (hover: hover) {
   aside nav a:hover {
     transform: translateX(3px) translateY(-1px);
-    border-color: #d7d9dd !important;
+    border-color: rgba(224, 177, 41, 0.45) !important;
   }
 
   main section.rounded-xl:hover,
