@@ -310,6 +310,54 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/vitrine') ||
     caminho.startsWith('/documentos/') ||
     caminho.startsWith('/recibos/')
+  /*
+   * O login vence em 24 horas.
+   *
+   * Sem isto a sessao se renova sozinha para sempre: o
+   * aparelho troca o cracha por um novo a cada hora, e quem
+   * entrou uma vez fica dentro para sempre. Num celular
+   * perdido, ou no computador da loja que todo mundo usa,
+   * isso e uma porta que nunca fecha.
+   *
+   * O relogio corre desde a hora em que a pessoa digitou a
+   * senha: last_sign_in_at so muda quando se entra de novo,
+   * nao quando o cracha e trocado. Entao sao 24 horas
+   * corridas - usar o sistema o dia inteiro nao estica o
+   * prazo.
+   *
+   * So vale para as telas do sistema: quem esta logado e
+   * abre o site da loja nao leva tranco para o login.
+   */
+  const VALIDADE_DO_LOGIN = 24 * 60 * 60 * 1000
+
+  if (user?.last_sign_in_at && !rotaEhPublica && !rotaEhLogin) {
+    const entrouEm = new Date(user.last_sign_in_at).getTime()
+
+    if (
+      Number.isFinite(entrouEm) &&
+      Date.now() - entrouEm > VALIDADE_DO_LOGIN
+    ) {
+      /* Derruba tambem do lado do Supabase, senao o cracha
+         velho ainda serve para pedir um novo por fora. */
+      await supabase.auth.signOut()
+
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.search = '?expirou=1'
+
+      const resposta = NextResponse.redirect(url)
+
+      /* O redirecionamento leva resposta propria, entao os
+         cookies precisam ser apagados nela. */
+      request.cookies
+        .getAll()
+        .filter((c) => c.name.startsWith('sb-'))
+        .forEach((c) => resposta.cookies.delete(c.name))
+
+      return resposta
+    }
+  }
+
   if (!user && !rotaEhLogin && !rotaEhPublica) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <Formulario />
+    </Suspense>
+  )
+}
+
+function Formulario() {
   const router = useRouter()
   const supabase = createClient()
 
@@ -12,6 +20,11 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
+
+  /* Quem chega com ?expirou=1 foi posto para fora pelo
+     prazo de 24 horas, nao errou a senha. Sem dizer isso,
+     o tranco de volta para o login parece defeito. */
+  const expirou = useSearchParams().get('expirou') === '1'
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -45,6 +58,13 @@ export default function LoginPage() {
             Acesse o painel de gestão
           </p>
         </div>
+
+        {expirou && !erro && (
+          <div className="mb-4 rounded-lg border border-[#e0b129]/40 bg-[#e0b129]/10 px-4 py-3 text-sm text-[#f0c640]">
+            Seu acesso durou 24 horas e venceu. Entre de novo para
+            continuar.
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
