@@ -76,7 +76,7 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-black/[.07] bg-white shadow-[10px_0_35px_rgba(15,23,42,.05)] transition-transform duration-200 ${
+        className={`fixed left-0 top-0 z-50 flex altura-da-tela w-64 flex-col border-r border-black/[.07] bg-white shadow-[10px_0_35px_rgba(15,23,42,.05)] transition-transform duration-200 ${
           aberto ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
@@ -154,7 +154,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className="border-t border-white/[.07] p-3">
+        <div className="border-t border-white/[.07] p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
           <div className="mb-3 rounded-2xl border border-[#a97800]/35 bg-[linear-gradient(145deg,#1d1a12,#141210)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_8px_20px_rgba(0,0,0,.35)]">
             <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#e0b129]">
               Blackout Motos

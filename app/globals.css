@@ -274,3 +274,21 @@ body {
     inset 0 1px 0 #fff,
     0 8px 20px rgba(169, 120, 0, 0.07);
 }
+
+
+/*
+ * A ALTURA DE UMA TELA DE CELULAR
+ *
+ * 100vh, no celular, nao e o que da para ver: o navegador
+ * conta tambem a faixa do endereco, que esta por cima. Um
+ * painel preso com 100vh fica com o rodape escondido atras
+ * dela - e, por ser preso, nao rola para alcancar.
+ *
+ * Foi o que sumiu com o botao Sair do menu. 100dvh conta so
+ * o que esta a vista. A linha de cima fica como reserva para
+ * navegador antigo, que ignora a de baixo.
+ */
+.altura-da-tela {
+  height: 100vh;
+  height: 100dvh;
+}
