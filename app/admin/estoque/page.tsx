@@ -11,6 +11,7 @@ import {
   Camera,
   Check,
   ChevronDown,
+  FileDown,
   Link2,
   ChevronLeft,
   ChevronRight,
@@ -780,6 +781,21 @@ export default function EstoquePage() {
               <Link2 size={18} />
               Compartilhar Estoque
             </Link>
+
+            {/*
+              * Link comum, e nao botao com script.
+              *
+              * O navegador baixa o arquivo sozinho, sem a tela
+              * precisar esperar, montar blob nem tratar erro de
+              * download. Quem monta a lista e a rota.
+              */}
+            <a
+              href="/api/estoque/lista"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto transition hover:border-dourado hover:text-dourado"
+            >
+              <FileDown size={18} />
+              Baixar Lista
+            </a>
 
             <Link
               href="/motos/nova"
