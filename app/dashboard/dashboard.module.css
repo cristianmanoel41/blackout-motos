@@ -372,8 +372,14 @@
 @media (max-width: 767px) {
   .hero {
     min-height: 150px;
+    /* O mesmo veu preto da versao de computador: no celular a
+       foto fica centralizada, senao a moto sai de quadro. */
     background:
-      linear-gradient(100deg, rgba(255,255,255,.995), rgba(255,255,255,.88)),
+      linear-gradient(
+        100deg,
+        rgba(10, 10, 12, 0.985),
+        rgba(12, 13, 16, 0.9)
+      ),
       url('/login-moto-fundo.png') center / cover no-repeat;
   }
 }
