@@ -7,18 +7,13 @@ import {
   Bike,
   CalendarDays,
   ChevronDown,
-  DollarSign,
-  Receipt,
   ShoppingCart,
   Timer,
-  TrendingUp,
-  Wallet,
   Warehouse,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { nomeCurtoVendedor } from '@/lib/dados/vendedores'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
-import GraficoValores from '@/components/GraficoValores'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
 import Dobravel from '@/components/Dobravel'
@@ -130,181 +125,6 @@ export default async function DashboardPage() {
     ) ?? []
 
   const motosVendidasMes = vendasProprias.length
-  const faturamentoMes = vendasProprias.reduce((s, v) => s + Number(v.valor_total_venda || 0), 0)
-
-  const idsMotosVendidas = vendasProprias.map((v) => v.motorcycle_id).filter(Boolean)
-  let custoMotosVendidas = 0
-
-  if (idsMotosVendidas.length > 0) {
-    const { data: motosVendidas } = await supabase
-      .from('motorcycles')
-      .select('id, valor_compra')
-      .in('id', idsMotosVendidas)
-
-    const { data: gastosDessasMotos } = await supabase
-      .from('motorcycle_expenses')
-      .select('motorcycle_id, valor')
-      .in('motorcycle_id', idsMotosVendidas)
-
-    const gastosPorMoto: Record<string, number> = {}
-
-    gastosDessasMotos?.forEach((g) => {
-      gastosPorMoto[String(g.motorcycle_id)] =
-        (gastosPorMoto[String(g.motorcycle_id)] || 0) + Number(g.valor || 0)
-    })
-
-    custoMotosVendidas =
-      motosVendidas?.reduce(
-        (s, m) => s + Number(m.valor_compra || 0) + (gastosPorMoto[String(m.id)] || 0),
-        0
-      ) ?? 0
-  }
-
-  /*
-   * DOCUMENTAÇÃO
-   *
-   * O valor que o cliente entrega para a loja cuidar do
-   * documento entra no caixa, mas nao e faturamento: ele
-   * existe para pagar vistoria, taxas e despachante.
-   *
-   * O que entra no lucro e a SOBRA, e so depois de a
-   * documentacao ser dada por concluida - ate la ainda pode
-   * aparecer custo. Se os custos passarem do recebido, a
-   * diferenca desconta do lucro.
-   */
-  const idsVendasMes = vendasMes?.map((v) => v.id) ?? []
-
-  const custosPorVenda: Record<string, number> = {}
-
-  if (idsVendasMes.length > 0) {
-    const { data: custosDoc } = await supabase
-      .from('sale_documentation_costs')
-      .select('sale_id, valor')
-      .in('sale_id', idsVendasMes)
-
-    custosDoc?.forEach((custo) => {
-      custosPorVenda[String(custo.sale_id)] =
-        (custosPorVenda[String(custo.sale_id)] || 0) +
-        Number(custo.valor || 0)
-    })
-  }
-
-  const resultadoDocumentacao =
-    vendasMes?.reduce((soma, venda) => {
-      if (!venda.documentacao_concluida) return soma
-
-      const recebido = Number(venda.transferencia_cliente || 0)
-      const custos = custosPorVenda[String(venda.id)] || 0
-
-      /*
-       * Dinheiro de passagem: sobra nao vira lucro. So pesa
-       * quando a documentacao custou mais do que o cliente
-       * pagou, e a loja bancou a diferenca.
-       */
-      return soma + Math.min(0, recebido - custos)
-    }, 0) ?? 0
-
-  const lucroBrutoMes = faturamentoMes + resultadoDocumentacao - custoMotosVendidas
-
-  const { data: despesasMes } = await supabase
-    .from('store_expenses')
-    .select('valor')
-    .gte('data', inicioMes)
-    .lte('data', fimMes)
-
-  const totalDespesasMes = despesasMes?.reduce((s, d) => s + Number(d.valor || 0), 0) ?? 0
-  const lucroLiquidoMes = lucroBrutoMes - totalDespesasMes
-
-  const chaveMes = (ano: number, mes: number) => `${ano}-${String(mes + 1).padStart(2, '0')}`
-
-  const mesesGrafico = Array.from({ length: 6 }, (_, i) => {
-    const data = new Date(hoje.getFullYear(), hoje.getMonth() - 5 + i, 1)
-    return {
-      chave: chaveMes(data.getFullYear(), data.getMonth()),
-      rotulo: `${data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}/${String(
-        data.getFullYear()
-      ).slice(2)}`,
-    }
-  })
-
-  const inicioJanela = `${mesesGrafico[0].chave}-01`
-
-  const { data: vendasJanela } = await supabase
-    .from('sales')
-    .select('id, motorcycle_id, valor_total_venda, transferencia_cliente, documentacao_concluida, data_venda')
-    .eq('status', 'ativa')
-    .gte('data_venda', inicioJanela)
-    .lte('data_venda', fimMes)
-
-  const { data: despesasJanela } = await supabase
-    .from('store_expenses')
-    .select('valor, data')
-    .gte('data', inicioJanela)
-    .lte('data', fimMes)
-
-  const idsVendidasJanela = vendasJanela?.map((v) => v.motorcycle_id).filter(Boolean) ?? []
-  const custoPorMoto: Record<string, number> = {}
-
-  if (idsVendidasJanela.length > 0) {
-    const { data: motosJanela } = await supabase
-      .from('motorcycles')
-      .select('id, valor_compra')
-      .in('id', idsVendidasJanela)
-
-    const { data: gastosJanela } = await supabase
-      .from('motorcycle_expenses')
-      .select('motorcycle_id, valor')
-      .in('motorcycle_id', idsVendidasJanela)
-
-    motosJanela?.forEach((m) => {
-      custoPorMoto[String(m.id)] = Number(m.valor_compra || 0)
-    })
-
-    gastosJanela?.forEach((g) => {
-      custoPorMoto[String(g.motorcycle_id)] =
-        (custoPorMoto[String(g.motorcycle_id)] || 0) + Number(g.valor || 0)
-    })
-  }
-
-  const custosDocJanela: Record<string, number> = {}
-
-  const idsJanela =
-    vendasJanela?.map((venda) => venda.id).filter(Boolean) ?? []
-
-  if (idsJanela.length > 0) {
-    const { data: custosJanela } = await supabase
-      .from('sale_documentation_costs')
-      .select('sale_id, valor')
-      .in('sale_id', idsJanela)
-
-    custosJanela?.forEach((custo) => {
-      custosDocJanela[String(custo.sale_id)] =
-        (custosDocJanela[String(custo.sale_id)] || 0) +
-        Number(custo.valor || 0)
-    })
-  }
-
-  const dadosGrafico = mesesGrafico.map(({ chave, rotulo }) => {
-    const vendasDoMes = vendasJanela?.filter((v) => String(v.data_venda).slice(0, 7) === chave) ?? []
-    const faturamento = vendasDoMes.reduce((s, v) => s + Number(v.valor_total_venda || 0), 0)
-    const documentacao = vendasDoMes.reduce(
-      (s, v) =>
-        s +
-        (v.documentacao_concluida
-          ? Number(v.transferencia_cliente || 0) -
-            (custosDocJanela[String(v.id)] || 0)
-          : 0),
-      0
-    )
-    const custo = vendasDoMes.reduce((s, v) => s + (custoPorMoto[String(v.motorcycle_id)] || 0), 0)
-    const despesas =
-      despesasJanela
-        ?.filter((d) => String(d.data).slice(0, 7) === chave)
-        .reduce((s, d) => s + Number(d.valor || 0), 0) ?? 0
-
-    return { mes: rotulo, faturamento, despesas, lucro: faturamento + documentacao - custo - despesas }
-  })
-
   const { data: vendasRecentesData } = await supabase
     .from('sales')
     .select('id, motorcycle_id, valor_total_venda, data_venda, vendedor')
@@ -377,7 +197,6 @@ export default async function DashboardPage() {
       )
     : 0
 
-  const nomeMes = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   const periodoLabel = `${inicioMes.split('-').reverse().join('/')} - ${fimMes.split('-').reverse().join('/')}`
 
   /*
@@ -444,19 +263,12 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card titulo="Motos disponíveis" valor={String(motosDisponiveis ?? 0)} icone={Bike} />
         {/* Clicar abre a lista na ordem em que as vendas foram cadastradas. */}
         <Link href="/vendas/historico?ordem=registro" className="block">
           <Card titulo="Vendas no mês" valor={String(motosVendidasMes)} icone={ShoppingCart} />
         </Link>
-        <Card titulo="Faturamento" valor={formatarMoeda(faturamentoMes)} icone={DollarSign} />
-        <Card
-          titulo="Lucro líquido"
-          valor={formatarMoeda(lucroLiquidoMes)}
-          icone={TrendingUp}
-          destaque={lucroLiquidoMes >= 0 ? 'green' : 'red'}
-        />
       </section>
 
       {/*
@@ -602,69 +414,6 @@ export default async function DashboardPage() {
         * com a leitura em lib/dados/anuncios-meta.ts. Para
         * trazer de volta: importar e por <AnunciosMeta /> aqui.
         */}
-
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.65fr_1fr]">
-        <div className={styles.panel}>
-          <Dobravel
-            nome="faturamento"
-            titulo="Faturamento mensal"
-            subtitulo="Faturamento, despesas e lucro dos últimos 6 meses"
-            grande
-            aoLado={
-              <span className={`${styles.dataPill} rounded-xl px-3 py-2 text-xs font-black text-black/65`}>Últimos 6 meses</span>
-            }
-          >
-            <GraficoValores dados={dadosGrafico} />
-          </Dobravel>
-        </div>
-
-        <div className={`${styles.panel} flex flex-col`}>
-          <Dobravel
-            nome="resumo-financeiro"
-            titulo="Resumo financeiro"
-            subtitulo={nomeMes}
-            grande
-          >
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            <div className={styles.miniCard}>
-              <div className="flex items-center gap-3">
-                <div className={styles.icon3d}><DollarSign size={20} /></div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Receita bruta</p>
-                  <p className="mt-1 text-lg font-black text-black">{formatarMoeda(faturamentoMes)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.miniCard}>
-              <div className="flex items-center gap-3">
-                <div className={styles.icon3d}><Receipt size={20} /></div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Despesas totais</p>
-                  <p className="mt-1 text-lg font-black text-red-500">{formatarMoeda(totalDespesasMes)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={`${styles.miniCard} ${styles.goldPanel} mt-3 flex-1`}>
-            <div className="flex h-full items-center justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-wider text-black/45">Lucro líquido</p>
-                <p className="mt-2 text-3xl font-black tracking-tight text-black">{formatarMoeda(lucroLiquidoMes)}</p>
-                <div className="mt-3 flex items-center gap-2 text-xs font-black text-emerald-700">
-                  <TrendingUp size={15} /> Resultado do mês
-                </div>
-              </div>
-              <div className={`${styles.icon3d} !h-16 !w-16 !rounded-[20px]`}>
-                <Wallet size={30} />
-              </div>
-            </div>
-          </div>
-          </Dobravel>
-        </div>
-      </section>
 
       <section className="grid grid-cols-1 gap-5">
         <details className={styles.panel}>
