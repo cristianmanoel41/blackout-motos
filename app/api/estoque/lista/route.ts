@@ -84,7 +84,9 @@ export async function GET() {
     const { data, error } = await supabase
       .from("motorcycles")
       .select(
-        "marca, modelo, versao, cor, placa, ano_fabricacao, ano_modelo, quilometragem, preco_anunciado"
+        /* `cilindrada` é o que separa a lista em grupos - sem
+           ela no select, toda moto cai em "outras". */
+        "marca, modelo, versao, cor, placa, ano_fabricacao, ano_modelo, quilometragem, cilindrada, preco_anunciado"
       )
       .eq("status", "disponivel");
 
@@ -97,22 +99,37 @@ export async function GET() {
     }
 
     /*
-     * Por marca, e dentro dela por modelo.
+     * Por cilindrada, e dentro dela por marca e modelo.
+     *
+     * Cilindrada primeiro porque é assim que o cliente
+     * pergunta - "o que vocês têm de 160?" -, e quem procura
+     * uma 125 não quer ler a lista inteira.
      *
      * A marca é comparada em maiúsculas porque no banco ela
      * aparece escrita de jeitos diferentes - "Honda" e "HONDA"
      * são a mesma marca e não podem virar dois grupos.
      */
-    const motos = (data || [])
-      .map((moto) => moto as Record<string, unknown>)
-      .sort((a, b) => {
-        const marcaA = String(a.marca || "").toUpperCase();
-        const marcaB = String(b.marca || "").toUpperCase();
+    const motos = (data || []).map(
+      (moto) => moto as Record<string, unknown>
+    );
 
-        if (marcaA !== marcaB) return marcaA.localeCompare(marcaB);
+    const grupos = new Map<number, Record<string, unknown>[]>();
 
-        return nomeDaMoto(a).localeCompare(nomeDaMoto(b));
-      });
+    for (const moto of motos) {
+      const cc = Math.round(Number(moto.cilindrada || 0));
+
+      const chave = Number.isFinite(cc) && cc > 0 ? cc : 0;
+
+      if (!grupos.has(chave)) grupos.set(chave, []);
+
+      grupos.get(chave)!.push(moto);
+    }
+
+    /* Cilindrada sem informar vai para o fim, e não no começo
+       como o zero mandaria. */
+    const cilindradas = [...grupos.keys()].sort(
+      (a, b) => (a || Infinity) - (b || Infinity)
+    );
 
     const modelo = await fs.readFile(
       path.join(
@@ -128,15 +145,89 @@ export async function GET() {
       linebreaks: true,
     });
 
-    documento.render({
-      motos: motos.map((moto) => ({
-        moto: nomeDaMoto(moto),
-        placa: String(moto.placa || "").toUpperCase(),
-        anos: anos(moto),
-        km: numero(moto.quilometragem),
-        valor: dinheiro(moto.preco_anunciado),
-      })),
+    /*
+     * Cada cilindrada entra com uma linha de titulo na frente.
+     *
+     * A linha de grupo é uma linha normal da tabela, com texto
+     * só na primeira coluna - a prévia reconhece ela por isso
+     * e pinta diferente. Fazer com que a tabela do Word tenha
+     * dois tipos de linha daria um modelo bem mais complicado
+     * para um ganho que o olho nem percebe.
+     */
+    const linhas: Record<string, string>[] = [];
+
+    for (const cc of cilindradas) {
+      const doGrupo = (grupos.get(cc) || []).sort((a, b) => {
+        const marcaA = String(a.marca || "").toUpperCase();
+        const marcaB = String(b.marca || "").toUpperCase();
+
+        if (marcaA !== marcaB) return marcaA.localeCompare(marcaB);
+
+        return nomeDaMoto(a).localeCompare(nomeDaMoto(b));
+      });
+
+      linhas.push({
+        moto: cc > 0 ? `${cc} CC` : "OUTRAS CILINDRADAS",
+        placa: "",
+        anos: "",
+        km: "",
+        valor: "",
+      });
+
+      for (const moto of doGrupo) {
+        linhas.push({
+          moto: nomeDaMoto(moto),
+          placa: String(moto.placa || "").toUpperCase(),
+          anos: anos(moto),
+          km: numero(moto.quilometragem),
+          valor: dinheiro(moto.preco_anunciado),
+        });
+      }
+    }
+
+    /*
+     * Linhas em branco ate a tabela encher a folha.
+     *
+     * A loja imprime a lista e anota a caneta o que chegou
+     * depois - moto nova, preco acertado na hora. Tabela que
+     * acaba no meio da pagina deixa o resto da folha inutil, e
+     * o papel com cara de rascunho.
+     *
+     * LINHAS_NA_FOLHA foi medido no Chrome, na propria previa:
+     * com 28 a folha fecha em 297mm exatos; com 29 ela estoura
+     * e a tabela vai para a segunda pagina.
+     */
+    const LINHAS_NA_FOLHA = 28;
+
+    while (linhas.length < LINHAS_NA_FOLHA) {
+      linhas.push({
+        moto: "",
+        placa: "",
+        anos: "",
+        km: "",
+        valor: "",
+      });
+    }
+
+    /*
+     * A linha embaixo do título.
+     *
+     * Lista impressa anda pela loja e volta dias depois - sem
+     * a data, ninguém sabe se o preço ali ainda vale. A
+     * contagem vem junto porque é o primeiro número que
+     * alguém procura.
+     */
+    const quando = new Date().toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
     });
+
+    const subtitulo = `${motos.length} ${
+      motos.length === 1
+        ? "moto disponível"
+        : "motos disponíveis"
+    }  ·  ${quando}`;
+
+    documento.render({ motos: linhas, subtitulo });
 
     const arquivo = documento
       .getZip()

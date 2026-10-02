@@ -25,6 +25,7 @@ type Documento = {
   espalhar?: boolean;
   fonte?: number;
   entrelinha?: number;
+  variante?: string;
 };
 
 const documentos: Record<string, Documento> = {
@@ -59,6 +60,20 @@ const documentos: Record<string, Documento> = {
     entrelinha: 1.5,
   },
 
+  /*
+   * A lista do estoque nao tem id: e sempre o estoque inteiro.
+   * O endereco leva um mesmo assim para caber na rota dos
+   * documentos - e assim ela herda a moldura, a marca d'agua e
+   * o botao de imprimir que os contratos ja usam.
+   */
+  estoque: {
+    titulo: "a lista do estoque",
+    url: () => "/api/estoque/lista",
+    voltar: () => "/admin/estoque",
+    voltarRotulo: "Voltar para o estoque",
+    variante: "lista",
+  },
+
   procuracao: {
     titulo: "a procuração",
     url: (id) => `/api/contratos/procuracao/${id}`,
@@ -91,6 +106,7 @@ export default async function DocumentoPage({
       espalhar={!!documento.espalhar}
       fonte={documento.fonte}
       entrelinha={documento.entrelinha}
+      variante={documento.variante}
     />
   );
 }

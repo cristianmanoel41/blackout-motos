@@ -783,19 +783,19 @@ export default function EstoquePage() {
             </Link>
 
             {/*
-              * Link comum, e nao botao com script.
+              * Vai para a previa, e nao direto para o arquivo.
               *
-              * O navegador baixa o arquivo sozinho, sem a tela
-              * precisar esperar, montar blob nem tratar erro de
-              * download. Quem monta a lista e a rota.
+              * La dentro estao os dois caminhos que a loja usa -
+              * imprimir e baixar em Word - e da para conferir a
+              * lista antes de gastar papel.
               */}
-            <a
-              href="/api/estoque/lista"
+            <Link
+              href="/documentos/estoque/lista"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto transition hover:border-dourado hover:text-dourado"
             >
               <FileDown size={18} />
-              Baixar Lista
-            </a>
+              Lista do Estoque
+            </Link>
 
             <Link
               href="/motos/nova"

@@ -132,12 +132,62 @@ function prepararHtmlDocumento(valor: string) {
     if (vazio) item.remove();
   }
 
+  /*
+   * Tabela de assinatura, ou tabela de conteudo?
+   *
+   * Nos contratos a unica tabela e a das assinaturas, e por
+   * isso bastava marcar todas. A lista do estoque trouxe uma
+   * tabela de verdade - e o estilo de assinatura, que centraliza
+   * tudo e divide as colunas em 45/10/45, destruiria ela.
+   *
+   * Quem decide e o conteudo: tabela de assinatura tem linha de
+   * assinatura dentro.
+   */
   const tabelas = Array.from(
     documento.body.querySelectorAll("table")
   );
 
   for (const tabela of tabelas) {
-    tabela.classList.add("assinaturas-documento");
+    const ehDeAssinatura = tabela.querySelector(
+      ".linha-assinatura-doc"
+    );
+
+    tabela.classList.add(
+      ehDeAssinatura
+        ? "assinaturas-documento"
+        : "tabela-documento"
+    );
+
+    if (ehDeAssinatura) continue;
+
+    /*
+     * A linha que abre um grupo.
+     *
+     * Ela vem da mesma tabela que as motos - o modelo do Word
+     * só sabe fazer um tipo de linha -, e se reconhece pelo
+     * formato: texto na primeira coluna e nada nas outras.
+     *
+     * Moto nunca cai nessa regra: a última coluna é o preço, e
+     * moto sem preço sai como "A consultar".
+     */
+    const linhas = Array.from(tabela.querySelectorAll("tr"));
+
+    for (const linha of linhas) {
+      const celulas = Array.from(linha.querySelectorAll("td"));
+
+      if (celulas.length < 2) continue;
+
+      const texto = (celula: Element) =>
+        (celula.textContent || "").trim();
+
+      const soAPrimeira =
+        texto(celulas[0]) !== "" &&
+        celulas
+          .slice(1)
+          .every((celula) => texto(celula) === "");
+
+      if (soAPrimeira) linha.classList.add("linha-grupo");
+    }
   }
 
   return documento.body.innerHTML;
@@ -151,6 +201,7 @@ export default function PreviaDocumento({
   espalhar = false,
   fonte,
   entrelinha,
+  variante,
 }: {
   url: string;
   titulo: string;
@@ -170,6 +221,15 @@ export default function PreviaDocumento({
    * nao precisa.
    */
   entrelinha?: number;
+  /*
+   * Que documento e este, para o CSS.
+   *
+   * Vira a classe `documento-<variante>` na folha. Contrato e
+   * procuracao nao usam: a aparencia deles vem do Word. A
+   * lista do estoque usa, porque ela e desenhada aqui - o
+   * modelo do Word so carrega o texto.
+   */
+  variante?: string;
 }) {
   const [html, setHtml] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -474,6 +534,228 @@ export default function PreviaDocumento({
           margin-top: 20mm !important;
         }
 
+        /*
+         * A tabela de conteudo - hoje, a lista do estoque.
+         *
+         * Pega a largura toda da folha e as linhas ficam com
+         * altura de formulario: a loja imprime a lista e
+         * preenche as linhas vazias a caneta, entao linha
+         * apertada demais nao serve.
+         *
+         * A grade e desenhada aqui, e nao herdada do Word: o
+         * conversor traz a tabela sem as bordas do estilo
+         * "Tabela com grade", e sem elas a lista vira um monte
+         * de texto solto.
+         */
+        .documento-word .tabela-documento {
+          width: 100% !important;
+          margin: 0 !important;
+          border-collapse: collapse !important;
+          table-layout: fixed !important;
+        }
+
+        /* ---------- A LISTA DO ESTOQUE ---------- */
+
+        /*
+         * Tipografia sem serifa.
+         *
+         * O conversor entrega a tabela sem fonte nenhuma, e o
+         * navegador cai no Times - que da ao documento cara de
+         * papel velho. Calibri e a fonte do resto dos
+         * documentos da loja; Carlito tem as mesmas medidas e
+         * entra onde Calibri nao existe.
+         */
+        .documento-lista .documento-word {
+          font-family: Calibri, Carlito, "Segoe UI", Arial,
+            sans-serif !important;
+          color: #18181b !important;
+        }
+
+        /*
+         * O titulo, que no modelo e so um paragrafo solto.
+         *
+         * Vira cabecalho de documento: nome da loja em caixa
+         * alta, espacado, com um fio dourado embaixo separando
+         * do conteudo.
+         */
+        .documento-lista .documento-word > p:first-of-type {
+          margin: 0 0 0.5mm !important;
+          font-size: 20pt !important;
+          font-weight: 700 !important;
+          font-style: normal !important;
+          letter-spacing: 0.06em !important;
+          text-align: left !important;
+          color: #18181b !important;
+        }
+
+        /*
+         * A linha da data, logo abaixo do nome da loja.
+         *
+         * O fio dourado fica aqui, e nao no titulo: ele fecha
+         * o cabecalho inteiro - nome e data juntos - em vez de
+         * cortar no meio.
+         */
+        .documento-lista .documento-word > p:nth-of-type(2) {
+          margin: 0 0 5mm !important;
+          padding-bottom: 2.5mm !important;
+          border-bottom: 2px solid #a97800 !important;
+          font-size: 9.5pt !important;
+          font-weight: 600 !important;
+          letter-spacing: 0.04em !important;
+          text-transform: uppercase !important;
+          color: #52525b !important;
+        }
+
+        .documento-lista .documento-word > p:first-of-type em,
+        .documento-lista .documento-word > p:first-of-type i {
+          font-style: normal !important;
+        }
+
+        /*
+         * O cabecalho da tabela: faixa preta, letra branca.
+         *
+         * E a identidade da loja, e resolve de uma vez a
+         * separacao entre titulo das colunas e conteudo - sem
+         * precisar de grade em volta de cada celula.
+         */
+        .documento-lista .tabela-documento tr:first-child td {
+          background: #18181b !important;
+          border: 0 !important;
+          border-bottom: 2px solid #a97800 !important;
+          height: 9mm !important;
+        }
+
+        .documento-lista .tabela-documento tr:first-child p {
+          color: #ffffff !important;
+          font-size: 9.5pt !important;
+          font-weight: 700 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        /*
+         * As linhas: so fio horizontal, sem grade.
+         *
+         * Grade em volta de tudo cansa a vista numa lista de
+         * trinta linhas e nao ajuda a ler - o olho ja segue a
+         * linha sozinho.
+         *
+         * Mas o fio horizontal precisa aparecer: a loja
+         * escreve a caneta nas linhas vazias, e ali ele deixa
+         * de ser enfeite e vira a pauta.
+         */
+        .documento-lista .tabela-documento td {
+          /* Celula fechada dos quatro lados: cada coluna tem o
+             seu campo, e o que se escreve a caneta fica dentro
+             dele em vez de correr pela folha. */
+          border: 1px solid #a1a1aa !important;
+          padding: 0 3mm !important;
+          height: 8.2mm !important;
+          vertical-align: middle !important;
+        }
+
+
+
+        /*
+         * Uma listra clara a cada duas linhas, para o olho nao
+         * pular de coluna no meio do caminho.
+         *
+         * Translucida, e nao cinza solido: atras da tabela
+         * passa a marca d'agua, e listra opaca cobriria o logo
+         * so nas linhas pares - ele aparecia picotado, como se
+         * a impressao tivesse falhado.
+         */
+        .documento-lista .tabela-documento tr:nth-child(even) td {
+          background: rgba(24, 24, 27, 0.04) !important;
+        }
+
+        /*
+         * A marca d'agua, mais fraca do que nos contratos.
+         *
+         * No contrato ela fica atras de texto corrido e espaco
+         * em branco. Aqui ela divide a folha com uma tabela
+         * cheia de numero, e no mesmo tom de cinza ela briga
+         * com o que a loja precisa ler.
+         */
+        .documento-lista .marca-dagua-documento {
+          opacity: 0.055 !important;
+          top: 118mm !important;
+        }
+
+        /*
+         * A linha que abre cada cilindrada.
+         *
+         * Faixa dourada clara, que separa os grupos sem pesar
+         * como outra faixa preta, e sem gastar tinta a cada
+         * cinco linhas.
+         */
+        .documento-lista .tabela-documento tr.linha-grupo td {
+          background: rgba(169, 120, 0, 0.16) !important;
+          height: 7mm !important;
+          border-color: #a97800 !important;
+        }
+
+        .documento-lista .tabela-documento tr.linha-grupo p {
+          font-size: 9.5pt !important;
+          font-weight: 700 !important;
+          letter-spacing: 0.1em !important;
+          color: #6b4c00 !important;
+        }
+
+        .documento-lista .tabela-documento p {
+          margin: 0 !important;
+          padding: 0 !important;
+          font-size: 10.5pt !important;
+          line-height: 1.15 !important;
+          /* Algarismo de mesma largura: as colunas de numero
+             ficam alinhadas de cima a baixo. */
+          font-variant-numeric: tabular-nums !important;
+        }
+
+        /*
+         * Cada coluna com a largura do que ela carrega.
+         *
+         * Com table-layout fixo e sem isto, as cinco colunas
+         * ficam iguais - e o nome da moto, que e o campo
+         * comprido, quebra em duas linhas enquanto a coluna do
+         * ano sobra vazia.
+         */
+        .documento-lista .tabela-documento td:nth-child(1) {
+          width: 42% !important;
+          text-align: left !important;
+          font-weight: 600 !important;
+        }
+
+        .documento-lista .tabela-documento td:nth-child(2) {
+          width: 15% !important;
+          text-align: center !important;
+        }
+
+        .documento-lista .tabela-documento td:nth-child(3) {
+          width: 16% !important;
+          text-align: center !important;
+        }
+
+        .documento-lista .tabela-documento td:nth-child(4) {
+          width: 12% !important;
+          text-align: right !important;
+        }
+
+        /* O preco e o que a conversa procura: alinhado a
+           direita e em negrito, se acha de relance. */
+        .documento-lista .tabela-documento td:nth-child(5) {
+          width: 15% !important;
+          text-align: right !important;
+          font-weight: 700 !important;
+        }
+
+        .documento-lista
+          .tabela-documento
+          tr:first-child
+          td:nth-child(1) {
+          font-weight: 700 !important;
+        }
+
         .documento-word .assinaturas-documento {
           width: 100% !important;
           margin: 0 !important;
@@ -691,7 +973,7 @@ export default function PreviaDocumento({
           ref={folhaRef}
           className={`folha-documento mx-auto min-h-[29.7cm] w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl${
             espalhar ? " documento-espalhado" : ""
-          }`}
+          }${variante ? ` documento-${variante}` : ""}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
