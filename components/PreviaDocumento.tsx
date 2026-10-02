@@ -340,6 +340,42 @@ export default function PreviaDocumento({
     }
   }, [html, espalhar, fonte, entrelinha]);
 
+  /*
+   * A lista cabe numa folha só, apertando a linha.
+   *
+   * O estoque cresce, e com ele a tabela: cada moto é uma
+   * linha, e cada cilindrada ainda leva uma linha de título e
+   * uma em branco. Em algum momento isso passa de 29,7cm e a
+   * lista vai para a segunda folha - que é papel a mais para
+   * levar na conversa.
+   *
+   * Então a folha se mede, como já faz com a fonte do
+   * contrato: começa na linha larga e vai apertando de dois em
+   * dois décimos de milímetro até fechar.
+   *
+   * O piso de 5,5mm não é arbitrário: abaixo disso não cabe
+   * caneta, e a lista existe para ser preenchida à mão. Se nem
+   * no piso couber, aí vai para a segunda folha mesmo - é
+   * melhor do que uma lista que ninguém consegue escrever.
+   */
+  useEffect(() => {
+    const folha = folhaRef.current;
+
+    if (variante !== "lista" || !html || !folha) return;
+
+    const alturaDaFolha = (29.7 * 96) / 2.54;
+
+    let altura = 8.2;
+
+    while (altura >= 5.5) {
+      folha.style.setProperty("--linha-altura", `${altura}mm`);
+
+      if (folha.offsetHeight <= alturaDaFolha + 1) break;
+
+      altura -= 0.2;
+    }
+  }, [html, variante]);
+
   return (
     <>
       <style>{`
@@ -650,7 +686,7 @@ export default function PreviaDocumento({
              dele em vez de correr pela folha. */
           border: 1px solid #a1a1aa !important;
           padding: 0 3mm !important;
-          height: 8.2mm !important;
+          height: var(--linha-altura, 8.2mm) !important;
           vertical-align: middle !important;
         }
 
@@ -691,7 +727,7 @@ export default function PreviaDocumento({
          */
         .documento-lista .tabela-documento tr.linha-grupo td {
           background: rgba(169, 120, 0, 0.16) !important;
-          height: 7mm !important;
+          height: calc(var(--linha-altura, 8.2mm) - 1.2mm) !important;
           border-color: #a97800 !important;
         }
 
@@ -721,23 +757,23 @@ export default function PreviaDocumento({
          * ano sobra vazia.
          */
         .documento-lista .tabela-documento td:nth-child(1) {
-          width: 42% !important;
+          width: 48% !important;
           text-align: left !important;
           font-weight: 600 !important;
         }
 
         .documento-lista .tabela-documento td:nth-child(2) {
-          width: 15% !important;
+          width: 13% !important;
           text-align: center !important;
         }
 
         .documento-lista .tabela-documento td:nth-child(3) {
-          width: 16% !important;
+          width: 13% !important;
           text-align: center !important;
         }
 
         .documento-lista .tabela-documento td:nth-child(4) {
-          width: 12% !important;
+          width: 11% !important;
           text-align: right !important;
         }
 
