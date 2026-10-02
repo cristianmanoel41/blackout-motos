@@ -21,6 +21,7 @@ import { nomeCurtoVendedor } from '@/lib/dados/vendedores'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import GraficoValores from '@/components/GraficoValores'
 import AcessosDoSite from './AcessosDoSite'
+import Aniversariantes from './Aniversariantes'
 import styles from './dashboard.module.css'
 
 type MotoParada = MotoResumo & {
@@ -493,6 +494,15 @@ export default async function DashboardPage() {
           destaque={lucroLiquidoMes >= 0 ? 'green' : 'red'}
         />
       </section>
+
+      {/*
+        * Os aniversarios vem antes dos numeros do mes.
+        *
+        * E a unica coisa do painel que vence hoje: faturamento
+        * e estoque continuam la amanha, mensagem de
+        * aniversario nao.
+        */}
+      <Aniversariantes />
 
       {/*
         * Quantas entraram e quantas sairam no mes.
