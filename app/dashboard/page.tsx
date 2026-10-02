@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ChevronDown,
   DollarSign,
-  PlusCircle,
   Receipt,
   ShoppingCart,
   Timer,
@@ -215,42 +214,6 @@ export default async function DashboardPage() {
 
   const totalDespesasMes = despesasMes?.reduce((s, d) => s + Number(d.valor || 0), 0) ?? 0
   const lucroLiquidoMes = lucroBrutoMes - totalDespesasMes
-
-  const { data: motosEstoque } = await supabase
-    .from('motorcycles')
-    .select('valor_compra')
-    .in('status', ['disponivel', 'reservada'])
-
-  const valorInvestidoEstoque = motosEstoque?.reduce((s, m) => s + Number(m.valor_compra || 0), 0) ?? 0
-
-  const { data: entradasMesData } = await supabase
-    .from('cash_transactions')
-    .select('valor')
-    .eq('tipo', 'entrada')
-    .eq('confirmado', true)
-    .gte('data', inicioMes)
-    .lte('data', fimMes)
-
-  const { data: saidasMesData } = await supabase
-    .from('cash_transactions')
-    .select('valor')
-    .eq('tipo', 'saida')
-    .eq('confirmado', true)
-    .gte('data', inicioMes)
-    .lte('data', fimMes)
-
-  const entradasMes = entradasMesData?.reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
-  const saidasMes = saidasMesData?.reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
-
-  const { data: todasTransacoes } = await supabase
-    .from('cash_transactions')
-    .select('tipo, valor')
-    .eq('confirmado', true)
-  const totalEntradasGeral =
-    todasTransacoes?.filter((t) => t.tipo === 'entrada').reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
-  const totalSaidasGeral =
-    todasTransacoes?.filter((t) => t.tipo === 'saida').reduce((s, t) => s + Number(t.valor || 0), 0) ?? 0
-  const saldoCaixa = totalEntradasGeral - totalSaidasGeral
 
   const chaveMes = (ano: number, mes: number) => `${ano}-${String(mes + 1).padStart(2, '0')}`
 
@@ -700,41 +663,6 @@ export default async function DashboardPage() {
             </div>
           </div>
           </Dobravel>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <div className={styles.miniCard}>
-          <PlusCircle size={20} className="text-[#a97800]" />
-          <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-black/40">Motos compradas</p>
-          <p className="mt-1 text-xl font-black text-black">{motosCompradasMes ?? 0}</p>
-        </div>
-        <div className={styles.miniCard}>
-          <Warehouse size={20} className="text-[#a97800]" />
-          <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-black/40">Valor em estoque</p>
-          <p className="mt-1 text-xl font-black text-black">{formatarMoeda(valorInvestidoEstoque)}</p>
-        </div>
-        <div className={styles.miniCard}>
-          <TrendingUp size={20} className="text-emerald-600" />
-          <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-black/40">Lucro bruto</p>
-          <p className="mt-1 text-xl font-black text-black">{formatarMoeda(lucroBrutoMes)}</p>
-        </div>
-        <div className={styles.miniCard}>
-          <ArrowUpCircle size={20} className="text-emerald-600" />
-          <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-black/40">Entradas no caixa</p>
-          <p className="mt-1 text-xl font-black text-black">{formatarMoeda(entradasMes)}</p>
-        </div>
-        <div className={styles.miniCard}>
-          <ArrowDownCircle size={20} className="text-red-500" />
-          <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-black/40">Saídas do caixa</p>
-          <p className="mt-1 text-xl font-black text-black">{formatarMoeda(saidasMes)}</p>
-        </div>
-        <div className={`${styles.miniCard} ${styles.goldPanel}`}>
-          <Wallet size={20} className="text-[#a97800]" />
-          <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-black/40">Saldo do caixa</p>
-          <p className={`mt-1 text-xl font-black ${saldoCaixa >= 0 ? 'text-[#a97800]' : 'text-red-500'}`}>
-            {formatarMoeda(saldoCaixa)}
-          </p>
         </div>
       </section>
 
