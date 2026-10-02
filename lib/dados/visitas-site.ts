@@ -119,6 +119,16 @@ export type Visitas = {
   horas: Hora[];
   comparacao: Comparacao;
   /*
+   * A lista traz só moto que está no pátio.
+   *
+   * Vendida e arquivada saem na migração 0031: o painel existe
+   * para decidir o que fazer hoje, e moto que já saiu não
+   * aceita decisão nenhuma - só empurra para baixo a que ainda
+   * está para vender. O campo `vendida` continua aqui porque,
+   * enquanto o SQL não for rodado, a tela precisa saber.
+   */
+
+  /*
    * A moto que mais gente abriu e ninguém chamou.
    *
    * É a única linha do painel que pede uma atitude: ou o preço
