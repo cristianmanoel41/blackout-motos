@@ -22,6 +22,7 @@ import { formatarMoeda } from '@/lib/formatadores/moeda'
 import GraficoValores from '@/components/GraficoValores'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
+import Dobravel from '@/components/Dobravel'
 import styles from './dashboard.module.css'
 
 type MotoParada = MotoResumo & {
@@ -641,21 +642,26 @@ export default async function DashboardPage() {
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.65fr_1fr]">
         <div className={styles.panel}>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-black text-black">Faturamento mensal</h2>
-              <p className="text-xs font-bold text-black/45">Faturamento, despesas e lucro dos últimos 6 meses</p>
-            </div>
-            <span className={`${styles.dataPill} rounded-xl px-3 py-2 text-xs font-black text-black/65`}>Últimos 6 meses</span>
-          </div>
-          <GraficoValores dados={dadosGrafico} />
+          <Dobravel
+            nome="faturamento"
+            titulo="Faturamento mensal"
+            subtitulo="Faturamento, despesas e lucro dos últimos 6 meses"
+            grande
+            aoLado={
+              <span className={`${styles.dataPill} rounded-xl px-3 py-2 text-xs font-black text-black/65`}>Últimos 6 meses</span>
+            }
+          >
+            <GraficoValores dados={dadosGrafico} />
+          </Dobravel>
         </div>
 
         <div className={`${styles.panel} flex flex-col`}>
-          <div className="mb-5">
-            <h2 className="text-lg font-black text-black">Resumo financeiro</h2>
-            <p className="text-xs font-bold capitalize text-black/45">{nomeMes}</p>
-          </div>
+          <Dobravel
+            nome="resumo-financeiro"
+            titulo="Resumo financeiro"
+            subtitulo={nomeMes}
+            grande
+          >
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             <div className={styles.miniCard}>
@@ -693,6 +699,7 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+          </Dobravel>
         </div>
       </section>
 
@@ -821,10 +828,12 @@ export default async function DashboardPage() {
 
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className={`${styles.panel} flex flex-col`}>
-          <div className="mb-4">
-            <h2 className="text-lg font-black text-black">Motos em destaque</h2>
-            <p className="text-xs font-bold text-black/45">Moto disponível com a menor quilometragem</p>
-          </div>
+          <Dobravel
+            nome="moto-destaque"
+            titulo="Motos em destaque"
+            subtitulo="Moto disponível com a menor quilometragem"
+            grande
+          >
 
           {motoDestaque ? (
             <div className={`${styles.goldPanel} flex-1 rounded-[22px] border p-4`}>
@@ -859,12 +868,18 @@ export default async function DashboardPage() {
               </div>
             </div>
           )}
+          </Dobravel>
         </div>
 
         <div className={`${styles.panel} ${styles.goldPanel}`}>
+          <Dobravel
+            nome="moto-parada"
+            titulo="Parada há mais tempo"
+            subtitulo="A moto que está há mais dias no pátio"
+            grande
+          >
           <div className="flex h-full flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className={`text-xs font-black uppercase tracking-[0.18em] ${styles.paradaEtiqueta}`}>Parada há mais tempo</p>
 
               {motoParada ? (
                 <>
@@ -903,6 +918,7 @@ export default async function DashboardPage() {
               <Timer size={30} />
             </div>
           </div>
+          </Dobravel>
         </div>
       </section>
     </div>

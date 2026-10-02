@@ -156,6 +156,49 @@ export async function GET() {
      */
     const linhas: Record<string, string>[] = [];
 
+    const vazia = {
+      moto: "",
+      placa: "",
+      anos: "",
+      km: "",
+      valor: "",
+    };
+
+    /*
+     * Linhas em branco ate a tabela encher a folha.
+     *
+     * A loja imprime a lista e anota a caneta o que chegou
+     * depois - moto nova, preco acertado na hora. Tabela que
+     * acaba no meio da pagina deixa o resto da folha inutil, e
+     * o papel com cara de rascunho.
+     *
+     * LINHAS_NA_FOLHA foi medido no Chrome, na propria previa:
+     * com 28 a folha fecha em 297mm exatos; com 29 ela estoura
+     * e a tabela vai para a segunda pagina.
+     */
+    const LINHAS_NA_FOLHA = 28;
+
+    /*
+     * Quantas linhas livres sobram para cada cilindrada.
+     *
+     * Moto que chega é anotada à caneta no grupo dela - uma
+     * 125 nova vai escrita junto das outras 125, não no fim da
+     * folha. Para isso cada grupo precisa de espaço próprio.
+     *
+     * O que sobra da folha é dividido entre os grupos, mas
+     * nunca menos de uma linha por grupo: grupo sem espaço
+     * nenhum derruba a razão de ter separado a lista. Quando o
+     * estoque crescer a ponto de nem isso caber, a tabela
+     * passa para a segunda página - mais moto, mais papel.
+     */
+    const LIVRES_POR_GRUPO = Math.max(
+      1,
+      Math.floor(
+        (LINHAS_NA_FOLHA - cilindradas.length - motos.length) /
+          Math.max(cilindradas.length, 1)
+      )
+    );
+
     for (const cc of cilindradas) {
       const doGrupo = (grupos.get(cc) || []).sort((a, b) => {
         const marcaA = String(a.marca || "").toUpperCase();
@@ -183,21 +226,13 @@ export async function GET() {
           valor: dinheiro(moto.preco_anunciado),
         });
       }
+
+      /* O espaço da cilindrada, logo abaixo das motos dela. */
+      for (let i = 0; i < LIVRES_POR_GRUPO; i += 1) {
+        linhas.push({ ...vazia });
+      }
     }
 
-    /*
-     * Linhas em branco ate a tabela encher a folha.
-     *
-     * A loja imprime a lista e anota a caneta o que chegou
-     * depois - moto nova, preco acertado na hora. Tabela que
-     * acaba no meio da pagina deixa o resto da folha inutil, e
-     * o papel com cara de rascunho.
-     *
-     * LINHAS_NA_FOLHA foi medido no Chrome, na propria previa:
-     * com 28 a folha fecha em 297mm exatos; com 29 ela estoura
-     * e a tabela vai para a segunda pagina.
-     */
-    const LINHAS_NA_FOLHA = 28;
 
     while (linhas.length < LINHAS_NA_FOLHA) {
       linhas.push({
