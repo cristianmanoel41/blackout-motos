@@ -213,10 +213,18 @@
 .estradaPerto {
   pointer-events: none;
   position: absolute;
-  left: -40%;
-  right: -40%;
+  left: max(-40%, -620px);
+  right: max(-40%, -620px);
   bottom: 0;
-  height: 240%;
+  /*
+   * Teto em pixels, nao so em porcentagem.
+   *
+   * Numa janela de 1440 de altura, 240% seriam 3456px de
+   * camada - e memoria de desenho cresce com a area. O teto
+   * mexe de leve no horizonte e segura o custo numa tela
+   * grande.
+   */
+  height: min(240%, 1500px);
   transform: perspective(900px) rotateX(66deg);
   transform-origin: 50% 100%;
   background-image:
@@ -232,12 +240,7 @@
      * desenho fica o mesmo de longe e deixa de ter canto vivo
      * de perto.
      */
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 4px,
-      rgba(176, 179, 188, 0.68) 10px 48px,
-      transparent 54px 152px
-    ),
+    url('/faixa.png'),
     /*
      * As duas linhas da beira, tambem em rampa.
      *
@@ -260,9 +263,9 @@
        virava chuvisco */
       linear-gradient(
         90deg,
-        #000 0 37.5%,
-        transparent 38.5% 61.5%,
-        #000 62.5% 100%
+        #000 0 34%,
+        transparent 40% 60%,
+        #000 66% 100%
       ),
     /* a pedra do asfalto */ url('/asfalto.png'),
     /* o escuro do longe, por cima da pista */
@@ -270,12 +273,12 @@
     /* a pista: cinza fechado no meio, preto nas beiras */
       linear-gradient(
         90deg,
-        #000 0 37.5%,
-        #141619 38.5% 61.5%,
-        #000 62.5% 100%
+        #000 0 34%,
+        #141619 40% 60%,
+        #000 66% 100%
       );
   background-size:
-    11px 152px,
+    28px 152px,
     100% 100%,
     100% 100%,
     76px 76px,
@@ -351,7 +354,7 @@
 }
 
 .estradaPerto {
-  height: 240vh;
+  height: min(240vh, 1500px);
   filter: blur(7px);
   opacity: 0.9;
   mask-image: linear-gradient(
@@ -453,24 +456,28 @@
     linear-gradient(
       0deg,
       #000 0%,
-      rgba(0, 0, 0, 0.82) 3%,
-      rgba(0, 0, 0, 0.3) 9%,
-      transparent 18%
+      rgba(0, 0, 0, 0.84) 3%,
+      rgba(0, 0, 0, 0.52) 7%,
+      rgba(0, 0, 0, 0.26) 12%,
+      transparent 20%
     ),
     /* a testeira, mais funda que a queixeira */
       linear-gradient(
         180deg,
         #000 0%,
         rgba(0, 0, 0, 0.95) 6%,
-        rgba(0, 0, 0, 0.45) 16%,
-        transparent 27%
+        rgba(0, 0, 0, 0.66) 11%,
+        rgba(0, 0, 0, 0.38) 18%,
+        transparent 28%
       ),
     /* a abertura, fechando em oval nos cantos */
       radial-gradient(
         ellipse 104% 70% at 50% 50%,
         transparent 50%,
+        rgba(0, 0, 0, 0.16) 61%,
         rgba(0, 0, 0, 0.42) 76%,
-        rgba(0, 0, 0, 0.9) 100%
+        rgba(0, 0, 0, 0.68) 88%,
+        rgba(0, 0, 0, 0.88) 100%
       );
 }
 
@@ -489,7 +496,7 @@
 .granulado {
   pointer-events: none;
   position: fixed;
-  inset: -30%;
+  inset: 0;
   z-index: 5;
   background-image: url('/grao.png');
   background-size: 140px 140px;
@@ -508,24 +515,51 @@
   animation: trocarGrao 0.6s steps(1) infinite;
 }
 
+/*
+ * O grao troca de posicao em degraus, nunca deslizando: o grao
+ * de um filme troca a cada quadro, nao escorrega pela tela.
+ *
+ * QUEM MOVE E O DESENHO, NAO A CAMADA. Enquanto isto era um
+ * transform, cada deslocamento descobria uma tira na beira da
+ * tela - e essa tira piscava preta seis vezes por segundo, na
+ * borda inteira. Com background-position o ladrilho se repete
+ * para sempre e nao existe beira para descobrir.
+ */
 @keyframes trocarGrao {
   0% {
-    transform: translate3d(0, 0, 0);
+    background-position: 0 0;
   }
   20% {
-    transform: translate3d(-3.5%, 2.5%, 0);
+    background-position: -37px 23px;
   }
   40% {
-    transform: translate3d(2.5%, -4%, 0);
+    background-position: 29px -51px;
   }
   60% {
-    transform: translate3d(-2%, -2.5%, 0);
+    background-position: -19px -31px;
   }
   80% {
-    transform: translate3d(3.5%, 1.5%, 0);
+    background-position: 44px 17px;
   }
 }
 
+/*
+ * A TRAVA DO ZOOM
+ *
+ * Quem amplia a tela faz o navegador redesenhar tudo numa
+ * resolucao maior, e o custo sobe com o QUADRADO da escala:
+ * tres vezes de zoom, nove vezes mais pixels. E a mesma porta
+ * pela qual o Safari do iPhone matou a aba.
+ *
+ * A classe e posta e tirada pelo TelaDeLogin, que escuta o
+ * visualViewport. Fica o preto, o capacete e o formulario -
+ * que e o que a pessoa ampliou a tela para ler.
+ */
+.telaAmpliada .mundoLogin,
+.telaAmpliada .granulado,
+.telaAmpliada .reflexoVisor {
+  display: none !important;
+}
 /*
  * O CELULAR NAO AGUENTA A CENA INTEIRA
  *
@@ -552,22 +586,35 @@
     display: none;
   }
 
-  /* A pista encolhe. A perspectiva muda um pouco com isso - a
-     estrada nasce em 71% da altura em vez de 66% - e esse e o
-     preco combinado. */
+  /*
+   * A pista do celular.
+   *
+   * Encolhida para caber na memoria, ela ocupava so 29% da
+   * tela e ficava pequena demais. A alavanca certa nao e o
+   * tamanho e sim o ANGULO: deitar menos faz a estrada subir
+   * na tela sem pedir um pixel a mais de memoria.
+   *
+   * A 66 graus ela ocupava 29% da tela; a 56 graus ocupa 45%.
+   * O custo das duas e o mesmo - o que muda e so para onde o
+   * plano aponta.
+   *
+   * Na tela grande o angulo continua 66: la a estrada e mais
+   * larga que alta, e deitar menos faria ela subir por tras do
+   * formulario.
+   */
   .estradaLogin {
     left: -30%;
     right: -30%;
-    height: 190%;
+    height: 220%;
+    transform: perspective(900px) rotateX(56deg);
   }
 
   /* O grao para de misturar e passa a so cobrir a tela: a
      mistura obriga o navegador a guardar mais uma copia de
      tudo que esta embaixo. */
   .granulado {
-    inset: 0;
     mix-blend-mode: normal;
-    opacity: 0.045;
+    opacity: 0.07;
   }
 }
 /*

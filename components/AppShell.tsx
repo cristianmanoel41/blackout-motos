@@ -1,8 +1,109 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import styles from './AppShell.module.css'
+
+/*
+ * A TELA DE LOGIN
+ *
+ * Mora em componente proprio por causa do useEffect abaixo: o
+ * React nao aceita hook dentro de um if, e o login e um dos
+ * caminhos do AppShell.
+ */
+function TelaDeLogin({ children }: { children: React.ReactNode }) {
+  const moldura = useRef<HTMLDivElement>(null)
+
+  /*
+   * A cena sai quando a pessoa da zoom.
+   *
+   * Ampliar multiplica a memoria do desenho pelo QUADRADO da
+   * escala: tres vezes de zoom pede nove vezes mais pixels para
+   * desenhar a mesma estrada. Foi memoria que matou a aba do
+   * iPhone em 02/10/2026 - "um problema ocorreu repetidamente" -
+   * e o zoom reabre exatamente a mesma porta, mesmo depois de a
+   * cena ter emagrecido.
+   *
+   * A troca nao custa nada: quem ampliou a tela esta lendo o
+   * formulario, nao olhando a estrada.
+   *
+   * visualViewport e o que enxerga o zoom de pinca - innerWidth
+   * nao muda com ele. Onde nao existir, a cena fica como esta:
+   * navegador velho o bastante para nao ter visualViewport
+   * tambem nao tem pinca.
+   */
+  useEffect(() => {
+    const janela = window.visualViewport
+    const alvo = moldura.current
+    if (!janela || !alvo) return
+
+    const conferir = () => {
+      alvo.classList.toggle(styles.telaAmpliada, janela.scale > 1.15)
+    }
+
+    conferir()
+    janela.addEventListener('resize', conferir)
+    janela.addEventListener('scroll', conferir)
+
+    return () => {
+      janela.removeEventListener('resize', conferir)
+      janela.removeEventListener('scroll', conferir)
+    }
+  }, [])
+
+  return (
+    <div
+      ref={moldura}
+      className={`${styles.legibilidade} ${styles.loginComLogo}`}
+    >
+      <div className={styles.fundoLogin} aria-hidden="true" />
+
+      {/*
+        O mundo: tudo que treme junto com a moto. O capacete
+        fica de fora de proposito - ele esta preso a cabeca de
+        quem olha, entao e a unica coisa parada na cena.
+      */}
+      <div className={styles.mundoLogin} aria-hidden="true">
+        {/* O bamboleio lento da moto em linha reta. */}
+        <div className={styles.guinadaLogin}>
+          {/* O tremor do motor, por dentro do bamboleio. */}
+          <div className={styles.tremorLogin}>
+            {/* A pista nitida, deitada em perspectiva. */}
+            <div className={styles.estradaLogin} />
+
+            {/* A mesma pista borrada, so no que passa perto.
+                O recorte existe por desempenho: ver o comentario
+                em .recorteDoBorrao. */}
+            <div className={styles.recorteDoBorrao}>
+              <div className={styles.estradaPerto} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* O brilho do plastico do visor. */}
+      <div className={styles.reflexoVisor} aria-hidden="true" />
+
+      {/* A moldura da abertura do capacete. */}
+      <div className={styles.capaceteLogin} aria-hidden="true" />
+
+      {/* O grao do sensor, por cima de toda a paisagem. */}
+      <div className={styles.granulado} aria-hidden="true" />
+
+      <div className={styles.logoLogin} aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          data-logo-login-atual="true"
+          src="/logo-blackout-marca.png"
+          alt=""
+        />
+      </div>
+
+      <div className={styles.conteudoLogin}>{children}</div>
+    </div>
+  )
+}
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -38,54 +139,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (foraDoPainel) return <>{children}</>
 
   if (pathname === '/login') {
-    return (
-      <div className={`${styles.legibilidade} ${styles.loginComLogo}`}>
-        <div className={styles.fundoLogin} aria-hidden="true" />
-
-        {/*
-          O mundo: tudo que treme junto com a moto. O capacete
-          fica de fora de proposito - ele esta preso a cabeca de
-          quem olha, entao e a unica coisa parada na cena.
-        */}
-        <div className={styles.mundoLogin} aria-hidden="true">
-          {/* O bamboleio lento da moto em linha reta. */}
-          <div className={styles.guinadaLogin}>
-            {/* O tremor do motor, por dentro do bamboleio. */}
-            <div className={styles.tremorLogin}>
-              {/* A pista nitida, deitada em perspectiva. */}
-              <div className={styles.estradaLogin} />
-
-              {/* A mesma pista borrada, so no que passa perto.
-                  O recorte existe por desempenho: ver o comentario
-                  em .recorteDoBorrao. */}
-              <div className={styles.recorteDoBorrao}>
-                <div className={styles.estradaPerto} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* O brilho do plastico do visor. */}
-        <div className={styles.reflexoVisor} aria-hidden="true" />
-
-        {/* A moldura da abertura do capacete. */}
-        <div className={styles.capaceteLogin} aria-hidden="true" />
-
-        {/* O grao do sensor, por cima de toda a paisagem. */}
-        <div className={styles.granulado} aria-hidden="true" />
-
-        <div className={styles.logoLogin} aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            data-logo-login-atual="true"
-            src="/logo-blackout-marca.png"
-            alt=""
-          />
-        </div>
-
-        <div className={styles.conteudoLogin}>{children}</div>
-      </div>
-    )
+    return <TelaDeLogin>{children}</TelaDeLogin>
   }
 
   return (
