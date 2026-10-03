@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import DocumentosCliente from "@/components/DocumentosCliente";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import CardWhatsapp, { linkWhatsapp } from "@/components/CardWhatsapp";
-import { mensagemDeAniversario } from "@/lib/dados/aniversariantes";
+import { mensagemDeAniversario } from "@/lib/dados/mensagem-aniversario";
 
 type Cliente = {
   id: string;

@@ -177,31 +177,15 @@ export async function aniversariantes(): Promise<Aniversarios> {
 }
 
 /*
- * A mensagem que vai no WhatsApp.
+ * A mensagem mora em mensagem-aniversario.ts, sozinha.
  *
- * Só o primeiro nome: "Parabéns, José Carlos da Silva Santos"
- * soa a cobrança, não a felicitação. Sem oferta junto -
- * mensagem de aniversário que vende vira propaganda, e o
- * cliente sente.
+ * Ela e usada tambem pela ficha do cliente, que e tela de
+ * navegador; deixando-a aqui, o import arrastava este arquivo
+ * - e o Supabase de servidor que ele usa - para dentro do
+ * navegador, e o build de producao recusava.
  *
- * Vai em três parágrafos e não numa linha só. Mensagem de
- * felicitação espremida num parágrafo parece aviso de sistema;
- * com respiro, parece gente. O WhatsApp respeita a quebra.
- *
- * O fecho sobre estrada é o que faz a mensagem ser DESTA loja e
- * não de qualquer uma - é a única liberdade que a mensagem toma,
- * e ela não vende nada.
+ * Continua saindo por aqui para quem ja importava deste
+ * endereco nao precisar mudar.
  */
-export function mensagemDeAniversario(nome: string) {
-  const primeiro = String(nome || "")
-    .trim()
-    .split(/\s+/)[0];
+export { mensagemDeAniversario } from "./mensagem-aniversario";
 
-  return (
-    `Olá, ${primeiro}! Hoje o dia é seu. 🎉\n\n` +
-    "Nós, da Blackout Motos, desejamos muita felicidade, saúde e " +
-    "paz, e que esse novo ano traga tudo de bom pra você e pra sua " +
-    "família.\n\n" +
-    "Que venham muitas estradas boas pela frente. Feliz aniversário!"
-  );
-}
