@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { Download, Printer } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatarMoeda } from '@/lib/formatadores/moeda'
 import {
@@ -885,6 +887,34 @@ export default async function RelatorioMensalPage({
         >
           Gerar
         </button>
+
+        {/*
+          * Os dois jeitos de levar o relatorio embora.
+          *
+          * A folha e o que se guarda na pasta e se mostra ao
+          * contador; o CSV e para conferir numero no Excel.
+          * Os dois saem da mesma conta.
+          *
+          * Eles apontam para o mes JA GERADO, e nao para o que
+          * esta escolhido nos seletores - quem mexe no seletor
+          * e nao clica em Gerar continua vendo o mes anterior na
+          * tela, e levaria outro no papel.
+          */}
+        <Link
+          href={`/relatorios/imprimir?mes=${mesSelecionado}&ano=${anoSelecionado}`}
+          className="flex items-center gap-2 rounded-lg border border-dourado px-5 py-2 font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
+        >
+          <Printer size={17} />
+          Imprimir
+        </Link>
+
+        <a
+          href={`/api/relatorios/mensal?mes=${mesSelecionado}&ano=${anoSelecionado}`}
+          className="flex items-center gap-2 rounded-lg border border-grafite-claro px-5 py-2 font-semibold text-texto-suave transition hover:border-dourado hover:text-dourado"
+        >
+          <Download size={17} />
+          Baixar CSV
+        </a>
       </form>
 
       {/* PRIMEIRA LINHA */}
