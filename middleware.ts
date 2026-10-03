@@ -330,13 +330,15 @@ export async function middleware(request: NextRequest) {
    */
   const VALIDADE_DO_LOGIN = 24 * 60 * 60 * 1000
 
-  if (user?.last_sign_in_at && !rotaEhPublica && !rotaEhLogin) {
-    const entrouEm = new Date(user.last_sign_in_at).getTime()
+  const entrouEm = user?.last_sign_in_at
+    ? new Date(user.last_sign_in_at).getTime()
+    : NaN
 
-    if (
-      Number.isFinite(entrouEm) &&
-      Date.now() - entrouEm > VALIDADE_DO_LOGIN
-    ) {
+  const loginVencido =
+    Number.isFinite(entrouEm) && Date.now() - entrouEm > VALIDADE_DO_LOGIN
+
+  {
+    if (loginVencido && !rotaEhPublica && !rotaEhLogin) {
       /* Derruba tambem do lado do Supabase, senao o cracha
          velho ainda serve para pedir um novo por fora. */
       await supabase.auth.signOut()
@@ -364,7 +366,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && rotaEhLogin) {
+  /*
+   * Quem ja esta dentro nao precisa ver a tela de login.
+   *
+   * O "e nao venceu" e trava contra laco: se por algum motivo o
+   * cookie sobrevivesse ao vencimento, esta linha mandaria a
+   * pessoa para o painel, o painel a mandaria de volta para ca,
+   * e o navegador ficaria girando ate derrubar a aba.
+   */
+  if (user && rotaEhLogin && !loginVencido) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
