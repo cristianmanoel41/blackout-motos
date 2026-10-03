@@ -134,6 +134,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/v2') ||
     pathname.startsWith('/diagnostico') ||
     pathname.startsWith('/vitrine/') ||
+    /* A folha do relatorio e documento branco: dentro da
+       moldura escura o texto dela sairia claro no papel. */
+    pathname.startsWith('/relatorios/imprimir') ||
     pathname.startsWith('/documentos/') ||
     pathname.startsWith('/recibos/')
   if (foraDoPainel) return <>{children}</>

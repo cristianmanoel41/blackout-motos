@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   useOptimistic,
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 
 export default function RelatorioFiltro({
   mes,
@@ -87,6 +89,21 @@ export default function RelatorioFiltro({
           </option>
         ))}
       </select>
+
+      {/*
+        * Imprimir vem antes de baixar.
+        *
+        * O CSV serve para conferir numero no Excel; a folha e
+        * o que se guarda na pasta e se mostra ao contador.
+        * Quem abre esta tela quer o segundo muito mais vezes.
+        */}
+      <Link
+        href={`/relatorios/imprimir?mes=${selecao.mes}&ano=${selecao.ano}`}
+        className="flex items-center gap-2 rounded-lg border border-dourado bg-dourado px-6 py-2 font-semibold text-preto transition hover:brightness-110"
+      >
+        <Printer size={17} />
+        Imprimir
+      </Link>
 
       <a
         href={`/api/relatorios/mensal?mes=${selecao.mes}&ano=${selecao.ano}`}

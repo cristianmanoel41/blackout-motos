@@ -553,6 +553,21 @@ export async function GET(request: Request) {
       ['Saldo', saldoCaixa.toFixed(2)],
     ]
 
+    /*
+     * A tela de impressão pede os mesmos números em JSON.
+     *
+     * Ela desenha o documento com timbre e blocos separados; o
+     * CSV continua existindo para quem quer abrir no Excel. Os
+     * dois saem desta mesma lista, então não há como um mostrar
+     * um número e o outro mostrar outro.
+     */
+    if (url.searchParams.get('formato') === 'json') {
+      return Response.json(
+        { mes, ano, linhas },
+        { headers: { 'Cache-Control': 'no-store' } }
+      )
+    }
+
     const csv =
       '\uFEFF' +
       linhas

@@ -1,0 +1,171 @@
+/*
+ * O RELATÓRIO MENSAL EM FOLHA
+ *
+ * Documento branco dentro de um sistema preto. A tela mostra a
+ * folha como ela vai sair da impressora - é a mesma ideia da
+ * prévia dos contratos: ninguém deve descobrir o desenho só
+ * depois de gastar papel.
+ *
+ * O que vale aqui é o padrão de medir em vez de supor, que já
+ * custou caro nos contratos: as medidas são em milímetro, do
+ * tamanho da folha para dentro, e não em pixel.
+ */
+
+.fundo {
+  min-height: 100vh;
+  background: #26282c;
+  padding: 24px 16px 60px;
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-width: 210mm;
+  margin: 0 auto 18px;
+}
+
+.folha {
+  width: 210mm;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 18mm 16mm;
+  background: #fff;
+  color: #15171a;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------- */
+/* O TIMBRE                                                    */
+/* ---------------------------------------------------------- */
+
+.timbre {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 6mm;
+  border-bottom: 2px solid #bd8700;
+}
+
+.timbre img {
+  width: 48mm;
+  height: auto;
+}
+
+.loja {
+  text-align: right;
+  font-size: 8.5pt;
+  line-height: 1.45;
+  color: #55595f;
+}
+
+.titulo {
+  margin: 7mm 0 1mm;
+  font-size: 16pt;
+  font-weight: 800;
+  letter-spacing: -0.2pt;
+}
+
+.periodo {
+  margin: 0 0 6mm;
+  color: #bd8700;
+  font-weight: 700;
+  font-size: 9.5pt;
+  letter-spacing: 0.6pt;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------- */
+/* OS BLOCOS                                                   */
+/* ---------------------------------------------------------- */
+
+.bloco {
+  margin-top: 6mm;
+  /* Um bloco não se parte entre folhas: ler metade de
+     "Financeiro" na página 1 e metade na 2 é pior que uma
+     folha com espaço sobrando. */
+  break-inside: avoid;
+}
+
+.nomeDoBloco {
+  margin: 0 0 1.5mm;
+  padding-bottom: 1mm;
+  border-bottom: 1px solid #d8dade;
+  color: #15171a;
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: 1pt;
+  text-transform: uppercase;
+}
+
+.linha {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 1.1mm 0;
+  border-bottom: 1px dotted #e3e5e8;
+}
+
+.linha:last-child {
+  border-bottom: none;
+}
+
+.rotulo {
+  flex: 1;
+  min-width: 0;
+  color: #3d4147;
+}
+
+.valor {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Dinheiro negativo em vermelho: prejuízo não pode passar
+   despercebido numa coluna de números parecidos. */
+.negativo {
+  color: #b42318;
+}
+
+.rodape {
+  margin-top: 9mm;
+  padding-top: 3mm;
+  border-top: 1px solid #d8dade;
+  color: #767b82;
+  font-size: 8pt;
+}
+
+/* ---------------------------------------------------------- */
+/* A IMPRESSÃO                                                 */
+/* ---------------------------------------------------------- */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  .fundo {
+    min-height: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  /* A barra de botões é da tela, não do documento. */
+  .barra {
+    display: none;
+  }
+
+  .folha {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+}
