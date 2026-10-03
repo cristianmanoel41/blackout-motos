@@ -180,14 +180,28 @@ export async function aniversariantes(): Promise<Aniversarios> {
  * A mensagem que vai no WhatsApp.
  *
  * Só o primeiro nome: "Parabéns, José Carlos da Silva Santos"
- * soa a cobrança, não a felicitação. Sem emoji carregado e sem
- * oferta junto - mensagem de aniversário que vende vira
- * propaganda, e o cliente sente.
+ * soa a cobrança, não a felicitação. Sem oferta junto -
+ * mensagem de aniversário que vende vira propaganda, e o
+ * cliente sente.
+ *
+ * Vai em três parágrafos e não numa linha só. Mensagem de
+ * felicitação espremida num parágrafo parece aviso de sistema;
+ * com respiro, parece gente. O WhatsApp respeita a quebra.
+ *
+ * O fecho sobre estrada é o que faz a mensagem ser DESTA loja e
+ * não de qualquer uma - é a única liberdade que a mensagem toma,
+ * e ela não vende nada.
  */
 export function mensagemDeAniversario(nome: string) {
   const primeiro = String(nome || "")
     .trim()
     .split(/\s+/)[0];
 
-  return `Olá, ${primeiro}! O pessoal da Blackout Motos passou aqui para desejar um feliz aniversário. Que seja um ótimo dia! 🎉`;
+  return (
+    `Olá, ${primeiro}! Hoje o dia é seu. 🎉\n\n` +
+    "Nós, da Blackout Motos, desejamos muita felicidade, saúde e " +
+    "paz, e que esse novo ano traga tudo de bom pra você e pra sua " +
+    "família.\n\n" +
+    "Que venham muitas estradas boas pela frente. Feliz aniversário!"
+  );
 }

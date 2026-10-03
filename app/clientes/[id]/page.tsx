@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Bike,
+  Cake,
   FileSignature,
   FileText,
   ReceiptText,
@@ -12,7 +13,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import DocumentosCliente from "@/components/DocumentosCliente";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
-import CardWhatsapp from "@/components/CardWhatsapp";
+import CardWhatsapp, { linkWhatsapp } from "@/components/CardWhatsapp";
+import { mensagemDeAniversario } from "@/lib/dados/aniversariantes";
 
 type Cliente = {
   id: string;
@@ -405,6 +407,10 @@ export default function ClienteDetalhesPage() {
     setSalvando(false);
   }
 
+  const parabens = cliente
+    ? linkWhatsapp(cliente.telefone, mensagemDeAniversario(cliente.nome))
+    : null;
+
   if (carregando) {
     return (
       <div className="p-6 text-texto-suave">
@@ -528,6 +534,33 @@ export default function ClienteDetalhesPage() {
             telefone={cliente.telefone}
             nome={cliente.nome}
           />
+
+          {/*
+            * PARABENIZAR
+            *
+            * O mesmo botao do painel, com a mesma mensagem
+            * assinada pela loja - duas versoes do mesmo recado
+            * seria uma para corrigir e outra para esquecer.
+            *
+            * No painel ele so aparece para quem faz aniversario
+            * nos proximos sete dias. Aqui fica sempre a mao:
+            * para o cliente que ligou no dia, ou para o que a
+            * loja descobriu tarde.
+            *
+            * Sem telefone nao ha botao: um que abre o WhatsApp
+            * num numero quebrado e pior que nenhum.
+            */}
+          {parabens && (
+            <a
+              href={parabens}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 px-4 py-3 text-sm font-bold text-emerald-400 transition hover:bg-emerald-400/10"
+            >
+              <Cake size={16} />
+              Mandar parabéns
+            </a>
+          )}
         </div>
 
         {/* DADOS DO CLIENTE */}

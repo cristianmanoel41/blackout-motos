@@ -144,6 +144,32 @@ export default function NovoClientePage() {
       return;
     }
 
+    /*
+     * A data de nascimento e obrigatoria.
+     *
+     * Nao e burocracia: e o unico jeito de a loja saber o
+     * aniversario e mandar a mensagem no dia. Cliente
+     * cadastrado sem data nunca aparece no painel, e ninguem
+     * volta depois para preencher - por isso a trava e na
+     * hora do cadastro, que e quando o cliente esta na frente
+     * de quem digita.
+     *
+     * A conferencia de data futura existe porque o campo e
+     * digitavel: 2206 em vez de 1996 passa despercebido, e o
+     * aniversario sumiria para sempre.
+     */
+    if (!form.data_nascimento) {
+      setErro(
+        "Informe a data de nascimento. Ela é o que permite enviar a mensagem de aniversário."
+      );
+      return;
+    }
+
+    if (new Date(form.data_nascimento) > new Date()) {
+      setErro("A data de nascimento não pode estar no futuro.");
+      return;
+    }
+
     setSalvando(true);
 
     const { data: clienteCriado, error } = await supabase
@@ -152,7 +178,7 @@ export default function NovoClientePage() {
         nome: form.nome.trim(),
         rg: form.rg.trim() || null,
         cpf: form.cpf.trim() || null,
-        data_nascimento: form.data_nascimento || null,
+        data_nascimento: form.data_nascimento,
         telefone: form.telefone.trim() || null,
         email: form.email.trim() || null,
         rua: form.rua.trim() || null,
@@ -302,12 +328,13 @@ return;
               />
 
               <Campo
-                label="Data de nascimento"
+                label="Data de nascimento *"
                 value={form.data_nascimento}
                 onChange={(valor) =>
                   atualizarCampo("data_nascimento", valor)
                 }
                 type="date"
+                ajuda="Usada para a mensagem de aniversário"
               />
 
               <Campo
@@ -452,6 +479,9 @@ type CampoProps = {
   onChange: (valor: string) => void;
   placeholder?: string;
   type?: string;
+  /* Uma linha embaixo do campo, para dizer por que ele
+     existe. So onde a pergunta 'por que isso?' aparece. */
+  ajuda?: string;
 };
 
 function Campo({
@@ -460,6 +490,7 @@ function Campo({
   onChange,
   placeholder = "",
   type = "text",
+  ajuda,
 }: CampoProps) {
   return (
     <div>
@@ -474,6 +505,12 @@ function Campo({
         placeholder={placeholder}
         className="w-full rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-dourado"
       />
+
+      {ajuda && (
+        <p className="mt-1.5 text-[11px] font-semibold text-zinc-500">
+          {ajuda}
+        </p>
+      )}
     </div>
   );
 }
