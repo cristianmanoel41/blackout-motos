@@ -47,7 +47,7 @@ export default function CardMoto({
   ].filter(Boolean) as string[];
 
   return (
-    <article className="cartao-3d flex flex-col overflow-hidden rounded-2xl">
+    <article className="cartao-3d group flex flex-col overflow-hidden rounded-2xl">
       <Link
         href={`/estoque/${slug}`}
         className="relative block aspect-[4/3] overflow-hidden bg-black"
@@ -57,9 +57,10 @@ export default function CardMoto({
             src={capa}
             alt={nome}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 23vw"
+            quality={90}
             priority={prioridade}
-            className="object-cover transition duration-500 hover:scale-105"
+            className="object-cover"
           />
         ) : null}
 
@@ -90,40 +91,48 @@ export default function CardMoto({
           {precoDaMoto(moto)}
         </p>
 
+        {/*
+          * Os selos eram uma lista de pe, um embaixo do outro,
+          * com circulo dourado em cada linha: tres linhas de
+          * altura por card, repetidas em quase todos. Em
+          * etiqueta eles ocupam uma linha e continuam dizendo o
+          * mesmo - e o card para de ser uma coluna de texto.
+          */}
         {selos.length > 0 && (
-          <ul className="mt-3 space-y-1.5">
+          <ul className="mt-3 flex flex-wrap gap-1.5">
             {selos.map((selo) => (
               <li
                 key={selo}
-                className="flex items-center gap-2 text-xs texto-suave"
+                className="rounded-md border border-[#e0b129]/25 bg-[#e0b129]/[0.07] px-2 py-1 text-[10px] font-bold uppercase tracking-wide texto-ouro"
               >
-                <CheckCircle2
-                  size={14}
-                  className="shrink-0 texto-ouro"
-                />
                 {selo}
               </li>
             ))}
           </ul>
         )}
-
-        <div className="mt-auto flex flex-col gap-2 pt-4">
+        {/*
+          * Lado a lado, e nao empilhados: dois botoes de largura
+          * inteira faziam o pe do card pesar mais que a moto. O
+          * dourado continua sendo so um - quem decide e "ver
+          * detalhes".
+          */}
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
           <Link
             href={`/estoque/${slug}`}
-            className="botao-ouro flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold"
+            className="botao-ouro flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13px] font-bold"
           >
             Ver detalhes
-            <ArrowRight size={15} />
+            <ArrowRight size={14} />
           </Link>
 
           <a
             href={linkWhatsApp(convitePelaMoto(moto))}
             target="_blank"
             rel="noopener noreferrer"
-            className="botao-vidro flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold"
+            className="botao-vidro flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13px] font-bold"
           >
-            <IconeWhatsApp className="h-4 w-4" />
-            Chamar no WhatsApp
+            <IconeWhatsApp className="h-3.5 w-3.5" />
+            WhatsApp
           </a>
         </div>
       </div>

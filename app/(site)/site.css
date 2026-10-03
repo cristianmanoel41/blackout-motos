@@ -52,9 +52,23 @@
  */
 .site-blackout .text-white { color: #ffffff !important; }
 
-.site-blackout .texto-claro { color: #f2f3f5 !important; }
-.site-blackout .texto-suave { color: #9ea3ab !important; }
-.site-blackout .texto-ouro  { color: var(--ouro) !important; }
+/*
+ * AS TRES CORES DE TEXTO
+ *
+ * Medidas contra o fundo do site: o texto apagado estava em
+ * 7,6 de contraste, enquanto o mesmo papel no painel de
+ * gestao esta em 8,8. Nao era escolha, era deriva - duas
+ * telas da mesma loja, dois cinzas.
+ *
+ * O dourado do texto tambem subiu. O #e0b129 e cor de FUNDO
+ * de botao, onde ele carrega letra preta em cima; como letra
+ * sobre preto ele fica abafado. O #f0c640 e o mesmo ouro um
+ * tom acima, e e o que o painel usa quando o dourado precisa
+ * ser lido - no preco, por exemplo.
+ */
+.site-blackout .texto-claro { color: #f1f3f5 !important; }
+.site-blackout .texto-suave { color: #a7adb6 !important; }
+.site-blackout .texto-ouro  { color: #f0c640 !important; }
 
 /*
  * Campo dentro de <main> é pintado de preto pelo tema, o que
@@ -85,29 +99,48 @@
  * faz o card descolar do fundo, que é o que dá o aspecto 3D
  * sem precisar de transformação pesada no celular.
  */
+/*
+ * A MOLDURA DO CARD
+ *
+ * O card era uma caixa escura com uma linha cinza de um pixel
+ * em volta: sobre fundo preto isso nao e moldura, e o fim do
+ * card. Agora sao tres aneis - fio de ouro apagado por fora,
+ * o vao escuro do passe-partout e a sombra interna encostando
+ * na foto.
+ *
+ * O vao e o que faz parecer moldura em vez de borda grossa: e
+ * a folga entre o quadro e a arte que diz ao olho que uma
+ * coisa esta DENTRO da outra.
+ */
 .cartao-3d {
   background: linear-gradient(
     160deg,
     var(--grafite-claro) 0%,
     var(--grafite) 100%
   );
-  border: 1px solid var(--borda);
+  padding: 5px;
+  border: 1px solid rgba(224, 177, 41, 0.3);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.55) inset,
     0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  /* Uma curva so para tudo que se mexe no card, e o tempo do
+     salto casado com o do zoom da foto. */
   transition:
-    transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
-    border-color 0.35s ease,
-    box-shadow 0.35s ease;
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.45s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.cartao-3d:hover {
-  transform: translateY(-6px);
-  border-color: rgba(224, 177, 41, 0.45);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 28px 55px -20px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(224, 177, 41, 0.12);
+@media (hover: hover) {
+  .cartao-3d:hover {
+    transform: translateY(-7px);
+    border-color: rgba(224, 177, 41, 0.6);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      0 28px 55px -20px rgba(0, 0, 0, 0.95),
+      0 0 0 1px rgba(224, 177, 41, 0.12);
+  }
 }
 
 /* Quem prefere menos movimento não recebe o salto. */
@@ -134,8 +167,10 @@
   transition: filter 0.25s ease, transform 0.25s ease;
 }
 
-.botao-ouro:hover {
-  filter: brightness(1.07);
+@media (hover: hover) {
+  .botao-ouro:hover {
+    filter: brightness(1.07);
+  }
 }
 
 /*
@@ -156,9 +191,11 @@ body.foto-aberta header {
   transition: border-color 0.25s ease, background 0.25s ease;
 }
 
-.botao-vidro:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(224, 177, 41, 0.5) !important;
+@media (hover: hover) {
+  .botao-vidro:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(224, 177, 41, 0.5) !important;
+  }
 }
 
 /* Fio discreto acima da linha de direitos autorais. */
@@ -345,12 +382,14 @@ body.foto-aberta header {
   z-index: 2;
 }
 
-.site-blackout .cartao-ouro:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.07) inset,
-    0 36px 80px -30px rgba(0, 0, 0, 0.95),
-    0 0 80px -20px rgba(224, 177, 41, 0.6);
+@media (hover: hover) {
+  .site-blackout .cartao-ouro:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.07) inset,
+      0 36px 80px -30px rgba(0, 0, 0, 0.95),
+      0 0 80px -20px rgba(224, 177, 41, 0.6);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -358,5 +397,52 @@ body.foto-aberta header {
   .site-blackout .cartao-ouro:hover {
     transform: none;
     transition: none;
+  }
+}
+
+/*
+ * A ARTE DENTRO DA MOLDURA
+ *
+ * Com o vao de 5px, a foto deixou de encostar no canto do
+ * card - e canto quadrado dentro de canto redondo salta aos
+ * olhos. O raio aqui e o do card menos o vao.
+ */
+.cartao-3d > a:first-child {
+  border-radius: 11px 11px 0 0;
+}
+
+.cartao-3d > div:last-child {
+  border-radius: 0 0 11px 11px;
+}
+
+/*
+ * O ZOOM DA FOTO, COMANDADO PELO CARD
+ *
+ * Antes quem disparava o zoom era a propria foto, com um
+ * hover do Tailwind: ele so comecava quando o ponteiro ja
+ * estava dentro da imagem, e parava ao passar pelo rodape do
+ * card. Eram dois movimentos soltos - o card subindo e a foto
+ * ampliando em horas diferentes.
+ *
+ * Agora o card manda nos dois, com a mesma curva. O zoom e
+ * mais lento que o salto de proposito: o que esta mais longe
+ * se move menos, e e isso que da sensacao de profundidade.
+ */
+@media (hover: hover) {
+  .cartao-3d img {
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .cartao-3d:hover img {
+    transform: scale(1.07);
+  }
+}
+
+/* Quem pediu menos movimento nao recebe o zoom. */
+@media (prefers-reduced-motion: reduce) {
+  .cartao-3d img,
+  .cartao-3d:hover img {
+    transition: none;
+    transform: none;
   }
 }

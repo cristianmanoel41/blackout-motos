@@ -42,10 +42,31 @@ export default async function HomePage() {
    * vira enfeite e ainda parece a oferta da vez.
    */
 
+  /*
+   * As três motos da capa.
+   *
+   * Quem manda é a estrela da ficha, no sistema: o campo
+   * na_capa já existia e já era gravado por ali, mas a capa
+   * ignorava e mostrava sempre as três mais novas. Agora a loja
+   * escolhe quem representa a vitrine sem precisar de código.
+   *
+   * Marcou uma, aparece uma - a marcação MANDA, não sugere.
+   * A primeira versão completava com as mais novas, e aí marcar
+   * uma moto não tirava as outras da capa: era o contrário do
+   * que a loja queria ao marcar.
+   *
+   * Sem nenhuma marcada, valem as três mais novas - uma capa
+   * vazia seria pior que uma capa automática.
+   */
+  const escolhidas = motos.filter((m) => m.na_capa)
+
+  const naCapa =
+    escolhidas.length > 0 ? escolhidas.slice(0, 3) : motos.slice(0, 3)
+
   return (
     <main>
       <Hero
-        motos={motos.slice(0, 3)}
+        motos={naCapa}
         slugs={slugs}
         capas={fotos.capas}
         quantas={motos.length}

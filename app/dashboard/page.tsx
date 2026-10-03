@@ -11,6 +11,7 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
+import DestaquesDoSite from './DestaquesDoSite'
 import styles from './dashboard.module.css'
 
 
@@ -293,6 +294,15 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/*
+        * As tres motos da capa do site.
+        *
+        * Fica perto dos acessos de proposito: as duas coisas
+        * respondem a mesma pergunta - o que o cliente esta
+        * vendo, e o que a loja decidiu mostrar.
+        */}
+      <DestaquesDoSite />
 
       <AcessosDoSite />
 

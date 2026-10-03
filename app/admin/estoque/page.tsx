@@ -21,6 +21,7 @@ import {
   Save,
   Search,
   ShoppingCart,
+  Star,
   SlidersHorizontal,
   X,
 } from "lucide-react";
@@ -53,6 +54,8 @@ type Moto = {
   possui_manual?: boolean | null;
   possui_chave_reserva?: boolean | null;
   unico_dono?: boolean | null;
+  /* Aparece na capa do site. Tres motos, escolhidas aqui. */
+  na_capa?: boolean | null;
 };
 
 /*
@@ -352,6 +355,48 @@ export default function EstoquePage() {
     );
   }
 
+  /*
+   * A moto entra ou sai da capa do site.
+   *
+   * O botao vive aqui, na lista, e nao so na ficha: trocar a
+   * vitrine e coisa de fazer toda semana, e abrir moto por moto
+   * para isso fazia ninguem trocar.
+   *
+   * A tela muda na hora e o banco depois. Se o banco recusar, a
+   * tela volta atras - melhor desfazer do que mostrar uma capa
+   * que nao existe.
+   */
+  const [salvandoCapaId, setSalvandoCapaId] = useState<string | null>(null);
+
+  async function alternarCapa(moto: Moto) {
+    const id = String(moto.id);
+    const novo = !moto.na_capa;
+
+    setSalvandoCapaId(id);
+    setMotos((atuais) =>
+      atuais.map((item) =>
+        String(item.id) === id ? { ...item, na_capa: novo } : item
+      )
+    );
+
+    const { error } = await supabase
+      .from("motorcycles")
+      .update({ na_capa: novo })
+      .eq("id", moto.id);
+
+    setSalvandoCapaId(null);
+
+    if (error) {
+      console.error(error);
+      setMotos((atuais) =>
+        atuais.map((item) =>
+          String(item.id) === id ? { ...item, na_capa: !novo } : item
+        )
+      );
+      setErro("Nao foi possivel mudar a capa do site.");
+    }
+  }
+
   async function carregarEstoque() {
     setCarregando(true);
     setErro("");
@@ -379,6 +424,7 @@ export default function EstoquePage() {
           "possui_manual",
           "possui_chave_reserva",
           "unico_dono",
+          "na_capa",
         ].join(",")
       )
       .order("data_entrada", {
@@ -1374,6 +1420,34 @@ export default function EstoquePage() {
                             >
                               <Eye size={16} />
                             </Link>
+
+                            {disponivel && (
+                              <button
+                                type="button"
+                                disabled={salvandoCapaId === idMoto}
+                                onClick={(evento) => {
+                                  /* A linha inteira abre os detalhes;
+                                     o clique na estrela para aqui. */
+                                  evento.stopPropagation();
+                                  alternarCapa(moto);
+                                }}
+                                title={
+                                  moto.na_capa
+                                    ? "Esta na capa do site - clique para tirar"
+                                    : "Por esta moto na capa do site"
+                                }
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition disabled:opacity-50 ${
+                                  moto.na_capa
+                                    ? "border-dourado bg-dourado text-preto"
+                                    : "border-grafite-claro bg-preto text-zinc-300 hover:border-dourado hover:text-dourado"
+                                }`}
+                              >
+                                <Star
+                                  size={16}
+                                  fill={moto.na_capa ? "currentColor" : "none"}
+                                />
+                              </button>
+                            )}
 
                             {disponivel && (
                               <Link

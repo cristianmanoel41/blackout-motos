@@ -71,9 +71,22 @@ export default function CardRotativo({
 }) {
   if (motos.length === 0) return null;
 
+  /*
+   * Cinco segundos por moto.
+   *
+   * A volta era fixa em 26 segundos, entao o ritmo dependia de
+   * quantas motos estavam na capa - com tres, cada uma ficava
+   * quase nove segundos parada na frente de quem olha. Agora o
+   * tempo acompanha a quantidade e o passo e sempre o mesmo.
+   */
+  const volta = motos.length * 5;
+
   return (
     <div className="vitrine-capa">
-      <div className="esteira-capa">
+      <div
+        className="esteira-capa"
+        style={{ "--volta-da-capa": `${volta}s` } as React.CSSProperties}
+      >
         <Fila motos={motos} slugs={slugs} capas={capas} />
 
         {/* A cópia existe só para o laço não dar salto. */}

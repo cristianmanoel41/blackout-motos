@@ -42,11 +42,80 @@ export function numero(valor: Numerico) {
   return Number.isFinite(convertido) ? convertido : null;
 }
 
+/*
+ * SIGLAS QUE FICAM EM CAIXA ALTA
+ *
+ * Aqui entram so as que tem vogal, porque essas o computador
+ * nao tem como adivinhar: ABS parece palavra, XTZ nao.
+ */
+const SIGLAS = new Set([
+  "ABS",
+  "CBS",
+  "ADV",
+  "DLX",
+  "ED",
+  "SE",
+  "EX",
+  "FI",
+  "GP",
+  "LTD",
+  "STD",
+  "CBF",
+  "CRF",
+  "XRE",
+  "NMAX",
+  /* Codigo de versao da NXR Bros, nao palavra. */
+  "ESDD",
+]);
+
+/*
+ * O NOME DA MOTO, ESCRITO SEMPRE IGUAL
+ *
+ * O cadastro foi preenchido por gente em dias diferentes, e o
+ * site mostrava o que estava la: "Honda CG 160 Fan CBS" ao
+ * lado de "HONDA CB300F TWISTER CBS" e "YAMAHA XTZ 250 LANDER
+ * ABS". Tres padroes na mesma fileira - e isso num site de
+ * loja le-se como desleixo, nao como variedade.
+ *
+ * A regra, por palavra:
+ *
+ *   tem numero          -> caixa alta (CB300F, 160, FZ25),
+ *                          menos o "i" de 125i, que e minusculo
+ *                          no nome de fabrica
+ *   nao tem vogal       -> sigla (XTZ, YBR, PCX, CG, CB)
+ *   esta na lista acima -> sigla com vogal (ABS, CBS, DLX)
+ *   o resto             -> Primeira Maiuscula (Honda, Twister,
+ *                          Fan, Lander, Factor)
+ *
+ * Nada disso toca o banco: e so como o site escreve. Quem
+ * cadastrar em caixa alta amanha continua podendo.
+ */
+function palavraDoNome(palavra: string) {
+  const limpa = palavra.trim();
+
+  if (!limpa) return "";
+
+  if (/\d/.test(limpa)) {
+    return limpa.toUpperCase().replace(/(\d)I\b/g, "$1i");
+  }
+
+  const alta = limpa.toUpperCase();
+
+  if (SIGLAS.has(alta)) return alta;
+  if (!/[AEIOU]/.test(alta)) return alta;
+
+  return alta.charAt(0) + limpa.slice(1).toLowerCase();
+}
+
+export function tituloDaMoto(texto: string) {
+  return texto.split(/\s+/).map(palavraDoNome).filter(Boolean).join(" ");
+}
+
 export function nomeDaMoto(moto: MotoSite) {
   return (
-    [moto.marca, moto.modelo, moto.versao]
-      .filter(Boolean)
-      .join(" ") || "Moto"
+    tituloDaMoto(
+      [moto.marca, moto.modelo, moto.versao].filter(Boolean).join(" ")
+    ) || "Moto"
   );
 }
 

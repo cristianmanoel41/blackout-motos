@@ -44,7 +44,7 @@ export default function CardMoto({
   const nome = nomeDaMoto(moto);
 
   return (
-    <article className="vidro vidro-sobe relative flex h-full flex-col overflow-hidden">
+    <article className="vidro vidro-sobe group relative flex h-full flex-col overflow-hidden">
       <Link
         href={`/estoque/${slug}`}
         className="zoom block"
@@ -56,7 +56,8 @@ export default function CardMoto({
               src={foto}
               alt={nome}
               fill
-              sizes="(max-width: 640px) 80vw, (max-width: 1024px) 45vw, 22vw"
+              sizes="(max-width: 640px) 88vw, (max-width: 1024px) 45vw, 22vw"
+              quality={90}
               priority={prioridade}
               className="object-cover"
             />

@@ -43,6 +43,29 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    /*
+     * AS FOTOS DAS MOTOS SAO PEQUENAS E NAO DA PARA MUDAR ISSO
+     * AQUI
+     *
+     * Os arquivos no Storage tem 720x1280 e vem do WhatsApp -
+     * o nome deles ainda diz isso. O WhatsApp recomprime e
+     * corta para 1280 no lado maior, entao a nitidez ja chega
+     * perdida. Nenhuma configuracao inventa pixel que nao
+     * existe.
+     *
+     * O que da para fazer e nao perder MAIS:
+     *
+     * - AVIF antes de WebP: na mesma banda ele guarda bem mais
+     *   detalhe, e detalhe e o que falta numa foto ja
+     *   recomprimida.
+     * - qualidade 90 liberada para as fotos de moto. O padrao
+     *   do Next e 75, que e bom para foto grande e ruim para
+     *   foto pequena: a perda cai duas vezes em cima da mesma
+     *   imagem.
+     */
+    formats: ["image/avif", "image/webp"],
+    qualities: [75, 90],
+
     remotePatterns: hostSupabase
       ? [
           {

@@ -106,14 +106,47 @@ export default function Galeria({
           aria-label="Ampliar foto"
           className="relative block aspect-[4/3] w-full cursor-zoom-in bg-black"
         >
-          <Image
-            src={fotos[indice]}
-            alt={nome}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 60vw"
-            className="object-cover"
-          />
+          {/*
+            * A TROCA DE FOTO E UMA DISSOLVENCIA, NAO UM CORTE
+            *
+            * Antes era uma <Image> so, com o endereco trocando:
+            * a foto sumia e a proxima aparecia do zero - e ainda
+            * piscava enquanto carregava, porque so comecava a
+            * baixar no instante do clique.
+            *
+            * Agora ficam montadas a atual e as duas vizinhas. A
+            * que sai apaga, a que entra acende, e a seguinte ja
+            * esta baixada quando chegar a vez dela.
+            *
+            * Sao tres, e nao todas: dez fotos de moto abertas ao
+            * mesmo tempo e memoria a toa no celular.
+            */}
+          {fotos.map((endereco, posicao) => {
+            const distancia = Math.abs(posicao - indice);
+            const vizinha =
+              distancia <= 1 || distancia === fotos.length - 1;
+
+            if (!vizinha) return null;
+
+            const atual = posicao === indice;
+
+            return (
+              <Image
+                key={endereco}
+                src={endereco}
+                alt={atual ? nome : ""}
+                fill
+                priority={posicao === 0}
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                /* E aqui que a pessoa olha de perto. */
+                quality={90}
+                className={
+                  "absolute inset-0 object-cover transition-opacity duration-500 ease-out " +
+                  (atual ? "opacity-100" : "opacity-0")
+                }
+              />
+            );
+          })}
         </button>
 
         {fotos.length > 1 && (
@@ -152,10 +185,10 @@ export default function Galeria({
               type="button"
               onClick={() => setIndice(posicao)}
               aria-label={`Ver foto ${posicao + 1}`}
-              className={`relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border transition ${
+              className={`relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border transition-all duration-300 ease-out ${
                 posicao === indice
-                  ? "border-[#e0b129]"
-                  : "border-white/10 opacity-60 hover:opacity-100"
+                  ? "border-[#e0b129] ring-1 ring-[#e0b129]/40"
+                  : "border-white/10 opacity-55 hover:opacity-90"
               }`}
             >
               <Image
