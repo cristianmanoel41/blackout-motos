@@ -169,7 +169,19 @@ export default async function ImprimirRelatorio({
       <article className={estilo.folha}>
         <header className={estilo.timbre}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-blackout-menu.png" alt={LOJA.nome} />
+          {/*
+            * A MESMA ARTE DO SITE, EM TINTA DE PAPEL.
+            *
+            * A do site e branca e sumiria aqui. A que estava
+            * antes neste timbre era OUTRO desenho - arco fino
+            * escuro em vez do arco dourado grosso -, e a marca
+            * aparecia diferente na tela e no papel.
+            *
+            * Esta e a arte do site com a tinta trocada: o branco
+            * virou quase preto, o dourado continua dourado um
+            * tom abaixo. Forma, arco e espacamento identicos.
+            */}
+          <img src="/logo-blackout-papel.png" alt={LOJA.nome} />
 
           <div className={estilo.loja}>
             {ENDERECO_COMPLETO.split(" · ").map((parte) => (
