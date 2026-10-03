@@ -118,11 +118,21 @@
     var(--grafite-claro) 0%,
     var(--grafite) 100%
   );
-  padding: 5px;
+  /*
+   * O vao da moldura e SOMBRA, nao padding.
+   *
+   * Com padding, a regra vencia o p-5 que alguns cards ja
+   * tinham - utilitario do Tailwind mora numa camada de
+   * prioridade menor que CSS solto - e o texto encostava na
+   * borda. Sombra interna pinta por cima e nao ocupa espaco:
+   * a foto colada na borda ganha o passe-partout, e o card de
+   * texto mantem o espacamento dele.
+   */
   border: 1px solid rgba(224, 177, 41, 0.3);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 0 0 1px rgba(0, 0, 0, 0.55) inset,
+    inset 0 0 0 4px #0d0d11,
+    inset 0 0 0 5px rgba(0, 0, 0, 0.55),
+    inset 0 6px 0 -5px rgba(255, 255, 255, 0.05),
     0 18px 40px -18px rgba(0, 0, 0, 0.9);
   /* Uma curva so para tudo que se mexe no card, e o tempo do
      salto casado com o do zoom da foto. */
@@ -400,20 +410,6 @@ body.foto-aberta header {
   }
 }
 
-/*
- * A ARTE DENTRO DA MOLDURA
- *
- * Com o vao de 5px, a foto deixou de encostar no canto do
- * card - e canto quadrado dentro de canto redondo salta aos
- * olhos. O raio aqui e o do card menos o vao.
- */
-.cartao-3d > a:first-child {
-  border-radius: 11px 11px 0 0;
-}
-
-.cartao-3d > div:last-child {
-  border-radius: 0 0 11px 11px;
-}
 
 /*
  * O ZOOM DA FOTO, COMANDADO PELO CARD

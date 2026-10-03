@@ -165,7 +165,7 @@ export default async function MotoPage({
         </section>
 
         <section className="min-w-0">
-          <article className="cartao-3d rounded-2xl p-5 sm:p-6">
+          <article className="cartao-3d rounded-2xl p-6 sm:p-8">
             <h1 className="text-xl font-black leading-tight texto-claro sm:text-2xl">
               {nome}
             </h1>

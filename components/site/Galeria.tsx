@@ -28,6 +28,10 @@ export default function Galeria({
 
   const toqueX = useRef<number | null>(null);
 
+  /* Enquanto a foto aberta nao termina de carregar, as
+     vizinhas nem sao pedidas - ver o comentario abaixo. */
+  const [principalPronta, setPrincipalPronta] = useState(false);
+
   /*
    * Com a foto aberta, Esc fecha e a rolagem da pagina
    * trava - sem isso a pagina corre atras da foto quando se
@@ -128,6 +132,17 @@ export default function Galeria({
 
             if (!vizinha) return null;
 
+            /*
+             * A vizinha espera a principal.
+             *
+             * Foto de celular de verdade tem 2268x4032 e leva
+             * ate cinco segundos para virar AVIF. Pedir tres
+             * dessas no mesmo instante fazia uma falhar - e
+             * foto quebrada na ficha e pior do que foto que
+             * demora.
+             */
+            if (posicao !== indice && !principalPronta) return null;
+
             const atual = posicao === indice;
 
             return (
@@ -138,6 +153,9 @@ export default function Galeria({
                 fill
                 priority={posicao === 0}
                 sizes="(max-width: 1024px) 100vw, 60vw"
+                onLoad={() => {
+                  if (atual) setPrincipalPronta(true);
+                }}
                 /* E aqui que a pessoa olha de perto. */
                 quality={90}
                 className={
