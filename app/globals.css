@@ -292,3 +292,10 @@ body {
   height: 100vh;
   height: 100dvh;
 }
+
+/* Mesma ideia, para quem precisa crescer alem da tela - o
+   formulario de login num aparelho baixo, por exemplo. */
+.altura-minima-da-tela {
+  min-height: 100vh;
+  min-height: 100dvh;
+}

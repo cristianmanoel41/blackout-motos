@@ -2,7 +2,9 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Lock, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import styles from './login.module.css'
 
 export default function LoginPage() {
   return (
@@ -48,67 +50,83 @@ function Formulario() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-preto px-4">
-      <div className="w-full max-w-sm bg-grafite rounded-2xl shadow-xl p-8 border border-grafite-claro">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-dourado tracking-wide">
-            BLACKOUT MOTOS
-          </h1>
-          <p className="text-texto-suave text-sm mt-1">
-            Acesse o painel de gestão
-          </p>
+    <div className="altura-minima-da-tela flex items-center justify-center px-4">
+      <div className={styles.moldura}>
+        <div className={styles.cartao}>
+          <div className={styles.fio} />
+
+          <div className={styles.corpo}>
+            {/* O nome da loja saiu daqui: a logo fica logo acima, e
+                escrever duas vezes o mesmo nome e o que mais tirava
+                o ar profissional da tela. */}
+            <p className={styles.titulo}>Acesse o painel de gestão</p>
+
+            {expirou && !erro && (
+              <p className={styles.aviso}>
+                Seu acesso durou 24 horas e venceu. Entre de novo para
+                continuar.
+              </p>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className={styles.campo}>
+                <label className={styles.rotulo} htmlFor="email">
+                  E-mail
+                </label>
+
+                <div className={styles.caixa}>
+                  <span className={styles.icone}>
+                    <Mail size={17} strokeWidth={2.2} />
+                  </span>
+
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={styles.entrada}
+                    placeholder="seuemail@exemplo.com"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.campo}>
+                <label className={styles.rotulo} htmlFor="senha">
+                  Senha
+                </label>
+
+                <div className={styles.caixa}>
+                  <span className={styles.icone}>
+                    <Lock size={17} strokeWidth={2.2} />
+                  </span>
+
+                  <input
+                    id="senha"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    className={styles.entrada}
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              {erro && <p className={styles.erro}>{erro}</p>}
+
+              <button
+                type="submit"
+                disabled={carregando}
+                className={styles.entrar}
+              >
+                {carregando ? 'Entrando...' : 'Entrar'}
+              </button>
+            </form>
+          </div>
         </div>
-
-        {expirou && !erro && (
-          <div className="mb-4 rounded-lg border border-[#e0b129]/40 bg-[#e0b129]/10 px-4 py-3 text-sm text-[#f0c640]">
-            Seu acesso durou 24 horas e venceu. Entre de novo para
-            continuar.
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-texto mb-1">
-              E-mail
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg bg-grafite-claro border border-grafite-claro text-texto px-4 py-3 outline-none focus:border-dourado transition"
-              placeholder="seuemail@exemplo.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-texto mb-1">
-              Senha
-            </label>
-            <input
-              type="password"
-              required
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="w-full rounded-lg bg-grafite-claro border border-grafite-claro text-texto px-4 py-3 outline-none focus:border-dourado transition"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {erro && (
-            <div className="bg-red-950 border border-red-700 text-red-300 text-sm rounded-lg px-4 py-3">
-              {erro}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={carregando}
-            className="w-full bg-dourado hover:bg-dourado-claro text-preto font-semibold rounded-lg py-3 transition disabled:opacity-60"
-          >
-            {carregando ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
       </div>
     </div>
   )

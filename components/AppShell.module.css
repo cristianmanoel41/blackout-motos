@@ -58,21 +58,44 @@
 .loginComLogo {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   isolation: isolate;
 }
 
 /*
- * O FUNDO DA TELA DE LOGIN
+ * O FUNDO DA TELA DE LOGIN: A VISAO DO PILOTO
  *
- * Preto, com a foto da moto por tras bem apagada e duas coisas
- * se movendo: brilhos dourados que vagam devagar e uma grade em
- * perspectiva correndo para o horizonte.
+ * A tela e o que o piloto ve pela abertura do capacete: a
+ * estrada correndo embaixo, o farol abrindo o caminho, o
+ * brilho do horizonte a frente e a moldura escura fechando em
+ * volta.
  *
- * A grade e o que da a sensacao de 3D, e custa quase nada: e um
- * fundo listrado deitado com perspective e empurrado por uma
- * animacao. Nada de biblioteca, nada de canvas - a placa de
- * video desenha isso dormindo, inclusive no notebook da loja.
+ * O ALVO E PARECER FILMAGEM, NAO DESENHO
+ *
+ * O que separa uma coisa da outra nao e quantidade de pixels:
+ * e que imagem de camera tem grao, tem borrao no que passa
+ * perto, tem chao de pedra e treme junto com a maquina. Sao
+ * essas quatro coisas que esta cena faz - e por isso ela nao
+ * precisa de video, que custaria megabytes no login de todo
+ * mundo e ainda traria problema de licenca.
+ *
+ * As camadas, de tras para a frente:
+ *
+ *   .fundoLogin      a noite e o brilho do horizonte
+ *   .mundoLogin      o que treme junto com a moto, e dentro:
+ *     .estradaLogin    a pista nitida, correndo
+ *     .estradaPerto    a mesma pista borrada, so no que passa
+ *                      perto - o borrao de movimento
+ *   .reflexoVisor    o brilho do plastico do visor
+ *   .capaceteLogin   a moldura da abertura
+ *   .granulado       o grao do sensor, por cima de tudo
+ *
+ * A LICAO DA GRADE ANTIGA: o que e deitado com rotateX gira em
+ * volta do transform-origin. Se esse ponto cair fora da janela,
+ * o desenho gira para onde ninguem ve - foi assim que a grade
+ * da primeira versao ficou invisivel. Por isso a estrada tem o
+ * rodape colado no rodape da tela, que e onde fica o eixo.
  */
 .fundoLogin {
   pointer-events: none;
@@ -81,151 +104,412 @@
   z-index: 0;
   overflow: hidden;
   background:
+    /* O clarao do horizonte, na altura em que a estrada some. */
     radial-gradient(
-      ellipse 80% 55% at 50% 0%,
-      rgba(224, 177, 41, 0.1),
-      transparent 60%
+      ellipse 19% 7% at 50% 63%,
+      rgba(224, 177, 41, 0.42),
+      transparent 72%
     ),
-    linear-gradient(180deg, #0c0d10 0%, #08090b 55%, #000 100%);
-}
-
-/* A foto da moto, no limite do que o olho percebe: da textura
-   ao preto sem disputar com o formulario. */
-.fundoLogin::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url('/login-moto-fundo.png');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  opacity: 0.13;
-  filter: grayscale(1) contrast(1.1);
+    linear-gradient(
+      180deg,
+      #04050a 0%,
+      #07080d 40%,
+      #0a0c12 57%,
+      #050507 100%
+    );
 }
 
 /*
- * A grade em perspectiva.
+ * O MUNDO QUE TREME
  *
- * Deitada com rotateX, ela vira chao; a animacao empurra o
- * desenho para a frente e o chao parece correr. A mascara
- * apaga o fundo da grade no horizonte, senao as linhas se
- * acumulam num borrao.
+ * Moto em movimento vibra, e a camera vibra junto. O tremor e
+ * minusculo de proposito - dois decimos de por cento. Grande
+ * o bastante para o olho sentir que aquilo e captado, pequeno
+ * o bastante para ninguem conseguir apontar o que mudou.
+ *
+ * Treme o mundo, nunca o capacete: o capacete esta preso a
+ * cabeca de quem olha, entao para o piloto ele e a unica coisa
+ * parada na cena.
  */
-.fundoLogin::after {
-  content: '';
+.mundoLogin {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/*
+ * A GUINADA
+ *
+ * Moto em linha reta nao anda reta: ela bamboleia de leve o
+ * tempo todo, e a estrada entra e sai do meio do quadro. Essa
+ * assimetria lenta e o que mais separa filmagem de desenho -
+ * mais que o grao, mais que o borrao. Desenho e simetrico;
+ * camera em cima de maquina, nunca.
+ *
+ * Dezenove segundos para ir de um lado ao outro: ninguem
+ * percebe acontecer, todo mundo percebe se faltar.
+ *
+ * Ela mora separada do tremor porque as duas mexem no mesmo
+ * transform - juntas no mesmo elemento, uma apagaria a outra.
+ */
+.guinadaLogin {
   position: absolute;
-  /* O rodape do elemento tem que coincidir com o rodape da
-     tela: e nele que fica o ponto de giro, e se ele cair fora
-     da janela a grade gira para onde ninguem ve. */
-  left: -60%;
-  right: -60%;
+  inset: 0;
+  animation: guinarMoto 19s ease-in-out infinite alternate;
+}
+
+@keyframes guinarMoto {
+  from {
+    transform: translate3d(-1.4%, 0, 0) rotate(-0.55deg);
+  }
+  to {
+    transform: translate3d(1.4%, 0, 0) rotate(0.55deg);
+  }
+}
+
+/* O tremor do motor, por dentro da guinada. */
+.tremorLogin {
+  position: absolute;
+  inset: 0;
+  animation: tremerMoto 2.4s ease-in-out infinite;
+}
+
+@keyframes tremerMoto {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    transform: translate3d(0.14%, 0.2%, 0);
+  }
+  48% {
+    transform: translate3d(-0.12%, 0.1%, 0);
+  }
+  71% {
+    transform: translate3d(0.09%, -0.16%, 0);
+  }
+}
+
+/*
+ * A ESTRADA
+ *
+ * Um retangulo deitado para tras, com seis desenhos por cima.
+ * Dois deles correm - o tracejado e a pedra do asfalto - e os
+ * dois correm no mesmo passo, 152px por volta, senao a pista
+ * deslizaria por baixo das faixas.
+ *
+ * O desenho e empurrado por background-position, e nao por
+ * transform: assim a perspectiva nao e recalculada a cada
+ * quadro, e quem esta perto corre mais que quem esta longe,
+ * como na estrada de verdade.
+ *
+ * A altura e a perspectiva saem de conta, nao de tentativa: o
+ * topo projetado de um plano deitado vale
+ *   800 - h*cos(t) * p/(p + h*sin(t))
+ * e o horizonte, com h infinito, vale 800 - p/tan(t). Com
+ * 900px a 66 graus a estrada nasce em 65% da altura da tela e
+ * o horizonte fica em 50% - ela ocupa o terco de baixo em vez
+ * de uma tira no rodape.
+ */
+.estradaLogin,
+.estradaPerto {
+  pointer-events: none;
+  position: absolute;
+  left: -55%;
+  right: -55%;
   bottom: 0;
-  height: 78%;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      rgba(224, 177, 41, 0.32) 0 1px,
-      transparent 1px 90px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgba(224, 177, 41, 0.32) 0 1px,
-      transparent 1px 90px
-    );
-  transform: perspective(520px) rotateX(66deg);
+  height: 300%;
+  transform: perspective(900px) rotateX(66deg);
   transform-origin: 50% 100%;
-  animation: correrGrade 7s linear infinite;
+  background-image:
+    /* o farol, abrindo o caminho logo a frente */
+    radial-gradient(
+      ellipse 34% 17% at 50% 89%,
+      rgba(255, 241, 208, 0.15),
+      transparent 70%
+    ),
+    /* o tracejado do meio */
+      repeating-linear-gradient(
+        0deg,
+        rgba(242, 242, 247, 0.95) 0 58px,
+        transparent 58px 152px
+      ),
+    /* as duas linhas da beira */
+      linear-gradient(
+        90deg,
+        transparent 0 40.6%,
+        rgba(236, 236, 242, 0.5) 40.6% 41%,
+        transparent 41% 59%,
+        rgba(236, 236, 242, 0.5) 59% 59.4%,
+        transparent 59.4% 100%
+      ),
+    /* a pedra do asfalto */ url('/asfalto.png'),
+    /* o escuro do longe, por cima da pista */
+      linear-gradient(
+        180deg,
+        rgba(5, 6, 8, 0.95) 0%,
+        rgba(5, 6, 8, 0.45) 42%,
+        transparent 100%
+      ),
+    /* a pista: clara no meio, terra escura nas beiras */
+      linear-gradient(
+        90deg,
+        #050608 0 37.5%,
+        #23262d 38.5% 61.5%,
+        #050608 62.5% 100%
+      );
+  background-size:
+    100% 100%,
+    13px 152px,
+    100% 100%,
+    152px 152px,
+    100% 100%,
+    100% 100%;
+  background-position:
+    0 0,
+    50% 0,
+    0 0,
+    0 0,
+    0 0,
+    0 0;
+  background-repeat: no-repeat, repeat-y, no-repeat, repeat, no-repeat,
+    no-repeat;
+  animation: correrEstrada 1.7s linear infinite;
+  /* Longe, o tracejado se acumula num borrao: a mascara apaga
+     o comeco da estrada e deixa so o que da para ler. */
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(0, 0, 0, 0.35) 38%,
-    #000 72%,
+    rgba(0, 0, 0, 0.5) 16%,
+    #000 38%,
     #000 100%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    #000 42%,
+    rgba(0, 0, 0, 0.5) 16%,
+    #000 38%,
     #000 100%
   );
 }
 
-@keyframes correrGrade {
+/*
+ * O BORRAO DE MOVIMENTO
+ *
+ * A mesma pista, borrada, aparecendo so no pedaco que passa
+ * mais perto. E o que uma camera faz sozinha: o que esta longe
+ * sai nitido, o que passa rente ao olho vira risco.
+ *
+ * Sem isto, a faixa do meio chega ao rodape como um quadrado
+ * perfeito a 1,7 segundo por volta - e quadrado perfeito em
+ * movimento e a assinatura do desenho animado.
+ *
+ * Ela nasce da mesma regra da pista nitida (os dois nomes
+ * dividem o bloco acima), entao as duas correm no mesmo passo
+ * e nunca saem de sincronia.
+ */
+/*
+ * O RECORTE DO BORRAO
+ *
+ * A pista borrada so aparece na faixa de baixo, mas o
+ * navegador desenhava as tres telas de altura dela antes de
+ * jogar fora o que a mascara esconde. Recortada, sobe de 71
+ * para 78 quadros por segundo - medido, nao suposto.
+ *
+ * O raio do desfoque, esse, nao muda nada: 7px, 5px e 2,5px
+ * deram o mesmo numero. O que custa e existir uma segunda
+ * pista inteira, nao o quanto ela esta borrada.
+ *
+ * A altura de dentro passa a ser em vh para a conta da
+ * perspectiva nao mudar: 300% de um pai de 40% seria outra
+ * estrada.
+ */
+.recorteDoBorrao {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.estradaPerto {
+  height: 300vh;
+  filter: blur(7px);
+  opacity: 0.9;
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 78%,
+    #000 97%
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 78%,
+    #000 97%
+  );
+}
+
+@keyframes correrEstrada {
   from {
     background-position:
+      0 0,
+      50% 0,
+      0 0,
+      0 0,
       0 0,
       0 0;
   }
   to {
     background-position:
       0 0,
-      0 90px;
+      50% 152px,
+      0 0,
+      0 152px,
+      0 0,
+      0 0;
   }
 }
 
 /*
- * Os brilhos dourados.
+ * O BRILHO DO VISOR
  *
- * Dois pontos de luz que vagam devagar, em tempos diferentes,
- * para o fundo nunca repetir o mesmo quadro. Blur alto: e luz,
- * nao desenho.
+ * O plastico do visor nao e invisivel: ele devolve um pouco da
+ * luz num risco largo e mole, que anda conforme a cabeca mexe.
+ * Bem fraco - e o que separa "olhar a estrada" de "olhar uma
+ * foto da estrada".
  */
-.brilhoLogin {
+.reflexoVisor {
   pointer-events: none;
   position: fixed;
-  z-index: 1;
-  width: 46vmax;
-  height: 46vmax;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.4;
-}
-
-.brilhoUm {
-  top: -16vmax;
-  left: -10vmax;
-  background: radial-gradient(
-    circle,
-    rgba(224, 177, 41, 0.5),
-    transparent 68%
+  inset: -25%;
+  z-index: 3;
+  background: linear-gradient(
+    116deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.03) 42%,
+    rgba(224, 177, 41, 0.05) 50%,
+    rgba(255, 255, 255, 0.026) 58%,
+    transparent 72%
   );
-  animation: vagarUm 19s ease-in-out infinite alternate;
+  filter: blur(10px);
+  animation: derivarVisor 13s ease-in-out infinite alternate;
 }
 
-.brilhoDois {
-  right: -14vmax;
-  bottom: -18vmax;
-  background: radial-gradient(
-    circle,
-    rgba(169, 120, 0, 0.45),
-    transparent 68%
-  );
-  animation: vagarDois 24s ease-in-out infinite alternate;
-}
-
-@keyframes vagarUm {
+@keyframes derivarVisor {
   from {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(-4%, -2%, 0) rotate(0deg);
   }
   to {
-    transform: translate3d(14vmax, 9vmax, 0) scale(1.18);
+    transform: translate3d(5%, 2.5%, 0) rotate(2deg);
   }
 }
 
-@keyframes vagarDois {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.1);
+/*
+ * A MOLDURA DO CAPACETE
+ *
+ * A abertura do visor: escuro cheio em cima (a testeira) e
+ * embaixo (a queixeira), com os cantos fechando em oval. E a
+ * camada que transforma uma estrada numa estrada VISTA DE
+ * DENTRO - sem ela as outras sao so um fundo bonito.
+ *
+ * Fica acima da paisagem, mas abaixo do formulario: o capacete
+ * escurece a estrada, nunca o que se vai ler.
+ */
+.capaceteLogin {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background:
+    /* a queixeira */
+    linear-gradient(
+      0deg,
+      #000 0%,
+      rgba(0, 0, 0, 0.82) 3%,
+      rgba(0, 0, 0, 0.3) 9%,
+      transparent 18%
+    ),
+    /* a testeira, mais funda que a queixeira */
+      linear-gradient(
+        180deg,
+        #000 0%,
+        rgba(0, 0, 0, 0.95) 6%,
+        rgba(0, 0, 0, 0.45) 16%,
+        transparent 27%
+      ),
+    /* a abertura, fechando em oval nos cantos */
+      radial-gradient(
+        ellipse 104% 70% at 50% 50%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.42) 76%,
+        rgba(0, 0, 0, 0.9) 100%
+      );
+}
+
+/*
+ * O GRAO
+ *
+ * O ruido do sensor, por cima de tudo. E a camada mais barata
+ * da cena e a que mais faz diferenca: imagem de verdade nunca
+ * e lisa, e qualquer superficie perfeitamente limpa o olho le
+ * como desenho.
+ *
+ * O ladrilho pula de posicao em degraus, nunca deslizando: o
+ * grao de um filme troca a cada quadro, nao escorrega pela
+ * tela.
+ */
+.granulado {
+  pointer-events: none;
+  position: fixed;
+  inset: -30%;
+  z-index: 5;
+  background-image: url('/grao.png');
+  background-size: 170px 170px;
+  opacity: 0.075;
+  animation: trocarGrao 0.6s steps(1) infinite;
+}
+
+@keyframes trocarGrao {
+  0% {
+    transform: translate3d(0, 0, 0);
   }
-  to {
-    transform: translate3d(-12vmax, -8vmax, 0) scale(1);
+  20% {
+    transform: translate3d(-3.5%, 2.5%, 0);
+  }
+  40% {
+    transform: translate3d(2.5%, -4%, 0);
+  }
+  60% {
+    transform: translate3d(-2%, -2.5%, 0);
+  }
+  80% {
+    transform: translate3d(3.5%, 1.5%, 0);
   }
 }
 
-/* Quem desligou animacao no sistema ve a mesma tela, parada. */
+/*
+ * Quem desligou animacao no sistema ve a mesma estrada, parada.
+ * A cena continua de pe - o capacete, o asfalto, o horizonte -
+ * so nao corre, nao treme e nao pisca.
+ */
 @media (prefers-reduced-motion: reduce) {
-  .fundoLogin::after,
-  .brilhoLogin {
+  .estradaLogin,
+  .estradaPerto,
+  .guinadaLogin,
+  .tremorLogin,
+  .reflexoVisor,
+  .granulado {
     animation: none !important;
+  }
+
+  /* Parada, a pista borrada so suja a nitida. */
+  .estradaPerto {
+    opacity: 0;
   }
 }
 
@@ -233,6 +517,7 @@
   position: relative;
   z-index: 10;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Remove somente o fundo geral antigo; o card do formulário permanece branco. */
@@ -253,22 +538,12 @@
   left: 50%;
   z-index: 30;
   /*
-   * A arte e branca sobre preto, e screen apaga o preto contra
-   * o fundo da tela - sobram as letras e o dourado.
-   *
-   * A mistura vai NO CONTEINER, nunca no <img>: o conteiner
-   * tem z-index, e isso cria um contexto de pintura proprio;
-   * ali dentro o fundo e o nada, e a mistura nao faz efeito.
-   * Foi assim que o retangulo preto do JPEG apareceu.
+   * Antes aqui moravam um mix-blend-mode: screen e um
+   * filter: contrast(1.55), que existiam so para apagar o
+   * fundo preto do JPEG. Em 02/10/2026 a arte virou PNG com
+   * fundo transparente de verdade (logo-blackout-marca.png,
+   * tirada do mesmo original), e os dois truques sairam.
    */
-  mix-blend-mode: screen;
-  /*
-   * O preto do JPEG nao e preto puro - a compressao deixou
-   * cinza escuro, e screen clareia por esse tanto, desenhando
-   * um retangulo. O contraste empurra esses cinzas para o zero,
-   * e ai o fundo do arquivo some de verdade.
-   */
-  filter: contrast(1.55) brightness(0.96);
   width: min(72vw, 280px);
   height: 130px;
   transform: translateX(-50%);

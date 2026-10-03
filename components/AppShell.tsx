@@ -42,21 +42,43 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className={`${styles.legibilidade} ${styles.loginComLogo}`}>
         <div className={styles.fundoLogin} aria-hidden="true" />
 
-        {/* Os dois brilhos que vagam pelo fundo. */}
-        <div
-          className={`${styles.brilhoLogin} ${styles.brilhoUm}`}
-          aria-hidden="true"
-        />
-        <div
-          className={`${styles.brilhoLogin} ${styles.brilhoDois}`}
-          aria-hidden="true"
-        />
+        {/*
+          O mundo: tudo que treme junto com a moto. O capacete
+          fica de fora de proposito - ele esta preso a cabeca de
+          quem olha, entao e a unica coisa parada na cena.
+        */}
+        <div className={styles.mundoLogin} aria-hidden="true">
+          {/* O bamboleio lento da moto em linha reta. */}
+          <div className={styles.guinadaLogin}>
+            {/* O tremor do motor, por dentro do bamboleio. */}
+            <div className={styles.tremorLogin}>
+              {/* A pista nitida, deitada em perspectiva. */}
+              <div className={styles.estradaLogin} />
+
+              {/* A mesma pista borrada, so no que passa perto.
+                  O recorte existe por desempenho: ver o comentario
+                  em .recorteDoBorrao. */}
+              <div className={styles.recorteDoBorrao}>
+                <div className={styles.estradaPerto} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* O brilho do plastico do visor. */}
+        <div className={styles.reflexoVisor} aria-hidden="true" />
+
+        {/* A moldura da abertura do capacete. */}
+        <div className={styles.capaceteLogin} aria-hidden="true" />
+
+        {/* O grao do sensor, por cima de toda a paisagem. */}
+        <div className={styles.granulado} aria-hidden="true" />
 
         <div className={styles.logoLogin} aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             data-logo-login-atual="true"
-            src="/logo-blackout-escura.jpg"
+            src="/logo-blackout-marca.png"
             alt=""
           />
         </div>

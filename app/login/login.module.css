@@ -1,0 +1,238 @@
+/*
+ * O CARD DA TELA DE LOGIN
+ *
+ * Antes era um retangulo escuro chapado sobre a foto. Chapado
+ * e o que faz uma tela parecer modelo pronto: nao ha nada
+ * acontecendo entre o fundo e o que esta na frente.
+ *
+ * Agora ele e vidro escuro - deixa a moto passar por tras,
+ * desfocada. O custo e uma propriedade so, backdrop-filter, e
+ * quem nao a suportar ve um card escuro comum, que e
+ * exatamente o que havia antes.
+ *
+ * SOBRE OS SELETORES LONGOS E OS !important
+ *
+ * A moldura do sistema (.legibilidade, no AppShell) pinta todo
+ * p, span e label de #e8eaed com !important, para nenhum texto
+ * sumir no fundo preto. Aqui dentro isso atrapalha: o rotulo
+ * nao acenderia de dourado no foco, e o icone nao mudaria de
+ * cor.
+ *
+ * Com !important dos dois lados quem decide e a especificidade,
+ * e a dela e de dois niveis (.legibilidade :global(p)). Por
+ * isso cada regra de cor aqui nasce de .moldura e passa por
+ * mais um nome: tres niveis ganham de dois sem depender da
+ * ordem em que os arquivos entram na pagina.
+ */
+.moldura {
+  width: 100%;
+  max-width: 24rem;
+}
+
+.cartao {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(16, 18, 21, 0.72);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 2px 10px rgba(0, 0, 0, 0.45),
+    0 34px 80px rgba(0, 0, 0, 0.62);
+}
+
+/* O fio dourado da tampa: a assinatura da marca no card. */
+.fio {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(224, 177, 41, 0.35) 22%,
+    #f0c640 50%,
+    rgba(224, 177, 41, 0.35) 78%,
+    transparent
+  );
+}
+
+.corpo {
+  padding: 1.75rem;
+}
+
+.moldura .cartao .titulo {
+  margin: 0 0 1.75rem;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 900 !important;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #9aa1aa !important;
+}
+
+/*
+ * O campo e o icone.
+ *
+ * O icone fica dentro do campo, a esquerda, e acende quando o
+ * campo recebe o cursor - junto com o rotulo acima dele. Sao
+ * duas coisas dizendo "e aqui que voce esta", em vez de so a
+ * borda mudar de cor.
+ */
+.campo {
+  display: block;
+}
+
+.moldura .campo .rotulo {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 900 !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8d949d !important;
+  transition: color 0.18s ease;
+}
+
+.moldura .campo:focus-within .rotulo {
+  color: #e0b129 !important;
+}
+
+/* A caixa existe so para o icone ter de quem se pendurar: se
+   ele se guiasse pelo campo inteiro, ficaria no meio da altura
+   do rotulo mais a entrada, e nao dentro da entrada. */
+.caixa {
+  position: relative;
+}
+
+.moldura .caixa .icone {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: #6f757d !important;
+  pointer-events: none;
+  transition: color 0.18s ease;
+}
+
+.moldura .campo:focus-within .icone {
+  color: #e0b129 !important;
+}
+
+.entrada {
+  width: 100%;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: #f1f3f5 !important;
+  padding: 0.85rem 1rem 0.85rem 2.85rem !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.32) !important;
+  outline: none !important;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.entrada::placeholder {
+  color: rgba(241, 243, 245, 0.32) !important;
+  font-weight: 500 !important;
+}
+
+.entrada:focus {
+  border-color: rgba(224, 177, 41, 0.6) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.32),
+    0 0 0 3px rgba(224, 177, 41, 0.13) !important;
+}
+
+/*
+ * O botao.
+ *
+ * Dourado com luz em cima e sombra embaixo, para ter volume -
+ * e com um halo da propria cor por baixo, que e o que faz
+ * parecer aceso em vez de pintado.
+ */
+.entrar {
+  width: 100%;
+  border: 1px solid rgba(224, 177, 41, 0.55);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 900 !important;
+  letter-spacing: 0.04em;
+  color: #0b0c0e !important;
+  background: linear-gradient(180deg, #f7d45f 0%, #e3b52d 46%, #c0900c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 10px 26px rgba(224, 177, 41, 0.2);
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    filter 0.16s ease;
+}
+
+@media (hover: hover) {
+  .entrar:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+      0 14px 32px rgba(224, 177, 41, 0.3);
+  }
+}
+
+.entrar:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+.entrar:disabled {
+  cursor: progress;
+  filter: saturate(0.6) brightness(0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Os dois avisos: o de prazo vencido e o de senha errada. */
+.moldura .cartao .aviso {
+  margin: 0 0 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(224, 177, 41, 0.35);
+  background: rgba(224, 177, 41, 0.09);
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600 !important;
+  line-height: 1.45;
+  color: #f0c640 !important;
+}
+
+.moldura .cartao .erro {
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600 !important;
+  line-height: 1.45;
+  color: #fca5a5 !important;
+}
+
+@media (min-width: 640px) {
+  .corpo {
+    padding: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada,
+  .entrar,
+  .moldura .caixa .icone,
+  .moldura .campo .rotulo {
+    transition: none;
+  }
+}
