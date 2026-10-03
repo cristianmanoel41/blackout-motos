@@ -103,20 +103,16 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background:
-    /* O clarao do horizonte, na altura em que a estrada some. */
-    radial-gradient(
-      ellipse 19% 7% at 50% 63%,
-      rgba(224, 177, 41, 0.42),
-      transparent 72%
-    ),
-    linear-gradient(
-      180deg,
-      #04050a 0%,
-      #07080d 40%,
-      #0a0c12 57%,
-      #050507 100%
-    );
+  /*
+   * Preto puro, sem clarao nenhum.
+   *
+   * Havia um brilho dourado no horizonte e um farol branco
+   * abrindo a pista. Os dois acendiam o fundo, e era isso que
+   * aparecia como mancha clara atras do formulario. Saíram em
+   * 02/10/2026 a pedido: o que da forma a cena agora e so o
+   * cinza do asfalto contra o preto de tudo em volta.
+   */
+  background: #000;
 }
 
 /*
@@ -217,64 +213,82 @@
 .estradaPerto {
   pointer-events: none;
   position: absolute;
-  left: -55%;
-  right: -55%;
+  left: -40%;
+  right: -40%;
   bottom: 0;
-  height: 300%;
+  height: 240%;
   transform: perspective(900px) rotateX(66deg);
   transform-origin: 50% 100%;
   background-image:
-    /* o farol, abrindo o caminho logo a frente */
-    radial-gradient(
-      ellipse 34% 17% at 50% 89%,
-      rgba(255, 241, 208, 0.15),
-      transparent 70%
+    /*
+     * O tracejado do meio, com as pontas moles.
+     *
+     * Antes as paradas eram duras - a faixa comecava e acabava
+     * num pixel exato. A perspectiva amplia o que esta perto em
+     * tres, quatro vezes, e borda reta ampliada vira escada:
+     * eram esses os quadrados brancos feios.
+     *
+     * Agora a cor nasce e morre dentro de uma rampa de 6px. O
+     * desenho fica o mesmo de longe e deixa de ter canto vivo
+     * de perto.
+     */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 4px,
+      rgba(176, 179, 188, 0.68) 10px 48px,
+      transparent 54px 152px
     ),
-    /* o tracejado do meio */
-      repeating-linear-gradient(
-        0deg,
-        rgba(242, 242, 247, 0.95) 0 58px,
-        transparent 58px 152px
-      ),
-    /* as duas linhas da beira */
+    /*
+     * As duas linhas da beira, tambem em rampa.
+     *
+     * Uma linha de meio por cento de largura, deitada em
+     * perspectiva, e uma diagonal finissima - o pior caso para
+     * serrilha. Com a cor saindo de transparente e voltando
+     * para transparente, a propria rampa faz o trabalho que o
+     * antisserrilhado nao faz.
+     */
       linear-gradient(
         90deg,
-        transparent 0 40.6%,
-        rgba(236, 236, 242, 0.5) 40.6% 41%,
-        transparent 41% 59%,
-        rgba(236, 236, 242, 0.5) 59% 59.4%,
-        transparent 59.4% 100%
+        transparent 0 40.2%,
+        rgba(150, 153, 162, 0.3) 40.8%,
+        transparent 41.4% 58.6%,
+        rgba(150, 153, 162, 0.3) 59.2%,
+        transparent 59.8% 100%
+      ),
+    /* o acostamento tapa a pedra fora da pista: o granulado
+       so pertence ao asfalto, e sobre o preto das beiras ele
+       virava chuvisco */
+      linear-gradient(
+        90deg,
+        #000 0 37.5%,
+        transparent 38.5% 61.5%,
+        #000 62.5% 100%
       ),
     /* a pedra do asfalto */ url('/asfalto.png'),
     /* o escuro do longe, por cima da pista */
-      linear-gradient(
-        180deg,
-        rgba(5, 6, 8, 0.95) 0%,
-        rgba(5, 6, 8, 0.45) 42%,
-        transparent 100%
-      ),
-    /* a pista: clara no meio, terra escura nas beiras */
+      linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.55) 42%, transparent 100%),
+    /* a pista: cinza fechado no meio, preto nas beiras */
       linear-gradient(
         90deg,
-        #050608 0 37.5%,
-        #23262d 38.5% 61.5%,
-        #050608 62.5% 100%
+        #000 0 37.5%,
+        #141619 38.5% 61.5%,
+        #000 62.5% 100%
       );
   background-size:
+    11px 152px,
     100% 100%,
-    13px 152px,
     100% 100%,
-    152px 152px,
+    76px 76px,
     100% 100%,
     100% 100%;
   background-position:
-    0 0,
     50% 0,
     0 0,
     0 0,
     0 0,
+    0 0,
     0 0;
-  background-repeat: no-repeat, repeat-y, no-repeat, repeat, no-repeat,
+  background-repeat: repeat-y, no-repeat, no-repeat, repeat, no-repeat,
     no-repeat;
   animation: correrEstrada 1.7s linear infinite;
   /* Longe, o tracejado se acumula num borrao: a mascara apaga
@@ -337,7 +351,7 @@
 }
 
 .estradaPerto {
-  height: 300vh;
+  height: 240vh;
   filter: blur(7px);
   opacity: 0.9;
   mask-image: linear-gradient(
@@ -354,11 +368,20 @@
   );
 }
 
+/*
+ * A ordem aqui tem que bater com a ordem de background-image,
+ * uma entrada por camada. Ao tirar o farol da pista eu esqueci
+ * de tirar daqui: sobrou uma posicao a mais, cada camada
+ * herdou a da vizinha, e o tracejado do meio foi parar na
+ * beira esquerda da tela.
+ *
+ * Correm so duas: o tracejado (1a) e a pedra do asfalto (4a).
+ */
 @keyframes correrEstrada {
   from {
     background-position:
-      0 0,
       50% 0,
+      0 0,
       0 0,
       0 0,
       0 0,
@@ -366,8 +389,8 @@
   }
   to {
     background-position:
-      0 0,
       50% 152px,
+      0 0,
       0 0,
       0 152px,
       0 0,
@@ -469,8 +492,19 @@
   inset: -30%;
   z-index: 5;
   background-image: url('/grao.png');
-  background-size: 170px 170px;
-  opacity: 0.075;
+  background-size: 140px 140px;
+  /*
+   * Antes esta camada so PINTAVA por cima, e todos os valores
+   * dela eram mais claros que a cena: numa tela preta isso nao
+   * e grao, e um punhado de pontos brancos acendendo.
+   *
+   * Com overlay, o cinza medio do ladrilho nao muda nada, o
+   * que esta acima clareia e o que esta abaixo escurece. Sobre
+   * fundo escuro o overlay puxa mais para baixo que para cima,
+   * entao ele tambem aprofunda o preto.
+   */
+  mix-blend-mode: overlay;
+  opacity: 0.5;
   animation: trocarGrao 0.6s steps(1) infinite;
 }
 
@@ -492,6 +526,50 @@
   }
 }
 
+/*
+ * O CELULAR NAO AGUENTA A CENA INTEIRA
+ *
+ * Em 02/10/2026 o Safari do iPhone passou a matar a aba no
+ * login: "um problema ocorreu repetidamente". Nao era rede nem
+ * login - era memoria.
+ *
+ * A conta: a pista media 210% por 300% da tela. Num iPhone de
+ * 390x844 com tela de 3x isso da 18 milhoes de pixels, 71 MB
+ * numa camada so. Vezes duas, porque existe a copia borrada, e
+ * mais o buffer do desfoque e o do grao misturado: passava de
+ * 170 MB. No computador sobra memoria para isso; no telefone,
+ * nao.
+ *
+ * Entao no celular caem as tres camadas caras. O que fica - a
+ * pista correndo, o farol, o capacete, o grao - e a cena que
+ * importa; o que sai e o requinte que ninguem nota numa tela
+ * de seis polegadas.
+ */
+@media (max-width: 900px) {
+  /* A copia borrada e a mais cara de todas, e e a que menos
+     se percebe no telefone. */
+  .recorteDoBorrao {
+    display: none;
+  }
+
+  /* A pista encolhe. A perspectiva muda um pouco com isso - a
+     estrada nasce em 71% da altura em vez de 66% - e esse e o
+     preco combinado. */
+  .estradaLogin {
+    left: -30%;
+    right: -30%;
+    height: 190%;
+  }
+
+  /* O grao para de misturar e passa a so cobrir a tela: a
+     mistura obriga o navegador a guardar mais uma copia de
+     tudo que esta embaixo. */
+  .granulado {
+    inset: 0;
+    mix-blend-mode: normal;
+    opacity: 0.045;
+  }
+}
 /*
  * Quem desligou animacao no sistema ve a mesma estrada, parada.
  * A cena continua de pe - o capacete, o asfalto, o horizonte -

@@ -222,6 +222,15 @@
   color: #fca5a5 !important;
 }
 
+/* No celular o vidro desfoca menos: backdrop-filter guarda uma
+   copia do que esta atras, e naquela tela cada copia conta. */
+@media (max-width: 900px) {
+  .cartao {
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  }
+}
+
 @media (min-width: 640px) {
   .corpo {
     padding: 2rem;
