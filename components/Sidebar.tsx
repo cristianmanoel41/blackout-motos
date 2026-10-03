@@ -87,19 +87,18 @@ export default function Sidebar() {
             className="flex w-full items-center justify-center"
           >
             {/*
-              logo-blackout-menu.png sai do timbre dos contratos,
-              onde a logo está em 1278x475 - dez vezes mais
-              resolução que o arquivo antigo.
-              A arte é branca sobre preto, então foi invertida
-              para o fundo claro: capacete e BLACKOUT em preto,
-              MOTOS no dourado original. O ruído do JPEG foi
-              tratado antes da inversão, senão cada sujeirinha
-              do fundo virava um ponto cinza no branco.
+              logo-blackout-marca.png sai do timbre dos contratos,
+              onde a logo esta em 1278x475 - dez vezes mais
+              resolucao que o arquivo antigo.
+              A arte e branca com MOTOS em dourado, e o fundo e
+              transparente de verdade: ate 02/10/2026 era um JPEG
+              de fundo preto, apagado por mix-blend-mode screen
+              mais um contraste alto. Os dois truques sairam junto.
             */}
-            <span className="relative block h-[88px] w-[214px] mix-blend-screen [filter:contrast(1.55)_brightness(0.96)]">
+            <span className="relative block h-[88px] w-[214px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-blackout-escura.jpg"
+                src="/logo-blackout-marca.png"
                 alt="Blackout Motos"
                 className="h-full w-full object-contain"
               />

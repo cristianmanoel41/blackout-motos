@@ -50,10 +50,10 @@ export default function Cabecalho({
             aria-label={LOJA.nome}
           >
             <Image
-              src="/logo-blackout-site.png"
+              src="/logo-blackout-marca.png"
               alt={LOJA.nome}
-              width={1774}
-              height={887}
+              width={995}
+              height={425}
               priority
               className="h-10 w-auto sm:h-12"
             />

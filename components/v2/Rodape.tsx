@@ -41,10 +41,10 @@ export default function Rodape() {
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_1fr]">
           <div>
             <Image
-              src="/logo-blackout-site.png"
+              src="/logo-blackout-marca.png"
               alt={LOJA.nome}
-              width={1774}
-              height={887}
+              width={995}
+              height={425}
               className="h-12 w-auto"
             />
 
