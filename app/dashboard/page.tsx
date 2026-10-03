@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -11,6 +12,7 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
+import LucroDoMes from './LucroDoMes'
 import DestaquesDoSite from './DestaquesDoSite'
 import styles from './dashboard.module.css'
 
@@ -157,12 +159,27 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card titulo="Motos disponíveis" valor={String(motosDisponiveis ?? 0)} icone={Bike} />
         {/* Clicar abre a lista na ordem em que as vendas foram cadastradas. */}
         <Link href="/vendas/historico?ordem=registro" className="block">
           <Card titulo="Vendas no mês" valor={String(motosVendidasMes)} icone={ShoppingCart} />
         </Link>
+
+        {/*
+          * O único número do financeiro que ficou no painel.
+          *
+          * Ele vem da mesma conta do relatório, e não de uma
+          * segunda - ver o comentário em LucroDoMes.
+          *
+          * Dentro de Suspense porque essa conta é cara: são as
+          * mesmas catorze consultas do relatório. Sem isso, o
+          * painel inteiro esperaria por um card - e o painel é a
+          * tela que a loja abre todo dia.
+          */}
+        <Suspense fallback={<div className={styles.metricCard} />}>
+          <LucroDoMes />
+        </Suspense>
       </section>
 
       {/*
