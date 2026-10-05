@@ -117,19 +117,27 @@ export default function Rodape() {
           <div>
             <p className="rotulo">Fale com a gente</p>
 
-            <p className="titulo mt-4 text-[1.6rem] claro">
-              {LOJA.whatsappExibicao}
-            </p>
-
+            {/*
+              * O botao vem antes do numero.
+              *
+              * Quase todo mundo que chega aqui vai falar pelo
+              * WhatsApp; o numero escrito serve para quem prefere
+              * ligar, ou para anotar. Entao a acao fica no alto e
+              * o numero logo abaixo, como alternativa.
+              */}
             <a
               href={linkWhatsApp(CONVITE_GERAL)}
               target="_blank"
               rel="noopener noreferrer"
-              className="botao-ouro mt-5 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm"
+              className="botao-ouro mt-4 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm"
             >
               <IconeWhatsApp className="h-4 w-4" />
               Fale no WhatsApp
             </a>
+
+            <p className="titulo mt-5 text-[1.6rem] claro">
+              {LOJA.whatsappExibicao}
+            </p>
           </div>
         </div>
 
