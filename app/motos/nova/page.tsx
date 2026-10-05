@@ -634,12 +634,25 @@ export default function NovaMotoPage() {
         cilindrada:
           resultado.cilindrada ||
           anterior.cilindrada,
+
+        /*
+          * O RENAVAM agora vem da consulta.
+          *
+          * A tela nunca preenchia este campo porque o
+          * fornecedor antigo nao entregava - o codigo ate
+          * devolvia renavam em branco, fixo. Com a Base
+          * Nacional V2 ele vem, e e um dos dois campos que
+          * mais custam caro digitar errado.
+          */
+        renavam:
+          resultado.renavam ||
+          anterior.renavam,
       }));
 
       setMensagemBuscaPlaca(
         resultado.renavam
-          ? "Dados encontrados e preenchidos. Confira as informações antes de salvar."
-          : "Dados encontrados e preenchidos. O RENAVAM não é fornecido por esta consulta e deve ser informado manualmente."
+          ? "Dados encontrados, chassi e RENAVAM incluídos. Confira tudo antes de salvar."
+          : "Dados encontrados. O RENAVAM não veio nesta consulta e precisa ser digitado."
       );
     } catch (error) {
       setErroBuscaPlaca(

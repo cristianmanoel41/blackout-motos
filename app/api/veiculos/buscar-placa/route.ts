@@ -2,374 +2,258 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+/*
+ * CONSULTA DE PLACA — API BRASIL, BASE NACIONAL V2
+ *
+ * O que a loja precisa é chassi e RENAVAM a partir da placa.
+ * São os dois campos onde errar um dígito estraga o contrato:
+ * chassi tem 17 caracteres, RENAVAM tem 11.
+ *
+ * POR QUE ESTE FORNECEDOR
+ *
+ * O anterior (placaapi.com) nunca foi ligado, e não resolveria:
+ * o campo renavam saía fixo em branco no código, porque aquela
+ * consulta não entrega esse dado.
+ *
+ * Das opções da API Brasil, só a Base Nacional V2 traz os dois.
+ * As irmãs mais baratas — Agregados Propria (R$ 0,08) e
+ * Agregados V2 (R$ 0,60) — trazem chassi e não trazem RENAVAM,
+ * o que é metade do serviço. Esta custa R$ 3,20 por consulta, e
+ * é uma consulta por moto que entra no pátio.
+ *
+ * A BigDataCorp foi descartada: o dataset de chassi e RENAVAM
+ * dela atende somente o Rio de Janeiro.
+ *
+ * A ARMADILHA QUE A PRÓPRIA DOCUMENTAÇÃO AVISA
+ *
+ * O erro chega no CORPO com HTTP 200. Conferir só o status da
+ * resposta deixaria passar falha como sucesso, e o cadastro
+ * seria preenchido com vazio como se tivesse dado certo. Por
+ * isso a conferência de `error === false` vem antes de qualquer
+ * leitura de dado.
+ */
+
+const ENDPOINT =
+  process.env.APIBRASIL_ENDPOINT ||
+  "https://gateway.apibrasil.io/api/v2/consulta/veiculos/credits";
+
 function limparPlaca(valor: string) {
   return String(valor || "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "");
 }
 
-function decodificarEntidadesXml(valor: string) {
-  return valor
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
+/*
+ * Placa válida é a antiga (ABC1234) ou a do Mercosul (ABC1D23).
+ *
+ * A conferência é aqui, antes de gastar: cada consulta custa, e
+ * placa digitada errada custaria igual à certa.
+ */
+function placaValida(placa: string) {
+  return /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(placa);
 }
 
-function textoCampo(
-  valor: unknown
-): string {
-  if (
-    valor === null ||
-    valor === undefined
-  ) {
+/*
+ * Procura um campo em qualquer nível da resposta.
+ *
+ * A documentação mostra chassi e renavam dentro de
+ * `data.baseNacional`, mas o mesmo gateway serve vários
+ * produtos e a forma muda entre eles. Procurar pelo NOME, em
+ * vez de pelo caminho, faz a integração sobreviver a uma
+ * mudança de ninho — que é o tipo de coisa que acontece sem
+ * aviso e quebra na primeira moto do dia.
+ */
+function acharCampo(objeto: unknown, ...nomes: string[]): string {
+  const procurados = nomes.map((n) => n.toLowerCase());
+  const visitados = new Set<unknown>();
+
+  const visitar = (no: unknown): string => {
+    if (!no || typeof no !== "object") return "";
+    if (visitados.has(no)) return "";
+    visitados.add(no);
+
+    if (Array.isArray(no)) {
+      for (const item of no) {
+        const achado = visitar(item);
+        if (achado) return achado;
+      }
+      return "";
+    }
+
+    const registro = no as Record<string, unknown>;
+
+    for (const [chave, valor] of Object.entries(registro)) {
+      if (
+        procurados.includes(chave.toLowerCase()) &&
+        (typeof valor === "string" || typeof valor === "number")
+      ) {
+        const texto = String(valor).trim();
+        if (texto) return texto;
+      }
+    }
+
+    for (const valor of Object.values(registro)) {
+      const achado = visitar(valor);
+      if (achado) return achado;
+    }
+
     return "";
-  }
+  };
 
-  if (typeof valor === "string") {
-    return valor.trim();
-  }
-
-  if (
-    typeof valor === "number"
-  ) {
-    return String(valor);
-  }
-
-  if (
-    typeof valor === "object"
-  ) {
-    const objeto = valor as Record<
-      string,
-      unknown
-    >;
-
-    const candidatos = [
-      objeto.CurrentTextValue,
-      objeto.currentTextValue,
-      objeto.Text,
-      objeto.text,
-      objeto.Value,
-      objeto.value,
-    ];
-
-    for (const candidato of candidatos) {
-      const texto =
-        textoCampo(candidato);
-
-      if (texto) return texto;
-    }
-  }
-
-  return "";
+  return visitar(objeto);
 }
 
-function pegar(
-  dados: Record<string, unknown>,
-  ...chaves: string[]
-) {
-  for (const chave of chaves) {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        dados,
-        chave
-      )
-    ) {
-      const valor =
-        textoCampo(dados[chave]);
+/*
+ * "HONDA/CG 160 FAN" vira marca e modelo separados.
+ *
+ * O campo vem junto, com barra, e o cadastro tem um campo para
+ * cada. Sem barra, tudo vai para o modelo: é melhor o modelo
+ * ficar comprido do que a marca sair errada.
+ */
+function separarMarcaModelo(junto: string) {
+  const texto = junto.trim();
 
-      if (valor) return valor;
-    }
-  }
+  if (!texto) return { marca: "", modelo: "" };
 
-  return "";
+  const barra = texto.indexOf("/");
+
+  if (barra < 0) return { marca: "", modelo: texto };
+
+  return {
+    marca: texto.slice(0, barra).trim(),
+    modelo: texto.slice(barra + 1).trim(),
+  };
 }
 
-function extrairVehicleJson(
-  xml: string
-): Record<string, unknown> {
-  const correspondencia =
-    xml.match(
-      /<vehicleJson(?:\s[^>]*)?>([\s\S]*?)<\/vehicleJson>/i
-    );
+/* Só os dígitos: chassi e RENAVAM às vezes vêm com pontuação. */
+const soDigitos = (valor: string) => valor.replace(/\D/g, "");
 
-  if (!correspondencia) {
-    throw new Error(
-      "A API respondeu, mas não retornou os dados do veículo."
-    );
-  }
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const placa = limparPlaca(url.searchParams.get("placa") || "");
 
-  const bruto =
-    decodificarEntidadesXml(
-      correspondencia[1]
-    ).trim();
-
-  if (!bruto) {
-    throw new Error(
-      "A consulta não retornou dados para esta placa."
-    );
-  }
-
-  try {
-    return JSON.parse(bruto);
-  } catch {
-    throw new Error(
-      "A API retornou os dados em um formato inesperado."
-    );
-  }
-}
-
-function mensagemErroApi(
-  dados: Record<string, unknown>
-) {
-  const candidatos = [
-    "Error",
-    "error",
-    "Message",
-    "message",
-    "Status",
-    "status",
-  ];
-
-  for (const chave of candidatos) {
-    const valor =
-      textoCampo(dados[chave]);
-
-    if (
-      valor &&
-      /error|erro|invalid|not found|não encontrado|nao encontrado|no data/i.test(
-        valor
-      )
-    ) {
-      return valor;
-    }
-  }
-
-  return "";
-}
-
-export async function GET(
-  request: NextRequest
-) {
-  const placa = limparPlaca(
-    request.nextUrl.searchParams.get(
-      "placa"
-    ) || ""
-  );
-
-  if (placa.length !== 7) {
+  if (!placaValida(placa)) {
     return NextResponse.json(
-      {
-        error:
-          "Informe uma placa válida com 7 caracteres.",
-      },
+      { error: "Placa inválida. Use o formato ABC1234 ou ABC1D23." },
       { status: 400 }
     );
   }
 
-  const username =
-    process.env.REGCHECK_USERNAME?.trim();
+  const token = process.env.APIBRASIL_BEARER_TOKEN?.trim();
+  const dispositivo = process.env.APIBRASIL_DEVICE_TOKEN?.trim();
 
-  if (!username) {
+  if (!token) {
     return NextResponse.json(
       {
         error:
-          "A consulta de placa ainda não foi configurada. Defina REGCHECK_USERNAME no .env.local e no Vercel.",
+          "A consulta de placa ainda não foi configurada. Defina APIBRASIL_BEARER_TOKEN no .env.local e na Vercel.",
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
-
-  const endpoint =
-    (
-      process.env.REGCHECK_ENDPOINT ||
-      "https://www.placaapi.com/api/reg.asmx/CheckBrazil"
-    ).replace(/\/+$/, "");
-
-  const url = new URL(endpoint);
-
-  url.searchParams.set(
-    "RegistrationNumber",
-    placa
-  );
-  url.searchParams.set(
-    "username",
-    username
-  );
 
   let resposta: Response;
 
   try {
-    resposta = await fetch(
-      url.toString(),
-      {
-        method: "GET",
-        headers: {
-          Accept:
-            "application/xml,text/xml,*/*",
-        },
-        cache: "no-store",
-      }
-    );
+    resposta = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        /* O DeviceToken é exigido por parte das APIs do gateway.
+           Vai quando existir; não atrapalha quem não pede. */
+        ...(dispositivo ? { DeviceToken: dispositivo } : {}),
+      },
+      body: JSON.stringify({
+        tipo: "base-nacional-v2",
+        placa,
+        /* homolog=true devolve dado de exemplo sem cobrar. Serve
+           para conferir a ligação antes de gastar consulta. */
+        ...(process.env.APIBRASIL_HOMOLOGACAO === "sim"
+          ? { homolog: true }
+          : {}),
+      }),
+      cache: "no-store",
+    });
   } catch {
     return NextResponse.json(
-      {
-        error:
-          "Não foi possível conectar ao serviço de consulta de placa.",
-      },
+      { error: "Não foi possível falar com a consulta de placa." },
       { status: 502 }
     );
   }
 
-  const corpo =
-    await resposta.text();
-
-  if (!resposta.ok) {
-    return NextResponse.json(
-      {
-        error:
-          "O serviço de consulta de placa recusou a requisição.",
-      },
-      { status: 502 }
-    );
-  }
-
-  let dados: Record<
-    string,
-    unknown
-  >;
+  let corpo: unknown;
 
   try {
-    dados =
-      extrairVehicleJson(corpo);
-  } catch (error) {
+    corpo = await resposta.json();
+  } catch {
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível interpretar a resposta da consulta.",
-      },
+      { error: "A consulta de placa respondeu em formato inesperado." },
       { status: 502 }
     );
   }
 
-  const erroApi =
-    mensagemErroApi(dados);
+  const registro = (corpo || {}) as Record<string, unknown>;
 
-  if (erroApi) {
+  /*
+   * A conferência que a documentação pede, antes de tudo.
+   *
+   * Sem ela, uma placa inexistente voltaria com HTTP 200 e o
+   * cadastro seria preenchido com vazio — e quem está na loja
+   * acharia que a consulta funcionou.
+   */
+  if (registro.error === true || resposta.status >= 400) {
+    const recado =
+      typeof registro.message === "string" && registro.message.trim()
+        ? registro.message.trim()
+        : "A consulta não encontrou esta placa.";
+
+    return NextResponse.json({ error: recado }, { status: 404 });
+  }
+
+  const chassi = acharCampo(corpo, "chassi", "chassis", "vin");
+  const renavam = soDigitos(acharCampo(corpo, "renavam"));
+
+  const { marca, modelo } = separarMarcaModelo(
+    acharCampo(corpo, "marcaModelo", "marca_modelo", "marcaemodelo")
+  );
+
+  const resultado = {
+    placa: acharCampo(corpo, "placa") || placa,
+    marca: marca || acharCampo(corpo, "marca"),
+    modelo: modelo || acharCampo(corpo, "modelo"),
+    ano_fabricacao: acharCampo(corpo, "anoFabricacao", "ano_fabricacao"),
+    ano_modelo: acharCampo(corpo, "anoModelo", "ano_modelo"),
+    cor: acharCampo(corpo, "corVeiculo", "cor", "color"),
+    chassi,
+    renavam,
+    cilindrada: acharCampo(corpo, "cilindradas", "cilindrada"),
+    combustivel: acharCampo(corpo, "combustivel"),
+    localizacao: [
+      acharCampo(corpo, "municipio"),
+      acharCampo(corpo, "uf"),
+    ]
+      .filter(Boolean)
+      .join(" - "),
+    situacao: acharCampo(corpo, "situacaoVeiculo", "situacao"),
+    descricao: acharCampo(corpo, "marcaModelo", "marca_modelo"),
+  };
+
+  /*
+   * Veio resposta, mas sem o que interessa.
+   *
+   * Acontece com placa fora da base. Dizer isso é melhor que
+   * preencher o cadastro com nada e deixar a pessoa achando que
+   * a moto não tem chassi.
+   */
+  if (!resultado.chassi && !resultado.modelo) {
     return NextResponse.json(
-      {
-        error: erroApi,
-      },
+      { error: "A consulta não trouxe dados desta placa." },
       { status: 404 }
     );
   }
 
-  const descricao = pegar(
-    dados,
-    "Description",
-    "description"
-  );
-
-  const marca = pegar(
-    dados,
-    "CarMake",
-    "Make",
-    "make",
-    "Marca",
-    "marca"
-  );
-
-  let modelo = pegar(
-    dados,
-    "CarModel",
-    "Model",
-    "model",
-    "Modelo",
-    "modelo"
-  );
-
-  if (
-    !modelo &&
-    descricao &&
-    marca &&
-    descricao
-      .toUpperCase()
-      .startsWith(
-        marca.toUpperCase()
-      )
-  ) {
-    modelo = descricao
-      .slice(marca.length)
-      .replace(/^[\s\-\/]+/, "")
-      .trim();
-  }
-
-  const ano = pegar(
-    dados,
-    "RegistrationYear",
-    "Year",
-    "year",
-    "Ano",
-    "ano"
-  );
-
-  const resultado = {
-    placa,
-    marca,
-    modelo,
-    ano_fabricacao: ano,
-    ano_modelo: ano,
-    cor: pegar(
-      dados,
-      "Colour",
-      "Color",
-      "colour",
-      "color",
-      "Cor",
-      "cor"
-    ),
-    chassi: pegar(
-      dados,
-      "Vin",
-      "VIN",
-      "vin",
-      "Chassis",
-      "chassis"
-    ),
-    cilindrada: pegar(
-      dados,
-      "EngineCC",
-      "engineCC",
-      "Cilindrada",
-      "cilindrada"
-    ),
-    combustivel: pegar(
-      dados,
-      "Fuel",
-      "fuel",
-      "Combustivel",
-      "combustivel"
-    ),
-    localizacao: pegar(
-      dados,
-      "Location",
-      "location"
-    ),
-    descricao,
-    renavam: "",
-  };
-
-  return NextResponse.json(
-    resultado,
-    {
-      headers: {
-        "Cache-Control":
-          "no-store, max-age=0",
-      },
-    }
-  );
+  return NextResponse.json(resultado, {
+    headers: { "Cache-Control": "no-store, max-age=0" },
+  });
 }
