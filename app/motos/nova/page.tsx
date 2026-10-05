@@ -1993,6 +1993,26 @@ export default function NovaMotoPage() {
                   </button>
                 </div>
 
+                {/*
+                  * O aviso de que a busca é opcional.
+                  *
+                  * A tela nunca disse isso, e quem chega nela vê
+                  * um botão dourado ao lado da placa - parece
+                  * caminho obrigatório. Nenhum campo é travado e
+                  * nada do que foi digitado se perde, mas isso só
+                  * se descobre tentando.
+                  *
+                  * Some quando há recado da consulta: ali o que
+                  * importa é o resultado, não a instrução.
+                  */}
+                {!mensagemBuscaPlaca && !erroBuscaPlaca && (
+                  <p className="mt-2 text-xs leading-5 text-texto-suave">
+                    A busca é opcional. Todos os campos podem ser
+                    preenchidos à mão, e o que você já digitou não
+                    é apagado pela consulta.
+                  </p>
+                )}
+
                 {mensagemBuscaPlaca && (
                   <p
                     className={`mt-2 text-xs font-semibold leading-5 ${
