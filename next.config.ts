@@ -1,18 +1,14 @@
 import type { NextConfig } from "next";
 
 /*
- * As fotos das motos ficam no Storage do Supabase, em outro
- * domínio. O next/image só otimiza imagem de fora quando o
- * domínio está liberado aqui - sem isto a foto nem carrega.
+ * O endereço do Supabase não precisa mais ser liberado aqui.
  *
- * O endereço sai da própria variável de ambiente, então
- * trocar de projeto no Supabase não exige mexer neste arquivo.
+ * Ele existia para o otimizador da Vercel aceitar imagem de
+ * outro domínio. Desde que o redimensionamento passou para o
+ * próprio Supabase (veja `images`, abaixo), não há otimizador
+ * nenhum para autorizar: o endereço da foto vai inteiro do
+ * banco para o navegador.
  */
-const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-const hostSupabase = supabase
-  ? new URL(supabase).hostname
-  : undefined;
 
 const nextConfig: NextConfig = {
   /*
@@ -63,18 +59,27 @@ const nextConfig: NextConfig = {
      *   foto pequena: a perda cai duas vezes em cima da mesma
      *   imagem.
      */
-    formats: ["image/avif", "image/webp"],
+    /*
+     * QUEM REDIMENSIONA AGORA E O SUPABASE, NAO A VERCEL
+     *
+     * Em 05/10/2026 a cota de otimizacao de imagem do plano
+     * acabou e a Vercel passou a responder 402 "Payment
+     * required": doze das vinte e duas fotos do estoque sumiram
+     * da pagina, e quem chegava do Instagram via quadradinho de
+     * imagem quebrada no lugar da moto.
+     *
+     * O Supabase, onde as fotos ja moram, redimensiona sozinho.
+     * Com o leitor de imagem proprio em lib/imagem-loader.ts a
+     * Vercel sai do caminho - e sem intermediario nao ha cota
+     * mensal para estourar de novo, em silencio, num sabado.
+     *
+     * `formats` e `remotePatterns` sumiram porque so valiam para
+     * o otimizador da Vercel. `qualities` fica: ele continua
+     * validando o quality={90} que os cards pedem.
+     */
+    loader: "custom",
+    loaderFile: "./lib/imagem-loader.ts",
     qualities: [75, 90],
-
-    remotePatterns: hostSupabase
-      ? [
-          {
-            protocol: "https",
-            hostname: hostSupabase,
-            pathname: "/storage/v1/object/public/**",
-          },
-        ]
-      : [],
   },
 };
 
