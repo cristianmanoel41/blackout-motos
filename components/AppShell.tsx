@@ -129,6 +129,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const foraDoPainel =
     SITE.includes(pathname) ||
     pathname.startsWith('/estoque/') ||
+    pathname.startsWith('/financiamento/') ||
     pathname.startsWith('/novo') ||
     /* A versao 2, em provas. */
     pathname.startsWith('/v2') ||

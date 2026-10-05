@@ -21,6 +21,7 @@ export default function GlobalBackButton() {
     pathname === "/estoque" ||
     pathname.startsWith("/estoque/") ||
     pathname === "/financiamento" ||
+    pathname.startsWith("/financiamento/") ||
     pathname === "/sobre" ||
     pathname === "/contato" ||
     pathname === "/privacidade" ||

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   BadgeCheck,
   ChevronDown,
+  ChevronRight,
   FileText,
   Repeat2,
   Wallet,
 } from "lucide-react";
-import SimuladorFinanciamento from "@/components/site/SimuladorFinanciamento";
+import CalculadoraParcela from "@/components/site/CalculadoraParcela";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import {
   anoDaMoto,
@@ -18,15 +20,19 @@ import { LOJA } from "@/lib/dados/loja";
 /*
  * Página de financiamento.
  *
- * O formulário vem primeiro, antes de qualquer explicação:
- * quem abre esta tela já quer simular, e ler quatro passos
- * antes de achar o campo é o caminho mais curto para desistir.
- * Como funciona fica logo abaixo, recolhido, para quem quiser.
+ * O simulador vem primeiro, antes de qualquer explicação:
+ * quem abre esta tela já quer saber se cabe no mês, e ler
+ * quatro passos antes de achar o campo é o caminho mais curto
+ * para desistir. Como funciona fica logo abaixo, recolhido.
  *
- * A simulação recolhe os dados e monta a mensagem de WhatsApp -
- * não calcula parcela. Taxa e aprovação dependem do banco e do
- * perfil de cada cliente; número na tela que depois não se
- * confirma queima a loja.
+ * A conta usa a taxa de base da loja, que vive numa constante
+ * só, e a tela diz que é ilustrativa: taxa e aprovação dependem
+ * do banco e do perfil de cada cliente, e número que depois não
+ * se confirma queima a loja.
+ *
+ * Quem quer condição de verdade vai para /financiamento/proposta,
+ * que é onde ficam os dados pessoais - em tela separada, porque
+ * pedir CPF para quem só queria ver uma parcela espanta.
  *
  * Quando a pessoa vem de um anúncio, a moto chega pela URL
  * (?moto=...) e o campo já aparece preenchido.
@@ -106,11 +112,57 @@ export default async function FinanciamentoPage({
         </p>
       </header>
 
+      {/*
+        * A conta vem antes da proposta.
+        *
+        * Quem abre esta página quer saber se cabe no mês. O
+        * formulário de baixo responde isso também, mas cobra
+        * nome, CPF e data de nascimento antes - e quem está só
+        * olhando fecha a aba em vez de digitar CPF. A
+        * calculadora responde na hora e de graça; quem gostar
+        * do número desce e manda a proposta.
+        */}
       <section className="mt-8">
-        <SimuladorFinanciamento
-          moto={moto}
+        <CalculadoraParcela
           estoque={doEstoque}
+          motoInicial={moto}
         />
+      </section>
+
+      {/*
+        * O convite para a proposta, que agora mora em outra tela.
+        *
+        * Simular e curiosidade; mandar CPF e decisao. Juntas na
+        * mesma tela, a segunda atrapalhava a primeira - quem so
+        * queria ver uma parcela encontrava um formulario pedindo
+        * documento e fechava a aba.
+        */}
+      <section className="mt-8">
+        <Link
+          href={
+            moto
+              ? `/financiamento/proposta?moto=${encodeURIComponent(moto)}`
+              : "/financiamento/proposta"
+          }
+          className="cartao-3d flex items-center gap-4 rounded-2xl p-5 transition sm:p-6"
+        >
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-black texto-claro sm:text-lg">
+              Quer a condição real do banco?
+            </h2>
+
+            <p className="mt-1 text-sm leading-6 texto-suave">
+              Mande seus dados e a gente consulta a taxa e a
+              entrada com os principais bancos. Leva um minuto.
+            </p>
+          </div>
+
+          <ChevronRight
+            size={22}
+            className="shrink-0 texto-ouro"
+            aria-hidden="true"
+          />
+        </Link>
       </section>
 
       {/*

@@ -34,10 +34,15 @@ export default function EscolherMoto({
   valor,
   aoEscolher,
   estoque,
+  rolagemInterna = true,
 }: {
   valor: string;
   aoEscolher: (nome: string) => void;
   estoque: MotoDaLista[];
+  /* No celular, rolagem dentro de rolagem come o primeiro
+     toque: o iOS usa ele para parar a inercia, e o clique
+     nao acontece. Quem nao precisa da caixa desliga. */
+  rolagemInterna?: boolean;
 }) {
   const escolhida = estoque.find(
     (item) => item.nome === valor
@@ -160,12 +165,32 @@ export default function EscolherMoto({
       {/*
         * Altura limitada: a lista rola dentro dela mesma, e o
         * resto do formulário continua à vista. Sem isso, as
-        * dezessete motos empurram o botão de enviar para longe.
+        * motos empurram o botão de enviar para longe.
+        *
+        * Com `rolagemInterna` desligada, a caixa só existe
+        * da tela do computador para cima. No celular a lista
+        * cresce e quem rola é a página - é o único jeito de
+        * o toque na moto valer sempre no iPhone.
         */}
-      <div className="max-h-64 space-y-1.5 overflow-y-auto pr-1">
-        {encontradas.map((item) => (
+      <div
+        className={
+          rolagemInterna
+            ? "max-h-64 space-y-1.5 overflow-y-auto pr-1"
+            : "space-y-1.5 sm:max-h-80 sm:overflow-y-auto sm:pr-1"
+        }
+      >
+        {/*
+          * A chave leva a posição junto do nome.
+          *
+          * Duas motos iguais no pátio têm o mesmo nome e o
+          * mesmo ano - hoje são duas Yamaha YBR 125i Factor ED.
+          * Com o nome sozinho como chave, o React tratava as
+          * duas como a mesma coisa e podia sumir com uma delas
+          * da lista: moto no estoque que o cliente não via.
+          */}
+        {encontradas.map((item, posicao) => (
           <button
-            key={item.nome}
+            key={`${item.nome}-${posicao}`}
             type="button"
             onClick={() => aoEscolher(item.nome)}
             className="flex w-full items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-2 text-left transition hover:border-[#e0b129]/50 hover:bg-white/[.05]"

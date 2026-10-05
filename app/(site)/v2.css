@@ -729,3 +729,78 @@ html[data-js="sim"] .v2 .surgir-pronto {
     transition: none;
   }
 }
+
+/*
+ * A BARRA DA ENTRADA, NO SIMULADOR
+ *
+ * O controle de faixa que o navegador desenha sozinho é cinza
+ * claro: some no fundo preto e parece desligado. Aqui ele vira
+ * um fio escuro com o botão dourado da casa.
+ *
+ * A parte já preenchida não é pintada de dourado de propósito.
+ * Isso exigiria avisar o CSS do valor a cada arrasto, e o fio
+ * ficaria piscando no celular; o botão dourado sozinho já diz
+ * onde a pessoa está, e o valor em dinheiro aparece logo acima.
+ */
+.v2 .faixa-entrada {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+  /* Reserva para os navegadores que ainda desenham o controle
+     por conta própria: pelo menos sai na cor certa. */
+  accent-color: #e0b129;
+}
+
+.v2 .faixa-entrada::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.v2 .faixa-entrada::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/*
+ * O botão tem 22px, bem mais que os 6px do fio.
+ *
+ * Dedo não acerta alvo de 6px: a recomendação de alvo tocável é
+ * perto de 24px, e esta barra existe principalmente para ser
+ * arrastada com o polegar.
+ */
+.v2 .faixa-entrada::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
+  border: 2px solid #1b1b21;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f7dd8a 0%, #e0b129 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.v2 .faixa-entrada::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #1b1b21;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f7dd8a 0%, #e0b129 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* O contorno de foco fica no botão, para quem navega por
+   teclado saber onde está. */
+.v2 .faixa-entrada:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #f7dd8a;
+  outline-offset: 2px;
+}
+
+.v2 .faixa-entrada:focus-visible::-moz-range-thumb {
+  outline: 2px solid #f7dd8a;
+  outline-offset: 2px;
+}

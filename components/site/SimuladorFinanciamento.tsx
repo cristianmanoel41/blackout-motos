@@ -173,7 +173,15 @@ export default function SimuladorFinanciamento({
         escritos. Você confere antes de enviar.
       </p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      {/*
+        * grid-cols-1 no celular nao e enfeite.
+        *
+        * Sem ele a coluna vira `auto` e assume a largura do
+        * campo mais largo, sem encolher. O Chrome entao afasta
+        * o zoom da pagina toda para caber, e o formulario abre
+        * com a letra menor no iPhone.
+        */}
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className={rotulo} htmlFor="nome">
             Nome completo
