@@ -8,6 +8,7 @@ import {
 import { Analytics } from "@vercel/analytics/next";
 import Pixel from "@/components/site/Pixel";
 import Medidor from "@/components/site/Medidor";
+import LuzDoMouse from "@/components/site/LuzDoMouse";
 import { scriptDoWhatsApp } from "@/components/site/medicao";
 import Cabecalho from "@/components/v2/Cabecalho";
 import Rodape from "@/components/v2/Rodape";
@@ -203,6 +204,15 @@ export default async function SiteLayout({
       <script
         dangerouslySetInnerHTML={{ __html: scriptDoWhatsApp() }}
       />
+
+      {/*
+        * A luz que segue o mouse.
+        *
+        * Fica antes do cabecalho para nascer junto com a
+        * pagina. So existe onde ha mouse de verdade: no
+        * celular o componente nao cria elemento nenhum.
+        */}
+      <LuzDoMouse />
 
       <Cabecalho motos={paraBusca} />
 
