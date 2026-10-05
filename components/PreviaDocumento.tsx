@@ -388,6 +388,15 @@ export default function PreviaDocumento({
           position: relative;
           display: flex;
           flex-direction: column;
+          /*
+           * A folha é papel, e papel não tem modo escuro.
+           *
+           * Sem isto, um navegador com escurecimento automático
+           * repinta a folha e inverte o texto que herda a cor —
+           * o preto da lista vira branco no branco. Declarar o
+           * esquema de cor manda o navegador não mexer.
+           */
+          color-scheme: only light;
         }
 
         .folha-documento .documento-word {
@@ -790,6 +799,37 @@ export default function PreviaDocumento({
           tr:first-child
           td:nth-child(1) {
           font-weight: 700 !important;
+        }
+
+        /*
+         * Moto, placa e ano/modelo com preto declarado.
+         *
+         * Antes a cor vinha por herança, e herança é frágil: no
+         * modelo do Word essas três colunas ficavam em
+         * "Automático" — que não é preto, é "decida você" — e o
+         * Word em modo escuro as pintava de branco. Declarado
+         * aqui e no modelo, o preto não depende de quem abre.
+         *
+         * A linha de grupo fica de fora: ali o texto é a
+         * cilindrada, em dourado escuro, e é o que separa um
+         * bloco do outro na folha.
+         */
+        .documento-lista
+          .tabela-documento
+          tr:not(:first-child):not(.linha-grupo)
+          td:nth-child(1)
+          p,
+        .documento-lista
+          .tabela-documento
+          tr:not(:first-child):not(.linha-grupo)
+          td:nth-child(2)
+          p,
+        .documento-lista
+          .tabela-documento
+          tr:not(:first-child):not(.linha-grupo)
+          td:nth-child(3)
+          p {
+          color: #18181b !important;
         }
 
         /*
