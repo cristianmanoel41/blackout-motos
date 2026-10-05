@@ -165,8 +165,27 @@ export default function NovoClientePage() {
       return;
     }
 
-    if (new Date(form.data_nascimento) > new Date()) {
+    const nascimento = new Date(form.data_nascimento);
+
+    if (nascimento > new Date()) {
       setErro("A data de nascimento não pode estar no futuro.");
+      return;
+    }
+
+    /*
+     * O ano precisa ser de gente viva.
+     *
+     * Um cadastro de teste entrou com 0123 no ano. O campo é
+     * digitável, então errar o ano é fácil e passa
+     * despercebido - e o aniversário daquele cliente nunca
+     * mais sai no dia certo.
+     */
+    if (nascimento.getFullYear() < 1900) {
+      setErro(
+        "Confira o ano de nascimento: ele ficou em " +
+          nascimento.getFullYear() +
+          "."
+      );
       return;
     }
 

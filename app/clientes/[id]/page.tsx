@@ -326,6 +326,33 @@ export default function ClienteDetalhesPage() {
   async function salvarAlteracoes() {
     if (!cliente) return;
 
+    /*
+     * A data de nascimento é conferida antes de salvar.
+     *
+     * É por esta tela que os clientes antigos recebem a data,
+     * um a um - e o campo é digitável. Um cadastro de teste já
+     * entrou com o ano 0123; sem a conferência, o erro de
+     * digitação entra justamente no mutirão de preencher, e o
+     * aniversário daquele cliente nunca mais sai no dia certo.
+     */
+    if (cliente.data_nascimento) {
+      const nascimento = new Date(cliente.data_nascimento);
+
+      if (nascimento > new Date()) {
+        setErro("A data de nascimento não pode estar no futuro.");
+        return;
+      }
+
+      if (nascimento.getFullYear() < 1900) {
+        setErro(
+          "Confira o ano de nascimento: ele ficou em " +
+            nascimento.getFullYear() +
+            "."
+        );
+        return;
+      }
+    }
+
     setSalvando(true);
     setErro("");
     setMensagem("");

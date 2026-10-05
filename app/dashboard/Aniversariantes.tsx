@@ -187,13 +187,16 @@ export default async function Aniversariantes() {
         * ninguém iria atrás de preencher.
         */}
       {dados.semData > 0 && (
-        <p className="mt-3 border-t border-white/10 pt-3 text-[11px] font-bold text-black/40">
+        <Link
+          href="/clientes?semData=1"
+          className="mt-3 block border-t border-white/10 pt-3 text-[11px] font-bold text-black/40 transition hover:text-[#f0c640]"
+        >
           {dados.semData}{" "}
           {dados.semData === 1
-            ? "cliente está sem data de nascimento no cadastro e nunca vai aparecer aqui"
-            : "clientes estão sem data de nascimento no cadastro e nunca vão aparecer aqui"}
-          .
-        </p>
+            ? "cliente está sem data de nascimento e nunca vai aparecer aqui"
+            : "clientes estão sem data de nascimento e nunca vão aparecer aqui"}
+          . Clique para ver quem são.
+        </Link>
       )}
     </div>
   );
