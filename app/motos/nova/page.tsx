@@ -274,6 +274,18 @@ export default function NovaMotoPage() {
     setErroBuscaPlaca,
   ] = useState("");
 
+  /*
+   * Marca que o resultado veio do modo de simulação.
+   *
+   * Sem isso o aviso de teste sairia verde, igual ao de consulta
+   * boa - e o chassi de mentira entraria na ficha sem ninguém
+   * reparar.
+   */
+  const [
+    placaSimulada,
+    setPlacaSimulada,
+  ] = useState(false);
+
   const [
     buscandoCepFornecedor,
     setBuscandoCepFornecedor,
@@ -649,10 +661,16 @@ export default function NovaMotoPage() {
           anterior.renavam,
       }));
 
+      setPlacaSimulada(
+        resultado.simulado === true
+      );
+
       setMensagemBuscaPlaca(
-        resultado.renavam
-          ? "Dados encontrados, chassi e RENAVAM incluídos. Confira tudo antes de salvar."
-          : "Dados encontrados. O RENAVAM não veio nesta consulta e precisa ser digitado."
+        resultado.simulado
+          ? "SIMULAÇÃO — estes dados são de teste e não valem nada. Não salve esta moto."
+          : resultado.renavam
+            ? "Dados encontrados, chassi e RENAVAM incluídos. Confira tudo antes de salvar."
+            : "Dados encontrados. O RENAVAM não veio nesta consulta e precisa ser digitado."
       );
     } catch (error) {
       setErroBuscaPlaca(
@@ -1976,7 +1994,13 @@ export default function NovaMotoPage() {
                 </div>
 
                 {mensagemBuscaPlaca && (
-                  <p className="mt-2 text-xs leading-5 text-green-400">
+                  <p
+                    className={`mt-2 text-xs font-semibold leading-5 ${
+                      placaSimulada
+                        ? "text-amber-400"
+                        : "text-green-400"
+                    }`}
+                  >
                     {mensagemBuscaPlaca}
                   </p>
                 )}

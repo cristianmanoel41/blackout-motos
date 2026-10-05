@@ -37,6 +37,29 @@ const ENDPOINT =
   process.env.APIBRASIL_ENDPOINT ||
   "https://gateway.apibrasil.io/api/v2/consulta/veiculos/credits";
 
+/*
+ * Qual produto da API Brasil é consultado.
+ *
+ * O mesmo endereço serve vários, e quem escolhe é este campo:
+ *
+ *   nacional          R$ 1,80 — chassi, RENAVAM, nome do
+ *                     proprietário, roubo e furto, Renajud, PDF
+ *   base-nacional-v2  R$ 3,20 — chassi, RENAVAM, restrições de
+ *                     financiamento, número do motor
+ *
+ * Fica em variável de ambiente porque trocar de produto não
+ * devia pedir mexida no código: o leitor de campos abaixo
+ * procura pelo nome, e os dois formatos já foram testados.
+ *
+ * É lido a cada chamada, não uma vez só. Guardado numa constante
+ * do módulo, o valor congelava no primeiro carregamento — foi
+ * assim que o meu próprio teste comparou um produto com ele
+ * mesmo e eu quase culpei a API deles.
+ */
+function tipoDaConsulta() {
+  return process.env.APIBRASIL_TIPO || "base-nacional-v2";
+}
+
 function limparPlaca(valor: string) {
   return String(valor || "")
     .toUpperCase()
@@ -139,6 +162,60 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  /*
+   * MODO DE TESTE, SEM CONTA E SEM GASTAR
+   *
+   * Com APIBRASIL_SIMULAR=sim no .env.local, a rota devolve um
+   * veículo de mentira sem falar com a API. Serve para conferir o
+   * caminho inteiro na tela — o botão, o preenchimento dos
+   * campos, o que acontece quando a placa não existe — antes de
+   * contratar qualquer coisa.
+   *
+   * Duas travas, porque dado de mentira em ficha de moto é pior
+   * que consulta nenhuma:
+   *
+   *   1. só funciona fora de produção, então ligar a variável na
+   *      Vercel por engano não tem efeito;
+   *   2. os valores são impossíveis de confundir com os reais —
+   *      o chassi começa com SIMULACAO, e a resposta vem marcada
+   *      com `simulado`, que a tela usa para avisar.
+   *
+   * Placa terminada em 0 devolve erro de propósito. O caminho da
+   * falha também precisa de teste: a tela tem que avisar, não
+   * preencher os campos com vazio.
+   */
+  if (
+    process.env.APIBRASIL_SIMULAR === "sim" &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    if (placa.endsWith("0")) {
+      return NextResponse.json(
+        { error: "SIMULAÇÃO: nenhum veículo com esta placa na base." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        placa,
+        marca: "HONDA",
+        modelo: "CG 160 FAN",
+        ano_fabricacao: "2021",
+        ano_modelo: "2022",
+        cor: "VERMELHA",
+        chassi: "SIMULACAO00000000",
+        renavam: "00000000000",
+        cilindrada: "162",
+        combustivel: "GASOLINA",
+        localizacao: "SAO JOSE DOS CAMPOS - SP",
+        situacao: "EM CIRCULACAO",
+        descricao: "HONDA/CG 160 FAN",
+        simulado: true,
+      },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
+  }
+
   const token = process.env.APIBRASIL_BEARER_TOKEN?.trim();
   const dispositivo = process.env.APIBRASIL_DEVICE_TOKEN?.trim();
 
@@ -165,7 +242,7 @@ export async function GET(request: NextRequest) {
         ...(dispositivo ? { DeviceToken: dispositivo } : {}),
       },
       body: JSON.stringify({
-        tipo: "base-nacional-v2",
+        tipo: tipoDaConsulta(),
         placa,
         /* homolog=true devolve dado de exemplo sem cobrar. Serve
            para conferir a ligação antes de gastar consulta. */
@@ -202,6 +279,25 @@ export async function GET(request: NextRequest) {
    * cadastro seria preenchido com vazio — e quem está na loja
    * acharia que a consulta funcionou.
    */
+  /*
+   * Saldo acabado tem recado próprio.
+   *
+   * A API devolve 402 quando os créditos zeram. Sem este trecho a
+   * mensagem padrão diria "não encontrou esta placa" — e quem está
+   * na loja procuraria defeito na moto, no documento ou no
+   * sistema, quando o problema é recarregar a conta. É o único
+   * erro aqui que se resolve com cartão, não com conferência.
+   */
+  if (resposta.status === 402) {
+    return NextResponse.json(
+      {
+        error:
+          "Os créditos da consulta de placa acabaram. Recarregue em app.apibrasil.io/recargas. Os campos podem ser preenchidos à mão.",
+      },
+      { status: 402 }
+    );
+  }
+
   if (registro.error === true || resposta.status >= 400) {
     const recado =
       typeof registro.message === "string" && registro.message.trim()
@@ -224,7 +320,8 @@ export async function GET(request: NextRequest) {
     modelo: modelo || acharCampo(corpo, "modelo"),
     ano_fabricacao: acharCampo(corpo, "anoFabricacao", "ano_fabricacao"),
     ano_modelo: acharCampo(corpo, "anoModelo", "ano_modelo"),
-    cor: acharCampo(corpo, "corVeiculo", "cor", "color"),
+    /* A V2 chama de corVeiculo, a V1 de cor_veiculo. */
+    cor: acharCampo(corpo, "corVeiculo", "cor_veiculo", "cor", "color"),
     chassi,
     renavam,
     cilindrada: acharCampo(corpo, "cilindradas", "cilindrada"),
@@ -237,6 +334,23 @@ export async function GET(request: NextRequest) {
       .join(" - "),
     situacao: acharCampo(corpo, "situacaoVeiculo", "situacao"),
     descricao: acharCampo(corpo, "marcaModelo", "marca_modelo"),
+
+    /*
+     * Homologação deles também é dado de mentira.
+     *
+     * Com APIBRASIL_HOMOLOGACAO=sim a API responde sempre o mesmo
+     * veículo de exemplo — um Ford Focus — e não cobra. Sem esta
+     * marca, a tela mostraria esse carro em verde, como consulta
+     * boa, e alguém cadastraria a moto com o chassi dele.
+     *
+     * A marca vem do que ELES dizem na resposta, não do que nós
+     * mandamos: se um dia a conta cair em homologação sozinha, o
+     * aviso aparece do mesmo jeito.
+     */
+    simulado:
+      registro.homolog === true ||
+      registro.api_limit_for === "homolog" ||
+      undefined,
   };
 
   /*
