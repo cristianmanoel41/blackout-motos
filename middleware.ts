@@ -51,7 +51,9 @@ const PAGINAS_DO_SITE = [
 function ehPaginaDoSite(caminho: string) {
   return (
     PAGINAS_DO_SITE.includes(caminho) ||
-    caminho.startsWith('/estoque/')
+    caminho.startsWith('/estoque/') ||
+    /* A proposta mora dentro de /financiamento/. */
+    caminho.startsWith('/financiamento/')
   )
 }
 
@@ -293,6 +295,7 @@ export async function middleware(request: NextRequest) {
   const rotaEhPublica =
     SITE.includes(caminho) ||
     caminho.startsWith('/estoque/') ||
+    caminho.startsWith('/financiamento/') ||
     /* O cadastro da lista de interesse vem de visitante. */
     caminho.startsWith('/api/interesse') ||
     /* A contagem de visitas tambem: quem e medido nao tem
@@ -385,6 +388,19 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * _vercel fica de fora.
+     *
+     * /_vercel/insights/script.js é servido pela Vercel, não
+     * por nós. Fora de lá o caminho não existe, o middleware
+     * manda para /login e o navegador recebe HTML onde pediu
+     * JavaScript: dá "SyntaxError: Unexpected token '<'", e a
+     * página inteira deixa de responder ao toque.
+     *
+     * Na Vercel o caminho é atendido antes de chegar aqui - por
+     * isso o defeito só aparecia no localhost e no Tailscale,
+     * que é justamente onde a loja testa antes de publicar.
+     */
+    '/((?!_next/static|_next/image|_vercel|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
