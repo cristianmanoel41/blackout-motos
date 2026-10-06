@@ -48,8 +48,18 @@ export default function VisiteALoja() {
       </AoEntrar>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-        <AoEntrar>
-          <div className="vidro overflow-hidden">
+        {/*
+          * O h-full precisa de corrente inteira.
+          *
+          * O item da grade é o <AoEntrar>, não a moldura de
+          * dentro. Sem altura nele, o `h-full` do mapa não tinha
+          * a que se agarrar: o mapa parava na altura mínima e o
+          * cartão do lado, mais alto, deixava um degrau entre os
+          * dois. A grade igualava as colunas; o conteúdo é que
+          * não ocupava.
+          */}
+        <AoEntrar className="h-full">
+          <div className="vidro h-full overflow-hidden">
             <iframe
               src={MAPA_EMBUTIDO}
               title={`Mapa até a ${LOJA.nome}`}
@@ -60,7 +70,7 @@ export default function VisiteALoja() {
           </div>
         </AoEntrar>
 
-        <AoEntrar atraso={100}>
+        <AoEntrar atraso={100} className="h-full">
           <div className="vidro h-full p-6 sm:p-7">
             <ul className="space-y-5">
               <li className="flex gap-3.5">
@@ -128,7 +138,7 @@ export default function VisiteALoja() {
                 href={MAPA}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="botao-ouro inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm"
+                className="botao-ouro inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-3.5 text-sm"
               >
                 <IconeGoogleMaps className="h-4 w-4" />
                 Abrir no Maps
@@ -139,7 +149,7 @@ export default function VisiteALoja() {
                 href={WAZE}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="botao-vidro inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm"
+                className="botao-vidro inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-3.5 text-sm"
               >
                 <IconeWaze className="h-4 w-4" />
                 Abrir no Waze

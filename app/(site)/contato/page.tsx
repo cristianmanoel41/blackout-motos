@@ -52,16 +52,24 @@ export default function ContatoPage() {
       linhas: [`WhatsApp ${LOJA.whatsappExibicao}`, `Loja ${LOJA.telefone}`],
       acoes: [
         {
-          nome: "Chamar no WhatsApp",
+          nome: "WhatsApp",
           href: linkWhatsApp(CONVITE_GERAL),
           Icone: IconeWhatsApp,
+        },
+        {
+          nome: "Ligar",
+          href: `tel:${LOJA.telefoneLink}`,
+          Icone: Phone,
         },
       ],
     },
     {
       Icone: Clock,
       titulo: "Horário de atendimento",
-      linhas: HORARIOS.map((item) => `${item.texto}: ${item.horas}`),
+      /* Em linhas, não corrido: dia à esquerda e hora à
+         direita se acha de relance. */
+      linhas: [] as string[],
+      horarios: HORARIOS,
       /* Horário não tem para onde clicar. */
       acoes: [] as Array<{
         nome: string;
@@ -90,7 +98,7 @@ export default function ContatoPage() {
         </header>
 
         <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {canais.map(({ Icone, titulo, linhas, acoes }) => (
+          {canais.map(({ Icone, titulo, linhas, acoes, horarios }) => (
             <article
               key={titulo}
               /*
@@ -116,7 +124,40 @@ export default function ContatoPage() {
                * a rua, o WhatsApp, o dia de semana -, então
                * vem maior e mais clara que o resto.
                */}
-              <div className="mt-4 flex-1 space-y-1">
+              {/*
+               * O texto NÃO estica para empurrar os botões ao pé
+               * do cartão.
+               *
+               * A grade já iguala a altura dos três, e com o
+               * texto esticado a sobra virava um buraco no meio:
+               * o cartão do telefone tinha duas linhas, um vão, e
+               * o botão lá embaixo; o do horário tinha três
+               * linhas e metade vazia. Lado a lado no computador,
+               * um parecia cheio e os outros furados.
+               *
+               * Sem esticar, os três ficam com o mesmo ritmo -
+               * título, texto, botão - e a sobra vai toda para o
+               * pé, igual nos três.
+               */}
+              {horarios && (
+                <dl className="mt-4 text-[15px]">
+                  {horarios.map((item, ordem) => (
+                    <div
+                      key={item.texto}
+                      className={`flex items-baseline justify-between gap-3 py-2 ${
+                        ordem > 0 ? "border-t border-white/[.07]" : ""
+                      }`}
+                    >
+                      <dt className="texto-suave">{item.texto}</dt>
+                      <dd className="font-semibold texto-claro">
+                        {item.horas}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              <div className="mt-4 space-y-1">
                 {linhas.map((linha, ordem) => (
                   <p
                     key={linha}
@@ -143,7 +184,15 @@ export default function ContatoPage() {
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="botao-vidro flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-bold"
+                      /*
+                       * whitespace-nowrap: "Google Maps" quebrava
+                       * em duas linhas dentro da metade do
+                       * cartão, e o botão ficava mais alto que o
+                       * "Waze" ao lado - dois botões irmãos com
+                       * alturas diferentes. O espaço lateral
+                       * encolhe para o nome caber inteiro.
+                       */
+                      className="botao-vidro flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 py-2.5 text-[13px] font-bold"
                     >
                       <item.Icone className="h-4 w-4" />
                       {item.nome}
