@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import DocumentosCliente from "@/components/DocumentosCliente";
+import ApagarCliente from "@/components/ApagarCliente";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import CardWhatsapp, { linkWhatsapp } from "@/components/CardWhatsapp";
 import { mensagemDeAniversario } from "@/lib/dados/mensagem-aniversario";
@@ -1109,6 +1110,16 @@ export default function ClienteDetalhesPage() {
         <section className="mt-4">
           <DocumentosCliente customerId={id} />
         </section>
+
+        {/*
+          * Apagar fica no fim, e so aparece para quem nao tem
+          * compra. Botao vermelho no topo da ficha convida ao
+          * acidente; aqui embaixo, quem chega ja passou por
+          * tudo o que o cliente tem.
+          */}
+        {cliente && (
+          <ApagarCliente id={id} nome={cliente.nome} />
+        )}
       </div>
     </main>
   );
