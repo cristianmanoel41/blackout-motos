@@ -15,6 +15,7 @@ export default function GlobalBackButton() {
      * onde voltar, e o botão levaria ao painel interno.
      */
     pathname.startsWith("/vitrine/") ||
+    pathname.startsWith("/contrato/") ||
     /* O site e do cliente: ele chegou pelo Google, nao de outra
        tela do sistema, e tem o proprio menu. */
     pathname === "/v2" ||

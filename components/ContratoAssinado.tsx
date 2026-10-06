@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Copy,
+  Download,
   FileCheck2,
   Loader2,
   ScanLine,
+  Share2,
   Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -198,15 +200,103 @@ export default function ContratoAssinado({
     const primeiro = (cliente || "").trim().split(/\s+/)[0];
 
     return [
-      primeiro ? `Olá, ${primeiro}!` : "Olá!",
+      primeiro
+        ? `Olá, ${primeiro}! Tudo bem?`
+        : "Olá! Tudo bem?",
+      "",
+      "Aqui é a *Blackout Motos*. 🏍️",
       "",
       "Segue a cópia do seu contrato, já assinado pelas duas partes:",
       enderecoDe(token),
       "",
-      "Guarde este link — ele continua valendo.",
+      "Pode guardar este link — ele não vence, e o contrato fica disponível sempre que você precisar.",
       "",
-      "Blackout Motos",
+      "Qualquer dúvida é só chamar por aqui. Boas estradas! 🙏",
     ].join("\n");
+  }
+
+  /*
+   * Mandar o PDF de verdade, não o link.
+   *
+   * O `wa.me` só preenche texto - site nenhum anexa arquivo por
+   * ele. Mas o celular tem outro caminho: o menu de compartilhar
+   * do próprio sistema aceita arquivo e tem o WhatsApp dentro.
+   *
+   * Então aqui o PDF é baixado e entregue a esse menu. No iPhone
+   * sai exatamente o que a loja queria: a pessoa escolhe o
+   * contato e o contrato chega como documento na conversa, não
+   * como link.
+   *
+   * No computador quase nenhum navegador compartilha arquivo, e
+   * por isso o botão só aparece onde funciona - prometer e
+   * falhar é pior que não oferecer.
+   */
+  const [podeCompartilhar, setPodeCompartilhar] =
+    useState(false);
+
+  const [compartilhando, setCompartilhando] = useState("");
+
+  useEffect(() => {
+    try {
+      const teste = new File(["a"], "t.pdf", {
+        type: "application/pdf",
+      });
+
+      setPodeCompartilhar(
+        typeof navigator !== "undefined" &&
+          typeof navigator.share === "function" &&
+          typeof navigator.canShare === "function" &&
+          navigator.canShare({ files: [teste] })
+      );
+    } catch {
+      setPodeCompartilhar(false);
+    }
+  }, []);
+
+  async function mandarOPdf(contrato: Contrato) {
+    setErro("");
+    setCompartilhando(contrato.token);
+
+    try {
+      const resposta = await fetch(
+        `/contrato/${contrato.token}/arquivo`
+      );
+
+      if (!resposta.ok) {
+        throw new Error("Não consegui baixar o contrato.");
+      }
+
+      const arquivo = new File(
+        [await resposta.blob()],
+        "Contrato - Blackout Motos.pdf",
+        { type: "application/pdf" }
+      );
+
+      await navigator.share({
+        files: [arquivo],
+        /* Sem `url`: no iOS, texto e arquivo juntos às vezes
+           fazem o WhatsApp mandar só o texto. O arquivo é o que
+           importa aqui. */
+        title: "Contrato - Blackout Motos",
+      });
+    } catch (e) {
+      /* Fechar o menu de compartilhar cancela, e cancelar não é
+         erro - não vale assustar com recado vermelho. */
+      if (
+        e instanceof Error &&
+        (e.name === "AbortError" || e.name === "NotAllowedError")
+      ) {
+        return;
+      }
+
+      setErro(
+        e instanceof Error
+          ? e.message
+          : "Não consegui compartilhar o arquivo."
+      );
+    } finally {
+      setCompartilhando("");
+    }
   }
 
   const ativos = contratos.filter((c) => c.ativo);
@@ -311,6 +401,8 @@ export default function ContratoAssinado({
                 {contrato.ativo && (
                   <div className="flex flex-wrap gap-2">
                     <a
+                      /* A pagina, nao o arquivo: a loja ve
+                         exatamente o que o cliente ve. */
                       href={`/contrato/${contrato.token}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -337,6 +429,41 @@ export default function ContratoAssinado({
                       )}
                     </button>
 
+                    {/*
+                      * No celular, mandar o PDF ganha o dourado.
+                      *
+                      * É o que a loja quer de verdade: o contrato
+                      * chega como documento na conversa, e o
+                      * cliente guarda no aparelho dele sem
+                      * depender de link nenhum. O link vira a
+                      * segunda opção, para quem prefere.
+                      */}
+                    {podeCompartilhar && (
+                      <button
+                        type="button"
+                        onClick={() => mandarOPdf(contrato)}
+                        disabled={
+                          compartilhando === contrato.token
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:bg-dourado-claro disabled:opacity-60"
+                      >
+                        {compartilhando === contrato.token ? (
+                          <>
+                            <Loader2
+                              size={13}
+                              className="animate-spin"
+                            />
+                            Preparando...
+                          </>
+                        ) : (
+                          <>
+                            <Share2 size={13} />
+                            Mandar o PDF
+                          </>
+                        )}
+                      </button>
+                    )}
+
                     <a
                       href={conversaComOCliente(
                         mensagem(contrato.token),
@@ -344,10 +471,32 @@ export default function ContratoAssinado({
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-lg bg-dourado px-3 py-2 text-xs font-bold text-preto transition hover:bg-dourado-claro"
+                      className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                        podeCompartilhar
+                          ? "border border-zinc-700 text-zinc-300 hover:border-dourado hover:text-dourado"
+                          : "bg-dourado text-preto hover:bg-dourado-claro"
+                      }`}
                     >
-                      Mandar no WhatsApp
+                      Mandar o link
                     </a>
+
+                    {/*
+                      * Baixar, para quem está no computador.
+                      *
+                      * Lá o menu de compartilhar não existe, e
+                      * sem isto a única saída seria o link. Com o
+                      * arquivo na mão, dá para anexar no WhatsApp
+                      * Web como se anexa qualquer documento.
+                      */}
+                    {!podeCompartilhar && (
+                      <a
+                        href={`/contrato/${contrato.token}/arquivo?baixar=1`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-300 transition hover:border-dourado hover:text-dourado"
+                      >
+                        <Download size={13} />
+                        Baixar PDF
+                      </a>
+                    )}
 
                     <button
                       type="button"

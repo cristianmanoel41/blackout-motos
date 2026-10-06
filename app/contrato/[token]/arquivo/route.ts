@@ -88,15 +88,24 @@ export async function GET(
   }
 
   /*
-   * inline, não attachment: no celular o contrato abre na tela
-   * e a pessoa decide se salva. Forçar download faz o arquivo
-   * cair numa pasta que metade das pessoas não encontra depois.
+   * Ver ou baixar, conforme o botão que a pessoa apertou.
+   *
+   * `inline` abre na tela, que é o que quem só quer conferir
+   * espera. `attachment` manda salvar, e é o que o botão de
+   * baixar pede - sem isso o cliente dependeria do menu do
+   * navegador dele, que muda de aparelho para aparelho.
    */
+  const baixar =
+    new URL(_request.url).searchParams.get("baixar") === "1";
+
+  const nome = "Contrato - Blackout Motos.pdf";
+
   return new Response(await arquivo.arrayBuffer(), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition":
-        'inline; filename="contrato-blackout-motos.pdf"',
+      "Content-Disposition": `${
+        baixar ? "attachment" : "inline"
+      }; filename="${nome}"`,
       /*
        * Sem cache em lugar nenhum do caminho.
        *
