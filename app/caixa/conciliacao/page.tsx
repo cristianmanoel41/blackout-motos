@@ -911,7 +911,7 @@ export default function ConciliacaoCaixaPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-sm">
+              <table className="w-full sm:min-w-[850px] text-sm tabela-em-cartao">
                 <thead className="border-b border-grafite-claro bg-preto text-left text-xs uppercase tracking-wide text-texto-suave">
                   <tr>
                     <th className="px-5 py-3">
@@ -952,19 +952,19 @@ export default function ConciliacaoCaixaPage() {
                             )}
                           </td>
 
-                          <td className="px-5 py-4 text-right">
+                          <td data-rotulo="Sistema" className="px-5 py-4 text-right">
                             {moeda(
                               item.saldo_sistema
                             )}
                           </td>
 
-                          <td className="px-5 py-4 text-right font-semibold text-white">
+                          <td data-rotulo="Real" className="px-5 py-4 text-right font-semibold text-white">
                             {moeda(
                               item.saldo_real
                             )}
                           </td>
 
-                          <td className={`px-5 py-4 text-right font-bold ${
+                          <td data-rotulo="Diferença" className={`px-5 py-4 text-right font-bold ${
                             Math.abs(
                               diferenca
                             ) < 0.01
@@ -976,7 +976,7 @@ export default function ConciliacaoCaixaPage() {
                             )}
                           </td>
 
-                          <td className="max-w-[320px] px-5 py-4 text-texto-suave">
+                          <td data-rotulo="Observação" className="max-w-[320px] px-5 py-4 text-texto-suave">
                             {item.observacoes ||
                               "—"}
                           </td>

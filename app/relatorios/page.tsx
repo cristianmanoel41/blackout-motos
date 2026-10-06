@@ -1157,7 +1157,7 @@ export default async function RelatorioMensalPage({
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
+              <table className="w-full sm:min-w-[760px] text-sm tabela-em-cartao">
                 <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
                   <tr>
                     <th className="px-5 py-3">Moto</th>
@@ -1195,26 +1195,26 @@ export default async function RelatorioMensalPage({
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-3 text-texto-suave">
+                        <td data-rotulo="Vendida em" className="whitespace-nowrap px-5 py-3 text-texto-suave">
                           {item.dataVenda
                             .split("-")
                             .reverse()
                             .join("/")}
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-3 text-right text-texto">
+                        <td data-rotulo="Venda" className="whitespace-nowrap px-5 py-3 text-right text-texto">
                           {formatarMoeda(item.venda)}
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-3 text-right text-texto-suave">
+                        <td data-rotulo="Compra" className="whitespace-nowrap px-5 py-3 text-right text-texto-suave">
                           {formatarMoeda(item.compra)}
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-3 text-right text-texto-suave">
+                        <td data-rotulo="Gastos" className="whitespace-nowrap px-5 py-3 text-right text-texto-suave">
                           {formatarMoeda(item.gastos)}
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-3 text-right">
+                        <td data-rotulo="Lucro" className="whitespace-nowrap px-5 py-3 text-right">
                           <span
                             className={
                               item.lucro >= 0
@@ -1260,7 +1260,7 @@ export default async function RelatorioMensalPage({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-sm">
+            <table className="w-full sm:min-w-[520px] text-sm tabela-em-cartao">
               <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
                 <tr>
                   <th className="px-5 py-3">Banco</th>
@@ -1286,15 +1286,15 @@ export default async function RelatorioMensalPage({
                       {banco.nome}
                     </td>
 
-                    <td className="px-5 py-3 text-right text-white">
+                    <td data-rotulo="Contratos" className="px-5 py-3 text-right text-white">
                       {banco.quantidade}
                     </td>
 
-                    <td className="px-5 py-3 text-right font-semibold text-white">
+                    <td data-rotulo="Valor financiado" className="px-5 py-3 text-right font-semibold text-white">
                       {formatarMoeda(banco.valor)}
                     </td>
 
-                    <td className="px-5 py-3 text-right text-white">
+                    <td data-rotulo="Participação" className="px-5 py-3 text-right text-white">
                       {banco.participacao.toFixed(1)}%
                     </td>
                   </tr>

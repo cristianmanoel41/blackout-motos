@@ -280,7 +280,7 @@ export default function HistoricoVendasCapacetePage() {
 
       {!carregando && vendasFiltradas.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full sm:min-w-[900px] text-sm tabela-em-cartao">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
                 <th className="px-4 py-3">Data</th>
@@ -313,7 +313,7 @@ export default function HistoricoVendasCapacetePage() {
                       {formatarData(venda.data_venda)}
                     </td>
 
-                    <td className="px-4 py-3">
+                    <td data-rotulo="Cliente" className="px-4 py-3">
                       <p className="font-medium text-texto">
                         {venda.cliente_nome || "—"}
                       </p>
@@ -325,26 +325,26 @@ export default function HistoricoVendasCapacetePage() {
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Produto" className="px-4 py-3 text-texto-suave">
                       {descricaoItens(venda.helmet_sale_items)}
                     </td>
 
-                    <td className="px-4 py-3 text-right text-texto">
+                    <td data-rotulo="Qtd." className="px-4 py-3 text-right text-texto">
                       {quantidade}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
+                    <td data-rotulo="Valor" className="whitespace-nowrap px-4 py-3 text-right font-semibold text-dourado">
                       {formatarMoeda(venda.valor_total)}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Pagamento" className="whitespace-nowrap px-4 py-3 text-texto-suave">
                       {venda.forma_pagamento || "—"}
                       {venda.parcelas && venda.parcelas > 1
                         ? ` ${venda.parcelas}x`
                         : ""}
                     </td>
 
-                    <td className="px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Vendedor" className="px-4 py-3 text-texto-suave">
                       {venda.vendedor || "—"}
                     </td>
 

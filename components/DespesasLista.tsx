@@ -758,7 +758,7 @@ export default function DespesasLista({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full sm:min-w-[820px] text-sm tabela-em-cartao">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
                 <Coluna campo="data">Data</Coluna>
@@ -789,7 +789,7 @@ export default function DespesasLista({
                       {formatarData(despesa.data)}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-texto-suave">
+                    <td data-rotulo="Lançada em" className="whitespace-nowrap px-4 py-2.5 text-xs text-texto-suave">
                       {despesa.criado_em
                         ? new Date(
                             despesa.criado_em
@@ -804,25 +804,25 @@ export default function DespesasLista({
                         : "—"}
                     </td>
 
-                    <td className="px-4 py-2.5 font-medium text-texto">
+                    <td data-rotulo="Categoria" className="px-4 py-2.5 font-medium text-texto">
                       {despesa.categoria || "—"}
                     </td>
 
-                    <td className="max-w-[240px] px-4 py-2.5 text-texto-suave">
+                    <td data-rotulo="Descrição" className="max-w-[240px] px-4 py-2.5 text-texto-suave">
                       <span className="block truncate">
                         {despesa.descricao || "—"}
                       </span>
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-2.5 text-texto-suave">
+                    <td data-rotulo="Pagamento" className="whitespace-nowrap px-4 py-2.5 text-texto-suave">
                       {despesa.forma_pagamento || "—"}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-red-300">
+                    <td data-rotulo="Valor" className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-red-300">
                       - {formatarMoeda(despesa.valor)}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-2.5">
+                    <td data-rotulo="Situação" className="whitespace-nowrap px-4 py-2.5">
                       {despesa.pago ? (
                         <span className="text-xs font-semibold text-texto-suave">
                           Pago

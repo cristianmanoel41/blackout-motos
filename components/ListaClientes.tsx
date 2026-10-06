@@ -111,7 +111,84 @@ export default function ListaClientes({
       )}
 
       {filtrados.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
+        <>
+        {/*
+          * No celular, cada cliente e um cartao.
+          *
+          * A tabela abaixo pede 760px de largura minima; num
+          * aparelho de 390 ela vira uma caixa que se arrasta
+          * para o lado, e a pessoa perde a linha no meio do
+          * caminho. Em cartao, cada cliente cabe inteiro numa
+          * olhada.
+          */}
+        <ul className="space-y-2 sm:hidden">
+          {filtrados.map((cliente) => (
+            <li
+              key={cliente.id}
+              className="rounded-xl border border-grafite-claro bg-grafite p-4"
+            >
+              <Link
+                href={`/clientes/${cliente.id}`}
+                className="block font-semibold text-texto"
+              >
+                {cliente.nome || "Sem nome"}
+              </Link>
+
+              {cliente.cidade && (
+                <p className="mt-0.5 text-xs text-texto-suave">
+                  {cliente.cidade}
+                </p>
+              )}
+
+              {/* So o que existe: linha vazia com travessao
+                  ocupa altura e nao informa nada. */}
+              <dl className="mt-3 space-y-1 text-sm">
+                {cliente.telefone && (
+                  <div className="flex gap-2">
+                    <dt className="shrink-0 text-texto-suave">Telefone</dt>
+                    <dd className="ml-auto text-texto">{cliente.telefone}</dd>
+                  </div>
+                )}
+
+                {cliente.cpf && (
+                  <div className="flex gap-2">
+                    <dt className="shrink-0 text-texto-suave">CPF</dt>
+                    <dd className="ml-auto text-texto">{cliente.cpf}</dd>
+                  </div>
+                )}
+
+                {cliente.email && (
+                  <div className="flex gap-2">
+                    <dt className="shrink-0 text-texto-suave">E-mail</dt>
+                    <dd className="ml-auto min-w-0 truncate text-texto">
+                      {cliente.email}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              <div className="mt-4 flex gap-2">
+                {cliente.telefone && (
+                  <BotaoWhatsapp
+                    telefone={cliente.telefone}
+                    nome={cliente.nome}
+                    rotulo="WhatsApp"
+                  />
+                )}
+
+                <Link
+                  href={`/clientes/${cliente.id}`}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-grafite-claro px-3 py-2.5 text-xs font-semibold text-texto-suave transition"
+                >
+                  <Eye size={14} />
+                  Ver ficha
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto rounded-xl border border-grafite-claro bg-grafite sm:block">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
@@ -182,6 +259,7 @@ export default function ListaClientes({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

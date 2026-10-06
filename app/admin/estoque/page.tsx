@@ -1209,7 +1209,7 @@ export default function EstoquePage() {
 
         <section className={`${estilo.superficie} ${estilo.entrada} overflow-hidden`}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1290px] border-collapse">
+            <table className="w-full sm:min-w-[1290px] border-collapse tabela-em-cartao">
               <thead>
                 <tr className="border-b border-grafite-claro bg-preto/60 text-left text-[11px] uppercase tracking-wide text-texto-suave">
                   <th className="px-4 py-3 font-semibold">Foto</th>
@@ -1297,7 +1297,7 @@ export default function EstoquePage() {
                           )}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3">
+                        <td data-rotulo="ID" className="whitespace-nowrap px-4 py-3">
                           <span className="block font-mono text-xs font-semibold text-dourado">
                             {moto.codigo || `#${moto.id}`}
                           </span>
@@ -1313,7 +1313,7 @@ export default function EstoquePage() {
                           )}
                         </td>
 
-                        <td className="px-4 py-3">
+                        <td data-rotulo="Modelo" className="px-4 py-3">
                           <div className="min-w-[180px]">
                             <p className="font-semibold text-white">
                               {moto.modelo || "Sem modelo"}
@@ -1326,39 +1326,39 @@ export default function EstoquePage() {
                           </div>
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
+                        <td data-rotulo="Marca" className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
                           {moto.marca || "—"}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
+                        <td data-rotulo="Ano" className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
                           {anoFab}/{anoMod}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                        <td data-rotulo="Cor" className="whitespace-nowrap px-4 py-3 text-sm">
                           <strong className="font-bold text-white">
                             {moto.cor || "—"}
                           </strong>
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 font-mono text-base font-bold text-zinc-200">
+                        <td data-rotulo="Placa" className="whitespace-nowrap px-4 py-3 font-mono text-base font-bold text-zinc-200">
                           {moto.placa || "—"}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
+                        <td data-rotulo="CC" className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
                           {moto.cilindrada
                             ? `${moto.cilindrada}cc`
                             : "—"}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
+                        <td data-rotulo="KM" className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
                           {formatarKm(moto.quilometragem)}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-dourado">
+                        <td data-rotulo="Valor anunciado" className="whitespace-nowrap px-4 py-3 text-right font-bold text-dourado">
                           {formatarMoeda(Number(moto.preco_anunciado || 0))}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3">
+                        <td data-rotulo="Status" className="whitespace-nowrap px-4 py-3">
                           <span
                             className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${classeStatus(
                               moto.status
@@ -1368,7 +1368,7 @@ export default function EstoquePage() {
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
+                        <td data-rotulo="Data entrada" className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
                           {formatarData(moto.data_entrada)}
 
                           {diasNoEstoque(moto.data_entrada) !== null && (

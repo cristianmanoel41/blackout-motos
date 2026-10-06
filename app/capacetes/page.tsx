@@ -505,7 +505,7 @@ export default function CapacetesPage() {
 
       {!carregando && modelosFiltrados.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full sm:min-w-[720px] text-sm tabela-em-cartao">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
                 <th className="px-4 py-3">Capacete</th>
@@ -549,15 +549,15 @@ export default function CapacetesPage() {
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Cor" className="px-4 py-3 text-texto-suave">
                       {modelo.cor}
                     </td>
 
-                    <td className="px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Tamanho" className="px-4 py-3 text-texto-suave">
                       {modelo.tamanho}
                     </td>
 
-                    <td
+                    <td data-rotulo="Estoque"
                       className={`px-4 py-3 text-right font-semibold ${
                         estoque <= 0
                           ? "text-red-400"
@@ -569,17 +569,17 @@ export default function CapacetesPage() {
                       {estoque}
                     </td>
 
-                    <td className="px-4 py-3 text-right text-texto-suave">
+                    <td data-rotulo="Custo médio" className="px-4 py-3 text-right text-texto-suave">
                       {formatarMoeda(modelo.custo_medio)}
                     </td>
 
-                    <td className="px-4 py-3 text-right text-texto">
+                    <td data-rotulo="Valor padrão" className="px-4 py-3 text-right text-texto">
                       {formatarMoeda(
                         modelo.preco_venda_padrao
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-right font-semibold text-dourado">
+                    <td data-rotulo="Em estoque" className="px-4 py-3 text-right font-semibold text-dourado">
                       {formatarMoeda(
                         Math.max(estoque, 0) *
                           Number(modelo.custo_medio || 0)

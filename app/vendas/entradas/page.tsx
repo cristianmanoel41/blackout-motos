@@ -268,7 +268,7 @@ export default function EntradasPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full sm:min-w-[760px] text-sm tabela-em-cartao">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
                 <th className="px-4 py-3">Data</th>
@@ -312,20 +312,20 @@ export default function EntradasPage() {
                         {formatarData(item.data)}
                       </td>
 
-                      <td className="px-4 py-3 text-texto">
+                      <td data-rotulo="De onde veio" className="px-4 py-3 text-texto">
                         {item.descricao || "—"}
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-3 text-texto-suave">
+                      <td data-rotulo="Origem" className="whitespace-nowrap px-4 py-3 text-texto-suave">
                         {nomesOrigem[item.origem] ||
                           "Outro"}
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-green-400">
+                      <td data-rotulo="Valor" className="whitespace-nowrap px-4 py-3 text-right font-semibold text-green-400">
                         + {formatarMoeda(item.valor)}
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-3">
+                      <td data-rotulo="Situação" className="whitespace-nowrap px-4 py-3">
                         {item.confirmado === false ? (
                           <span className="text-xs font-semibold text-dourado">
                             A receber

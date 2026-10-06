@@ -299,3 +299,181 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+/*
+ * TABELA QUE VIRA CARTÃO NO CELULAR
+ *
+ * O sistema tem onze tabelas largas - a do estoque pede 1290px.
+ * Num aparelho de 390 elas viram uma caixa que se arrasta para o
+ * lado: a pessoa vê o modelo, arrasta, vê a placa, arrasta, e
+ * perde a linha no meio do caminho. No balcão, com uma mão no
+ * celular, não dá.
+ *
+ * Em vez de reescrever onze listas, a tabela se desmonta: cada
+ * linha vira um cartão e cada célula vira "rótulo à esquerda,
+ * valor à direita". O rótulo sai do atributo `data-rotulo` da
+ * própria célula, porque o cabeçalho da tabela some.
+ *
+ * Do tablet para cima nada muda. Lá a tabela é melhor mesmo:
+ * compara várias linhas de uma olhada, e é assim que o Cristian
+ * usa no computador.
+ */
+@media (max-width: 639px) {
+  .tabela-em-cartao,
+  .tabela-em-cartao tbody,
+  .tabela-em-cartao tr,
+  .tabela-em-cartao td {
+    display: block;
+    width: 100%;
+  }
+
+  /* O cabeçalho some: o rótulo passa a viver em cada célula. */
+  .tabela-em-cartao thead {
+    display: none;
+  }
+
+  .tabela-em-cartao {
+    /* Anula a largura mínima que empurrava a tabela para fora. */
+    min-width: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .tabela-em-cartao tr {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--color-grafite-claro);
+    border-radius: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: var(--color-grafite);
+  }
+
+  /*
+   * DUAS COLUNAS: O RÓTULO E O VALOR
+   *
+   * A primeira versão jogava o valor na ponta direita. Como cada
+   * valor tem um tamanho, cada um parava num lugar diferente, e o
+   * cartão virava uma escadinha - o Cristian olhou e disse que
+   * estava confuso. Agora o rótulo tem largura fixa e TODOS os
+   * valores começam no mesmo ponto, formando uma coluna só.
+   *
+   * O truque da margem negativa:
+   *
+   *   A célula tem um recuo de 6,75rem à esquerda, que é onde a
+   *   coluna dos valores começa. O rótulo é puxado de volta para
+   *   fora desse recuo pela margem negativa, então ele desenha na
+   *   borda do cartão sem sair do fluxo. O resultado é que tudo
+   *   que vier depois - inclusive o detalhe que desce de linha -
+   *   se alinha na coluna do valor, e não na borda.
+   *
+   *   Isso resolve o que `position: absolute` não resolveria: se
+   *   um rótulo comprido precisar de duas linhas, a célula cresce
+   *   junto em vez de o texto invadir a linha de baixo.
+   */
+  .tabela-em-cartao td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 0.15rem 0.5rem;
+    border: 0 !important;
+    padding: 0.25rem 0 0.25rem 6.75rem !important;
+    text-align: left;
+    max-width: none !important;
+  }
+
+  .tabela-em-cartao td::before {
+    content: attr(data-rotulo);
+    flex: 0 0 6.25rem;
+    margin-left: -6.75rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--color-texto-suave);
+  }
+
+  /*
+   * CADA INFORMAÇÃO NUMA LINHA SÓ
+   *
+   * A tabela empilha coisas dentro da mesma célula porque lá a
+   * coluna é estreita: o modelo em cima, a versão embaixo. No
+   * cartão isso vira duas linhas para uma informação só - "FZ25
+   * FAZER" numa, "ABS" na outra - e a leitura emperra.
+   *
+   * Aqui o que a tabela empilha volta para a mesma linha, e só
+   * desce quando não couber.
+   */
+  .tabela-em-cartao td > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 0.15rem 0.5rem;
+  }
+
+  /*
+   * Mas sem espremer: cada pedaço fica inteiro.
+   *
+   * O flex, por padrão, aperta os pedaços até caberem lado a
+   * lado. Foi assim que "Yamaha MT-03" virou "Yamaha MT-" numa
+   * linha e "03" na outra - pior do que empilhar. Com
+   * `flex-shrink: 0` o pedaço que não cabe desce inteiro, e o
+   * `max-width: 100%` garante que um pedaço sozinho e comprido
+   * ainda se dobre dentro da coluna em vez de furá-la.
+   */
+  .tabela-em-cartao td > *,
+  .tabela-em-cartao td > div > * {
+    flex-shrink: 0;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-top: 0 !important;
+  }
+
+  /*
+   * E o que a tabela cortava com "..." aparece inteiro.
+   *
+   * A descrição da despesa é cortada na tabela para a coluna não
+   * esticar. No cartão não tem coluna para esticar: cortar ali é
+   * esconder o que a pessoa abriu a tela para ler.
+   */
+  .tabela-em-cartao td .truncate {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  /*
+   * A primeira célula é o título do cartão.
+   *
+   * Numa lista, a primeira coluna é sempre o que identifica a
+   * linha - o nome, o modelo, a data. Repetir "Modelo" ali seria
+   * ruído: o valor sozinho já diz. Sendo título, ele não entra na
+   * coluna dos valores: ocupa o cartão inteiro.
+   */
+  .tabela-em-cartao td:first-child {
+    margin-bottom: 0.5rem;
+    padding-left: 0 !important;
+    font-weight: 600;
+  }
+
+  .tabela-em-cartao td:first-child::before {
+    content: none;
+  }
+
+  /* Célula sem rótulo e sem texto é a dos botões: ela ocupa a
+     largura toda, no pé do cartão. */
+  .tabela-em-cartao td:not([data-rotulo]):last-child {
+    display: block;
+    margin-top: 0.75rem;
+    padding-left: 0 !important;
+  }
+
+  /* Linha de "nenhum resultado" não vira cartão. */
+  .tabela-em-cartao td[colspan] {
+    display: block;
+    padding-left: 0 !important;
+    text-align: center;
+  }
+
+  .tabela-em-cartao td[colspan]::before {
+    content: none;
+  }
+}

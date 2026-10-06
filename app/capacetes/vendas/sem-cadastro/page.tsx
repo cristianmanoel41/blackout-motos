@@ -546,7 +546,7 @@ export default function VendaCapaceteSemCadastroPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
+              <table className="w-full sm:min-w-[760px] text-sm tabela-em-cartao">
                 <thead className="border-b border-grafite-claro bg-preto text-left text-xs uppercase tracking-wide text-texto-suave">
                   <tr>
                     <th className="px-5 py-3">
@@ -580,18 +580,18 @@ export default function VendaCapaceteSemCadastroPage() {
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td data-rotulo="Pagamento" className="px-5 py-4">
                           {
                             item.forma_pagamento
                           }
                         </td>
 
-                        <td className="max-w-[380px] px-5 py-4 text-texto-suave">
+                        <td data-rotulo="Observação" className="max-w-[380px] px-5 py-4 text-texto-suave">
                           {item.observacoes ||
                             "Capacete antigo sem cadastro"}
                         </td>
 
-                        <td className="whitespace-nowrap px-5 py-4 text-right font-bold text-dourado">
+                        <td data-rotulo="Valor" className="whitespace-nowrap px-5 py-4 text-right font-bold text-dourado">
                           {moeda(
                             Number(
                               item.valor_recebido ||

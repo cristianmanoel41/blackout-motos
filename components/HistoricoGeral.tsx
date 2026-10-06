@@ -481,7 +481,7 @@ export default function HistoricoGeral({
 
       {filtrados.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[1100px] text-sm">
+          <table className="w-full sm:min-w-[1100px] text-sm tabela-em-cartao">
             <thead className="border-b border-grafite-claro bg-preto text-left text-texto-suave">
               <tr>
                 <th className="px-4 py-3">Data</th>
@@ -548,7 +548,7 @@ export default function HistoricoGeral({
                       )}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td data-rotulo="Tipo" className="px-4 py-3">
                     <span
                       className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg border px-2 py-1 text-xs font-semibold ${
                         registro.tipo === "moto"
@@ -568,14 +568,34 @@ export default function HistoricoGeral({
                     </span>
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td data-rotulo="Item" className="px-4 py-3">
                     <div className="font-semibold text-white">
                       {registro.titulo}
                     </div>
 
                     {registro.detalhe && (
                       <div className="text-xs text-texto-suave">
-                        {registro.detalhe}
+                        {/*
+                          * Cada pedaço inteiro.
+                          *
+                          * O detalhe é uma linha só - "MOTO-0051 ·
+                          * 2019 · PRETA · GGW-4E22" -, e no celular
+                          * ela dobra. O navegador escolhe dobrar no
+                          * hífen, e a placa saía partida: "GGW-" numa
+                          * linha e "4E22" na outra. Separando os
+                          * pedaços aqui, a dobra só pode acontecer
+                          * entre eles.
+                          */}
+                        {registro.detalhe
+                          .split(" · ")
+                          .map((pedaco, posicao) => (
+                            <Fragment key={pedaco + posicao}>
+                              {posicao > 0 ? " · " : ""}
+                              <span className="whitespace-nowrap">
+                                {pedaco}
+                              </span>
+                            </Fragment>
+                          ))}
                       </div>
                     )}
 
@@ -587,7 +607,7 @@ export default function HistoricoGeral({
                     )}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td data-rotulo="Cliente" className="px-4 py-3">
                     <div className="text-white">
                       {registro.cliente}
                     </div>
@@ -608,15 +628,15 @@ export default function HistoricoGeral({
                     )}
                   </td>
 
-                  <td className="px-4 py-3 font-semibold text-dourado">
+                  <td data-rotulo="Vendedor" className="px-4 py-3 font-semibold text-dourado">
                     {registro.vendedor || "-"}
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-white">
+                  <td data-rotulo="Valor" className="whitespace-nowrap px-4 py-3 text-right font-semibold text-white">
                     {formatarMoeda(registro.valor)}
                   </td>
 
-                  <td
+                  <td data-rotulo="Lucro"
                     className={`whitespace-nowrap px-4 py-3 text-right font-semibold ${
                       typeof registro.lucro !== "number"
                         ? "text-texto-suave"
@@ -642,7 +662,7 @@ export default function HistoricoGeral({
                     )}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td data-rotulo="Pagamento" className="px-4 py-3">
                     <div className="text-texto">
                       {registro.pagamento || "-"}
                     </div>

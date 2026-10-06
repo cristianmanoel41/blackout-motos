@@ -202,7 +202,7 @@ export default function HistoricoPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-grafite-claro bg-grafite">
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full sm:min-w-[860px] text-sm tabela-em-cartao">
             <thead className="border-b border-grafite-claro text-left text-xs uppercase tracking-wide text-texto-suave">
               <tr>
                 <th className="px-4 py-3">Quando</th>
@@ -229,7 +229,7 @@ export default function HistoricoPage() {
                       {quandoFoi(item.alterado_em)}
                     </td>
 
-                    <td className="px-4 py-3">
+                    <td data-rotulo="O quê" className="px-4 py-3">
                       <span className="block font-medium text-texto">
                         {nomesTabela[item.tabela] ||
                           item.tabela}
@@ -242,17 +242,17 @@ export default function HistoricoPage() {
                       )}
                     </td>
 
-                    <td className="px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Campo" className="px-4 py-3 text-texto-suave">
                       {nomesCampo[item.campo] || item.campo}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-texto-suave">
+                    <td data-rotulo="De" className="whitespace-nowrap px-4 py-3 text-right text-texto-suave">
                       {formatarMoeda(
                         Number(item.valor_anterior || 0)
                       )}
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <td data-rotulo="Para" className="whitespace-nowrap px-4 py-3 text-right">
                       <span className="font-semibold text-texto">
                         {formatarMoeda(
                           Number(item.valor_novo || 0)
@@ -271,7 +271,7 @@ export default function HistoricoPage() {
                       </span>
                     </td>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-texto-suave">
+                    <td data-rotulo="Quem" className="whitespace-nowrap px-4 py-3 text-texto-suave">
                       {nomes[String(item.alterado_por)] ||
                         "Não identificado"}
                     </td>
