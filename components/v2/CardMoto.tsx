@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Wallet } from "lucide-react";
 import {
   anoDaMoto,
   convitePelaMoto,
@@ -92,6 +92,31 @@ export default function CardMoto({
             {precoDaMoto(moto)}
           </p>
         </Link>
+
+        {/*
+          * "Quanto fica por mês?" logo embaixo do preço.
+          *
+          * É a pergunta que vem na cabeça de quem lê o valor à
+          * vista, e até agora ela só tinha resposta na ficha da
+          * moto - um clique adiante. Aqui a pessoa vai direto do
+          * preço para a parcela, com a moto já escolhida.
+          *
+          * Fica fora dos dois botões de propósito: eles são "ver
+          * a moto" e "falar com a loja", decisões diferentes.
+          * Mais um botão do mesmo tamanho faria as três
+          * competirem e nenhuma se destacar.
+          */}
+        {!compacto && (
+          <Link
+            href={`/financiamento?moto=${encodeURIComponent(
+              `${nome} ${anoDaMoto(moto)}`
+            )}`}
+            className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-bold ouro"
+          >
+            <Wallet size={13} />
+            Simular parcela
+          </Link>
+        )}
 
         {!compacto && (
           <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
