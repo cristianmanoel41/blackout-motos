@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
     "192.168.15.11",
     "desktop-fap6db3.tail309103.ts.net",
     "*.tail309103.ts.net",
+    /*
+     * O IP do Tailscale, além do nome.
+     *
+     * Quem digita `100.91.144.52:3000` no celular não está
+     * usando o nome, e o Next trata endereço fora da lista como
+     * origem estranha: bloqueia os recursos de desenvolvimento
+     * e a página abre com o cabeçalho e o resto preto. Não dá
+     * erro na tela - só fica vazio.
+     */
+    "100.91.144.52",
   ],
 
   /*
