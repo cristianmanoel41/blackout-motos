@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
+import ContratoAssinado from "@/components/ContratoAssinado";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { OPERADORA_CARTAO } from "@/lib/dados/financeiras";
 import CampoMoeda from "@/components/CampoMoeda";
@@ -2575,6 +2576,20 @@ export default function EditarVendaPage() {
               className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
             />
           </section>
+
+          {/*
+            * A copia assinada, para o cliente.
+            *
+            * Fica depois das observacoes e antes do resumo: o
+            * contrato so existe quando a venda ja esta
+            * fechada, entao nao faz sentido no meio dos
+            * campos que ainda estao sendo preenchidos.
+            */}
+          <ContratoAssinado
+            vendaId={id}
+            cliente={cliente}
+            telefone={telefone}
+          />
 
           {/* RESUMO */}
 

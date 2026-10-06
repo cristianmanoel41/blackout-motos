@@ -52,6 +52,8 @@ function ehPaginaDoSite(caminho: string) {
   return (
     PAGINAS_DO_SITE.includes(caminho) ||
     caminho.startsWith('/estoque/') ||
+    /* O contrato do cliente abre no dominio da loja. */
+    caminho.startsWith('/contrato/') ||
     /* A proposta mora dentro de /financiamento/. */
     caminho.startsWith('/financiamento/')
   )
@@ -101,7 +103,8 @@ const SEPARAR_POR_DOMINIO =
  *   - /api/meta/catalogo e /catalogo.xml, que o Meta busca;
  *   - /api/interesse e /api/visita, que as paginas do site
  *     chamam de dentro do dominio;
- *   - /vitrine/, que e link que a loja manda para cliente;
+ *   - /vitrine/ e /contrato/, que sao links que a loja manda
+ *     para o cliente;
  *   - /documentos/ e /recibos/, que sao abertos para imprimir.
  *
  * Mandar qualquer um desses para outro endereco quebraria algo
@@ -311,6 +314,9 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/v2') ||
     caminho.startsWith('/diagnostico') ||
     caminho.startsWith('/vitrine') ||
+    /* O contrato assinado que a loja manda no WhatsApp. A
+       propria rota confere o token e se o link foi revogado. */
+    caminho.startsWith('/contrato/') ||
     caminho.startsWith('/documentos/') ||
     caminho.startsWith('/recibos/')
   /*
