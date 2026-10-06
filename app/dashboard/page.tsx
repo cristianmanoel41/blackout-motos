@@ -10,6 +10,7 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { nomeAPartirDoEmail, primeiroNome } from '@/lib/dados/nome-do-usuario'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
 import LucroDoMes from './LucroDoMes'
@@ -29,6 +30,30 @@ type MotoResumo = {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+
+  /*
+   * Quem esta usando o sistema agora.
+   *
+   * O nome vem do perfil cadastrado; sem perfil, sai do
+   * e-mail - murilo@admin.com vira Murilo. Assim ninguem e
+   * chamado pelo nome errado so porque o cadastro do perfil
+   * ainda nao foi preenchido.
+   */
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { data: perfil } = user
+    ? await supabase
+        .from('profiles')
+        .select('nome')
+        .eq('id', user.id)
+        .maybeSingle()
+    : { data: null }
+
+  const quemEntrou =
+    primeiroNome(perfil?.nome) ||
+    primeiroNome(nomeAPartirDoEmail(user?.email))
 
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10)
@@ -145,7 +170,7 @@ export default async function DashboardPage() {
         <div className="relative z-10 flex h-full flex-col justify-between gap-5 md:flex-row md:items-center">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#a97800]">Blackout Motos · Painel de gestão</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-black md:text-3xl">Olá, Cristian 👋</h1>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-black md:text-3xl">{quemEntrou ? `Olá, ${quemEntrou} 👋` : 'Olá 👋'}</h1>
             <p className="mt-1 text-sm font-semibold text-black/50">Aqui está o resumo geral da sua loja.</p>
           </div>
 
