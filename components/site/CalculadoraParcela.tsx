@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import CampoMoeda from "@/components/CampoMoeda";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import EscolherMoto, {
@@ -197,6 +196,7 @@ export default function CalculadoraParcela({
             aoEscolher={setMoto}
             estoque={comPreco}
             rolagemInterna={false}
+            comecaFechada
           />
         </div>
       )}
@@ -389,36 +389,29 @@ export default function CalculadoraParcela({
         inclui IOF, tarifas nem seguros.
       </p>
 
+      {/*
+        * Uma saída só, e ela já leva tudo.
+        *
+        * Havia um segundo caminho ao lado, para a tela de
+        * proposta. Mas a mensagem do WhatsApp já sai com moto,
+        * valor, entrada e parcela escritos - o vendedor recebe a
+        * conta feita e continua dali. Duas saídas lado a lado
+        * faziam a pessoa parar para escolher entre coisas que
+        * terminam no mesmo lugar.
+        *
+        * Quem quer a proposta formal continua achando: o convite
+        * para ela fica logo abaixo, na própria página.
+        */}
       {temConta && (
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <a
-            href={linkWhatsApp(mensagem)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="botao-ouro inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold sm:w-auto"
-          >
-            <IconeWhatsApp className="h-5 w-5" />
-            Mandar esta simulação no WhatsApp
-          </a>
-
-          {/*
-            * O caminho formal, para quem quer taxa de banco.
-            *
-            * Leva a moto escolhida junto: perguntar de novo o
-            * que a pessoa acabou de responder é o jeito mais
-            * fácil de perder alguém que já estava decidido.
-            */}
-          <Link
-            href={
-              moto
-                ? `/financiamento/proposta?moto=${encodeURIComponent(moto)}`
-                : "/financiamento/proposta"
-            }
-            className="text-center text-sm font-bold texto-ouro underline underline-offset-4 sm:text-left"
-          >
-            Quero a condição do banco
-          </Link>
-        </div>
+        <a
+          href={linkWhatsApp(mensagem)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="botao-ouro mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold sm:w-auto"
+        >
+          <IconeWhatsApp className="h-5 w-5" />
+          Mandar esta simulação no WhatsApp
+        </a>
       )}
     </div>
   );

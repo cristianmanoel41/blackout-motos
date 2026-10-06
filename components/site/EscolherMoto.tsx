@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Pencil, Search, X } from "lucide-react";
+import { Check, ListFilter, Pencil, Search, X } from "lucide-react";
 
 /*
  * Escolher a moto no formulário de financiamento.
@@ -35,6 +35,7 @@ export default function EscolherMoto({
   aoEscolher,
   estoque,
   rolagemInterna = true,
+  comecaFechada = false,
 }: {
   valor: string;
   aoEscolher: (nome: string) => void;
@@ -43,6 +44,9 @@ export default function EscolherMoto({
      toque: o iOS usa ele para parar a inercia, e o clique
      nao acontece. Quem nao precisa da caixa desliga. */
   rolagemInterna?: boolean;
+  /* Começa fechada: mostra um botão no lugar da lista, e a
+     lista só nasce quando a pessoa pede. */
+  comecaFechada?: boolean;
 }) {
   const escolhida = estoque.find(
     (item) => item.nome === valor
@@ -54,6 +58,16 @@ export default function EscolherMoto({
   );
 
   const [busca, setBusca] = useState("");
+
+  /*
+   * A lista inteira esta aberta?
+   *
+   * Fechada por padrao: vinte e uma motos empilhadas antes de
+   * a pessoa decidir qualquer coisa empurram a entrada e as
+   * parcelas para longe.
+   */
+  const [verTodas, setVerTodas] = useState(false);
+
 
   const encontradas = useMemo(() => {
     const termos = semAcento(busca)
@@ -70,6 +84,158 @@ export default function EscolherMoto({
       );
     });
   }, [estoque, busca]);
+
+  /*
+   * ---------- modo busca ----------
+   *
+   * A linha de procurar fica sempre à vista, e embaixo dela só
+   * a moto escolhida. A lista inteira - vinte e uma - só nasce
+   * quando a pessoa digita alguma coisa.
+   *
+   * É o contrário do que estava: antes a tela mostrava tudo e
+   * esperava a pessoa achar a dela no meio. Aqui ela diz o que
+   * procura e a tela mostra só isso.
+   */
+  if (comecaFechada && !escrevendo) {
+    const procurando = busca.trim() !== "";
+
+    /*
+     * O que aparece embaixo da busca.
+     *
+     * Procurando, os resultados. Pedindo para ver tudo, o pátio
+     * inteiro. Parado, só a moto escolhida - que é o estado em
+     * que a tela passa a maior parte do tempo.
+     */
+    const aMostrar = procurando
+      ? encontradas
+      : verTodas
+        ? estoque
+        : escolhida
+          ? [escolhida]
+          : [];
+
+    return (
+      <div>
+        <div className="relative">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35"
+          />
+
+          <input
+            value={busca}
+            onChange={(evento) => setBusca(evento.target.value)}
+            placeholder="Procurar por marca ou modelo"
+            className="w-full rounded-xl border py-3 pl-9 pr-4 text-sm outline-none"
+          />
+        </div>
+
+        <div className="mt-2 space-y-1.5">
+          {aMostrar.map((item, posicao) => {
+            const estaEscolhida = item.nome === valor;
+
+            return (
+              <button
+                key={`${item.nome}-${posicao}`}
+                type="button"
+                onClick={() => {
+                  aoEscolher(item.nome);
+                  /* Escolheu: a busca se apaga e a lista fecha.
+                     Sobra na tela só a moto dela, que é o que
+                     interessa daqui para a frente. */
+                  setBusca("");
+                  setVerTodas(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-xl border p-2 text-left transition ${
+                  estaEscolhida
+                    ? "border-[#e0b129]/45 bg-[#e0b129]/[.06]"
+                    : "border-white/[.07] bg-white/[.02]"
+                }`}
+              >
+                {item.capa && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={item.capa}
+                    alt=""
+                    loading="lazy"
+                    className="h-12 w-16 shrink-0 rounded-lg object-cover"
+                  />
+                )}
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold texto-claro">
+                    {item.nome}
+                  </span>
+
+                  <span className="block text-xs font-bold texto-ouro">
+                    {item.preco}
+                  </span>
+                </span>
+
+                <Check
+                  size={16}
+                  className={
+                    estaEscolhida
+                      ? "shrink-0 texto-ouro"
+                      : "shrink-0 text-white/15"
+                  }
+                />
+              </button>
+            );
+          })}
+
+          {procurando && encontradas.length === 0 && (
+            <p className="px-1 py-3 text-sm texto-suave">
+              Nenhuma moto com esse nome no pátio. Use
+              &quot;Outra moto&quot; abaixo.
+            </p>
+          )}
+        </div>
+
+        {/*
+          * Ver o pátio inteiro, para quem não sabe o que quer.
+          *
+          * Procurar serve a quem já tem um modelo em mente.
+          * Quem está só olhando precisa de uma porta que diga
+          * "me mostra o que você tem" - e o número ao lado já
+          * responde "vinte e uma" antes de ela tocar.
+          *
+          * Some enquanto a pessoa procura: ali a lista já está
+          * na tela, e o botão viraria ruído.
+          */}
+        {!procurando && (
+          <button
+            type="button"
+            onClick={() => setVerTodas((antes) => !antes)}
+            className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-white/[.02] px-4 py-3 text-left text-sm font-bold transition"
+          >
+            <span className="flex items-center gap-2 texto-claro">
+              <ListFilter size={16} className="shrink-0 texto-ouro" />
+              {verTodas
+                ? "Esconder a lista"
+                : "Ver as motos do pátio"}
+            </span>
+
+            <span className="shrink-0 text-xs font-bold texto-suave">
+              {estoque.length}
+            </span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => {
+            setEscrevendo(true);
+            aoEscolher("");
+          }}
+          className="mt-2 flex items-center gap-1.5 text-xs font-semibold texto-suave transition hover:text-white"
+        >
+          <Pencil size={13} />
+          Outra moto, não está na lista
+        </button>
+      </div>
+    );
+  }
 
   /* ---------- já escolheu ---------- */
 
