@@ -1,64 +1,51 @@
 import CardMoto from "@/components/v2/CardMoto";
+import Carrossel from "@/components/v2/Carrossel";
 import { type MotoSite } from "@/lib/dados/moto-site";
 
 /*
- * O card da capa: as últimas motos passando sozinhas.
+ * A vitrine da capa: as últimas motos passando.
  *
- * Mesma mecânica da faixa de marcas, e sem JavaScript nenhum:
- * a fila é escrita duas vezes e a animação arrasta metade da
- * largura, então, quando ela termina, a segunda cópia está
- * exatamente onde a primeira começou e o salto de volta não
- * aparece.
+ * ANTES ERA UMA ESTEIRA DE CSS, E O DEDO NÃO PEGAVA NELA.
  *
- * A diferença para a faixa de marcas é a largura de cada item:
- * aqui cada card ocupa a largura inteira da vitrine, então se
- * vê uma moto de cada vez, deslizando para dar lugar à
- * próxima - em vez de três lado a lado repetidas.
+ * A fila era escrita duas vezes e uma animação arrastava metade
+ * da largura, o que dava um laço perfeito sem JavaScript nenhum.
+ * Bonito, e errado para quem está no celular: a animação é dona
+ * da posição, então passar o dedo não muda nada. A pessoa via
+ * uma moto que interessava, tentava segurar, e a moto ia embora
+ * sozinha.
  *
- * Para quando o mouse encosta, para quem quiser ler com calma.
- * No celular não para: ali o dedo passa por cima o tempo todo
- * só para rolar a página.
+ * Agora quem rola é o próprio navegador - a mesma escolha que o
+ * carrossel do resto do site já tinha feito. A lista tem encaixe
+ * (scroll-snap), então o dedo arrasta de verdade, com inércia, e
+ * cada moto para no lugar certo. A troca automática continua,
+ * só que agora ela manda rolar em vez de desenhar: para quando o
+ * dedo encosta, quando o mouse está em cima e quando a aba sai
+ * da frente.
+ *
+ * O QUE SE PERDEU, E POR QUE TUDO BEM
+ *
+ * O laço perfeito. Com a fila escrita uma vez só, chegar ao fim
+ * e voltar ao começo é um pulo. Ele é seco de propósito
+ * (`voltaSeca`): piscar lê-se como recomeço, enquanto voltar
+ * rolando seria uma varrida longa para trás no alto da página.
+ *
+ * A fila dobrada não dava para manter: ali a cópia é escondida
+ * dos leitores de tela e do teclado, o que no CSS não importava
+ * porque ninguém alcançava - mas numa lista que rola o dedo
+ * chega nela, e tocar numa moto que não abre nada é pior do que
+ * o pulo.
+ *
+ * Os pontinhos embaixo vieram junto, e fazem falta aqui: sem
+ * nenhum sinal, ninguém descobre que dá para arrastar.
  *
  * O card vai sem os dois botões: acertar "Ver detalhes" com o
- * dedo enquanto ele desliza é loteria. Aqui a foto, o nome e o
+ * dedo enquanto se arrasta é loteria. Aqui a foto, o nome e o
  * preço são o link inteiro - tocar em qualquer parte abre a
  * ficha, que é onde estão os botões.
  */
 
-function Fila({
-  motos,
-  slugs,
-  capas,
-  escondida,
-}: {
-  motos: MotoSite[];
-  slugs: Record<string, string>;
-  capas: Record<string, string>;
-  escondida?: boolean;
-}) {
-  return (
-    <ul
-      aria-hidden={escondida}
-      inert={escondida}
-      className="flex shrink-0 items-stretch"
-    >
-      {motos.map((moto, posicao) => (
-        <li
-          key={moto.id}
-          className="w-[var(--card-capa)] shrink-0"
-        >
-          <CardMoto
-            moto={moto}
-            slug={slugs[moto.id]}
-            foto={capas[moto.id]}
-            prioridade={!escondida && posicao === 0}
-            compacto
-          />
-        </li>
-      ))}
-    </ul>
-  );
-}
+/* Cinco segundos por moto, o mesmo ritmo da esteira antiga. */
+const TEMPO_POR_MOTO = 5000;
 
 export default function CardRotativo({
   motos,
@@ -71,32 +58,28 @@ export default function CardRotativo({
 }) {
   if (motos.length === 0) return null;
 
-  /*
-   * Cinco segundos por moto.
-   *
-   * A volta era fixa em 26 segundos, entao o ritmo dependia de
-   * quantas motos estavam na capa - com tres, cada uma ficava
-   * quase nove segundos parada na frente de quem olha. Agora o
-   * tempo acompanha a quantidade e o passo e sempre o mesmo.
-   */
-  const volta = motos.length * 5;
-
   return (
     <div className="vitrine-capa">
-      <div
-        className="esteira-capa"
-        style={{ "--volta-da-capa": `${volta}s` } as React.CSSProperties}
+      <Carrossel
+        rotulo="Últimas entradas"
+        tempo={TEMPO_POR_MOTO}
+        voltaSeca
       >
-        <Fila motos={motos} slugs={slugs} capas={capas} />
-
-        {/* A cópia existe só para o laço não dar salto. */}
-        <Fila
-          motos={motos}
-          slugs={slugs}
-          capas={capas}
-          escondida
-        />
-      </div>
+        {motos.map((moto, posicao) => (
+          <div
+            key={moto.id}
+            className="w-[var(--card-capa)] min-w-0"
+          >
+            <CardMoto
+              moto={moto}
+              slug={slugs[moto.id]}
+              foto={capas[moto.id]}
+              prioridade={posicao === 0}
+              compacto
+            />
+          </div>
+        ))}
+      </Carrossel>
     </div>
   );
 }

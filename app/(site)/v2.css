@@ -572,7 +572,6 @@ html[data-rolou="sim"] .v2 .barra img {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
 }
 
 @media (min-width: 640px) {
@@ -587,23 +586,11 @@ html[data-rolou="sim"] .v2 .barra img {
   }
 }
 
-.v2 .esteira-capa {
-  display: flex;
-  width: max-content;
-  /*
-   * O tempo vem do componente, nao daqui: sao cinco segundos
-   * por moto. Fixo em 26s, a volta ficava lenta com tres motos
-   * e ficaria arrastada com uma so - o ritmo mudava conforme a
-   * loja escolhia a capa, que e justamente o que nao pode.
-   */
-  animation: andar var(--volta-da-capa, 15s) linear infinite;
-}
 
 @media (hover: hover) {
   .v2 .esteira:hover,
   .v2 .esteira-cards:hover,
-  .v2 .esteira-frases:hover,
-  .v2 .esteira-capa:hover {
+  .v2 .esteira-frases:hover {
     animation-play-state: paused;
   }
 }
@@ -706,7 +693,6 @@ html[data-js="sim"] .v2 .surgir-pronto {
   .v2 .esteira,
   .v2 .esteira-cards,
   .v2 .esteira-frases,
-  .v2 .esteira-capa,
   .v2 .brasa,
   .v2 .botao-ouro:hover::after {
     animation: none;

@@ -38,10 +38,21 @@ export default function Carrossel({
   children,
   rotulo,
   tempo = TEMPO,
+  voltaSeca = false,
 }: {
   children: React.ReactNode;
   rotulo: string;
   tempo?: number;
+  /*
+   * Como o laço volta ao começo.
+   *
+   * Rolada, a volta passa despercebida numa fila de três ou
+   * quatro cards. Na vitrine da capa, com um card ocupando
+   * a tela inteira, a mesma volta vira uma varrida longa
+   * para trás bem no alto da página, e parece defeito.
+   * Seca, ela é uma piscada: lê-se como recomeço.
+   */
+  voltaSeca?: boolean;
 }) {
   const trilho = useRef<HTMLDivElement>(null);
   const parado = useRef(false);
@@ -141,7 +152,18 @@ export default function Carrossel({
         lista.scrollWidth - lista.clientWidth - 8;
 
       if (fim) {
-        lista.scrollTo({ left: 0 });
+        if (voltaSeca) {
+          /* O `scroll-behavior: smooth` mora no CSS, então
+             a volta instantânea precisa desligá-lo na mão. */
+          const antes = lista.style.scrollBehavior;
+
+          lista.style.scrollBehavior = "auto";
+          lista.scrollLeft = 0;
+          lista.style.scrollBehavior = antes;
+        } else {
+          lista.scrollTo({ left: 0 });
+        }
+
         return;
       }
 
@@ -152,7 +174,7 @@ export default function Carrossel({
     }, tempo);
 
     return () => window.clearInterval(relogio);
-  }, [paginas, passo, tempo]);
+  }, [paginas, passo, tempo, voltaSeca]);
 
   return (
     <div
