@@ -8,7 +8,7 @@ import {
   Repeat2,
   Wallet,
 } from "lucide-react";
-import CalculadoraParcela from "@/components/site/CalculadoraParcela";
+import SimuladorDePagamento from "@/components/site/SimuladorDePagamento";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import {
   anoDaMoto,
@@ -122,8 +122,16 @@ export default async function FinanciamentoPage({
         * calculadora responde na hora e de graça; quem gostar
         * do número desce e manda a proposta.
         */}
+      {/*
+        * Um simulador só, com os dois caminhos dentro.
+        *
+        * Eram dois blocos empilhados, cada um pedindo moto e
+        * valor de novo - a página parecia ter se repetido. A
+        * primeira pergunta agora é banco ou cartão, e só depois
+        * dela aparecem os campos daquele caminho.
+        */}
       <section className="mt-8">
-        <CalculadoraParcela
+        <SimuladorDePagamento
           estoque={doEstoque}
           motoInicial={moto}
         />

@@ -1,27 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import CampoMoeda from "@/components/CampoMoeda";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
-import EscolherMoto, {
-  type MotoDaLista,
-} from "@/components/site/EscolherMoto";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { linkWhatsApp } from "@/lib/dados/loja";
 
 /*
- * A conta da parcela, antes da conversa.
+ * A conta da parcela no banco, antes da conversa.
  *
- * O formulário que existe nesta página pede nome, CPF e data de
- * nascimento, porque ele monta uma proposta. Mas quem está
- * olhando moto às onze da noite não quer propor nada ainda -
- * quer saber se cabe no mês. Pedir CPF para responder isso
- * espanta mais gente do que converte.
+ * O formulário da página de proposta pede nome, CPF e data de
+ * nascimento, porque ele monta uma proposta de verdade. Mas
+ * quem está olhando moto às onze da noite não quer propor nada
+ * ainda - quer saber se cabe no mês. Pedir CPF para responder
+ * isso espanta mais gente do que converte.
  *
  * Então esta peça não pede nada de pessoal, não guarda nada e
  * não manda nada para servidor nenhum: a conta acontece no
  * navegador da pessoa e morre ali, a menos que ela mesma
  * resolva mandar no WhatsApp.
+ *
+ * A MOTO E O VALOR NÃO MORAM AQUI.
+ *
+ * Eles são do simulador que envolve esta peça, porque o cartão
+ * usa os mesmos dois - e assim quem compara os dois caminhos
+ * não digita duas vezes. Aqui ficam só os passos que são do
+ * banco: entrada, prazo e o aviso da análise de crédito.
  */
 
 /*
@@ -55,19 +59,6 @@ const PARCELAS = [12, 24, 36, 48];
 const PASSO_DA_ENTRADA = 100;
 
 /*
- * "R$ 16.500,00" vira 16500.
- *
- * O estoque entrega o preço já escrito para leitura, e moto sem
- * preço vem como "Consultar" - que não tem dígito nenhum e
- * devolve zero, do jeito certo.
- */
-function numeroDoPreco(texto: string) {
-  const digitos = (texto || "").replace(/\D/g, "");
-
-  return digitos ? Number(digitos) / 100 : 0;
-}
-
-/*
  * A parcela pela Tabela Price, que é como banco calcula.
  *
  * Parcelas iguais do começo ao fim: no início quase tudo é
@@ -90,51 +81,22 @@ function parcelaPrice(
   );
 }
 
-export default function CalculadoraParcela({
-  estoque,
-  motoInicial = "",
+export default function PassosDoFinanciamento({
+  preco,
+  moto = "",
+  primeiroPasso = 1,
 }: {
-  estoque: MotoDaLista[];
-  motoInicial?: string;
+  preco: number;
+  moto?: string;
+  primeiroPasso?: number;
 }) {
-  /* Só entram na lista as motos com preço: simular sobre uma
-     moto "a consultar" não tem como dar número. */
-  const comPreco = useMemo(
-    () => estoque.filter((item) => numeroDoPreco(item.preco) > 0),
-    [estoque]
-  );
-
-  const [moto, setMoto] = useState(motoInicial);
-  const [valor, setValor] = useState("");
   const [entrada, setEntrada] = useState("");
   const [meses, setMeses] = useState(24);
 
-  /*
-   * Escolher moto preenche o valor.
-   *
-   * Quem chega pela ficha de uma moto já encontra tudo pronto;
-   * quem chega pelo menu escolhe aqui. O campo continua
-   * digitável depois - serve para quem está de olho numa moto
-   * que ainda não entrou no site, ou quer brincar com outro
-   * valor.
-   */
-  useEffect(() => {
-    const achada = comPreco.find((item) => item.nome === moto);
-
-    if (!achada) return;
-
-    setValor(String(numeroDoPreco(achada.preco)));
-  }, [moto, comPreco]);
-
-  const preco = Number(valor) || 0;
   const paga = Math.min(Number(entrada) || 0, preco);
   const financiado = preco - paga;
 
-  const parcela = parcelaPrice(
-    financiado,
-    TAXA_MENSAL,
-    meses
-  );
+  const parcela = parcelaPrice(financiado, TAXA_MENSAL, meses);
 
   const total = parcela * meses + paga;
 
@@ -144,16 +106,6 @@ export default function CalculadoraParcela({
   const temConta = preco > 0 && financiado > 0;
 
   const entradaMaior = preco > 0 && financiado <= 0;
-
-  /*
-   * Quando as opcoes aparecem.
-   *
-   * Com moto escolhida, o preco dela ja preencheu o valor.
-   * Com "Outra moto", nao ha preco nenhum - mas a pessoa
-   * escreveu um modelo, e precisa do campo de valor para
-   * digitar. Os dois casos abrem o bloco.
-   */
-  const temValor = preco > 0 || moto.trim() !== "";
 
   const mensagem = [
     "Olá! Fiz uma simulação no site:",
@@ -171,78 +123,15 @@ export default function CalculadoraParcela({
   const campo =
     "w-full rounded-xl border px-4 py-3 text-sm outline-none";
 
-  const rotulo =
-    "mb-1.5 block text-xs font-semibold texto-suave";
-
   return (
-    <div className="cartao-3d rounded-2xl p-5 sm:p-8">
-      <h2 className="text-xl font-black texto-claro sm:text-2xl">
-        Simule a sua parcela
-      </h2>
-
-      <p className="mt-2 text-sm leading-6 texto-suave">
-        Base de{" "}
-        <strong className="texto-ouro">{TAXA_ESCRITA}</strong>. Sem
-        cadastro e sem compromisso — a conta acontece aqui mesmo,
-        no seu celular.
-      </p>
-
-      {comPreco.length > 0 && (
-        <div className="mt-6">
-          <span className={rotulo}>1. Escolha a moto</span>
-
-          <EscolherMoto
-            valor={moto}
-            aoEscolher={setMoto}
-            estoque={comPreco}
-            rolagemInterna={false}
-            comecaFechada
-          />
-        </div>
-      )}
-
-      {/*
-        * Enquanto não há moto escolhida, o resto não existe.
-        *
-        * Uma tela com seis campos ao mesmo tempo faz a pessoa
-        * decidir por onde começar antes de decidir qualquer
-        * coisa útil - e quem está no celular desiste nessa hora.
-        * Escolher a moto é a única pergunta que ela já sabe
-        * responder; as outras só fazem sentido depois dela.
-        *
-        * A porta continua aberta para quem chega sem moto: se o
-        * estoque não tiver nenhuma com preço, o valor aparece
-        * direto para ser digitado.
-        */}
-      {!temValor && comPreco.length > 0 && (
-        <p className="mt-5 text-sm leading-6 texto-suave">
-          Escolha uma moto acima — ou use “Outra moto” — e as
-          opções de entrada e parcelas aparecem aqui.
-        </p>
-      )}
-
-      <div
-        className={temValor || comPreco.length === 0 ? "" : "hidden"}
-      >
-
-      <div className="mt-5">
-        <label htmlFor="valor-moto" className={rotulo}>
-          2. Valor da moto
-        </label>
-
-        <CampoMoeda
-          id="valor-moto"
-          value={valor}
-          onChange={setValor}
-          placeholder="0,00"
-          className={campo}
-        />
-      </div>
-
+    <>
       <div className="mt-5">
         <div className="mb-1.5 flex items-end justify-between gap-3">
-          <label htmlFor="valor-entrada" className="text-xs font-semibold texto-suave">
-            3. Entrada
+          <label
+            htmlFor="valor-entrada"
+            className="text-xs font-semibold texto-suave"
+          >
+            {primeiroPasso}. Entrada
           </label>
 
           {preco > 0 && (
@@ -279,9 +168,7 @@ export default function CalculadoraParcela({
               max={Math.floor(preco)}
               step={PASSO_DA_ENTRADA}
               value={paga}
-              onChange={(evento) =>
-                setEntrada(evento.target.value)
-              }
+              onChange={(evento) => setEntrada(evento.target.value)}
               aria-label="Valor da entrada"
               className="faixa-entrada mt-3 w-full"
             />
@@ -295,7 +182,9 @@ export default function CalculadoraParcela({
       </div>
 
       <div className="mt-5">
-        <span className={rotulo}>4. Em quantas vezes</span>
+        <span className="mb-1.5 block text-xs font-semibold texto-suave">
+          {primeiroPasso + 1}. Em quantas vezes
+        </span>
 
         {/*
           * Botões em vez de lista suspensa.
@@ -313,17 +202,13 @@ export default function CalculadoraParcela({
               onClick={() => setMeses(quantas)}
               aria-pressed={meses === quantas}
               className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${
-                meses === quantas
-                  ? "botao-ouro"
-                  : "botao-vidro"
+                meses === quantas ? "botao-ouro" : "botao-vidro"
               }`}
             >
               {quantas}x
             </button>
           ))}
         </div>
-      </div>
-
       </div>
 
       {entradaMaior && (
@@ -392,15 +277,11 @@ export default function CalculadoraParcela({
       {/*
         * Uma saída só, e ela já leva tudo.
         *
-        * Havia um segundo caminho ao lado, para a tela de
-        * proposta. Mas a mensagem do WhatsApp já sai com moto,
-        * valor, entrada e parcela escritos - o vendedor recebe a
-        * conta feita e continua dali. Duas saídas lado a lado
-        * faziam a pessoa parar para escolher entre coisas que
-        * terminam no mesmo lugar.
-        *
-        * Quem quer a proposta formal continua achando: o convite
-        * para ela fica logo abaixo, na própria página.
+        * A mensagem do WhatsApp sai com moto, valor, entrada e
+        * parcela escritos - o vendedor recebe a conta feita e
+        * continua dali. Quem quer a proposta formal continua
+        * achando: o convite para ela fica logo abaixo, na
+        * própria página.
         */}
       {temConta && (
         <a
@@ -413,6 +294,6 @@ export default function CalculadoraParcela({
           Mandar esta simulação no WhatsApp
         </a>
       )}
-    </div>
+    </>
   );
 }
