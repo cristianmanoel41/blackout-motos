@@ -26,6 +26,17 @@ export type EstoqueDoSite = {
   motos: MotoSite[];
   fotos: Fotos;
   slugs: Record<string, string>;
+  /*
+   * A lista veio vazia porque o pátio está vazio, ou porque
+   * a consulta quebrou?
+   *
+   * Antes isto se perdia: o erro era descartado e a lista
+   * caía para vazia, então uma falha de banco chegava ao
+   * cliente como "0 motos à pronta entrega — estamos
+   * renovando o estoque". Dizer que a loja não tem moto
+   * quando ela tem vinte e uma é o pior jeito de errar.
+   */
+  falhou: boolean;
 };
 
 /*
@@ -38,7 +49,15 @@ export type EstoqueDoSite = {
 export const estoqueDoSite = cache(async function estoqueDoSite(): Promise<EstoqueDoSite> {
   const supabase = await createClient();
 
-  const { data } = await supabase.rpc("estoque_publico");
+  const { data, error } = await supabase.rpc("estoque_publico");
+
+  if (error) {
+    /* No log do servidor, para aparecer na Vercel. */
+    console.error(
+      "[estoque do site] a consulta falhou:",
+      error.message
+    );
+  }
 
   const todas = (data || []) as MotoSite[];
 
@@ -54,6 +73,8 @@ export const estoqueDoSite = cache(async function estoqueDoSite(): Promise<Estoq
     motos,
     fotos,
     slugs: slugsDoEstoque(motos),
+    /* Qualquer uma das duas consultas esvazia a vitrine. */
+    falhou: Boolean(error) || Boolean(fotos.falhou),
   };
 });
 

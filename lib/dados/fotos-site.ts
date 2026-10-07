@@ -28,6 +28,15 @@ export type Fotos = {
   /* A capa marcada na ficha; sem marcação, a primeira. */
   capas: Record<string, string>;
   galerias: Record<string, string[]>;
+  /*
+   * A consulta falhou?
+   *
+   * Sem foto, a moto é filtrada fora do site. Então uma
+   * falha aqui esvazia a vitrine do mesmo jeito que um
+   * pátio vazio - e quem olha a tela não tem como saber a
+   * diferença. Quem sabe é esta linha.
+   */
+  falhou?: boolean;
 };
 
 export async function fotosDasMotos(
@@ -40,7 +49,7 @@ export async function fotosDasMotos(
 
   const supabase = await createClient();
 
-  const { data: fotos } = await supabase
+  const { data: fotos, error } = await supabase
     .from("motorcycle_photos")
     .select(
       "motorcycle_id, url, principal, arquivo_tipo, arquivo_nome"
@@ -66,7 +75,14 @@ export async function fotosDasMotos(
     if (!capas[moto]) capas[moto] = galerias[moto][0];
   });
 
-  return { capas, galerias };
+  if (error) {
+    console.error(
+      "[fotos do site] a consulta falhou:",
+      error.message
+    );
+  }
+
+  return { capas, galerias, falhou: Boolean(error) };
 }
 
 /* A galeria com a capa na frente. */

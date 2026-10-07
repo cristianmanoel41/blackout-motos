@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function EstoquePage() {
-  const { motos, fotos, slugs } = await estoqueDoSite();
+  const { motos, fotos, slugs, falhou } = await estoqueDoSite();
 
   const totalFotos: Record<string, number> = {};
 
@@ -40,20 +40,37 @@ export default async function EstoquePage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-black texto-claro sm:text-4xl">
-            {motos.length} moto
-            {motos.length === 1 ? "" : "s"} à pronta entrega
+            {falhou ? (
+              "Estoque indisponível agora"
+            ) : (
+              <>
+                {motos.length} moto
+                {motos.length === 1 ? "" : "s"} à pronta
+                entrega
+              </>
+            )}
           </h1>
 
           <p className="mt-2 text-sm texto-suave">
-            Todas com foto, preço e ficha. Clique na moto para
-            ver a galeria completa.
+            {falhou
+              ? "Deu problema para carregar a lista. Recarregue em instantes — as motos continuam no pátio."
+              : "Todas com foto, preço e ficha. Clique na moto para ver a galeria completa."}
           </p>
         </header>
 
         {motos.length === 0 ? (
+          /*
+           * Vazio e quebrado não são a mesma coisa.
+           *
+           * "Estamos renovando o estoque" é verdade quando o
+           * pátio está vazio e mentira quando o banco caiu -
+           * e a segunda custa venda, porque manda embora quem
+           * ia comprar hoje.
+           */
           <article className="cartao-3d rounded-2xl p-10 text-center text-sm texto-suave">
-            Estamos renovando o estoque. Fale com a gente no
-            WhatsApp: chega moto nova toda semana.
+            {falhou
+              ? "Não conseguimos carregar o estoque agora. Tente de novo em instantes, ou chame no WhatsApp que a gente manda as fotos na hora."
+              : "Estamos renovando o estoque. Fale com a gente no WhatsApp: chega moto nova toda semana."}
           </article>
         ) : (
           <EstoqueFiltrado
