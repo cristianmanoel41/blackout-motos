@@ -45,6 +45,67 @@ const TAMANHO_MAXIMO = 20 * 1024 * 1024;
 
 const TIPOS_ACEITOS = ".pdf,.jpg,.jpeg,.png,.webp";
 
+/*
+ * Sobe o arquivo e grava na ficha do cliente. Usado aqui e
+ * também pela tela de compra, que guarda a CNH de quem vendeu
+ * a moto logo depois de cadastrar a pessoa em Clientes.
+ */
+export async function enviarDocumentoCliente({
+  arquivo,
+  customerId,
+  tipo,
+  observacoes,
+}: {
+  arquivo: File;
+  customerId: string;
+  tipo: string;
+  observacoes?: string;
+}) {
+  if (arquivo.size > TAMANHO_MAXIMO) {
+    throw new Error(
+      `O arquivo tem ${tamanhoLegivel(
+        arquivo.size
+      )}. O limite é 20 MB.`
+    );
+  }
+
+  const caminho = `${customerId}/${tipo}-${Date.now()}-${nomeArquivoSeguro(
+    arquivo.name
+  )}`;
+
+  const { error: erroUpload } = await supabase.storage
+    .from(BUCKET)
+    .upload(caminho, arquivo, {
+      contentType: arquivo.type || undefined,
+      upsert: false,
+    });
+
+  if (erroUpload) {
+    throw new Error(`Falha ao enviar: ${erroUpload.message}`);
+  }
+
+  const { error: erroRegistro } = await supabase
+    .from("customer_documents")
+    .insert({
+      customer_id: customerId,
+      tipo,
+      arquivo_path: caminho,
+      arquivo_nome: arquivo.name,
+      arquivo_tipo: arquivo.type || null,
+      tamanho: arquivo.size,
+      observacoes: observacoes?.trim() || null,
+    });
+
+  if (erroRegistro) {
+    /* Não deixa arquivo órfão no Storage. */
+    await supabase.storage.from(BUCKET).remove([caminho]);
+
+    throw new Error(
+      `Falha ao registrar: ${erroRegistro.message}`
+    );
+  }
+}
+
 type Documento = {
   id: string;
   customer_id: string;
@@ -118,64 +179,22 @@ export default function DocumentosCliente({
       return;
     }
 
-    if (arquivo.size > TAMANHO_MAXIMO) {
-      setErro(
-        `O arquivo tem ${tamanhoLegivel(
-          arquivo.size
-        )}. O limite é 20 MB.`
-      );
-      return;
-    }
-
     setEnviando(true);
 
-    const caminho = `${customerId}/${tipo}-${Date.now()}-${nomeArquivoSeguro(
-      arquivo.name
-    )}`;
-
-    const { error: erroUpload } = await supabase.storage
-      .from(BUCKET)
-      .upload(caminho, arquivo, {
-        contentType: arquivo.type || undefined,
-        upsert: false,
+    try {
+      await enviarDocumentoCliente({
+        arquivo,
+        customerId,
+        tipo,
+        observacoes,
       });
-
-    if (erroUpload) {
+    } catch (falha) {
       setEnviando(false);
-
-      setErro(
-        `Falha ao enviar: ${erroUpload.message}`
-      );
-
+      setErro(falha instanceof Error ? falha.message : String(falha));
       return;
     }
-
-    const { error: erroRegistro } = await supabase
-      .from("customer_documents")
-      .insert({
-        customer_id: customerId,
-        tipo,
-        arquivo_path: caminho,
-        arquivo_nome: arquivo.name,
-        arquivo_tipo: arquivo.type || null,
-        tamanho: arquivo.size,
-        observacoes: observacoes.trim() || null,
-      });
 
     setEnviando(false);
-
-    if (erroRegistro) {
-      /* Não deixa arquivo órfão no Storage. */
-      await supabase.storage
-        .from(BUCKET)
-        .remove([caminho]);
-
-      setErro(
-        `Falha ao registrar: ${erroRegistro.message}`
-      );
-
-      return;
-    }
 
     setArquivo(null);
     setObservacoes("");

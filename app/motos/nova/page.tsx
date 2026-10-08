@@ -32,6 +32,9 @@ import {
   limparPlaca,
 } from "@/lib/formatadores/placa";
 import CampoMoeda from "@/components/CampoMoeda";
+import CampoArquivoDocumento from "@/components/CampoArquivoDocumento";
+import { enviarVistoria } from "@/components/Vistorias";
+import { enviarDocumentoCliente } from "@/components/DocumentosCliente";
 
 /*
  * Unica loja parceira hoje. Vira uma lista quando aparecer
@@ -310,6 +313,14 @@ export default function NovaMotoPage() {
     retornoVendaTroca,
     setRetornoVendaTroca,
   ] = useState(false);
+
+  /* Documentos escolhidos na compra. Sobem depois de salvar,
+     quando já existem a moto e o cliente onde ficam. */
+  const [arquivoCrlv, setArquivoCrlv] =
+    useState<File | null>(null);
+
+  const [arquivoCnh, setArquivoCnh] =
+    useState<File | null>(null);
 
   const ehEstoqueInicial =
     form.tipo_entrada ===
@@ -822,6 +833,19 @@ export default function NovaMotoPage() {
     ) {
       setErro(
         "Informe o nome de quem vendeu a moto para a loja."
+      );
+      return;
+    }
+
+    /* A CNH fica no cadastro do cliente, e o cliente só é
+       criado com nome e CPF. Sem eles, não há onde guardar. */
+    if (
+      arquivoCnh &&
+      (!form.fornecedor_nome.trim() ||
+        !form.fornecedor_cpf.trim())
+    ) {
+      setErro(
+        "Para guardar a CNH, informe o nome e o CPF de quem vendeu a moto."
       );
       return;
     }
@@ -1569,6 +1593,66 @@ export default function NovaMotoPage() {
         }
       }
 
+      // =====================================================
+      // DOCUMENTOS: CRLV NA FICHA DA MOTO, CNH NO CLIENTE
+      //
+      // A moto já está salva. Se um arquivo falhar, a compra
+      // não volta atrás - avisa, e o documento pode ser
+      // enviado depois pela ficha.
+      // =====================================================
+
+      const avisosDocumentos: string[] = [];
+      const documentosGuardados: string[] = [];
+
+      if (arquivoCrlv) {
+        try {
+          await enviarVistoria({
+            arquivo: arquivoCrlv,
+            motorcycleId: String(motoCriada.id),
+            tipo: "crlv",
+            data: form.data_entrada,
+          });
+
+          documentosGuardados.push("o CRLV na ficha da moto");
+        } catch (falha) {
+          avisosDocumentos.push(
+            `o CRLV não foi guardado (${
+              falha instanceof Error ? falha.message : falha
+            }) - envie pela ficha da moto`
+          );
+        }
+      }
+
+      if (arquivoCnh && fornecedorCustomerId) {
+        try {
+          await enviarDocumentoCliente({
+            arquivo: arquivoCnh,
+            customerId: fornecedorCustomerId,
+            tipo: "documento",
+            observacoes: "CNH enviada na compra da moto",
+          });
+
+          documentosGuardados.push("a CNH no cadastro do cliente");
+        } catch (falha) {
+          avisosDocumentos.push(
+            `a CNH não foi guardada (${
+              falha instanceof Error ? falha.message : falha
+            }) - envie pelo cadastro do cliente`
+          );
+        }
+      }
+
+      setArquivoCrlv(null);
+      setArquivoCnh(null);
+
+      const mensagemDocumentos =
+        (documentosGuardados.length
+          ? ` Guardado: ${documentosGuardados.join(" e ")}.`
+          : "") +
+        (avisosDocumentos.length
+          ? ` Atenção: ${avisosDocumentos.join("; ")}.`
+          : "");
+
       setMotoCriadaId(
         String(motoCriada.id)
       );
@@ -1640,14 +1724,14 @@ export default function NovaMotoPage() {
 
       setMensagem(
         ehEstoqueInicial
-          ? `Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}`
+          ? `Moto cadastrada como estoque inicial. O valor de compra será usado no custo e no lucro, mas não foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}${mensagemDocumentos}`
           : form.possui_financiamento
             ? `Compra cadastrada com sucesso. A quitação de ${moeda(
                 valorQuitacaoNumero
               )} e o repasse de ${moeda(
                 valorLiquidoCliente
-              )} foram registrados separadamente no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}`
-            : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}`
+              )} foram registrados separadamente no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}${mensagemDocumentos}`
+            : `Compra cadastrada com sucesso. A moto entrou no estoque e o valor da compra foi lançado como saída no caixa.${fornecedorCustomerId ? " Quem vendeu a moto também foi vinculado em Clientes." : ""}${mensagemLavagem}${mensagemDocumentos}`
       );
     } catch (error: any) {
       console.error(error);
@@ -2113,6 +2197,15 @@ export default function NovaMotoPage() {
                       "Em manutenção",
                   },
                 ]}
+              />
+            </div>
+
+            <div className="mt-5 max-w-xl">
+              <CampoArquivoDocumento
+                label="CRLV da moto"
+                ajuda="Opcional. Fica guardado na ficha da moto, em Vistorias e CRLV."
+                arquivo={arquivoCrlv}
+                aoEscolher={setArquivoCrlv}
               />
             </div>
           </section>
@@ -2918,6 +3011,15 @@ export default function NovaMotoPage() {
                   )
                 }
                 placeholder="SP"
+              />
+            </div>
+
+            <div className="mt-5 max-w-xl">
+              <CampoArquivoDocumento
+                label="CNH de quem vendeu"
+                ajuda="Opcional. Fica guardada no cadastro do cliente, em Documentos. Precisa do nome e do CPF preenchidos."
+                arquivo={arquivoCnh}
+                aoEscolher={setArquivoCnh}
               />
             </div>
           </section>
