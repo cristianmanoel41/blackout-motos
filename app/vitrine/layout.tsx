@@ -32,6 +32,26 @@ export default function VitrineLayout({
         main .text-white {
           color: #ffffff !important;
         }
+
+        /*
+         * Os textos "preto meio apagado" (text-black/50, /60...)
+         * o tema do painel troca por cinza claro, pensado para
+         * fundo escuro - no branco da vitrine sumiam. Aqui todo
+         * texto e preto. Fica de fora so o /20, que e o desenho
+         * da moto quando ela ainda nao tem foto.
+         */
+        main :is(
+          [class~='text-black/35'],
+          [class~='text-black/40'],
+          [class~='text-black/45'],
+          [class~='text-black/50'],
+          [class~='text-black/55'],
+          [class~='text-black/60'],
+          [class~='text-black/65'],
+          [class~='text-black/70']
+        ) {
+          color: #0b0b0d !important;
+        }
       `}</style>
 
       {children}
