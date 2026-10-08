@@ -252,23 +252,23 @@ export default function VitrineLista({
                       : "Consultar"}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-black/60">
-                    <span className="rounded-full bg-black/[.05] px-2.5 py-1">
+                  <div className="mt-3 flex flex-wrap gap-2 text-sm text-black/60">
+                    <span className="rounded-full bg-black/[.05] px-3 py-1.5">
                       {anos(moto)}
                     </span>
 
-                    <span className="rounded-full bg-black/[.05] px-2.5 py-1">
+                    <span className="rounded-full bg-black/[.05] px-3 py-1.5">
                       {quilometragem(moto.quilometragem)}
                     </span>
 
                     {moto.cor && (
-                      <span className="rounded-full bg-black/[.05] px-2.5 py-1">
+                      <span className="rounded-full bg-black/[.05] px-3 py-1.5">
                         {moto.cor}
                       </span>
                     )}
 
                     {moto.placa && (
-                      <span className="rounded-full bg-black/[.05] px-2.5 py-1 font-semibold">
+                      <span className="rounded-full bg-black/[.05] px-3 py-1.5 font-semibold">
                         Placa {moto.placa}
                       </span>
                     )}
