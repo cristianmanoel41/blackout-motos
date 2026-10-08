@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import CampoMoeda from "@/components/CampoMoeda";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { linkWhatsApp } from "@/lib/dados/loja";
@@ -15,10 +16,21 @@ import { CARTAO, noCartao } from "@/lib/dados/cartao-maquininha";
  * números saem da tabela dela. O que pode faltar é limite no
  * cartão do cliente - e isso só o cartão dele responde.
  *
- * Serve para os dois usos da loja: passar a entrada no cartão e
- * financiar o resto, ou passar a moto inteira. Por isso o valor
- * vem de fora como número livre, e não do preço da moto.
+ * A ENTRADA ABATE O QUE PASSA NO CARTÃO.
+ *
+ * Na loja quase nunca a moto inteira vai na maquininha: o
+ * cliente dá uma parte em dinheiro, PIX ou débito - que não tem
+ * acréscimo nenhum - e parcela o resto. Antes a conta era dele:
+ * subtrair de cabeça e digitar o resultado no campo de valor.
+ * Quem erra essa subtração sai com a parcela errada na cabeça, e
+ * descobre o número certo só na hora de fechar.
+ *
+ * Então a entrada é um campo, e o acréscimo da maquininha cai
+ * só sobre o que sobra - que é exatamente como a máquina cobra.
  */
+
+/* O passo da barra, igual ao do financiamento. */
+const PASSO_DA_ENTRADA = 100;
 
 export default function PassosDoCartao({
   preco,
@@ -29,16 +41,27 @@ export default function PassosDoCartao({
   moto?: string;
   primeiroPasso?: number;
 }) {
+  const [entrada, setEntrada] = useState("");
   const [escolhida, setEscolhida] = useState(12);
 
-  const temConta = preco > 0;
-  const conta = noCartao(preco, escolhida);
+  const paga = Math.min(Number(entrada) || 0, preco);
+  const naMaquina = preco - paga;
+
+  const porcentagem = preco > 0 ? (paga / preco) * 100 : 0;
+
+  /* Só vale mostrar a tabela quando sobra algo para parcelar. */
+  const temConta = preco > 0 && naMaquina > 0;
+  const entradaMaior = preco > 0 && naMaquina <= 0;
+
+  const conta = noCartao(naMaquina, escolhida);
 
   const mensagem = [
     "Olá! Simulei no cartão pelo site:",
     "",
     moto ? `Moto: ${moto}` : "",
     `Valor: ${formatarMoeda(preco)}`,
+    paga > 0 ? `Entrada: ${formatarMoeda(paga)}` : "",
+    `No cartão: ${formatarMoeda(naMaquina)}`,
     `${conta.parcelas}x de ${formatarMoeda(conta.parcela)}`,
     `Total no cartão: ${formatarMoeda(conta.total)}`,
     "",
@@ -47,8 +70,93 @@ export default function PassosDoCartao({
     .filter((linha) => linha !== "")
     .join("\n");
 
+  const campo =
+    "w-full rounded-xl border px-4 py-3 text-sm outline-none";
+
   return (
     <>
+      <div className="mt-5">
+        <div className="mb-1.5 flex items-end justify-between gap-3">
+          <label
+            htmlFor="entrada-cartao"
+            className="text-xs font-semibold texto-suave"
+          >
+            {primeiroPasso}. Entrada (se tiver)
+          </label>
+
+          {preco > 0 && paga > 0 && (
+            <span className="text-xs font-bold texto-ouro">
+              {Math.round(porcentagem)}% do valor
+            </span>
+          )}
+        </div>
+
+        <CampoMoeda
+          id="entrada-cartao"
+          value={paga ? String(paga) : ""}
+          onChange={setEntrada}
+          placeholder="0,00"
+          className={campo}
+        />
+
+        {/*
+          * A barra, igual à do financiamento.
+          *
+          * Aqui ela mostra uma coisa que o campo não mostra: o
+          * acréscimo da maquininha encolhendo junto com o valor
+          * parcelado. Puxar a entrada e ver a parcela cair é o
+          * que faz a pessoa entender quanto vale adiantar.
+          */}
+        {preco > 0 && (
+          <>
+            <input
+              type="range"
+              min={0}
+              max={Math.floor(preco)}
+              step={PASSO_DA_ENTRADA}
+              value={paga}
+              onChange={(evento) => setEntrada(evento.target.value)}
+              aria-label="Valor da entrada"
+              className="faixa-entrada mt-3 w-full"
+            />
+
+            <div className="mt-1 flex justify-between text-[11px] texto-suave">
+              <span>sem entrada</span>
+              <span>{formatarMoeda(preco)}</span>
+            </div>
+          </>
+        )}
+
+        <p className="mt-2 text-[11px] leading-4 texto-suave">
+          Em dinheiro, PIX ou débito não tem acréscimo — o
+          acréscimo da maquininha cai só sobre o que for
+          parcelado.
+        </p>
+      </div>
+
+      {/*
+        * Quanto sobra para o cartão, dito antes da tabela.
+        *
+        * É o número de que a tabela toda depende. Sem ele à
+        * mostra, quem pôs entrada vê vinte e quatro parcelas e
+        * não sabe de que valor elas saíram.
+        */}
+      {temConta && paga > 0 && (
+        <p className="mt-4 rounded-xl border border-[rgba(255,255,255,0.09)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm texto-suave">
+          Vai no cartão:{" "}
+          <strong className="texto-claro">
+            {formatarMoeda(naMaquina)}
+          </strong>
+        </p>
+      )}
+
+      {entradaMaior && (
+        <p className="mt-5 text-sm leading-6 texto-suave">
+          A entrada já cobre o valor — nesse caso não precisa
+          passar nada no cartão.
+        </p>
+      )}
+
       {/*
         * A tabela inteira, não quatro botões.
         *
@@ -65,12 +173,12 @@ export default function PassosDoCartao({
       {temConta && (
         <div className="mt-5">
           <span className="mb-1.5 block text-xs font-semibold texto-suave">
-            {primeiroPasso}. Em quantas vezes
+            {primeiroPasso + 1}. Em quantas vezes
           </span>
 
           <ul className="overflow-hidden rounded-xl border border-[rgba(255,255,255,0.09)]">
             {CARTAO.map((linha) => {
-              const item = noCartao(preco, linha.parcelas);
+              const item = noCartao(naMaquina, linha.parcelas);
               const atual = escolhida === linha.parcelas;
 
               return (
@@ -138,11 +246,24 @@ export default function PassosDoCartao({
             {formatarMoeda(conta.parcela)}
           </p>
 
-          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+          <dl
+            className={`mt-4 grid gap-2 text-sm ${
+              paga > 0 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+            }`}
+          >
+            {paga > 0 && (
+              <div>
+                <dt className="text-xs texto-suave">Entrada</dt>
+                <dd className="font-bold texto-claro">
+                  {formatarMoeda(paga)}
+                </dd>
+              </div>
+            )}
+
             <div>
               <dt className="text-xs texto-suave">No cartão</dt>
               <dd className="font-bold texto-claro">
-                {formatarMoeda(preco)}
+                {formatarMoeda(naMaquina)}
               </dd>
             </div>
 
@@ -162,6 +283,21 @@ export default function PassosDoCartao({
               </dd>
             </div>
           </dl>
+
+          {/*
+            * Com entrada, o total no cartão não é o total da
+            * moto - e é o total da moto que a pessoa compara
+            * com o preço anunciado.
+            */}
+          {paga > 0 && (
+            <p className="mt-3 text-xs leading-5 texto-suave">
+              Entrada mais cartão:{" "}
+              <strong className="texto-claro">
+                {formatarMoeda(paga + conta.total)}
+              </strong>{" "}
+              pela moto.
+            </p>
+          )}
         </div>
       )}
 

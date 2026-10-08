@@ -205,10 +205,7 @@ export default function SimuladorDePagamento({
 
           <div className="mt-5">
             <label htmlFor="valor-simulado" className={rotulo}>
-              {passoDoValor}.{" "}
-              {metodo === "cartao"
-                ? "Quanto vai passar no cartão"
-                : "Valor da moto"}
+              {passoDoValor}. Valor da moto
             </label>
 
             <CampoMoeda
@@ -221,8 +218,8 @@ export default function SimuladorDePagamento({
 
             {metodo === "cartao" && (
               <p className="mt-1.5 text-[11px] leading-4 texto-suave">
-                Escolher a moto preenche o preço cheio. Para
-                passar só a entrada, é só trocar o número.
+                Escolher a moto preenche o preço. A entrada, no
+                passo seguinte, desconta o que vai no cartão.
               </p>
             )}
           </div>

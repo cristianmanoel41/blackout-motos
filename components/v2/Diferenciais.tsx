@@ -52,7 +52,12 @@ export default function Diferenciais() {
       <div className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
         <AoEntrar>
           <h2 className="titulo text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
-            Diferenciais <span className="ouro">Blackout</span>
+            {/* Sem nowrap de proposito. No celular comum a marca
+                ja cai inteira na segunda linha sozinha; travar a
+                quebra so fazia o titulo furar a tela nos aparelhos
+                de 320px - e marca cortada pela borda e pior do
+                que marca em duas linhas. */}
+            Diferenciais <span className="ouro">Blackout Motos</span>
           </h2>
 
           <p className="mt-2 text-sm suave sm:text-base">
