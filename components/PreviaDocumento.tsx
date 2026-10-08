@@ -553,6 +553,22 @@ export default function PreviaDocumento({
         }
 
         /*
+         * A linha solta logo depois da data - a da procuracao.
+         *
+         * No contrato a assinatura vem numa tabela, e os 20mm
+         * de baixo ja afastam ela da data. Na procuracao a linha
+         * e um paragrafo comum, e sem isto ela grudava na data:
+         * o cliente preenchia o dia a mao em cima da linha onde
+         * vai a firma.
+         */
+        .documento-espalhado
+          .documento-word
+          .data-documento
+          + .linha-assinatura-doc {
+          margin-top: 20mm !important;
+        }
+
+        /*
          * O espaco do carimbo.
          *
          * Sao 20mm acima das linhas: e onde o carimbo da loja
@@ -861,6 +877,18 @@ export default function PreviaDocumento({
           margin: 0 !important;
           border-collapse: collapse !important;
           table-layout: fixed !important;
+        }
+
+        /*
+         * Preto a forca na tabela das assinaturas.
+         *
+         * O tema do sistema (blackout-brand-final.css) pinta de
+         * claro todo td, com !important, para as tabelas da tela
+         * escura. No papel branco isso apagava o "VENDEDOR" de
+         * baixo da linha.
+         */
+        .documento-word .assinaturas-documento :is(td, p, strong, b) {
+          color: #000000 !important;
         }
 
         .documento-word .assinaturas-documento td {
