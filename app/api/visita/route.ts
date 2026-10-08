@@ -33,6 +33,15 @@ function texto(valor: unknown, limite: number) {
 
 const NADA = new Response(null, { status: 204 });
 
+/* O que o banco aceita (migração 0033). Tipo desconhecido vira
+   tela aberta, como antes. */
+const TIPOS: unknown[] = [
+  "pagina",
+  "whatsapp",
+  "simulacao_financiamento",
+  "simulacao_cartao",
+];
+
 export async function POST(requisicao: Request) {
   const agente = requisicao.headers.get("user-agent") || "";
 
@@ -44,8 +53,9 @@ export async function POST(requisicao: Request) {
 
   if (!caminho.startsWith("/")) return NADA;
 
-  const tipo =
-    corpo?.tipo === "whatsapp" ? "whatsapp" : "pagina";
+  const tipo = TIPOS.includes(corpo?.tipo)
+    ? (corpo.tipo as string)
+    : "pagina";
 
   /*
    * Só a primeira tela de cada visita carrega origem. Dentro

@@ -90,3 +90,58 @@ fetch(${JSON.stringify(
 });
 }catch(x){}})()`;
 }
+
+/*
+ * Uma simulação de pagamento que apareceu na tela.
+ *
+ * Conta uma vez por método em cada aba: quem arrasta a barra
+ * da entrada vinte vezes é um cliente simulando, não vinte. A
+ * marca fica no sessionStorage, que morre com a aba - voltar
+ * outro dia conta de novo, como a visita.
+ *
+ * Sem sessionStorage (aba anônima com bloqueio, por exemplo)
+ * ainda conta; só perde a trava, e no pior caso uma recarga
+ * conta duas vezes.
+ */
+export function registrarSimulacao(
+  metodo: "financiamento" | "cartao"
+) {
+  if (!aquiConta()) return;
+
+  const chave = `simulou:${metodo}`;
+
+  try {
+    if (sessionStorage.getItem(chave)) return;
+    sessionStorage.setItem(chave, "1");
+  } catch {
+    // Sem armazenamento: conta assim mesmo.
+  }
+
+  const corpo = JSON.stringify({
+    caminho: window.location.pathname,
+    tipo: `simulacao_${metodo}`,
+    moto: null,
+    primeira: false,
+  });
+
+  try {
+    if (
+      navigator.sendBeacon &&
+      navigator.sendBeacon(
+        DESTINO,
+        new Blob([corpo], { type: "application/json" })
+      )
+    ) {
+      return;
+    }
+  } catch {
+    // Cai no fetch abaixo.
+  }
+
+  fetch(DESTINO, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: corpo,
+    keepalive: true,
+  }).catch(() => {});
+}

@@ -137,6 +137,29 @@ export type Visitas = {
    * dia faz a loja parar de ler o painel.
    */
   atencao: MotoVista | null;
+  /*
+   * Quantos clientes viram parcela no simulador, por período.
+   *
+   * `instalado` falso quer dizer que a migração 0033 ainda não
+   * rodou: sem a função, zero e "falta o SQL" seriam o mesmo
+   * número, e o painel precisa dizer qual dos dois é.
+   */
+  simulacoes: {
+    instalado: boolean;
+    hoje: Simulacoes;
+    semana: Simulacoes;
+    mes: Simulacoes;
+  };
+};
+
+export type Simulacoes = {
+  financiamento: number;
+  cartao: number;
+};
+
+const SEM_SIMULACAO: Simulacoes = {
+  financiamento: 0,
+  cartao: 0,
 };
 
 const ZERO: Resumo = {
@@ -167,6 +190,12 @@ const VAZIO: Visitas = {
   horas: [],
   comparacao: SEM_RUMO,
   atencao: null,
+  simulacoes: {
+    instalado: false,
+    hoje: SEM_SIMULACAO,
+    semana: SEM_SIMULACAO,
+    mes: SEM_SIMULACAO,
+  },
 };
 
 /*
@@ -278,8 +307,18 @@ function diaCurto(data: string) {
 export async function visitasDoSite(): Promise<Visitas> {
   const supabase = await createClient();
 
-  const [hoje, semana, mes, motos, origens, dias, horas] =
-    await Promise.all([
+  const [
+    hoje,
+    semana,
+    mes,
+    motos,
+    origens,
+    dias,
+    horas,
+    simHoje,
+    simSemana,
+    simMes,
+  ] = await Promise.all([
       supabase.rpc("visitas_resumo", { p_dias: 1 }),
       supabase.rpc("visitas_resumo", { p_dias: 7 }),
       supabase.rpc("visitas_resumo", { p_dias: 30 }),
@@ -290,6 +329,9 @@ export async function visitasDoSite(): Promise<Visitas> {
       supabase.rpc("visitas_por_origem", { p_dias: 30 }),
       supabase.rpc("visitas_por_dia", { p_dias: 30 }),
       supabase.rpc("visitas_por_hora", { p_dias: 30 }),
+      supabase.rpc("simulacoes_resumo", { p_dias: 1 }),
+      supabase.rpc("simulacoes_resumo", { p_dias: 7 }),
+      supabase.rpc("simulacoes_resumo", { p_dias: 30 }),
     ]);
 
   /*
@@ -315,6 +357,17 @@ export async function visitasDoSite(): Promise<Visitas> {
   }
 
   const doMes = resumo(mes.data);
+
+  function simulacoes(linha: unknown): Simulacoes {
+    const dado = Array.isArray(linha) ? linha[0] : linha;
+
+    return {
+      financiamento: inteiro(
+        (dado as Simulacoes)?.financiamento
+      ),
+      cartao: inteiro((dado as Simulacoes)?.cartao),
+    };
+  }
 
   /*
    * A versão antiga do resumo devolve as mesmas linhas, só que
@@ -391,6 +444,13 @@ export async function visitasDoSite(): Promise<Visitas> {
     dias: listaDias,
     comparacao: compararSemanas(listaDias),
     atencao: motoQuePedeAtencao(listaMotos),
+
+    simulacoes: {
+      instalado: !simHoje.error,
+      hoje: simulacoes(simHoje.data),
+      semana: simulacoes(simSemana.data),
+      mes: simulacoes(simMes.data),
+    },
 
     origens: (
       (origens.data || []) as Record<string, unknown>[]

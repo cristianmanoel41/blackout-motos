@@ -1,5 +1,9 @@
+import Link from "next/link";
 import {
+  ArrowRight,
+  BarChart3,
   Bike,
+  Calculator,
   Clock,
   Globe,
   MessageCircle,
@@ -14,6 +18,7 @@ import {
   type Comparacao,
   type MotoVista,
   type Resumo as ResumoDoPeriodo,
+  type Visitas,
 } from "@/lib/dados/visitas-site";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import GraficoVisitas from "@/components/GraficoVisitas";
@@ -62,10 +67,14 @@ function Resumo({
   hoje,
   comparacao,
   atencao,
+  soHoje,
 }: {
   hoje: ResumoDoPeriodo;
   comparacao: Comparacao;
   atencao: MotoVista | null;
+  /* Na dashboard fica só a frase do dia: o rumo da semana e a
+     moto do mês moram na tela completa. */
+  soHoje?: boolean;
 }) {
   /*
    * A cor vem de CLASSE, nunca de estilo em linha.
@@ -128,6 +137,7 @@ function Resumo({
         )}
       </p>
 
+      {!soHoje && (
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span
           className={`flex items-center gap-1.5 text-[13px] font-black ${RUMO.cor}`}
@@ -144,8 +154,9 @@ function Resumo({
           </strong>
         </span>
       </div>
+      )}
 
-      {atencao && (
+      {atencao && !soHoje && (
         <p className="mt-4 border-t border-white/10 pt-3 text-[13px] font-bold leading-6 text-black/55">
           {/* text-[#a97800] é o dourado que o tema do painel
               reconhece e repinta; cor em linha sumiria. */}
@@ -270,6 +281,135 @@ function Periodo({
 }
 
 /*
+ * Quantos clientes simularam pagamento, por período.
+ *
+ * Fica separado das visitas porque responde outra pergunta:
+ * não "quanta gente entrou", e sim "quanta gente chegou a fazer
+ * a conta". Banco e cartão lado a lado mostram também qual dos
+ * dois o cliente procura mais.
+ */
+function Simulacoes({
+  dados,
+  soHoje,
+}: {
+  dados: Visitas["simulacoes"];
+  /* Na dashboard: um cartão só, do dia, ao lado das visitas. */
+  soHoje?: boolean;
+}) {
+  if (soHoje) {
+    return (
+      <div className={styles.miniCard}>
+        <div className="flex items-center gap-3">
+          <div className={styles.icon3d}>
+            <Calculator size={20} />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-wider text-black/40">
+              Simulações hoje
+            </p>
+
+            <p className="mt-0.5 text-2xl font-black leading-none text-black">
+              {numero(
+                dados.hoje.financiamento + dados.hoje.cartao
+              )}
+            </p>
+
+            <p className="mt-1 text-[11px] font-bold text-black/45">
+              clientes viram a parcela no site
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-1.5 border-t border-white/10 pt-3">
+          {dados.instalado ? (
+            <>
+              <Detalhe
+                rotulo="Financiamento"
+                valor={dados.hoje.financiamento}
+              />
+
+              <Detalhe
+                rotulo="Cartão de crédito"
+                valor={dados.hoje.cartao}
+              />
+            </>
+          ) : (
+            <p className="text-[11px] font-bold leading-5 text-black/45">
+              Falta rodar no Supabase o SQL{" "}
+              <span className="text-black/70">
+                0033_simulacoes_site.sql
+              </span>
+              .
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const periodos = [
+    { titulo: "Hoje", valores: dados.hoje },
+    { titulo: "7 dias", valores: dados.semana },
+    { titulo: "30 dias", valores: dados.mes },
+  ];
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <Calculator size={15} className="text-[#a97800]" />
+
+        <h3 className="text-sm font-black text-black">
+          Simulações de pagamento
+        </h3>
+      </div>
+
+      {!dados.instalado ? (
+        <p className="text-sm font-semibold leading-6 text-black/55">
+          Falta rodar o SQL que ensina o banco a guardar as
+          simulações. No Supabase, SQL Editor, rode{" "}
+          <span className="font-black text-black/75">
+            supabase/migrations/0033_simulacoes_site.sql
+          </span>{" "}
+          inteiro. Enquanto isso o simulador funciona normal; só
+          não é contado.
+        </p>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {periodos.map((periodo) => (
+              <div key={periodo.titulo} className={styles.miniCard}>
+                <p className="text-[10px] font-black uppercase tracking-wider text-black/40">
+                  {periodo.titulo}
+                </p>
+
+                <div className="mt-3 space-y-1.5">
+                  <Detalhe
+                    rotulo="Financiamento"
+                    valor={periodo.valores.financiamento}
+                  />
+
+                  <Detalhe
+                    rotulo="Cartão de crédito"
+                    valor={periodo.valores.cartao}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-2 text-[11px] font-bold leading-5 text-black/40">
+            Conta cada cliente que chegou a ver a parcela no
+            simulador do site — uma vez por forma de pagamento,
+            mesmo que ele mude os valores várias vezes.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+/*
  * Uma linha de ranking, com a barra atrás do texto.
  *
  * A barra é proporção, não medida: ela compara com o primeiro
@@ -327,7 +467,20 @@ function Linha({
   );
 }
 
-export default async function AcessosDoSite() {
+/*
+ * Duas versões do mesmo painel.
+ *
+ * Na dashboard fica só o dia de hoje: é o número que a loja
+ * olha toda vez que abre o sistema, e o resto (semana, mês,
+ * motos mais vistas, origem, gráficos) empurrava o painel para
+ * baixo sem ser lido. Tudo isso continua em /dashboard/acessos,
+ * a um clique, com `completo`.
+ */
+export default async function AcessosDoSite({
+  completo = false,
+}: {
+  completo?: boolean;
+}) {
   const dados = await visitasDoSite();
 
   const maisVista = dados.motos[0]?.visitas || 1;
@@ -348,16 +501,29 @@ export default async function AcessosDoSite() {
           </h2>
 
           <p className="text-xs font-bold text-black/45">
-            Quantas pessoas entraram em blackoutmotos.com.br
+            {completo
+              ? "Quantas pessoas entraram em blackoutmotos.com.br"
+              : "Hoje, desde a meia-noite"}
           </p>
         </div>
 
-        <span
-          className={`${styles.dataPill} flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-black/65`}
-        >
-          <Globe size={14} className="text-[#a97800]" />
-          Só o site
-        </span>
+        {completo ? (
+          <span
+            className={`${styles.dataPill} flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-black/65`}
+          >
+            <Globe size={14} className="text-[#a97800]" />
+            Só o site
+          </span>
+        ) : (
+          <Link
+            href="/dashboard/acessos"
+            className={`${styles.dataPill} flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-black/65`}
+          >
+            <BarChart3 size={14} className="text-[#a97800]" />
+            Ver todas as métricas
+            <ArrowRight size={14} className="text-[#a97800]" />
+          </Link>
+        )}
       </div>
 
       {/*
@@ -366,14 +532,16 @@ export default async function AcessosDoSite() {
         * Visita e tela são números diferentes de propósito, e
         * sem isto escrito na tela um parece erro do outro.
         */}
-      <p className="mb-5 text-[11px] font-bold leading-5 text-black/40">
-        <span className="text-black/60">Visita</span> é cada
-        vez que alguém entra no site.{" "}
-        <span className="text-black/60">Tela</span> é cada
-        página aberta — quem entra e olha cinco motos conta como
-        uma visita e seis telas. O sistema da loja fica fora da
-        conta: só o site público é medido.
-      </p>
+      {completo && (
+        <p className="mb-5 text-[11px] font-bold leading-5 text-black/40">
+          <span className="text-black/60">Visita</span> é cada
+          vez que alguém entra no site.{" "}
+          <span className="text-black/60">Tela</span> é cada
+          página aberta — quem entra e olha cinco motos conta
+          como uma visita e seis telas. O sistema da loja fica
+          fora da conta: só o site público é medido.
+        </p>
+      )}
 
       {!dados.instalado ? (
         <p className="text-sm font-semibold leading-6 text-black/55">
@@ -400,6 +568,27 @@ export default async function AcessosDoSite() {
           </span>
           . É rápido, e os números aparecem na hora seguinte.
         </p>
+      ) : !completo ? (
+        <div className="mt-4 space-y-4">
+          {!dados.vazio && (
+            <Resumo
+              hoje={dados.hoje}
+              comparacao={dados.comparacao}
+              atencao={dados.atencao}
+              soHoje
+            />
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Periodo
+              titulo="Hoje"
+              quando="desde a meia-noite"
+              dados={dados.hoje}
+            />
+
+            <Simulacoes dados={dados.simulacoes} soHoje />
+          </div>
+        </div>
       ) : (
         <div className="space-y-5">
           {!dados.vazio && (
@@ -429,6 +618,8 @@ export default async function AcessosDoSite() {
               dados={dados.mes}
             />
           </div>
+
+          <Simulacoes dados={dados.simulacoes} />
 
           {dados.vazio ? (
             <p className="text-sm font-semibold leading-6 text-black/55">

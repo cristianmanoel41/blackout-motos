@@ -7,6 +7,7 @@ import EscolherMoto, {
 } from "@/components/site/EscolherMoto";
 import PassosDoFinanciamento from "@/components/site/CalculadoraParcela";
 import PassosDoCartao from "@/components/site/CalculadoraCartao";
+import { registrarSimulacao } from "@/components/site/medicao";
 
 /*
  * O SIMULADOR, COM A PERGUNTA CERTA NA FRENTE
@@ -100,6 +101,15 @@ export default function SimuladorDePagamento({
 
   const preco = Number(valor) || 0;
   const escolheu = metodo !== "";
+
+  /*
+   * Conta a simulação quando a parcela aparece: método
+   * escolhido e valor na tela. Só encostar no botão sem valor
+   * não é simulação - não deu número nenhum.
+   */
+  useEffect(() => {
+    if (metodo && preco > 0) registrarSimulacao(metodo);
+  }, [metodo, preco]);
 
   /*
    * A numeração dos passos é contada, não escrita.
