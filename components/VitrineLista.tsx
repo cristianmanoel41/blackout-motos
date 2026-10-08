@@ -23,6 +23,8 @@ export type MotoVitrine = {
   ano_modelo: number | null;
   quilometragem: number | null;
   preco_anunciado: number | null;
+  /* Só vem preenchida nos links com "mostrar placa" ligado. */
+  placa?: string | null;
 };
 
 function semAcento(valor: string) {
@@ -140,6 +142,7 @@ export default function VitrineLista({
           moto.cor,
           moto.ano_fabricacao,
           moto.ano_modelo,
+          moto.placa,
         ]
           .filter(Boolean)
           .join(" ")
@@ -261,6 +264,12 @@ export default function VitrineLista({
                     {moto.cor && (
                       <span className="rounded-full bg-black/[.05] px-2.5 py-1">
                         {moto.cor}
+                      </span>
+                    )}
+
+                    {moto.placa && (
+                      <span className="rounded-full bg-black/[.05] px-2.5 py-1 font-semibold">
+                        Placa {moto.placa}
                       </span>
                     )}
                   </div>

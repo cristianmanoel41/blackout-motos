@@ -11,6 +11,7 @@ import {
   Link2,
   Plus,
   Power,
+  RectangleHorizontal,
 } from "lucide-react";
 
 /*
@@ -30,6 +31,8 @@ type Compartilhamento = {
   observacao: string | null;
   ativo: boolean;
   criado_em: string;
+  /* Coluna da migração 0034. Antes dela, vem undefined. */
+  mostrar_placa?: boolean;
 };
 
 export default function CompartilharEstoquePage() {
@@ -44,6 +47,7 @@ export default function CompartilharEstoquePage() {
 
   const [loja, setLoja] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [mostrarPlaca, setMostrarPlaca] = useState(false);
 
   useEffect(() => {
     carregar();
@@ -91,6 +95,9 @@ export default function CompartilharEstoquePage() {
       .insert({
         loja: loja.trim(),
         observacao: observacao.trim() || null,
+        /* Só manda a coluna quando ligada: assim criar link
+           continua funcionando antes de rodar a 0034. */
+        ...(mostrarPlaca ? { mostrar_placa: true } : {}),
       });
 
     setSalvando(false);
@@ -104,6 +111,7 @@ export default function CompartilharEstoquePage() {
 
     setLoja("");
     setObservacao("");
+    setMostrarPlaca(false);
     await carregar();
   }
 
@@ -126,6 +134,30 @@ export default function CompartilharEstoquePage() {
     if (error) {
       setErro(
         `Não foi possível alterar o link: ${error.message}`
+      );
+      return;
+    }
+
+    await carregar();
+  }
+
+  /*
+   * Liga ou desliga a placa na vitrine deste link.
+   *
+   * Loja que faz financiamento precisa da placa para
+   * simular; as outras não precisam ver.
+   */
+  async function alternarPlaca(link: Compartilhamento) {
+    const { error } = await supabase
+      .from("stock_shares")
+      .update({ mostrar_placa: !link.mostrar_placa })
+      .eq("id", link.id);
+
+    if (error) {
+      setErro(
+        error.message.includes("mostrar_placa")
+          ? "Falta rodar o arquivo 0034_placa_na_vitrine.sql no Supabase."
+          : `Não foi possível alterar o link: ${error.message}`
       );
       return;
     }
@@ -222,6 +254,18 @@ export default function CompartilharEstoquePage() {
           </div>
         </div>
 
+        <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-texto">
+          <input
+            type="checkbox"
+            checked={mostrarPlaca}
+            onChange={(e) =>
+              setMostrarPlaca(e.target.checked)
+            }
+            className="h-4 w-4 accent-[#d4a514]"
+          />
+          Mostrar a placa das motos (para loja que simula financiamento)
+        </label>
+
         <button
           type="button"
           onClick={criar}
@@ -302,6 +346,22 @@ export default function CompartilharEstoquePage() {
                       Copiar
                     </>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => alternarPlaca(link)}
+                  aria-pressed={!!link.mostrar_placa}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                    link.mostrar_placa
+                      ? "border-dourado text-dourado"
+                      : "border-grafite-claro text-texto hover:border-dourado hover:text-dourado"
+                  }`}
+                >
+                  <RectangleHorizontal size={14} />
+                  {link.mostrar_placa
+                    ? "Placa visível"
+                    : "Mostrar placa"}
                 </button>
 
                 <a
