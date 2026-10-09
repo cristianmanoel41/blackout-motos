@@ -7,6 +7,7 @@ import {
   Wallet,
 } from "lucide-react";
 import SimuladorDePagamento from "@/components/site/SimuladorDePagamento";
+import VideoComoSimular from "@/components/site/VideoComoSimular";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import {
   anoDaMoto,
@@ -109,6 +110,10 @@ export default async function FinanciamentoPage({
           Cuidamos da análise, da documentação e da
           transferência — você só escolhe a moto.
         </p>
+
+        <div className="mt-6 flex justify-center">
+          <VideoComoSimular />
+        </div>
       </header>
 
       {/*

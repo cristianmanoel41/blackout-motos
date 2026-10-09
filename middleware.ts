@@ -406,7 +406,12 @@ export const config = {
      * Na Vercel o caminho é atendido antes de chegar aqui - por
      * isso o defeito só aparecia no localhost e no Tailscale,
      * que é justamente onde a loja testa antes de publicar.
+     *
+     * O .mp4 também fica de fora: é o vídeo "como simular" da
+     * página de financiamento (public/videos), e o cliente do
+     * site não tem login - mandado para /login, o vídeo não
+     * tocava.
      */
-    '/((?!_next/static|_next/image|_vercel|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|_vercel|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4)$).*)',
   ],
 }
