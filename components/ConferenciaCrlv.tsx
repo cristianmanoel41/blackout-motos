@@ -10,6 +10,7 @@ import {
   type Situacao,
 } from "@/lib/documentos/crlv";
 import {
+  ChevronDown,
   CircleAlert,
   CircleCheck,
   CircleHelp,
@@ -80,6 +81,7 @@ export default function ConferenciaCrlv({
   const [carregando, setCarregando] = useState(true);
   const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState("");
+  const [verConferidos, setVerConferidos] = useState(false);
 
   useEffect(() => {
     carregar();
@@ -154,6 +156,22 @@ export default function ConferenciaCrlv({
   const itens = anexo?.leitura
     ? conferirCrlv(moto, anexo.leitura.dados)
     : [];
+
+  /*
+   * O que confere fica escondido por padrão.
+   *
+   * Na maioria das vezes quase tudo bate, e nove cartões
+   * verdes empurram para baixo justamente o que precisa de
+   * atenção. Aparece o que é diferente ou pede um olhar; o
+   * resto fica a um clique.
+   */
+  const conferidos = itens.filter(
+    (item) => item.situacao === "igual"
+  );
+
+  const visiveis = verConferidos
+    ? itens
+    : itens.filter((item) => item.situacao !== "igual");
 
   const diferentes = itens.filter(
     (item) => item.situacao === "diferente"
@@ -277,7 +295,7 @@ export default function ConferenciaCrlv({
           </div>
 
           <ul className="space-y-2">
-            {itens.map((item) => {
+            {visiveis.map((item) => {
               const { classe, Icone, rotulo } =
                 ESTILO[item.situacao];
 
@@ -328,6 +346,29 @@ export default function ConferenciaCrlv({
               );
             })}
           </ul>
+
+          {conferidos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setVerConferidos((ver) => !ver)}
+              aria-expanded={verConferidos}
+              className={`${
+                visiveis.length ? "mt-3" : ""
+              } inline-flex items-center gap-1.5 text-sm font-semibold text-texto-suave transition hover:text-dourado`}
+            >
+              <ChevronDown
+                size={16}
+                className={`transition ${
+                  verConferidos ? "rotate-180" : ""
+                }`}
+              />
+              {verConferidos
+                ? "Ocultar os dados que conferem"
+                : conferidos.length === 1
+                ? "Ver o dado que confere"
+                : `Ver os ${conferidos.length} dados que conferem`}
+            </button>
+          )}
 
           <p className="mt-3 text-xs text-texto-suave">
             {anexo.arquivo_nome} · anexado em{" "}
