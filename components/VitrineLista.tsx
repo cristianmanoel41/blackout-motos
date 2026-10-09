@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
-import { Bike, Search } from "lucide-react";
+import { Bike, FileDown, Search } from "lucide-react";
 
 /*
  * Lista de motos da vitrine compartilhada, com busca.
@@ -25,6 +25,8 @@ export type MotoVitrine = {
   preco_anunciado: number | null;
   /* Só vem preenchida nos links com "mostrar placa" ligado. */
   placa?: string | null;
+  /* Verdadeiro só nos links com "liberar CRLV" e moto com CRLV anexado. */
+  tem_crlv?: boolean | null;
 };
 
 function semAcento(valor: string) {
@@ -58,8 +60,11 @@ export default function VitrineLista({
   motos,
   capas,
   galerias,
+  token,
 }: {
   motos: MotoVitrine[];
+  /* O código do link: monta o endereço de baixar o CRLV. */
+  token?: string;
   /* Endereço da foto de capa, por moto. */
   capas?: Record<string, string>;
   /* Todas as fotos, na ordem, por moto. */
@@ -274,20 +279,45 @@ export default function VitrineLista({
                     )}
                   </div>
 
-                  {fotos.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAberta(
-                          abertaAgora ? "" : moto.id
-                        )
-                      }
-                      className="mt-3 text-sm font-semibold text-black/70 underline underline-offset-4 hover:text-black"
-                    >
-                      {abertaAgora
-                        ? "Esconder fotos"
-                        : "Ver todas as fotos"}
-                    </button>
+                  {/*
+                    * Os dois botões numa linha só, com respiro entre
+                    * eles: lado a lado sem espaço, o "Ver todas as
+                    * fotos" parecia grudado no "Baixar CRLV".
+                    */}
+                  {((moto.tem_crlv && token) || fotos.length > 0) && (
+                    <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                      {/*
+                        * O CRLV, para a loja parceira passar a ficha no
+                        * banco. O endereço é da própria vitrine: quem
+                        * confere se pode baixar é o servidor, a cada
+                        * clique.
+                        */}
+                      {moto.tem_crlv && token && (
+                        <a
+                          href={`/vitrine/${token}/crlv/${moto.id}`}
+                          className="inline-flex items-center gap-2 rounded-lg border border-black/15 bg-white px-3 py-2 text-sm font-semibold text-black transition hover:border-black/40"
+                        >
+                          <FileDown size={16} />
+                          Baixar CRLV
+                        </a>
+                      )}
+
+                      {fotos.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAberta(
+                              abertaAgora ? "" : moto.id
+                            )
+                          }
+                          className="py-2 text-sm font-semibold text-black/70 underline underline-offset-4 hover:text-black"
+                        >
+                          {abertaAgora
+                            ? "Esconder fotos"
+                            : "Ver todas as fotos"}
+                        </button>
+                      )}
+                    </div>
                   )}
 
                   {abertaAgora && fotos.length > 0 && (

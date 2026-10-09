@@ -11,6 +11,7 @@ import {
   Link2,
   Plus,
   Power,
+  FileText,
   RectangleHorizontal,
 } from "lucide-react";
 
@@ -33,6 +34,7 @@ type Compartilhamento = {
   criado_em: string;
   /* Coluna da migração 0034. Antes dela, vem undefined. */
   mostrar_placa?: boolean;
+  mostrar_crlv?: boolean;
 };
 
 export default function CompartilharEstoquePage() {
@@ -48,6 +50,7 @@ export default function CompartilharEstoquePage() {
   const [loja, setLoja] = useState("");
   const [observacao, setObservacao] = useState("");
   const [mostrarPlaca, setMostrarPlaca] = useState(false);
+  const [mostrarCrlv, setMostrarCrlv] = useState(false);
 
   useEffect(() => {
     carregar();
@@ -98,6 +101,7 @@ export default function CompartilharEstoquePage() {
         /* Só manda a coluna quando ligada: assim criar link
            continua funcionando antes de rodar a 0034. */
         ...(mostrarPlaca ? { mostrar_placa: true } : {}),
+        ...(mostrarCrlv ? { mostrar_crlv: true } : {}),
       });
 
     setSalvando(false);
@@ -112,6 +116,7 @@ export default function CompartilharEstoquePage() {
     setLoja("");
     setObservacao("");
     setMostrarPlaca(false);
+    setMostrarCrlv(false);
     await carregar();
   }
 
@@ -157,6 +162,40 @@ export default function CompartilharEstoquePage() {
       setErro(
         error.message.includes("mostrar_placa")
           ? "Falta rodar o arquivo 0034_placa_na_vitrine.sql no Supabase."
+          : `Não foi possível alterar o link: ${error.message}`
+      );
+      return;
+    }
+
+    await carregar();
+  }
+
+  /*
+   * Libera ou corta o download do CRLV neste link.
+   *
+   * O CRLV tem nome e CPF do dono: só a loja que passa a ficha
+   * no banco precisa dele.
+   */
+  async function alternarCrlv(link: Compartilhamento) {
+    if (!link.mostrar_crlv) {
+      const confirmar = window.confirm(
+        `Liberar o download do CRLV para ${
+          link.loja || "este link"
+        }? O CRLV tem nome e CPF do dono da moto.`
+      );
+
+      if (!confirmar) return;
+    }
+
+    const { error } = await supabase
+      .from("stock_shares")
+      .update({ mostrar_crlv: !link.mostrar_crlv })
+      .eq("id", link.id);
+
+    if (error) {
+      setErro(
+        error.message.includes("mostrar_crlv")
+          ? "Falta rodar o arquivo 0036_crlv_na_vitrine.sql no Supabase."
           : `Não foi possível alterar o link: ${error.message}`
       );
       return;
@@ -266,6 +305,18 @@ export default function CompartilharEstoquePage() {
           Mostrar a placa das motos (para loja que simula financiamento)
         </label>
 
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-texto">
+          <input
+            type="checkbox"
+            checked={mostrarCrlv}
+            onChange={(e) =>
+              setMostrarCrlv(e.target.checked)
+            }
+            className="h-4 w-4 accent-[#d4a514]"
+          />
+          Liberar o download do CRLV (para loja que passa a ficha no banco)
+        </label>
+
         <button
           type="button"
           onClick={criar}
@@ -362,6 +413,22 @@ export default function CompartilharEstoquePage() {
                   {link.mostrar_placa
                     ? "Placa visível"
                     : "Mostrar placa"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => alternarCrlv(link)}
+                  aria-pressed={!!link.mostrar_crlv}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                    link.mostrar_crlv
+                      ? "border-dourado text-dourado"
+                      : "border-grafite-claro text-texto hover:border-dourado hover:text-dourado"
+                  }`}
+                >
+                  <FileText size={14} />
+                  {link.mostrar_crlv
+                    ? "CRLV liberado"
+                    : "Liberar CRLV"}
                 </button>
 
                 <a

@@ -160,6 +160,7 @@ export default async function VitrinePage({
             motos={comFoto}
             capas={capas}
             galerias={galerias}
+            token={token}
           />
         )}
 
