@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Phone } from "lucide-react";
 import {
   ENDERECO_COMPLETO,
   LOJA,
@@ -135,9 +136,38 @@ export default function Rodape() {
               Fale no WhatsApp
             </a>
 
-            <p className="titulo mt-5 text-[1.6rem] claro">
-              {LOJA.whatsappExibicao}
-            </p>
+            {/*
+              * Os dois números, cada um com o que ele é: o
+              * WhatsApp e o fixo da loja. Sem a etiqueta, quem
+              * liga para o celular achando que é a loja (ou
+              * manda WhatsApp para o fixo) não é atendido.
+              */}
+            <dl className="mt-5 space-y-3">
+              <div>
+                <dt className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] suave">
+                  <IconeWhatsApp className="h-3.5 w-3.5" />
+                  WhatsApp
+                </dt>
+                <dd className="titulo text-[1.6rem] claro">
+                  {LOJA.whatsappExibicao}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] suave">
+                  <Phone className="h-3.5 w-3.5" />
+                  Telefone da loja
+                </dt>
+                <dd>
+                  <a
+                    href={`tel:${LOJA.telefoneLink}`}
+                    className="titulo text-[1.6rem] claro transition hover:text-white"
+                  >
+                    {LOJA.telefone}
+                  </a>
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
 
