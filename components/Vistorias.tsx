@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatarData } from "@/lib/formatadores/data";
+import EscanearDocumento from "@/components/EscanearDocumento";
 import {
   ClipboardCheck,
   ExternalLink,
+  FileText,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 
 const supabase = createClient();
@@ -202,6 +205,8 @@ export default function Vistorias({
   const [data, setData] = useState(hoje());
   const [observacoes, setObservacoes] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
+  /* O arquivo veio do scanner (e não do seletor de arquivo). */
+  const [escaneado, setEscaneado] = useState(false);
 
   useEffect(() => {
     carregar();
@@ -258,6 +263,7 @@ export default function Vistorias({
       });
 
       setArquivo(null);
+      setEscaneado(false);
       setObservacoes("");
       await carregar();
       aoMudar?.();
@@ -502,14 +508,56 @@ export default function Vistorias({
               Arquivo (PDF ou foto, até 20 MB)
             </label>
 
-            <input
-              type="file"
-              accept={TIPOS_ACEITOS}
-              onChange={(e) =>
-                setArquivo(e.target.files?.[0] || null)
-              }
-              className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-3 text-sm text-texto file:mr-4 file:rounded-lg file:border-0 file:bg-dourado file:px-4 file:py-2 file:text-sm file:font-semibold file:text-preto"
-            />
+            {escaneado && arquivo ? (
+              <div className="flex items-center gap-2 rounded-lg border border-dourado/50 bg-grafite-claro px-4 py-3 text-sm text-texto">
+                <FileText size={16} className="shrink-0 text-dourado" />
+
+                <span className="min-w-0 flex-1 truncate">
+                  {arquivo.name}
+                </span>
+
+                <span className="shrink-0 text-xs text-texto-suave">
+                  {tamanhoLegivel(arquivo.size)}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArquivo(null);
+                    setEscaneado(false);
+                  }}
+                  aria-label="Remover o documento escaneado"
+                  className="shrink-0 rounded p-1 text-texto-suave transition hover:text-red-400"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept={TIPOS_ACEITOS}
+                onChange={(e) => {
+                  setArquivo(e.target.files?.[0] || null);
+                  setEscaneado(false);
+                }}
+                className="w-full rounded-lg border border-grafite-claro bg-grafite-claro px-4 py-3 text-sm text-texto file:mr-4 file:rounded-lg file:border-0 file:bg-dourado file:px-4 file:py-2 file:text-sm file:font-semibold file:text-preto"
+              />
+            )}
+
+            {/*
+              * Para o documento que só existe em papel (as motos
+              * que já estavam no pátio). Moto comprada daqui para
+              * frente entra com o CRLV-e em PDF.
+              */}
+            <div className="mt-2">
+              <EscanearDocumento
+                nomeBase={tipo}
+                aoConcluir={(pdf) => {
+                  setArquivo(pdf);
+                  setEscaneado(true);
+                }}
+              />
+            </div>
           </div>
 
           <div className="sm:col-span-2">
