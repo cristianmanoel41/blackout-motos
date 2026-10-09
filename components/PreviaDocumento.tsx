@@ -202,7 +202,10 @@ export default function PreviaDocumento({
   fonte,
   entrelinha,
   variante,
+  aviso,
 }: {
+  /* Aviso que fica acima da folha e não sai na impressão. */
+  aviso?: React.ReactNode;
   url: string;
   titulo: string;
   voltarPara: string;
@@ -1088,6 +1091,8 @@ export default function PreviaDocumento({
             </button>
           </div>
         </div>
+
+        {aviso}
 
         {erro && (
           <div className="no-print mx-auto mb-6 max-w-[21cm] px-4">

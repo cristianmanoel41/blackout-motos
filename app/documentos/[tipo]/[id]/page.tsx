@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import PreviaDocumento from "@/components/PreviaDocumento";
+import AvisoCrlv from "@/components/AvisoCrlv";
 
 /*
  * Prévia dos documentos em Word (contratos e procuração)
@@ -26,6 +27,12 @@ type Documento = {
   fonte?: number;
   entrelinha?: number;
   variante?: string;
+  /*
+   * O documento leva dados da moto? Então confere com o CRLV
+   * antes de imprimir. "moto" quando o id é da moto, "venda"
+   * quando é da venda.
+   */
+  conferirCrlv?: "moto" | "venda";
 };
 
 const documentos: Record<string, Documento> = {
@@ -34,6 +41,7 @@ const documentos: Record<string, Documento> = {
     url: (id) => `/api/contratos/venda/${id}`,
     voltar: (id) => `/vendas/${id}`,
     voltarRotulo: "Voltar para a venda",
+    conferirCrlv: "venda",
   },
 
   "contrato-compra": {
@@ -41,6 +49,7 @@ const documentos: Record<string, Documento> = {
     url: (id) => `/api/contratos/compra/${id}`,
     voltar: (id) => `/motos/${id}`,
     voltarRotulo: "Voltar para a moto",
+    conferirCrlv: "moto",
     espalhar: true,
     /*
      * O teto subiu de 15 para 17, e a entrelinha apertou de
@@ -79,6 +88,7 @@ const documentos: Record<string, Documento> = {
     url: (id) => `/api/contratos/procuracao/${id}`,
     voltar: (id) => `/motos/${id}`,
     voltarRotulo: "Voltar para a moto",
+    conferirCrlv: "moto",
     espalhar: true,
     fonte: 12,
   },
@@ -107,6 +117,13 @@ export default async function DocumentoPage({
       fonte={documento.fonte}
       entrelinha={documento.entrelinha}
       variante={documento.variante}
+      aviso={
+        documento.conferirCrlv === "moto" ? (
+          <AvisoCrlv motoId={id} />
+        ) : documento.conferirCrlv === "venda" ? (
+          <AvisoCrlv vendaId={id} />
+        ) : null
+      }
     />
   );
 }

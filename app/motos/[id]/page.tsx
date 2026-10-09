@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import Vistorias from "@/components/Vistorias";
+import ConferenciaCrlv from "@/components/ConferenciaCrlv";
 import FotosMoto from "@/components/FotosMoto";
 import MotoNaCapa from "@/components/MotoNaCapa";
 import LegendaPost from "@/components/LegendaPost";
@@ -77,6 +78,7 @@ export default function DetalheMotoPage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [excluindo, setExcluindo] = useState(false);
+  const [versaoAnexos, setVersaoAnexos] = useState(0);
 
   useEffect(() => {
     carregarDados();
@@ -937,6 +939,18 @@ export default function DetalheMotoPage() {
         )}
       </div>
 
+      {/* CONFERÊNCIA COM O CRLV */}
+
+      {moto && (
+        <div className="mt-6">
+          <ConferenciaCrlv
+            motorcycleId={String(id)}
+            moto={moto}
+            versao={versaoAnexos}
+          />
+        </div>
+      )}
+
       {/* FOTOS */}
 
       <div className="mt-6">
@@ -958,7 +972,10 @@ export default function DetalheMotoPage() {
       {/* VISTORIAS */}
 
       <div className="mt-6">
-        <Vistorias motorcycleId={String(id)} />
+        <Vistorias
+          motorcycleId={String(id)}
+          aoMudar={() => setVersaoAnexos((v) => v + 1)}
+        />
       </div>
 
     </div>

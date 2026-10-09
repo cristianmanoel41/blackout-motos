@@ -182,11 +182,14 @@ export default function Vistorias({
   saleId,
   titulo = "Vistorias e CRLV",
   descricao = "Guarde aqui a vistoria cautelar, a de transferência e o CRLV desta moto.",
+  aoMudar,
 }: {
   motorcycleId: string;
   saleId?: string | null;
   titulo?: string;
   descricao?: string;
+  /* Avisa a ficha quando um anexo entra ou sai (a conferência do CRLV escuta). */
+  aoMudar?: () => void;
 }) {
   const [vistorias, setVistorias] = useState<Vistoria[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -257,6 +260,7 @@ export default function Vistorias({
       setArquivo(null);
       setObservacoes("");
       await carregar();
+      aoMudar?.();
     } catch (e: any) {
       console.error(e);
       setErro(
@@ -322,6 +326,7 @@ export default function Vistorias({
       .remove([vistoria.arquivo_path]);
 
     await carregar();
+    aoMudar?.();
   }
 
   const inputClass =
