@@ -188,15 +188,36 @@ export function slugsDoEstoque(motos: MotoSite[]) {
   return slugs;
 }
 
-/* A mensagem que chega no WhatsApp da loja. */
-export function convitePelaMoto(moto: MotoSite) {
+/*
+ * A mensagem que chega no WhatsApp da loja.
+ *
+ * Com o endereço da ficha no fim, quando quem chama sabe qual
+ * é: a loja abre o link e vê na hora a moto, as fotos e o preço
+ * que o cliente viu - sem "qual moto?" de volta, e sem dúvida
+ * entre duas CG 160 do mesmo ano.
+ */
+export function convitePelaMoto(moto: MotoSite, endereco?: string) {
   const preco = numero(moto.preco_anunciado);
 
   return `Olá, tenho interesse na ${nomeDaMoto(
     moto
   )} ${anoDaMoto(moto)}${
     preco ? ` anunciada por ${formatarMoeda(preco)}` : ""
-  }.`;
+  }.${endereco ? `\n${endereco}` : ""}`;
+}
+
+/*
+ * O endereço completo da ficha, para ir dentro da mensagem.
+ *
+ * O domínio vem da mesma variável do resto do site. No
+ * navegador ela também existe, porque leva NEXT_PUBLIC_.
+ */
+export const ENDERECO_DO_SITE = (
+  process.env.NEXT_PUBLIC_SITE_URL || "https://blackoutmotos.com.br"
+).replace(/\/+$/, "");
+
+export function linkDaFicha(slug: string) {
+  return `${ENDERECO_DO_SITE}/estoque/${slug}`;
 }
 
 /*
@@ -342,3 +363,160 @@ export const CATEGORIAS: { chave: Categoria; nome: string }[] = [
   { chave: "scooter", nome: "Scooter" },
   { chave: "esportiva", nome: "Esportivas" },
 ];
+
+export function nomeDaCategoria(chave: Categoria) {
+  return CATEGORIAS.find((item) => item.chave === chave)?.nome || "";
+}
+
+/*
+ * OS ATALHOS DE PREÇO
+ *
+ * As quatro faixas que a loja pediu, nesta ordem, e com o nome
+ * do jeito que o cliente fala. "ate" é teto; "acima", piso. A
+ * chave vai para o endereço (/estoque?preco=ate-20000), então o
+ * anúncio pode mandar a pessoa direto para a faixa certa.
+ */
+export const FAIXAS_DE_PRECO = [
+  { chave: "ate-15000", nome: "Até R$ 15 mil", de: 0, ate: 15000 },
+  { chave: "ate-20000", nome: "Até R$ 20 mil", de: 0, ate: 20000 },
+  { chave: "ate-25000", nome: "Até R$ 25 mil", de: 0, ate: 25000 },
+  { chave: "acima-25000", nome: "Acima de R$ 25 mil", de: 25000, ate: null },
+] as const;
+
+export function cabeNaFaixa(moto: MotoSite, chave: string) {
+  const faixa = FAIXAS_DE_PRECO.find((item) => item.chave === chave);
+
+  if (!faixa) return true;
+
+  const preco = numero(moto.preco_anunciado);
+
+  /* Moto sem preço não entra em faixa nenhuma: dizer que ela
+     cabe em "até 15 mil" seria prometer o que não se sabe. */
+  if (preco === null) return false;
+
+  if (faixa.ate !== null) return preco <= faixa.ate;
+
+  return preco > faixa.de;
+}
+
+/*
+ * PARA QUE A PESSOA QUER A MOTO
+ *
+ * É a pergunta do "Encontre sua moto ideal". Cada uso diz que
+ * prateleiras servem e a faixa de motor que faz sentido - e a
+ * regra é a mesma de `paraQueServe`, acima, para a ficha e a
+ * ferramenta nunca se contradizerem.
+ *
+ * Moto sem cilindrada no cadastro não é descartada pelo motor:
+ * só pela prateleira. Descartar por falta de dado esconderia
+ * moto boa por esquecimento de cadastro.
+ */
+export type Uso = "trabalho" | "cidade" | "viagem" | "lazer";
+
+export const USOS: { chave: Uso; nome: string; texto: string }[] = [
+  {
+    chave: "trabalho",
+    nome: "Trabalho",
+    texto: "Entrega, app e o dia inteiro rodando",
+  },
+  {
+    chave: "cidade",
+    nome: "Cidade",
+    texto: "Ir e voltar, trânsito e economia",
+  },
+  {
+    chave: "viagem",
+    nome: "Viagem",
+    texto: "Estrada, conforto e motor sobrando",
+  },
+  {
+    chave: "lazer",
+    nome: "Lazer",
+    texto: "Passeio, trilha e fim de semana",
+  },
+];
+
+const PERFIL_DO_USO: Record<
+  Uso,
+  { categorias: Categoria[]; ccMin?: number; ccMax?: number }
+> = {
+  trabalho: { categorias: ["street", "scooter", "trail"], ccMax: 190 },
+  cidade: { categorias: ["street", "scooter"], ccMax: 320 },
+  viagem: { categorias: ["street", "trail", "esportiva"], ccMin: 250 },
+  lazer: { categorias: ["trail", "esportiva", "street"], ccMin: 150 },
+};
+
+export function serveParaUso(moto: MotoSite, uso: Uso) {
+  const perfil = PERFIL_DO_USO[uso];
+
+  if (!perfil.categorias.includes(categoriaDaMoto(moto))) return false;
+
+  const cc = numero(moto.cilindrada);
+
+  if (cc === null) return true;
+  if (perfil.ccMin && cc < perfil.ccMin) return false;
+  if (perfil.ccMax && cc > perfil.ccMax) return false;
+
+  return true;
+}
+
+/*
+ * MOTOS PARECIDAS, PARA O FIM DA FICHA
+ *
+ * Quem abriu uma moto e não se decidiu quase sempre quer ver a
+ * vizinha: mesma prateleira, preço perto. A nota abaixo junta
+ * as duas coisas - e a moto mais nova vence o empate, porque é
+ * a que tem mais chance de ainda não ter sido vista.
+ */
+export function motosParecidas(
+  motos: MotoSite[],
+  moto: MotoSite,
+  quantas = 4
+) {
+  const preco = numero(moto.preco_anunciado);
+  const categoria = categoriaDaMoto(moto);
+
+  return motos
+    .filter((outra) => outra.id !== moto.id)
+    .map((outra, posicao) => {
+      const dela = numero(outra.preco_anunciado);
+
+      let nota = 0;
+
+      if (categoriaDaMoto(outra) === categoria) nota += 3;
+      if (outra.marca && outra.marca === moto.marca) nota += 1;
+
+      if (preco && dela) {
+        const diferenca = Math.abs(dela - preco) / preco;
+
+        if (diferenca <= 0.15) nota += 3;
+        else if (diferenca <= 0.35) nota += 1.5;
+      }
+
+      /* A lista já vem da mais nova para a mais velha. */
+      return { outra, nota: nota - posicao * 0.01 };
+    })
+    .sort((a, b) => b.nota - a.nota)
+    .slice(0, quantas)
+    .map((item) => item.outra);
+}
+
+/* Entrou nos últimos dias? É o selo "Chegou agora" do card. */
+export function chegouAgora(moto: MotoSite, dias = 10) {
+  if (!moto.data_entrada) return false;
+
+  const entrada = new Date(`${moto.data_entrada}T12:00:00`).getTime();
+
+  if (!Number.isFinite(entrada)) return false;
+
+  return Date.now() - entrada <= dias * 24 * 60 * 60 * 1000;
+}
+
+/* Os selos que saem do cadastro - nunca de texto fixo. */
+export function selosDaMoto(moto: MotoSite) {
+  return [
+    moto.unico_dono ? "Único dono" : null,
+    moto.possui_manual ? "Com manual" : null,
+    moto.possui_chave_reserva ? "Chave reserva" : null,
+  ].filter(Boolean) as string[];
+}

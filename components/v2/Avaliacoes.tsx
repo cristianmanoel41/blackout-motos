@@ -59,20 +59,31 @@ export default async function Avaliacoes() {
     <section className="grao relative border-y border-white/[.07] bg-[#0c0c10]">
       <div className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
         <AoEntrar className="text-center">
-          <span className="flex justify-center">
-            <Estrelas nota={nota ?? 5} tamanho={22} />
-          </span>
-
+          {/*
+            * Estrela só com nota de verdade.
+            *
+            * Antes, sem resposta do Google, apareciam cinco
+            * estrelas cheias de enfeite - e cinco estrelas sem
+            * número ao lado leem-se como "nota 5". Se a API cai,
+            * a seção fica só com o título e os botões para o
+            * Google, onde a nota real está.
+            */}
           {nota !== null && (
-            <p className="titulo mt-4 text-[2.2rem] claro">
-              {nota.toFixed(1).replace(".", ",")}
+            <>
+              <span className="flex justify-center">
+                <Estrelas nota={nota} tamanho={22} />
+              </span>
 
-              {total !== null && (
-                <span className="ml-2 align-middle text-sm font-semibold suave">
-                  · {total} avaliações no Google
-                </span>
-              )}
-            </p>
+              <p className="titulo mt-4 text-[2.2rem] claro">
+                {nota.toFixed(1).replace(".", ",")}
+
+                {total !== null && (
+                  <span className="ml-2 align-middle text-sm font-semibold suave">
+                    · {total} avaliações no Google
+                  </span>
+                )}
+              </p>
+            </>
           )}
 
           <h2 className="titulo mt-4 text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
@@ -111,11 +122,24 @@ export default async function Avaliacoes() {
 
                     <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/[.07] pt-4">
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-bold claro">
-                          {item.autor}
-                        </p>
+                        {/* O nome leva à avaliação original, como a licença do Google pede. */}
+                        {item.link ? (
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate text-[13px] font-bold claro hover:underline"
+                          >
+                            {item.autor}
+                          </a>
+                        ) : (
+                          <p className="truncate text-[13px] font-bold claro">
+                            {item.autor}
+                          </p>
+                        )}
                         <p className="text-[12px] suave">
                           {item.quando}
+                          {item.quando ? " · " : ""}no Google
                         </p>
                       </div>
 

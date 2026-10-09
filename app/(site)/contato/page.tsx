@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Clock, MapPin, Phone } from "lucide-react";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { IconeGoogleMaps, IconeWaze } from "@/components/site/IconeMapa";
-import Avaliacoes from "@/components/site/Avaliacoes";
+import Avaliacoes from "@/components/v2/Avaliacoes";
 import {
   CONVITE_GERAL,
   HORARIOS,

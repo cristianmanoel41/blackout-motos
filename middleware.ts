@@ -40,6 +40,7 @@ const PAGINAS_DO_SITE = [
   '/',
   '/estoque',
   '/financiamento',
+  '/encontre-sua-moto',
   '/sobre',
   '/contato',
   '/privacidade',
@@ -284,6 +285,7 @@ export async function middleware(request: NextRequest) {
     '/',
     '/estoque',
     '/financiamento',
+    '/encontre-sua-moto',
     '/sobre',
     '/contato',
     /* Privacidade e termos: o TikTok e o Google leem estas

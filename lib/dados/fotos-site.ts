@@ -14,8 +14,12 @@
 import { createClient } from "@/lib/supabase/server";
 
 /*
- * Vídeo fica de fora: o site mostra galeria de imagem, e um
- * arquivo de vídeo na faixa apareceria como quadro preto.
+ * Vídeo é separado da foto, não descartado.
+ *
+ * Card e capa só usam foto: um arquivo de vídeo no lugar da
+ * imagem apareceria como quadro preto. Mas a galeria da ficha
+ * toca o vídeo que a loja subiu - o mesmo arquivo da galeria do
+ * sistema, que já aceita vídeo desde a migração 0021 (TikTok).
  */
 function ehVideo(foto: any) {
   return (
@@ -28,6 +32,8 @@ export type Fotos = {
   /* A capa marcada na ficha; sem marcação, a primeira. */
   capas: Record<string, string>;
   galerias: Record<string, string[]>;
+  /* Os vídeos de cada moto, na ordem da galeria. */
+  videos: Record<string, string[]>;
   /*
    * A consulta falhou?
    *
@@ -44,8 +50,9 @@ export async function fotosDasMotos(
 ): Promise<Fotos> {
   const capas: Record<string, string> = {};
   const galerias: Record<string, string[]> = {};
+  const videos: Record<string, string[]> = {};
 
-  if (ids.length === 0) return { capas, galerias };
+  if (ids.length === 0) return { capas, galerias, videos };
 
   const supabase = await createClient();
 
@@ -58,9 +65,14 @@ export async function fotosDasMotos(
     .order("ordem", { ascending: true });
 
   (fotos || []).forEach((foto: any) => {
-    if (!foto.url || ehVideo(foto)) return;
+    if (!foto.url) return;
 
     const moto = String(foto.motorcycle_id);
+
+    if (ehVideo(foto)) {
+      videos[moto] = [...(videos[moto] || []), foto.url];
+      return;
+    }
 
     if (foto.principal) capas[moto] = foto.url;
 
@@ -82,7 +94,7 @@ export async function fotosDasMotos(
     );
   }
 
-  return { capas, galerias, falhou: Boolean(error) };
+  return { capas, galerias, videos, falhou: Boolean(error) };
 }
 
 /* A galeria com a capa na frente. */
