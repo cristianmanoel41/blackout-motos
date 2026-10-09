@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   BadgeCheck,
   ChevronDown,
-  ChevronRight,
   FileText,
   Repeat2,
   Wallet,
@@ -30,9 +28,10 @@ import { LOJA } from "@/lib/dados/loja";
  * do banco e do perfil de cada cliente, e número que depois não
  * se confirma queima a loja.
  *
- * Quem quer condição de verdade vai para /financiamento/proposta,
- * que é onde ficam os dados pessoais - em tela separada, porque
- * pedir CPF para quem só queria ver uma parcela espanta.
+ * Quem quer a condição de verdade manda a própria simulação no
+ * WhatsApp, com a mensagem pedindo as condições reais do banco.
+ * Por isso a página não convida mais para o formulário de
+ * dados: seriam duas portas para o mesmo pedido.
  *
  * Quando a pessoa vem de um anúncio, a moto chega pela URL
  * (?moto=...) e o campo já aparece preenchido.
@@ -120,7 +119,7 @@ export default async function FinanciamentoPage({
         * nome, CPF e data de nascimento antes - e quem está só
         * olhando fecha a aba em vez de digitar CPF. A
         * calculadora responde na hora e de graça; quem gostar
-        * do número desce e manda a proposta.
+        * do número manda a simulação no WhatsApp.
         */}
       {/*
         * Um simulador só, com os dois caminhos dentro.
@@ -135,42 +134,6 @@ export default async function FinanciamentoPage({
           estoque={doEstoque}
           motoInicial={moto}
         />
-      </section>
-
-      {/*
-        * O convite para a proposta, que agora mora em outra tela.
-        *
-        * Simular e curiosidade; mandar CPF e decisao. Juntas na
-        * mesma tela, a segunda atrapalhava a primeira - quem so
-        * queria ver uma parcela encontrava um formulario pedindo
-        * documento e fechava a aba.
-        */}
-      <section className="mt-8">
-        <Link
-          href={
-            moto
-              ? `/financiamento/proposta?moto=${encodeURIComponent(moto)}`
-              : "/financiamento/proposta"
-          }
-          className="cartao-3d flex items-center gap-4 rounded-2xl p-5 transition sm:p-6"
-        >
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base font-black texto-claro sm:text-lg">
-              Quer a condição real do banco?
-            </h2>
-
-            <p className="mt-1 text-sm leading-6 texto-suave">
-              Mande seus dados e a gente consulta a taxa e a
-              entrada com os principais bancos. Leva um minuto.
-            </p>
-          </div>
-
-          <ChevronRight
-            size={22}
-            className="shrink-0 texto-ouro"
-            aria-hidden="true"
-          />
-        </Link>
       </section>
 
       {/*

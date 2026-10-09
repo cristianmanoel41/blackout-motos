@@ -75,17 +75,18 @@ export default function PassosDoCartao({
 
   return (
     <>
-      <div className="mt-5">
-        <div className="mb-1.5 flex items-end justify-between gap-3">
+      <div className="sim-passo mt-4">
+        <div className="flex items-start justify-between gap-3">
           <label
             htmlFor="entrada-cartao"
-            className="text-xs font-semibold texto-suave"
+            className="sim-passo-titulo"
           >
-            {primeiroPasso}. Entrada (se tiver)
+            <span className="sim-numero">{primeiroPasso}</span>
+            Entrada (se tiver)
           </label>
 
           {preco > 0 && paga > 0 && (
-            <span className="text-xs font-bold texto-ouro">
+            <span className="sim-selo mt-0.5 shrink-0 !tracking-[0.08em]">
               {Math.round(porcentagem)}% do valor
             </span>
           )}
@@ -142,7 +143,7 @@ export default function PassosDoCartao({
         * não sabe de que valor elas saíram.
         */}
       {temConta && paga > 0 && (
-        <p className="mt-4 rounded-xl border border-[rgba(255,255,255,0.09)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm texto-suave">
+        <p className="sim-dado mt-4 px-4 py-3 text-sm texto-suave">
           Vai no cartão:{" "}
           <strong className="texto-claro">
             {formatarMoeda(naMaquina)}
@@ -171,12 +172,13 @@ export default function PassosDoCartao({
         * saberia disso.
         */}
       {temConta && (
-        <div className="mt-5">
-          <span className="mb-1.5 block text-xs font-semibold texto-suave">
-            {primeiroPasso + 1}. Em quantas vezes
-          </span>
+        <div className="sim-passo mt-4">
+          <p className="sim-passo-titulo">
+            <span className="sim-numero">{primeiroPasso + 1}</span>
+            Em quantas vezes
+          </p>
 
-          <ul className="overflow-hidden rounded-xl border border-[rgba(255,255,255,0.09)]">
+          <ul className="sim-tabela">
             {CARTAO.map((linha) => {
               const item = noCartao(naMaquina, linha.parcelas);
               const atual = escolhida === linha.parcelas;
@@ -237,22 +239,26 @@ export default function PassosDoCartao({
       )}
 
       {temConta && (
-        <div className="mt-6 rounded-2xl border border-[rgba(224,177,41,0.28)] bg-[rgba(224,177,41,0.08)] p-5">
+        <div className="sim-resultado mt-5">
           <p className="text-xs font-bold uppercase tracking-[0.2em] texto-ouro">
             {conta.parcelas} parcelas de
           </p>
 
-          <p className="mt-1 text-3xl font-black texto-claro sm:text-4xl">
+          <p className="sim-valor mt-1">
             {formatarMoeda(conta.parcela)}
           </p>
 
+          <p className="mt-1 text-xs texto-suave">
+            no cartão, acréscimo incluso
+          </p>
+
           <dl
-            className={`mt-4 grid gap-2 text-sm ${
+            className={`mt-4 grid grid-cols-2 gap-2 text-sm ${
               paga > 0 ? "sm:grid-cols-4" : "sm:grid-cols-3"
             }`}
           >
             {paga > 0 && (
-              <div>
+              <div className="sim-dado">
                 <dt className="text-xs texto-suave">Entrada</dt>
                 <dd className="font-bold texto-claro">
                   {formatarMoeda(paga)}
@@ -260,21 +266,21 @@ export default function PassosDoCartao({
               </div>
             )}
 
-            <div>
+            <div className="sim-dado">
               <dt className="text-xs texto-suave">No cartão</dt>
               <dd className="font-bold texto-claro">
                 {formatarMoeda(naMaquina)}
               </dd>
             </div>
 
-            <div>
+            <div className="sim-dado">
               <dt className="text-xs texto-suave">Acréscimo</dt>
               <dd className="font-bold texto-claro">
                 {formatarMoeda(conta.juros)}
               </dd>
             </div>
 
-            <div>
+            <div className="sim-dado">
               <dt className="text-xs texto-suave">
                 Total no cartão
               </dt>

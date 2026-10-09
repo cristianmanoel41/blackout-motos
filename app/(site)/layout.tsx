@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./site.css";
 import "./v2.css";
+import "./simulador.css";
 import {
   fonteSite,
   fonteTitulo,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TriangleAlert } from "lucide-react";
 import CampoMoeda from "@/components/CampoMoeda";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
@@ -29,13 +30,19 @@ import { linkWhatsApp } from "@/lib/dados/loja";
  */
 
 /*
- * A taxa de base da simulação, que a loja define.
+ * As taxas da simulação, que a loja define: a média mais baixa
+ * e a média mais alta que os bancos têm cobrado.
  *
- * Fica numa constante com nome porque é o número que muda
+ * Uma taxa só prometia um número que metade dos clientes não
+ * ia conseguir. A faixa mostra o melhor e o pior caso, e a
+ * análise de crédito decide onde a pessoa cai.
+ *
+ * Ficam em constantes com nome porque são os números que mudam
  * quando o mercado muda - e quem for mexer precisa achar isso
  * em um lugar só, não espalhado pela conta.
  */
-const TAXA_MENSAL = 0.025;
+const TAXA_MINIMA = 0.025;
+const TAXA_MAXIMA = 0.035;
 
 /*
  * O mesmo número, escrito para a tela.
@@ -46,11 +53,17 @@ const TAXA_MENSAL = 0.025;
  * a conta cobrar 2,5%. Promessa escrita que a conta desmente é
  * o pior defeito possível numa tela de preço.
  */
-const TAXA_ESCRITA =
-  (TAXA_MENSAL * 100).toLocaleString("pt-BR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 2,
-  }) + "% ao mês";
+function taxaEscrita(taxa: number) {
+  return (
+    (taxa * 100).toLocaleString("pt-BR", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
+    }) + "%"
+  );
+}
+
+const MINIMA_ESCRITA = taxaEscrita(TAXA_MINIMA);
+const MAXIMA_ESCRITA = taxaEscrita(TAXA_MAXIMA);
 
 const PARCELAS = [12, 24, 36, 48];
 
@@ -96,9 +109,11 @@ export default function PassosDoFinanciamento({
   const paga = Math.min(Number(entrada) || 0, preco);
   const financiado = preco - paga;
 
-  const parcela = parcelaPrice(financiado, TAXA_MENSAL, meses);
+  const parcelaMinima = parcelaPrice(financiado, TAXA_MINIMA, meses);
+  const parcelaMaxima = parcelaPrice(financiado, TAXA_MAXIMA, meses);
 
-  const total = parcela * meses + paga;
+  const totalMinimo = parcelaMinima * meses + paga;
+  const totalMaximo = parcelaMaxima * meses + paga;
 
   const porcentagem = preco > 0 ? (paga / preco) * 100 : 0;
 
@@ -113,9 +128,9 @@ export default function PassosDoFinanciamento({
     moto ? `Moto: ${moto}` : "",
     `Valor: ${formatarMoeda(preco)}`,
     `Entrada: ${paga > 0 ? formatarMoeda(paga) : "sem entrada"}`,
-    `Parcelas: ${meses}x de ${formatarMoeda(parcela)}`,
+    `Parcelas: ${meses}x de ${formatarMoeda(parcelaMinima)} a ${formatarMoeda(parcelaMaxima)}`,
     "",
-    "Quero saber as condições reais.",
+    "Quero ver as condições reais do banco.",
   ]
     .filter((linha) => linha !== "")
     .join("\n");
@@ -125,17 +140,18 @@ export default function PassosDoFinanciamento({
 
   return (
     <>
-      <div className="mt-5">
-        <div className="mb-1.5 flex items-end justify-between gap-3">
+      <div className="sim-passo mt-4">
+        <div className="flex items-start justify-between gap-3">
           <label
             htmlFor="valor-entrada"
-            className="text-xs font-semibold texto-suave"
+            className="sim-passo-titulo"
           >
-            {primeiroPasso}. Entrada
+            <span className="sim-numero">{primeiroPasso}</span>
+            Entrada
           </label>
 
           {preco > 0 && (
-            <span className="text-xs font-bold texto-ouro">
+            <span className="sim-selo mt-0.5 shrink-0 !tracking-[0.08em]">
               {Math.round(porcentagem)}% do valor
             </span>
           )}
@@ -179,12 +195,36 @@ export default function PassosDoFinanciamento({
             </div>
           </>
         )}
+
+        {/*
+          * O aviso do "sem entrada".
+          *
+          * Fica no passo da entrada, e não só no rodapé: é aqui
+          * que a pessoa arrasta a barra até zero e conclui que
+          * dá. Com a entrada zerada ele acende, porque é
+          * exatamente a conta que o banco pode recusar.
+          */}
+        <div
+          className="sim-alerta mt-4"
+          data-aceso={paga === 0 ? "true" : undefined}
+          role="note"
+        >
+          <TriangleAlert className="sim-alerta-icone" aria-hidden />
+          <p>
+            <strong>Financiamento sem entrada pode não ser possível.</strong>{" "}
+            A aprovação depende de critérios definidos pelo banco:
+            a <strong>análise de crédito do cliente</strong> e o{" "}
+            <strong>ano da moto</strong>. Dependendo desses fatores,
+            o banco pode exigir uma entrada.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-5">
-        <span className="mb-1.5 block text-xs font-semibold texto-suave">
-          {primeiroPasso + 1}. Em quantas vezes
-        </span>
+      <div className="sim-passo mt-4">
+        <p className="sim-passo-titulo">
+          <span className="sim-numero">{primeiroPasso + 1}</span>
+          Em quantas vezes
+        </p>
 
         {/*
           * Botões em vez de lista suspensa.
@@ -194,16 +234,14 @@ export default function PassosDoFinanciamento({
           * e esconde justamente o número que a pessoa quer ver
           * mudar.
           */}
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {PARCELAS.map((quantas) => (
             <button
               key={quantas}
               type="button"
               onClick={() => setMeses(quantas)}
               aria-pressed={meses === quantas}
-              className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${
-                meses === quantas ? "botao-ouro" : "botao-vidro"
-              }`}
+              className="sim-chip"
             >
               {quantas}x
             </button>
@@ -219,17 +257,36 @@ export default function PassosDoFinanciamento({
       )}
 
       {temConta && (
-        <div className="mt-6 rounded-2xl border border-[rgba(224,177,41,0.28)] bg-[rgba(224,177,41,0.08)] p-5">
+        <div className="sim-resultado mt-5">
           <p className="text-xs font-bold uppercase tracking-[0.2em] texto-ouro">
-            {meses} parcelas de
+            {meses} parcelas entre
           </p>
 
-          <p className="mt-1 text-3xl font-black texto-claro sm:text-4xl">
-            {formatarMoeda(parcela)}
+          {/*
+            * A faixa, com a parcela menor em destaque.
+            *
+            * Uma embaixo da outra, e não "X a Y" numa linha só:
+            * dois valores grandes lado a lado não cabem no
+            * celular e viram três linhas quebradas no meio.
+            */}
+          <p className="sim-valor mt-1">
+            {formatarMoeda(parcelaMinima)}
           </p>
 
-          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
-            <div>
+          <p className="mt-1 text-lg font-black texto-claro sm:text-xl">
+            <span className="texto-suave text-sm font-bold">e </span>
+            {formatarMoeda(parcelaMaxima)}
+          </p>
+
+          <p className="mt-1.5 text-xs leading-5 texto-suave">
+            por mês, no banco · taxa média de {MINIMA_ESCRITA} a{" "}
+            {MAXIMA_ESCRITA} ao mês, podendo ser{" "}
+            <strong className="texto-claro">maior ou menor</strong>{" "}
+            mediante análise de crédito feita pelo banco.
+          </p>
+
+          <dl className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+            <div className="sim-dado">
               <dt className="text-xs texto-suave">
                 Valor financiado
               </dt>
@@ -238,19 +295,20 @@ export default function PassosDoFinanciamento({
               </dd>
             </div>
 
-            <div>
+            <div className="sim-dado">
               <dt className="text-xs texto-suave">Entrada</dt>
               <dd className="font-bold texto-claro">
                 {paga > 0 ? formatarMoeda(paga) : "—"}
               </dd>
             </div>
 
-            <div>
+            <div className="sim-dado">
               <dt className="text-xs texto-suave">
                 Total a prazo
               </dt>
               <dd className="font-bold texto-claro">
-                {formatarMoeda(total)}
+                {formatarMoeda(totalMinimo)} a{" "}
+                {formatarMoeda(totalMaximo)}
               </dd>
             </div>
           </dl>
@@ -267,11 +325,16 @@ export default function PassosDoFinanciamento({
         */}
       <p className="mt-5 text-xs leading-5 texto-suave">
         Esta é <strong>apenas uma simulação ilustrativa</strong>,
-        calculada sobre {TAXA_ESCRITA}. O valor da parcela e o
+        calculada com a taxa média mínima de {MINIMA_ESCRITA} e a
+        máxima de {MAXIMA_ESCRITA} ao mês. A taxa final pode ser
+        maior ou menor, mediante análise de crédito feita pelo
+        banco. O valor da parcela e o
         valor da entrada estão{" "}
         <strong>sujeitos à análise de crédito</strong> e podem
-        mudar conforme o banco, o prazo e o seu perfil. Não
-        inclui IOF, tarifas nem seguros.
+        mudar conforme o banco, o prazo e o seu perfil. A
+        simulação sem entrada pode não ser aprovada, conforme a
+        análise de crédito e o ano da moto. Não inclui IOF,
+        tarifas nem seguros.
       </p>
 
       {/*
@@ -283,16 +346,28 @@ export default function PassosDoFinanciamento({
         * achando: o convite para ela fica logo abaixo, na
         * própria página.
         */}
+      {/*
+        * O botão chama para o que a pessoa quer de verdade: a
+        * condição real. "Mandar simulação" descreve o clique;
+        * "consultar condições" diz o que ela ganha com ele.
+        */}
       {temConta && (
-        <a
-          href={linkWhatsApp(mensagem)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="botao-ouro mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold sm:w-auto"
-        >
-          <IconeWhatsApp className="h-5 w-5" />
-          Mandar esta simulação no WhatsApp
-        </a>
+        <div className="mt-6">
+          <a
+            href={linkWhatsApp(mensagem)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="botao-ouro inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold sm:w-auto"
+          >
+            <IconeWhatsApp className="h-5 w-5" />
+            Consultar condições reais
+          </a>
+
+          <p className="mt-2 text-center text-xs texto-suave sm:text-left">
+            A gente consulta os bancos para você. Resposta
+            rápida e sem compromisso.
+          </p>
+        </div>
       )}
     </>
   );

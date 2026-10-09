@@ -8,6 +8,7 @@ import EscolherMoto, {
 import PassosDoFinanciamento from "@/components/site/CalculadoraParcela";
 import PassosDoCartao from "@/components/site/CalculadoraCartao";
 import { registrarSimulacao } from "@/components/site/medicao";
+import { Calculator, Check, CreditCard, Landmark } from "lucide-react";
 
 /*
  * O SIMULADOR, COM A PERGUNTA CERTA NA FRENTE
@@ -125,12 +126,14 @@ export default function SimuladorDePagamento({
   const campo =
     "w-full rounded-xl border px-4 py-3 text-sm outline-none";
 
-  const rotulo =
-    "mb-1.5 block text-xs font-semibold texto-suave";
-
   return (
-    <div className="cartao-3d rounded-2xl p-5 sm:p-8">
-      <h2 className="text-xl font-black texto-claro sm:text-2xl">
+    <div className="sim-moldura p-5 sm:p-8">
+      <span className="sim-selo">
+        <Calculator size={13} aria-hidden="true" />
+        Simulador
+      </span>
+
+      <h2 className="mt-3 text-2xl font-black texto-claro sm:text-3xl">
         Simule o seu <span className="texto-ouro">pagamento</span>
       </h2>
 
@@ -139,20 +142,25 @@ export default function SimuladorDePagamento({
         mesmo, no seu celular.
       </p>
 
-      <div className="mt-6">
-        <span className={rotulo}>1. Como você quer pagar?</span>
+      <div className="sim-passo mt-6">
+        <p className="sim-passo-titulo">
+          <span className="sim-numero">1</span>
+          Como você quer pagar?
+        </p>
 
         {/*
-          * Dois botões grandes, com o que cada um é escrito
+          * Dois cards grandes, com o que cada um é escrito
           * embaixo.
           *
           * "Financiamento" e "Cartão" sozinhos obrigam a pessoa
           * a saber a diferença antes de escolher. A linha de
           * baixo responde isso na própria escolha.
           */}
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {CAMINHOS.map((caminho) => {
             const atual = metodo === caminho.chave;
+            const Icone =
+              caminho.chave === "financiamento" ? Landmark : CreditCard;
 
             return (
               <button
@@ -160,21 +168,27 @@ export default function SimuladorDePagamento({
                 type="button"
                 onClick={() => setMetodo(caminho.chave)}
                 aria-pressed={atual}
-                className={`rounded-xl px-5 py-3.5 text-left transition ${
-                  atual ? "botao-ouro" : "botao-vidro"
-                }`}
+                className="sim-metodo"
               >
-                <span className="block text-sm font-bold">
-                  {caminho.nome}
+                <span className="sim-icone h-12 w-12">
+                  <Icone size={22} aria-hidden="true" />
                 </span>
 
-                <span
-                  className={`mt-0.5 block text-[11px] leading-4 ${
-                    atual ? "opacity-70" : "texto-suave"
-                  }`}
-                >
-                  {caminho.abaixo}
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-black texto-claro">
+                    {caminho.nome}
+                  </span>
+
+                  <span className="mt-0.5 block text-xs leading-4 texto-suave">
+                    {caminho.abaixo}
+                  </span>
                 </span>
+
+                {atual && (
+                  <span className="sim-visto" aria-hidden="true">
+                    <Check size={13} strokeWidth={3.5} />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -189,7 +203,7 @@ export default function SimuladorDePagamento({
         * coisa útil - e quem está no celular desiste nessa hora.
         */}
       {!escolheu && (
-        <p className="mt-5 text-sm leading-6 texto-suave">
+        <p className="mt-5 text-center text-sm leading-6 texto-suave">
           Escolha um dos dois acima e a moto, o valor e as
           parcelas aparecem aqui.
         </p>
@@ -198,10 +212,11 @@ export default function SimuladorDePagamento({
       {escolheu && (
         <>
           {temLista && (
-            <div className="mt-5">
-              <span className={rotulo}>
-                {passoDaMoto}. Escolha a moto
-              </span>
+            <div className="sim-passo mt-4">
+              <p className="sim-passo-titulo">
+                <span className="sim-numero">{passoDaMoto}</span>
+                Escolha a moto
+              </p>
 
               <EscolherMoto
                 valor={moto}
@@ -213,9 +228,13 @@ export default function SimuladorDePagamento({
             </div>
           )}
 
-          <div className="mt-5">
-            <label htmlFor="valor-simulado" className={rotulo}>
-              {passoDoValor}. Valor da moto
+          <div className="sim-passo mt-4">
+            <label
+              htmlFor="valor-simulado"
+              className="sim-passo-titulo"
+            >
+              <span className="sim-numero">{passoDoValor}</span>
+              Valor da moto
             </label>
 
             <CampoMoeda
@@ -227,7 +246,7 @@ export default function SimuladorDePagamento({
             />
 
             {metodo === "cartao" && (
-              <p className="mt-1.5 text-[11px] leading-4 texto-suave">
+              <p className="mt-2 text-[11px] leading-4 texto-suave">
                 Escolher a moto preenche o preço. A entrada, no
                 passo seguinte, desconta o que vai no cartão.
               </p>

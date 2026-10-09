@@ -1,0 +1,467 @@
+/*
+ * O SIMULADOR DE PAGAMENTO
+ *
+ * Tela de decisão de dinheiro: precisa parecer peça bem
+ * acabada, não formulário. Por isso tudo aqui é camada -
+ * moldura de ouro por fora, painel fundo por dentro, e cada
+ * passo numa placa própria que sai do painel.
+ *
+ * O relevo vem de luz e sombra, não de inclinar o card:
+ * card torto no celular faz o dedo errar o botão.
+ */
+
+/* ---------- A MOLDURA DE FORA ---------- */
+
+.sim-moldura {
+  position: relative;
+  border-radius: 1.75rem;
+  /* Fio de ouro com brilho no canto de cima: o gradiente na
+     borda é o que faz parecer metal, e não linha amarela. */
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(120% 60% at 15% 0%, rgba(224, 177, 41, 0.1), transparent 55%) padding-box,
+    linear-gradient(165deg, #1d1d24 0%, #111116 45%, #0a0a0d 100%) padding-box,
+    linear-gradient(
+        140deg,
+        rgba(247, 221, 138, 0.95) 0%,
+        rgba(224, 177, 41, 0.35) 22%,
+        rgba(224, 177, 41, 0.12) 50%,
+        rgba(224, 177, 41, 0.35) 78%,
+        rgba(247, 221, 138, 0.8) 100%
+      )
+      border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 6px rgba(0, 0, 0, 0.25),
+    0 30px 60px -28px rgba(0, 0, 0, 0.95),
+    0 0 50px -20px rgba(224, 177, 41, 0.35);
+}
+
+/* Cantoneiras: o detalhe de joalheria nos quatro cantos. */
+.sim-moldura::before,
+.sim-moldura::after {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+  border-color: rgba(247, 221, 138, 0.85);
+  border-style: solid;
+}
+
+.sim-moldura::before {
+  top: 10px;
+  left: 10px;
+  border-width: 2px 0 0 2px;
+  border-top-left-radius: 12px;
+}
+
+.sim-moldura::after {
+  bottom: 10px;
+  right: 10px;
+  border-width: 0 2px 2px 0;
+  border-bottom-right-radius: 12px;
+}
+
+/* ---------- SELO DO TOPO ---------- */
+
+.sim-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f0c640 !important;
+  background: linear-gradient(180deg, rgba(224, 177, 41, 0.16), rgba(224, 177, 41, 0.05));
+  border: 1px solid rgba(224, 177, 41, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- ÍCONE EM RELEVO ---------- */
+
+.sim-icone {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.95rem;
+  color: #f0c640 !important;
+  background: linear-gradient(160deg, #2a2a33 0%, #15151a 100%);
+  border: 1px solid rgba(224, 177, 41, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
+    0 8px 16px -8px rgba(0, 0, 0, 0.9);
+}
+
+/* ---------- AS DUAS FORMAS DE PAGAR ---------- */
+
+.sim-metodo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  border-radius: 1.15rem;
+  padding: 1rem;
+  text-align: left;
+  color: #f2f3f5;
+  background: linear-gradient(165deg, #202028 0%, #141419 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
+    0 14px 26px -16px rgba(0, 0, 0, 0.95);
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+@media (hover: hover) {
+  .sim-metodo:hover {
+    transform: translateY(-3px);
+    border-color: rgba(224, 177, 41, 0.45);
+  }
+}
+
+.sim-metodo:active {
+  transform: translateY(1px);
+}
+
+/* Escolhido: moldura de ouro acesa e o card "levanta". */
+.sim-metodo[aria-pressed="true"] {
+  border-color: transparent;
+  background:
+    radial-gradient(90% 120% at 0% 0%, rgba(224, 177, 41, 0.2), transparent 60%) padding-box,
+    linear-gradient(165deg, #26241c 0%, #15140f 100%) padding-box,
+    linear-gradient(135deg, #f7dd8a, #e0b129 45%, #8a6a12) border-box;
+  border: 1.5px solid transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 18px 34px -16px rgba(224, 177, 41, 0.45),
+    0 0 0 4px rgba(224, 177, 41, 0.08);
+}
+
+.sim-metodo[aria-pressed="true"] .sim-icone {
+  color: #17140a !important;
+  background: linear-gradient(180deg, #f7dd8a 0%, #e0b129 55%, #b88a17 100%);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* O visto no canto do escolhido. */
+.sim-visto {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  height: 1.35rem;
+  width: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #17140a !important;
+  background: linear-gradient(180deg, #f7dd8a, #e0b129);
+  box-shadow: 0 4px 10px -4px rgba(224, 177, 41, 0.8);
+}
+
+/* A seta redonda do "Ver as motos do pátio": gira ao abrir. */
+.sim-seta {
+  display: flex;
+  flex-shrink: 0;
+  height: 1.9rem;
+  width: 1.9rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #f0c640 !important;
+  background: rgba(224, 177, 41, 0.1);
+  border: 1px solid rgba(224, 177, 41, 0.35);
+  transition: transform 0.3s ease;
+}
+
+.sim-seta * {
+  color: inherit !important;
+}
+
+[aria-expanded="true"] > .sim-seta {
+  transform: rotate(180deg);
+  color: #17140a !important;
+  background: linear-gradient(180deg, #f7dd8a, #e0b129);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ---------- CADA PASSO NUMA PLACA ---------- */
+
+.sim-passo {
+  border-radius: 1.25rem;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+    0 10px 22px -18px rgba(0, 0, 0, 0.9);
+}
+
+@media (min-width: 640px) {
+  .sim-passo {
+    padding: 1.25rem;
+  }
+}
+
+.sim-passo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f2f3f5;
+}
+
+/* O número do passo: medalha de ouro em relevo. */
+.sim-numero {
+  display: flex;
+  flex-shrink: 0;
+  height: 1.75rem;
+  width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #17140a !important;
+  background: radial-gradient(circle at 35% 30%, #fff1bf 0%, #f0c640 40%, #b88a17 100%);
+  box-shadow:
+    inset 0 -2px 0 rgba(0, 0, 0, 0.25),
+    0 0 0 3px rgba(224, 177, 41, 0.14),
+    0 6px 12px -6px rgba(224, 177, 41, 0.8);
+}
+
+/* Campos dentro das placas: afundados, para o dedo saber que
+   é ali que se escreve. */
+.sim-passo input:not([type="range"]) {
+  background: #0b0b0e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+}
+
+.sim-passo input:not([type="range"]):focus {
+  border-color: rgba(224, 177, 41, 0.6) !important;
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.6),
+    0 0 0 3px rgba(224, 177, 41, 0.15) !important;
+}
+
+/* ---------- PRAZOS DO BANCO ---------- */
+
+.sim-chip {
+  border-radius: 0.9rem;
+  padding: 0.7rem 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #e7e9ec;
+  background: linear-gradient(180deg, #24242c 0%, #16161b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.5),
+    0 8px 14px -10px rgba(0, 0, 0, 0.9);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.sim-chip:active {
+  transform: translateY(2px);
+}
+
+.sim-chip[aria-pressed="true"] {
+  color: #17140a !important;
+  background: linear-gradient(180deg, #f7dd8a 0%, #e0b129 55%, #b88a17 100%);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+    0 10px 20px -10px rgba(224, 177, 41, 0.85);
+}
+
+/* ---------- TABELA DO CARTÃO ---------- */
+
+.sim-tabela {
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #0c0c0f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.sim-tabela button {
+  position: relative;
+}
+
+.sim-tabela button[aria-pressed="true"] {
+  background: linear-gradient(90deg, rgba(224, 177, 41, 0.2), rgba(224, 177, 41, 0.04)) !important;
+}
+
+/* A barra de ouro na linha escolhida. */
+.sim-tabela button[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #f7dd8a, #e0b129);
+}
+
+/* ---------- O RESULTADO ---------- */
+
+/*
+ * Parece cartão de banco premium: chapa escura com veio de
+ * ouro, borda de metal e um reflexo cruzando na diagonal.
+ * É o número que a pessoa veio buscar - tem que ser a peça
+ * mais bonita da tela.
+ */
+.sim-resultado {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.4rem;
+  padding: 1.35rem;
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(80% 90% at 100% 0%, rgba(224, 177, 41, 0.28), transparent 60%) padding-box,
+    radial-gradient(60% 70% at 0% 100%, rgba(224, 177, 41, 0.12), transparent 60%) padding-box,
+    linear-gradient(150deg, #2a2618 0%, #15140f 45%, #0b0b0d 100%) padding-box,
+    linear-gradient(135deg, #f7dd8a, #b88a17 35%, #5c4710 60%, #e0b129 100%) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 26px 50px -22px rgba(0, 0, 0, 0.95),
+    0 0 60px -24px rgba(224, 177, 41, 0.55);
+}
+
+@media (min-width: 640px) {
+  .sim-resultado {
+    padding: 1.75rem;
+  }
+}
+
+/* O reflexo diagonal. */
+.sim-resultado::before {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -30%;
+  width: 45%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  pointer-events: none;
+}
+
+.sim-resultado > * {
+  position: relative;
+}
+
+.sim-valor {
+  font-size: 2.4rem;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ffffff 0%, #f7dd8a 70%, #e0b129 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  text-shadow: none;
+}
+
+@media (min-width: 640px) {
+  .sim-valor {
+    font-size: 3rem;
+  }
+}
+
+/* Os números menores, cada um numa plaquinha. Sobrou um
+   sozinho na última linha do celular, ele ocupa a largura. */
+@media (max-width: 639px) {
+  .sim-resultado dl > .sim-dado:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+}
+
+/* Texto escuro em cima do ouro: o tema do site pinta todo
+   texto de claro, e número claro some na medalha. */
+.sim-numero *,
+.sim-visto *,
+.sim-chip[aria-pressed="true"] *,
+.sim-metodo[aria-pressed="true"] .sim-icone * {
+  color: inherit !important;
+}
+
+/* Os números menores, cada um numa plaquinha. */
+.sim-dado {
+  border-radius: 0.85rem;
+  padding: 0.65rem 0.8rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-metodo,
+  .sim-chip {
+    transition: none;
+  }
+
+  .sim-metodo:hover {
+    transform: none;
+  }
+}
+
+/* ---------- O AVISO DO SEM ENTRADA ---------- */
+
+/* Âmbar, e não ouro: ouro aqui é botão e destaque bom, e o
+   aviso não pode parecer mais um enfeite da moldura. */
+.sim-alerta {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  border-radius: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.25rem;
+  color: #f3e3c3 !important;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.sim-alerta * {
+  color: inherit !important;
+}
+
+.sim-alerta strong {
+  color: #fbbf24 !important;
+}
+
+.sim-alerta[data-aceso="true"] {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.65);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.sim-alerta-icone {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.1rem;
+  color: #fbbf24 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-alerta {
+    transition: none;
+  }
+}

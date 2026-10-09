@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ListFilter, Pencil, Search, X } from "lucide-react";
+import { Check, ChevronDown, LayoutGrid, Pencil, Search, X } from "lucide-react";
 
 /*
  * Escolher a moto no formulário de financiamento.
@@ -207,17 +207,31 @@ export default function EscolherMoto({
           <button
             type="button"
             onClick={() => setVerTodas((antes) => !antes)}
-            className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-white/[.02] px-4 py-3 text-left text-sm font-bold transition"
+            aria-expanded={verTodas}
+            aria-pressed={verTodas}
+            className="sim-metodo mt-2 !gap-3 !px-3 !py-3"
           >
-            <span className="flex items-center gap-2 texto-claro">
-              <ListFilter size={16} className="shrink-0 texto-ouro" />
-              {verTodas
-                ? "Esconder a lista"
-                : "Ver as motos do pátio"}
+            <span className="sim-icone h-10 w-10">
+              <LayoutGrid size={19} aria-hidden="true" />
             </span>
 
-            <span className="shrink-0 text-xs font-bold texto-suave">
-              {estoque.length}
+            <span className="min-w-0 flex-1">
+              <span className="block whitespace-nowrap text-[14px] font-black leading-5 texto-claro">
+                {verTodas
+                  ? "Esconder a lista"
+                  : "Ver motos do pátio"}
+              </span>
+
+              <span className="mt-0.5 block text-xs texto-suave">
+                {estoque.length}{" "}
+                {estoque.length === 1
+                  ? "moto disponível"
+                  : "motos disponíveis"}
+              </span>
+            </span>
+
+            <span className="sim-seta" aria-hidden="true">
+              <ChevronDown size={16} strokeWidth={3} />
             </span>
           </button>
         )}
