@@ -60,12 +60,14 @@ export default function NovoClientePage() {
 
   const [retorno, setRetorno] = useState("");
   const [motoRetorno, setMotoRetorno] = useState("");
+  const [vendaRetorno, setVendaRetorno] = useState("");
 
   useEffect(() => {
     const parametros = new URLSearchParams(window.location.search);
 
     setRetorno(parametros.get("retorno") || "");
     setMotoRetorno(parametros.get("moto") || "");
+    setVendaRetorno(parametros.get("venda") || "");
   }, []);
 
   useEffect(() => {
@@ -242,6 +244,17 @@ router.refresh();
 return;
     }
 
+    /* Comprador de venda da loja parceira, informado depois. */
+    if (retorno === "comprador" && vendaRetorno) {
+      router.replace(
+        `/vendas/${encodeURIComponent(vendaRetorno)}?comprador=${encodeURIComponent(
+          String(clienteCriado.id)
+        )}`
+      );
+      router.refresh();
+      return;
+    }
+
     if (retorno === "capacete") {
       router.replace(
         `/capacetes/vendas/nova?cliente=${encodeURIComponent(
@@ -257,6 +270,11 @@ return;
   }
 
   function cancelar() {
+    if (retorno === "comprador" && vendaRetorno) {
+      router.push(`/vendas/${encodeURIComponent(vendaRetorno)}`);
+      return;
+    }
+
     if (retorno === "capacete") {
       router.push("/capacetes/vendas/nova");
       return;
@@ -290,14 +308,17 @@ return;
           </h1>
 
           <p className="mt-2 text-sm text-texto-suave">
-            {retorno === "venda" || retorno === "capacete"
+            {retorno === "venda" ||
+            retorno === "capacete" ||
+            retorno === "comprador"
               ? "Cadastre o cliente e volte automaticamente para concluir a venda."
               : "Preencha os dados completos do cliente."}
           </p>
         </div>
 
         {(retorno === "venda" ||
-          retorno === "capacete") && (
+          retorno === "capacete" ||
+          retorno === "comprador") && (
           <div className="mb-6 rounded-xl border border-dourado/40 bg-dourado/5 p-4 text-sm text-texto">
             Este cliente será usado na venda que você está registrando.
           </div>
@@ -481,7 +502,9 @@ return;
             >
               {salvando
                 ? "Salvando..."
-                : retorno === "venda" || retorno === "capacete"
+                : retorno === "venda" ||
+                    retorno === "capacete" ||
+                    retorno === "comprador"
                   ? "Cadastrar e Voltar para Venda"
                   : "Cadastrar Cliente"}
             </button>

@@ -15,6 +15,7 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
 import ContratoAssinado from "@/components/ContratoAssinado";
+import InformarComprador from "@/components/InformarComprador";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { OPERADORA_CARTAO } from "@/lib/dados/financeiras";
 import CampoMoeda from "@/components/CampoMoeda";
@@ -104,6 +105,16 @@ export default function EditarVendaPage() {
 
   const [telefone, setTelefone] =
     useState("");
+
+  /*
+   * Venda da loja parceira sem comprador ainda: a ficha mostra
+   * o quadro para informar quem comprou.
+   */
+  const [semComprador, setSemComprador] =
+    useState(false);
+
+  const [lojaParceira, setLojaParceira] =
+    useState<string | null>(null);
 
   const [vendedor, setVendedor] =
     useState("");
@@ -379,6 +390,14 @@ export default function EditarVendaPage() {
 
     setTelefone(
       venda.telefone || ""
+    );
+
+    setSemComprador(
+      !venda.customer_id
+    );
+
+    setLojaParceira(
+      venda.loja_parceira || null
     );
 
     setVendedor(
@@ -1639,43 +1658,59 @@ export default function EditarVendaPage() {
               Cliente
             </h2>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            {semComprador && (
+              <InformarComprador
+                vendaId={String(id)}
+                lojaParceira={lojaParceira}
+                aoInformar={carregarVenda}
+              />
+            )}
 
-              <div>
-                <label className="mb-2 block text-sm text-zinc-300">
-                  Nome do cliente *
-                </label>
+            {!semComprador && lojaParceira && (
+              <p className="mb-4 text-sm text-zinc-400">
+                Moto vendida pela loja do {lojaParceira}.
+              </p>
+            )}
 
-                <input
-                  type="text"
-                  value={cliente}
-                  onChange={(e) =>
-                    setCliente(
-                      e.target.value
-                    )
-                  }
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                />
+            {!semComprador && (
+              <div className="grid gap-4 md:grid-cols-2">
+
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Nome do cliente *
+                  </label>
+
+                  <input
+                    type="text"
+                    value={cliente}
+                    onChange={(e) =>
+                      setCliente(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Telefone
+                  </label>
+
+                  <input
+                    type="text"
+                    value={telefone}
+                    onChange={(e) =>
+                      setTelefone(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+                </div>
+
               </div>
-
-              <div>
-                <label className="mb-2 block text-sm text-zinc-300">
-                  Telefone
-                </label>
-
-                <input
-                  type="text"
-                  value={telefone}
-                  onChange={(e) =>
-                    setTelefone(
-                      e.target.value
-                    )
-                  }
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                />
-              </div>
-
-            </div>
+            )}
           </section>
 
           {/* VALORES */}

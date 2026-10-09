@@ -339,6 +339,22 @@ export async function GET(
       );
     }
 
+    /*
+     * Venda feita pela loja parceira sai sem comprador. Sem ele
+     * o contrato sairia com o campo do cliente em branco.
+     */
+    if (!venda.customer_id) {
+      return Response.json(
+        {
+          error:
+            "Esta venda ainda está sem comprador. Informe o comprador na ficha da venda antes de gerar o contrato.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
     // =====================================================
     // 2. CARREGA O CLIENTE
     // =====================================================

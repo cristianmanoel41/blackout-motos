@@ -8,6 +8,10 @@ import { fechamentoDaQuinzena, empresaDoTipo } from "@/lib/dados/documentacao";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import CampoMoeda from "@/components/CampoMoeda";
 import {
+  COMPRADOR_PENDENTE,
+  LOJA_PARCEIRA,
+} from "@/lib/dados/loja-parceira";
+import {
   BANCOS_FINANCIAMENTO,
   OPERADORA_CARTAO,
 } from "@/lib/dados/financeiras";
@@ -231,11 +235,20 @@ export default function VendasPage() {
   const [documentos, setDocumentos] = useState<{
     vendaId: string;
     motoTrocaId: string;
+    comprador: boolean;
   } | null>(null);
 
   const [clienteId, setClienteId] = useState("");
 
   const [buscaCliente, setBuscaCliente] = useState("");
+
+  /*
+   * Moto nossa vendida na loja do Edvaldo: o dinheiro vem no
+   * repasse dele e os dados do comprador chegam depois. A venda
+   * sai sem cliente e a ficha dela pede o comprador ate ele
+   * ser informado.
+   */
+  const [pelaParceira, setPelaParceira] = useState(false);
 
   const [vendedor, setVendedor] = useState("");
 
@@ -300,6 +313,20 @@ export default function VendasPage() {
 
     setTransferenciaCliente("");
     setTransferenciaLoja("");
+  }
+
+  /*
+   * Na venda pela loja parceira a documentacao e paga pelo
+   * cliente direto ao Edvaldo, e a transferencia e a vistoria
+   * ficam com ele. Nada disso passa pelo caixa da Blackout.
+   */
+  function marcarPelaParceira(marcado: boolean) {
+    setPelaParceira(marcado);
+    definirTransferencia(marcado ? "nenhum" : "cliente");
+
+    if (marcado) {
+      setVistoriaTransferencia(null);
+    }
   }
 
   const [tipoVenda, setTipoVenda] = useState<
@@ -676,6 +703,10 @@ export default function VendasPage() {
           if (rascunho.observacoes) {
             setObservacoes(rascunho.observacoes);
           }
+
+          if (rascunho.pelaParceira) {
+            setPelaParceira(true);
+          }
         } catch (e) {
           console.error("Erro ao restaurar venda:", e);
         }
@@ -752,6 +783,7 @@ export default function VendasPage() {
       valorParcelaManual,
       clienteId,
       buscaCliente,
+      pelaParceira,
       componentes,
       capacetes,
       transferenciaCliente,
@@ -954,6 +986,7 @@ export default function VendasPage() {
     setBuscaMoto("");
     setClienteId("");
     setBuscaCliente("");
+    setPelaParceira(false);
 
     /*
      * Volta com o usuário logado, e não em branco:
@@ -990,7 +1023,7 @@ export default function VendasPage() {
       return;
     }
 
-    if (!clienteId || !clienteSelecionado) {
+    if (!pelaParceira && (!clienteId || !clienteSelecionado)) {
       setErro("É obrigatório selecionar um cliente cadastrado.");
       return;
     }
@@ -1152,7 +1185,11 @@ export default function VendasPage() {
         motoSelecionada
           ? `${motoSelecionada.marca || ""} ${motoSelecionada.modelo || ""}`
           : "esta moto"
-      } para ${clienteSelecionado.nome}?`,
+      } ${
+        pelaParceira
+          ? `pela loja do ${LOJA_PARCEIRA}? O comprador fica pendente até você informar na ficha da venda.`
+          : `para ${clienteSelecionado?.nome}?`
+      }`,
     );
 
     if (!confirmar) {
@@ -1185,9 +1222,14 @@ export default function VendasPage() {
           data_venda: dataVenda,
           hora_venda: horaVenda,
           motorcycle_id: motoId,
-          customer_id: clienteSelecionado.id,
-          cliente: clienteSelecionado.nome.trim(),
-          telefone: clienteSelecionado.telefone?.trim() || "",
+          customer_id: pelaParceira ? null : clienteSelecionado?.id,
+          cliente: pelaParceira
+            ? COMPRADOR_PENDENTE
+            : clienteSelecionado?.nome.trim(),
+          telefone: pelaParceira
+            ? ""
+            : clienteSelecionado?.telefone?.trim() || "",
+          loja_parceira: pelaParceira ? LOJA_PARCEIRA : null,
           vendedor,
           forma_pagamento: formaResumo,
           tipo_venda: tipoVenda,
@@ -1532,7 +1574,7 @@ export default function VendasPage() {
             e?.message || "falha no envio"
           }). Anexe pela ficha da moto.`;
         }
-      } else {
+      } else if (!pelaParceira) {
         avisoVistoria =
           " Lembre-se de anexar a vistoria de transferência na ficha da moto.";
       }
@@ -1544,6 +1586,7 @@ export default function VendasPage() {
       setDocumentos({
         vendaId: String(vendaCriada.id),
         motoTrocaId: motosTroca[0]?.motoId || "",
+        comprador: !pelaParceira,
       });
 
       limparFormulario();
@@ -1611,13 +1654,23 @@ export default function VendasPage() {
                 </p>
 
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href={`/documentos/contrato-venda/${documentos.vendaId}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
-                  >
-                    <FileText size={16} />
-                    Contrato de Venda
-                  </a>
+                  {documentos.comprador ? (
+                    <a
+                      href={`/documentos/contrato-venda/${documentos.vendaId}`}
+                      className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
+                    >
+                      <FileText size={16} />
+                      Contrato de Venda
+                    </a>
+                  ) : (
+                    <a
+                      href={`/vendas/${documentos.vendaId}`}
+                      className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-400"
+                    >
+                      <FileText size={16} />
+                      Informar o comprador depois
+                    </a>
+                  )}
 
                   {documentos.motoTrocaId && (
                     <>
@@ -1850,73 +1903,98 @@ export default function VendasPage() {
               </p>
             </div>
 
-            <div className="relative">
+            <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-700 bg-zinc-900 p-4">
               <input
-                type="text"
-                value={buscaCliente}
-                onChange={(e) => {
-                  const valor = e.target.value;
-
-                  setBuscaCliente(valor);
-
-                  if (clienteSelecionado && valor !== clienteSelecionado.nome) {
-                    setClienteId("");
-                  }
-                }}
-                placeholder="Digite o nome ou CPF do cliente..."
-                autoComplete="off"
-                className="w-full rounded-xl border border-yellow-600/60 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                type="checkbox"
+                checked={pelaParceira}
+                onChange={(e) => marcarPelaParceira(e.target.checked)}
+                className="mt-1 h-4 w-4 accent-yellow-500"
               />
 
-              {buscaCliente.trim() && !clienteSelecionado && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-950 shadow-2xl">
-                  {carregandoClientes ? (
-                    <div className="p-4 text-sm text-zinc-400">
-                      Carregando clientes...
-                    </div>
-                  ) : clientesFiltrados.length > 0 ? (
-                    clientesFiltrados.slice(0, 10).map((cliente) => (
-                      <button
-                        key={cliente.id}
-                        type="button"
-                        onClick={() => {
-                          setClienteId(String(cliente.id));
-                          setBuscaCliente(cliente.nome);
-                        }}
-                        className="block w-full border-b border-zinc-800 px-4 py-3 text-left hover:bg-zinc-900"
-                      >
-                        <p className="font-semibold">{cliente.nome}</p>
+              <span>
+                <span className="block font-semibold">
+                  Vendida pela loja do {LOJA_PARCEIRA}
+                </span>
 
-                        <p className="mt-1 text-xs text-zinc-400">
-                          {cliente.cpf ? `CPF: ${cliente.cpf}` : ""}
-                          {cliente.telefone ? ` · ${cliente.telefone}` : ""}
-                        </p>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="p-4 text-sm text-yellow-300">
-                      Nenhum cliente encontrado.
+                <span className="mt-1 block text-xs text-zinc-400">
+                  Use quando ele vende uma moto nossa na loja dele. Lance o
+                  repasse dele nas formas de pagamento. Os dados do comprador
+                  podem ser informados depois, na ficha da venda.
+                </span>
+              </span>
+            </label>
+
+            {!pelaParceira && (
+              <>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={buscaCliente}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+
+                      setBuscaCliente(valor);
+
+                      if (clienteSelecionado && valor !== clienteSelecionado.nome) {
+                        setClienteId("");
+                      }
+                    }}
+                    placeholder="Digite o nome ou CPF do cliente..."
+                    autoComplete="off"
+                    className="w-full rounded-xl border border-yellow-600/60 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+
+                  {buscaCliente.trim() && !clienteSelecionado && (
+                    <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-950 shadow-2xl">
+                      {carregandoClientes ? (
+                        <div className="p-4 text-sm text-zinc-400">
+                          Carregando clientes...
+                        </div>
+                      ) : clientesFiltrados.length > 0 ? (
+                        clientesFiltrados.slice(0, 10).map((cliente) => (
+                          <button
+                            key={cliente.id}
+                            type="button"
+                            onClick={() => {
+                              setClienteId(String(cliente.id));
+                              setBuscaCliente(cliente.nome);
+                            }}
+                            className="block w-full border-b border-zinc-800 px-4 py-3 text-left hover:bg-zinc-900"
+                          >
+                            <p className="font-semibold">{cliente.nome}</p>
+
+                            <p className="mt-1 text-xs text-zinc-400">
+                              {cliente.cpf ? `CPF: ${cliente.cpf}` : ""}
+                              {cliente.telefone ? ` · ${cliente.telefone}` : ""}
+                            </p>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-sm text-yellow-300">
+                          Nenhum cliente encontrado.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm text-zinc-400">
-                {clienteSelecionado
-                  ? `Selecionado: ${clienteSelecionado.nome}`
-                  : "Nenhum cliente selecionado."}
-              </div>
+                <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="text-sm text-zinc-400">
+                    {clienteSelecionado
+                      ? `Selecionado: ${clienteSelecionado.nome}`
+                      : "Nenhum cliente selecionado."}
+                  </div>
 
-              <button
-                type="button"
-                onClick={cadastrarNovoCliente}
-                className="rounded-xl bg-yellow-500 px-5 py-3 font-bold text-black hover:bg-yellow-400"
-              >
-                + Cadastrar Cliente
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={cadastrarNovoCliente}
+                    className="rounded-xl bg-yellow-500 px-5 py-3 font-bold text-black hover:bg-yellow-400"
+                  >
+                    + Cadastrar Cliente
+                  </button>
+                </div>
+              </>
+            )}
           </section>
 
           <section>
@@ -2687,162 +2765,178 @@ export default function VendasPage() {
             )}
           </section>
 
-          <section>
-            <div className="mb-4 border-b border-zinc-800 pb-3">
+          {pelaParceira ? (
+            <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h2 className="text-lg font-semibold text-yellow-500">
                 Transferência do Documento
               </h2>
 
-              <p className="mt-1 text-xs text-zinc-500">
-                Escolha quem paga. Na divisão o valor é partido meio a meio, e
-                isso sai escrito no contrato.
+              <p className="mt-2 text-sm text-zinc-400">
+                Fica com a loja do {LOJA_PARCEIRA}: o cliente paga a
+                documentação direto para ele, e a transferência e a vistoria
+                são feitas por lá. Nada disso entra no caixa da Blackout.
               </p>
-            </div>
+            </section>
+          ) : (
+            <>
+              <section>
+                <div className="mb-4 border-b border-zinc-800 pb-3">
+                  <h2 className="text-lg font-semibold text-yellow-500">
+                    Transferência do Documento
+                  </h2>
 
-            <div className="mb-4 grid gap-4 md:grid-cols-[200px_1fr] md:items-end">
-              <div>
-                <label className="mb-2 block text-sm text-zinc-300">
-                  Valor da transferência
-                </label>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Escolha quem paga. Na divisão o valor é partido meio a meio, e
+                    isso sai escrito no contrato.
+                  </p>
+                </div>
 
-                <CampoMoeda
-                  value={valorTransferencia}
-                  onChange={(valorDigitado) =>
-                    setValorTransferencia(valorDigitado)
-                  }
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    {
-                      chave: "cliente",
-                      nome: "Cliente paga",
-                    },
-                    {
-                      chave: "loja",
-                      nome: "Loja paga",
-                    },
-                    {
-                      chave: "divisao",
-                      nome: "Divisão",
-                    },
-                    {
-                      chave: "nenhum",
-                      nome: "Grátis",
-                    },
-                  ] as const
-                ).map((opcao) => (
-                  <button
-                    key={opcao.chave}
-                    type="button"
-                    onClick={() => definirTransferencia(opcao.chave)}
-                    className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
-                  >
-                    {opcao.nome}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm text-zinc-300">
-                  Valor recebido para documentação
-                </label>
-
-                <CampoMoeda
-                  value={transferenciaCliente}
-                  onChange={(valorDigitado) =>
-                    setTransferenciaCliente(valorDigitado)
-                  }
-                  placeholder="0,00"
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
-                />
-
-                {(Number(transferenciaCliente) || 0) > 0 && (
-                  <div className="mt-3">
-                    <label className="mb-2 block text-xs text-zinc-400">
-                      Como o cliente pagou a documentação
+                <div className="mb-4 grid gap-4 md:grid-cols-[200px_1fr] md:items-end">
+                  <div>
+                    <label className="mb-2 block text-sm text-zinc-300">
+                      Valor da transferência
                     </label>
 
-                    <select
-                      value={formaTransferencia}
-                      onChange={(evento) =>
-                        setFormaTransferencia(
-                          evento.target.value as TipoPagamento,
-                        )
+                    <CampoMoeda
+                      value={valorTransferencia}
+                      onChange={(valorDigitado) =>
+                        setValorTransferencia(valorDigitado)
                       }
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm outline-none focus:border-yellow-500"
-                    >
-                      <option value="Pix">Pix</option>
-                      <option value="Cartão">Cartão</option>
-                      <option value="Dinheiro">Dinheiro</option>
-                      <option value="Transferência">Transferência</option>
-                    </select>
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                    />
                   </div>
-                )}
 
-                <p className="mt-3 text-xs text-zinc-500">
-                  Já vem preenchido com o valor da transferência. Quando for de
-                  graça, use &quot;Grátis&quot; acima para zerar.
-                </p>
-              </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        {
+                          chave: "cliente",
+                          nome: "Cliente paga",
+                        },
+                        {
+                          chave: "loja",
+                          nome: "Loja paga",
+                        },
+                        {
+                          chave: "divisao",
+                          nome: "Divisão",
+                        },
+                        {
+                          chave: "nenhum",
+                          nome: "Grátis",
+                        },
+                      ] as const
+                    ).map((opcao) => (
+                      <button
+                        key={opcao.chave}
+                        type="button"
+                        onClick={() => definirTransferencia(opcao.chave)}
+                        className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:border-yellow-500 hover:text-yellow-500"
+                      >
+                        {opcao.nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div>
-                <label className="mb-2 block text-sm text-zinc-300">
-                  Transferência paga pela loja
-                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm text-zinc-300">
+                      Valor recebido para documentação
+                    </label>
 
-                <CampoMoeda
-                  value={transferenciaLoja}
-                  onChange={(valorDigitado) =>
-                    setTransferenciaLoja(valorDigitado)
+                    <CampoMoeda
+                      value={transferenciaCliente}
+                      onChange={(valorDigitado) =>
+                        setTransferenciaCliente(valorDigitado)
+                      }
+                      placeholder="0,00"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                    />
+
+                    {(Number(transferenciaCliente) || 0) > 0 && (
+                      <div className="mt-3">
+                        <label className="mb-2 block text-xs text-zinc-400">
+                          Como o cliente pagou a documentação
+                        </label>
+
+                        <select
+                          value={formaTransferencia}
+                          onChange={(evento) =>
+                            setFormaTransferencia(
+                              evento.target.value as TipoPagamento,
+                            )
+                          }
+                          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm outline-none focus:border-yellow-500"
+                        >
+                          <option value="Pix">Pix</option>
+                          <option value="Cartão">Cartão</option>
+                          <option value="Dinheiro">Dinheiro</option>
+                          <option value="Transferência">Transferência</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <p className="mt-3 text-xs text-zinc-500">
+                      Já vem preenchido com o valor da transferência. Quando for de
+                      graça, use &quot;Grátis&quot; acima para zerar.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm text-zinc-300">
+                      Transferência paga pela loja
+                    </label>
+
+                    <CampoMoeda
+                      value={transferenciaLoja}
+                      onChange={(valorDigitado) =>
+                        setTransferenciaLoja(valorDigitado)
+                      }
+                      placeholder="0,00"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-4 border-b border-zinc-800 pb-3">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-yellow-500">
+                    <ClipboardCheck size={18} />
+                    Vistoria de Transferência
+                  </h2>
+
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Anexe aqui a vistoria feita para a transferência. Ela fica
+                    guardada na ficha da moto e vinculada a esta venda, para a loja
+                    sempre ter a última vistoria.
+                  </p>
+                </div>
+
+                <input
+                  type="file"
+                  accept={TIPOS_ACEITOS}
+                  onChange={(e) =>
+                    setVistoriaTransferencia(e.target.files?.[0] || null)
                   }
-                  placeholder="0,00"
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black"
                 />
-              </div>
-            </div>
-          </section>
 
-          <section>
-            <div className="mb-4 border-b border-zinc-800 pb-3">
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-yellow-500">
-                <ClipboardCheck size={18} />
-                Vistoria de Transferência
-              </h2>
-
-              <p className="mt-1 text-xs text-zinc-500">
-                Anexe aqui a vistoria feita para a transferência. Ela fica
-                guardada na ficha da moto e vinculada a esta venda, para a loja
-                sempre ter a última vistoria.
-              </p>
-            </div>
-
-            <input
-              type="file"
-              accept={TIPOS_ACEITOS}
-              onChange={(e) =>
-                setVistoriaTransferencia(e.target.files?.[0] || null)
-              }
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black"
-            />
-
-            {vistoriaTransferencia ? (
-              <p className="mt-2 text-xs text-green-400">
-                {vistoriaTransferencia.name} ·{" "}
-                {tamanhoLegivel(vistoriaTransferencia.size)}
-              </p>
-            ) : (
-              <p className="mt-2 text-xs text-yellow-300">
-                Nenhum arquivo escolhido. Dá para registrar a venda assim mesmo
-                e anexar depois pela ficha da moto.
-              </p>
-            )}
-          </section>
+                {vistoriaTransferencia ? (
+                  <p className="mt-2 text-xs text-green-400">
+                    {vistoriaTransferencia.name} ·{" "}
+                    {tamanhoLegivel(vistoriaTransferencia.size)}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-yellow-300">
+                    Nenhum arquivo escolhido. Dá para registrar a venda assim mesmo
+                    e anexar depois pela ficha da moto.
+                  </p>
+                )}
+              </section>
+            </>
+          )}
 
           <section>
             <label className="mb-2 block text-sm text-zinc-300">
@@ -2866,7 +2960,11 @@ export default function VendasPage() {
             <div className="grid gap-4 md:grid-cols-4">
               <ResumoTexto
                 titulo="Cliente"
-                valor={clienteSelecionado?.nome || "Obrigatório"}
+                valor={
+                  pelaParceira
+                    ? `Loja ${LOJA_PARCEIRA} (comprador depois)`
+                    : clienteSelecionado?.nome || "Obrigatório"
+                }
               />
 
               <ResumoTexto

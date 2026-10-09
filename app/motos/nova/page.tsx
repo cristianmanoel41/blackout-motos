@@ -35,12 +35,7 @@ import CampoMoeda from "@/components/CampoMoeda";
 import CampoArquivoDocumento from "@/components/CampoArquivoDocumento";
 import { enviarVistoria } from "@/components/Vistorias";
 import { enviarDocumentoCliente } from "@/components/DocumentosCliente";
-
-/*
- * Unica loja parceira hoje. Vira uma lista quando aparecer
- * a segunda.
- */
-const LOJA_PARCEIRA = "Edvaldo";
+import { LOJA_PARCEIRA } from "@/lib/dados/loja-parceira";
 
 type TipoEntrada =
   | "estoque_inicial"
