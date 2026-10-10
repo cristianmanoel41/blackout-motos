@@ -14,6 +14,7 @@ import { scriptDoWhatsApp } from "@/components/site/medicao";
 import Cabecalho from "@/components/v2/Cabecalho";
 import Rodape from "@/components/v2/Rodape";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
+import { avaliacoesDoGoogle } from "@/lib/dados/avaliacoes-google";
 import { anoDaMoto, nomeDaMoto } from "@/lib/dados/moto-site";
 import type { MotoBusca } from "@/components/v2/Busca";
 import {
@@ -158,6 +159,27 @@ export default async function SiteLayout({
     paraBusca = [];
   }
 
+  /*
+   * A nota da loja na ficha para o Google, só quando é a nota
+   * de verdade do perfil (guardada por 24 horas). Sem chave ou
+   * sem resposta, a ficha sai sem nota - nunca com número
+   * inventado.
+   */
+  const google = await avaliacoesDoGoogle();
+
+  const fichaDaLoja =
+    google?.nota && google?.total
+      ? {
+          ...FICHA_DA_LOJA,
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: google.nota,
+            reviewCount: google.total,
+            bestRating: 5,
+          },
+        }
+      : FICHA_DA_LOJA;
+
   return (
     <div
       className={`${fonteSite.variable} ${fonteTitulo.variable} site-blackout v2 min-h-screen`}
@@ -184,7 +206,7 @@ export default async function SiteLayout({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(FICHA_DA_LOJA),
+          __html: JSON.stringify(fichaDaLoja),
         }}
       />
 

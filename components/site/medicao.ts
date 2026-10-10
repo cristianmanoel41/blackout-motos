@@ -44,6 +44,21 @@ export function aquiConta() {
 /* Onde a ficha da moto marca qual moto está aberta. */
 export const MARCA_DA_MOTO = "[data-moto]";
 
+/* Onde o card de moto (vitrine, capa) marca de qual moto é.
+   Fora da ficha, é por ele que o clique sabe a moto. */
+export const MARCA_DO_CARD = "[data-moto-card]";
+
+/*
+ * Onde a primeira tela guarda as pistas de onde a pessoa veio.
+ *
+ * O clique no WhatsApp quase nunca acontece na tela de
+ * entrada, e só ela sabe a origem. O Medidor guarda aqui, no
+ * sessionStorage (morre com a aba, como a visita), e o
+ * ouvinte do clique manda junto - assim dá para saber quantas
+ * conversas cada rede trouxe.
+ */
+export const CHEGADA = "chegada";
+
 /* Todo jeito de escrever link do WhatsApp que o site usa. */
 export const LINKS_WHATSAPP =
   "a[href*='wa.me'], a[href*='api.whatsapp.com']";
@@ -80,7 +95,10 @@ var a=e.target&&e.target.closest&&e.target.closest(${JSON.stringify(
   )});
 if(!a)return;
 var m=document.querySelector(${JSON.stringify(MARCA_DA_MOTO)});
-var d=JSON.stringify({caminho:location.pathname,tipo:'whatsapp',moto:m?m.getAttribute('data-moto'):null,primeira:false});
+var mo=m?m.getAttribute('data-moto'):null;
+if(!mo){var c=a.closest(${JSON.stringify(MARCA_DO_CARD)});if(c)mo=c.getAttribute('data-moto-card');}
+var g=null;try{g=JSON.parse(sessionStorage.getItem(${JSON.stringify(CHEGADA)})||'null');}catch(x){}
+var d=JSON.stringify({caminho:location.pathname,tipo:'whatsapp',moto:mo,primeira:false,chegada:!!g,referencia:g?g.referencia:'',busca:g?g.busca:''});
 try{if(navigator.sendBeacon&&navigator.sendBeacon(${JSON.stringify(
     DESTINO
   )},new Blob([d],{type:'application/json'})))return;}catch(x){}

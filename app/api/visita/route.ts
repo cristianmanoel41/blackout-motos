@@ -64,8 +64,14 @@ export async function POST(requisicao: Request) {
    * hora que a aba carregou e não muda mais - sem esta trava,
    * quem entrou uma vez e abriu seis motos contaria como seis
    * pessoas vindas do Instagram.
+   *
+   * A exceção é o clique no WhatsApp: ele traz as pistas que
+   * a primeira tela guardou, e leva a origem para a linha dele
+   * - é o que enche a coluna de WhatsApp por origem. As contas
+   * de chegada filtram tipo 'pagina', então não contam dobrado.
    */
-  const chegada = corpo?.primeira
+  const chegada =
+    corpo?.primeira || (tipo === "whatsapp" && corpo?.chegada === true)
     ? chegadaDaVisita(
         texto(corpo?.referencia, 300),
         texto(corpo?.busca, 300),

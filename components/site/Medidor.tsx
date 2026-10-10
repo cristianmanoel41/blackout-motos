@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import {
   aquiConta,
+  CHEGADA,
   DESTINO,
   MARCA_DA_MOTO,
 } from "@/components/site/medicao";
@@ -142,6 +143,22 @@ export default function Medidor() {
     const entrada = primeiraTela && ehChegada();
 
     primeiraTela = false;
+
+    /* As pistas da chegada ficam para o clique no WhatsApp
+       (ver CHEGADA em medicao.ts). */
+    if (entrada) {
+      try {
+        sessionStorage.setItem(
+          CHEGADA,
+          JSON.stringify({
+            referencia: document.referrer,
+            busca: window.location.search,
+          })
+        );
+      } catch {
+        /* Sem armazenamento: o clique sai sem origem. */
+      }
+    }
 
     mandar({
       caminho,

@@ -24,6 +24,23 @@ import Link from "next/link";
 
 const PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
 
+/*
+ * O Google Ads vai no mesmo aceite: também usa cookie e também
+ * segue a pessoa, então só carrega depois do "Aceitar".
+ *
+ * NEXT_PUBLIC_GOOGLE_ADS_ID é o "AW-..." da conta. O rótulo da
+ * conversão (NEXT_PUBLIC_GOOGLE_ADS_ZAP, o que vem depois da
+ * barra no "AW-.../xxxx") é opcional: com ele, o clique no
+ * WhatsApp vira conversão no Google. Sem nenhum dos dois, nada
+ * muda.
+ */
+const ADS = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || "";
+
+const ADS_ZAP = process.env.NEXT_PUBLIC_GOOGLE_ADS_ZAP || "";
+
+/* Há algo que precisa do aceite? */
+const MEDE = Boolean(PIXEL || ADS);
+
 const CHAVE = "blackout-cookies";
 
 /* Avisa a página que o pixel subiu, para os eventos que
@@ -34,7 +51,36 @@ declare global {
   interface Window {
     fbq?: any;
     _fbq?: any;
+    gtag?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
   }
+}
+
+function carregarGoogleAds() {
+  if (typeof window === "undefined" || !ADS) return;
+  if (typeof window.gtag === "function") return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () {
+    // O gtag lê o `arguments` original, não um array.
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments);
+  };
+
+  const script = document.createElement("script");
+
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ADS)}`;
+
+  document.head.appendChild(script);
+
+  window.gtag("js", new Date());
+  window.gtag("config", ADS);
+}
+
+function carregarTudo() {
+  carregarPixel();
+  carregarGoogleAds();
 }
 
 /*
@@ -90,7 +136,7 @@ export default function Pixel() {
   const [decidiu, setDecidiu] = useState(true);
 
   useEffect(() => {
-    if (!PIXEL) return;
+    if (!MEDE) return;
 
     let escolha = "";
 
@@ -102,7 +148,7 @@ export default function Pixel() {
     }
 
     if (escolha === "sim") {
-      carregarPixel();
+      carregarTudo();
       return;
     }
 
@@ -117,14 +163,22 @@ export default function Pixel() {
    * rodapé e no financiamento. Um lugar só para manter.
    */
   useEffect(() => {
-    if (!PIXEL) return;
+    if (!MEDE) return;
 
     function aoClicar(evento: MouseEvent) {
       const alvo = (evento.target as HTMLElement)?.closest?.(
         "a[href*='wa.me'], a[href*='api.whatsapp.com']"
       );
 
-      if (alvo) rastrear("Contact");
+      if (!alvo) return;
+
+      rastrear("Contact");
+
+      if (ADS && ADS_ZAP && typeof window.gtag === "function") {
+        window.gtag("event", "conversion", {
+          send_to: `${ADS}/${ADS_ZAP}`,
+        });
+      }
     }
 
     document.addEventListener("click", aoClicar);
@@ -142,10 +196,10 @@ export default function Pixel() {
 
     setDecidiu(true);
 
-    if (aceitou) carregarPixel();
+    if (aceitou) carregarTudo();
   }
 
-  if (!PIXEL || decidiu) return null;
+  if (!MEDE || decidiu) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4">

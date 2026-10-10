@@ -141,6 +141,18 @@ export default function PrivacidadePage() {
           deixou contato.
         </p>
 
+        {process.env.NEXT_PUBLIC_GOOGLE_ADS_ID && (
+          <p>
+            Também anunciamos no Google, e a{" "}
+            <strong className="texto-claro">
+              tag do Google Ads
+            </strong>{" "}
+            funciona do mesmo jeito: grava um cookie e conta
+            quem chamou no WhatsApp depois de ver o anúncio.
+            Vale a mesma regra abaixo.
+          </p>
+        )}
+
         <p>
           <strong className="texto-claro">
             Ele só entra em ação se você aceitar.

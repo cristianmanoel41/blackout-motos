@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const fixas = [
     { url: "/", prioridade: 1 },
     { url: "/estoque", prioridade: 0.9 },
+    { url: "/encontre-sua-moto", prioridade: 0.7 },
     { url: "/financiamento", prioridade: 0.7 },
     { url: "/sobre", prioridade: 0.6 },
     { url: "/contato", prioridade: 0.6 },
