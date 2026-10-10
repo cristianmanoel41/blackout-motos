@@ -50,6 +50,9 @@ export default function ContatoPage() {
       Icone: Phone,
       titulo: "Telefone e WhatsApp",
       linhas: [`WhatsApp ${LOJA.whatsappExibicao}`, `Loja ${LOJA.telefone}`],
+      /* Os dois números valem o mesmo: mesmo tamanho, mesma
+         cor, no meio do cartão. */
+      centralizado: true,
       acoes: [
         {
           nome: "WhatsApp",
@@ -98,7 +101,7 @@ export default function ContatoPage() {
         </header>
 
         <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {canais.map(({ Icone, titulo, linhas, acoes, horarios }) => (
+          {canais.map(({ Icone, titulo, linhas, acoes, horarios, centralizado }) => (
             <article
               key={titulo}
               /*
@@ -125,19 +128,11 @@ export default function ContatoPage() {
                * vem maior e mais clara que o resto.
                */}
               {/*
-               * O texto NÃO estica para empurrar os botões ao pé
-               * do cartão.
-               *
-               * A grade já iguala a altura dos três, e com o
-               * texto esticado a sobra virava um buraco no meio:
-               * o cartão do telefone tinha duas linhas, um vão, e
-               * o botão lá embaixo; o do horário tinha três
-               * linhas e metade vazia. Lado a lado no computador,
-               * um parecia cheio e os outros furados.
-               *
-               * Sem esticar, os três ficam com o mesmo ritmo -
-               * título, texto, botão - e a sobra vai toda para o
-               * pé, igual nos três.
+               * Os botões vão ao pé do cartão (mt-auto), na mesma
+               * linha nos três. Soltos logo abaixo do texto, o
+               * endereço (quatro linhas) e o telefone (duas)
+               * deixavam os botões em alturas diferentes lado a
+               * lado no computador - parecia desalinhado.
                */}
               {horarios && (
                 <dl className="mt-4 text-[15px]">
@@ -157,24 +152,32 @@ export default function ContatoPage() {
                 </dl>
               )}
 
-              <div className="mt-4 space-y-1">
-                {linhas.map((linha, ordem) => (
-                  <p
-                    key={linha}
-                    className={`break-words leading-6 ${
-                      ordem === 0
-                        ? "text-[17px] font-semibold texto-claro"
-                        : "text-[15px] texto-suave"
-                    }`}
-                  >
-                    {linha}
-                  </p>
-                ))}
-              </div>
+              {linhas.length > 0 && (
+                <div
+                  className={
+                    centralizado
+                      ? "my-auto flex flex-col items-center gap-2 pt-5 text-center"
+                      : "mt-4 space-y-1"
+                  }
+                >
+                  {linhas.map((linha, ordem) => (
+                    <p
+                      key={linha}
+                      className={`break-words leading-6 ${
+                        ordem === 0 || centralizado
+                          ? "text-[17px] font-semibold texto-claro"
+                          : "text-[15px] texto-suave"
+                      }`}
+                    >
+                      {linha}
+                    </p>
+                  ))}
+                </div>
+              )}
 
               {acoes.length > 0 && (
                 <div
-                  className={`mt-5 grid gap-2 ${
+                  className={`mt-auto grid gap-2 pt-5 ${
                     acoes.length > 1 ? "grid-cols-2" : ""
                   }`}
                 >
