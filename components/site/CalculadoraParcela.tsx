@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { TriangleAlert } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Info, TriangleAlert } from "lucide-react";
 import CampoMoeda from "@/components/CampoMoeda";
+import BarraDoResultado from "@/components/site/BarraDoResultado";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { linkWhatsApp } from "@/lib/dados/loja";
@@ -98,10 +100,13 @@ export default function PassosDoFinanciamento({
   preco,
   moto = "",
   primeiroPasso = 1,
+  painel = null,
 }: {
   preco: number;
   moto?: string;
   primeiroPasso?: number;
+  /* A coluna do simulador onde a conta é escrita. */
+  painel?: HTMLElement | null;
 }) {
   const [entrada, setEntrada] = useState("");
   const [meses, setMeses] = useState(24);
@@ -138,9 +143,130 @@ export default function PassosDoFinanciamento({
   const campo =
     "w-full rounded-xl border px-4 py-3 text-sm outline-none";
 
+  const conta = (
+    <>
+      {!temConta && (
+        <div className="sim-vazio">
+          <p className="text-sm font-bold texto-claro">
+            {entradaMaior
+              ? "Não há o que financiar"
+              : "Falta o valor da moto"}
+          </p>
+
+          <p className="max-w-[16rem] text-xs leading-5 texto-suave">
+            {entradaMaior
+              ? "A entrada já cobre o valor da moto."
+              : "Escolha a moto ou digite o valor para ver a parcela."}
+          </p>
+        </div>
+      )}
+
+      {temConta && (
+        <div className="sim-resultado">
+          <p className="sim-rotulo">Parcela estimada · {meses}x</p>
+
+          {/*
+            * A faixa, com a parcela menor em destaque e a maior
+            * logo abaixo, escrita como faixa ("até"). Dois
+            * valores grandes lado a lado não cabem no celular.
+            */}
+          <p className="sim-valor mt-2">
+            {formatarMoeda(parcelaMinima)}
+          </p>
+
+          <p className="mt-1 text-sm texto-suave">
+            até{" "}
+            <strong className="text-base font-black tabular-nums texto-claro">
+              {formatarMoeda(parcelaMaxima)}
+            </strong>{" "}
+            por mês
+          </p>
+
+          <dl className="sim-linhas">
+            <div>
+              <dt>Valor da moto</dt>
+              <dd>{formatarMoeda(preco)}</dd>
+            </div>
+
+            <div>
+              <dt>Entrada</dt>
+              <dd>{paga > 0 ? formatarMoeda(paga) : "Sem entrada"}</dd>
+            </div>
+
+            <div>
+              <dt>Valor financiado</dt>
+              <dd>{formatarMoeda(financiado)}</dd>
+            </div>
+
+            <div>
+              <dt>Taxa estimada</dt>
+              <dd>
+                {MINIMA_ESCRITA} a {MAXIMA_ESCRITA} a.m.
+              </dd>
+            </div>
+
+            <div>
+              <dt>Total a prazo</dt>
+              <dd>
+                {formatarMoeda(totalMinimo)}
+                <br />a {formatarMoeda(totalMaximo)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      )}
+
+      {/*
+        * O botão chama para o que a pessoa quer de verdade: a
+        * condição real. A mensagem do WhatsApp sai com moto,
+        * valor, entrada e parcela escritos - o vendedor recebe
+        * a conta feita e continua dali.
+        */}
+      {temConta && (
+        <div className="mt-4">
+          <a
+            href={linkWhatsApp(mensagem)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="botao-ouro inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold"
+          >
+            <IconeWhatsApp className="h-5 w-5" />
+            Consultar condições reais
+          </a>
+
+          <p className="mt-2 text-center text-xs texto-suave">
+            A gente consulta os bancos para você. Resposta
+            rápida e sem compromisso.
+          </p>
+        </div>
+      )}
+
+      {/*
+        * O aviso fica junto do número, não no rodapé da
+        * página: quem lê "R$ 480 por mês" precisa ler na mesma
+        * olhada que aquilo ainda passa por análise.
+        */}
+      <p className="sim-aviso">
+        <Info aria-hidden="true" />
+        <span>
+          Esta é <strong>apenas uma simulação ilustrativa</strong>,
+          calculada com a taxa média mínima de {MINIMA_ESCRITA} e a
+          máxima de {MAXIMA_ESCRITA} ao mês. A taxa final pode ser
+          maior ou menor, mediante análise de crédito feita pelo
+          banco. O valor da parcela e o valor da entrada estão{" "}
+          <strong>sujeitos à análise de crédito</strong> e podem
+          mudar conforme o banco, o prazo e o seu perfil. A
+          simulação sem entrada pode não ser aprovada, conforme a
+          análise de crédito e o ano da moto. Não inclui IOF,
+          tarifas nem seguros.
+        </span>
+      </p>
+    </>
+  );
+
   return (
     <>
-      <div className="sim-passo mt-4">
+      <div className="sim-passo">
         <div className="flex items-start justify-between gap-3">
           <label
             htmlFor="valor-entrada"
@@ -151,7 +277,7 @@ export default function PassosDoFinanciamento({
           </label>
 
           {preco > 0 && (
-            <span className="sim-selo mt-0.5 shrink-0 !tracking-[0.08em]">
+            <span className="sim-selo shrink-0">
               {Math.round(porcentagem)}% do valor
             </span>
           )}
@@ -170,8 +296,7 @@ export default function PassosDoFinanciamento({
           *
           * Digitar entrada é decisão; arrastar é descoberta. Com
           * a barra a pessoa vê a parcela caindo enquanto puxa, e
-          * é aí que ela entende quanto precisa juntar - coisa
-          * que digitar valor por valor não mostra.
+          * é aí que ela entende quanto precisa juntar.
           *
           * Só aparece com valor na mão: barra sem limite não
           * sabe para onde ir.
@@ -186,11 +311,11 @@ export default function PassosDoFinanciamento({
               value={paga}
               onChange={(evento) => setEntrada(evento.target.value)}
               aria-label="Valor da entrada"
-              className="faixa-entrada mt-3 w-full"
+              className="faixa-entrada mt-4 w-full"
             />
 
             <div className="mt-1 flex justify-between text-[11px] texto-suave">
-              <span>sem entrada</span>
+              <span>Sem entrada</span>
               <span>{formatarMoeda(preco)}</span>
             </div>
           </>
@@ -199,10 +324,10 @@ export default function PassosDoFinanciamento({
         {/*
           * O aviso do "sem entrada".
           *
-          * Fica no passo da entrada, e não só no rodapé: é aqui
-          * que a pessoa arrasta a barra até zero e conclui que
-          * dá. Com a entrada zerada ele acende, porque é
-          * exatamente a conta que o banco pode recusar.
+          * Fica no passo da entrada: é aqui que a pessoa arrasta
+          * a barra até zero e conclui que dá. Com a entrada
+          * zerada ele acende, porque é exatamente a conta que o
+          * banco pode recusar.
           */}
         <div
           className="sim-alerta mt-4"
@@ -220,21 +345,19 @@ export default function PassosDoFinanciamento({
         </div>
       </div>
 
-      <div className="sim-passo mt-4">
+      <div className="sim-passo">
         <p className="sim-passo-titulo">
           <span className="sim-numero">{primeiroPasso + 1}</span>
           Em quantas vezes
         </p>
 
         {/*
-          * Botões em vez de lista suspensa.
-          *
-          * São quatro opções e o dedo acerta de primeira; lista
-          * suspensa no celular abre uma roleta por cima da tela
-          * e esconde justamente o número que a pessoa quer ver
+          * Botões em vez de lista suspensa: são quatro opções e
+          * o dedo acerta de primeira; lista suspensa no celular
+          * esconde justamente o número que a pessoa quer ver
           * mudar.
           */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="sim-prazos" role="group" aria-label="Prazo">
           {PARCELAS.map((quantas) => (
             <button
               key={quantas}
@@ -249,125 +372,14 @@ export default function PassosDoFinanciamento({
         </div>
       </div>
 
-      {entradaMaior && (
-        <p className="mt-5 text-sm leading-6 texto-suave">
-          A entrada já cobre o valor da moto — nesse caso não há
-          o que financiar.
-        </p>
-      )}
+      {painel && createPortal(conta, painel)}
 
       {temConta && (
-        <div className="sim-resultado mt-5">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] texto-ouro">
-            {meses} parcelas entre
-          </p>
-
-          {/*
-            * A faixa, com a parcela menor em destaque.
-            *
-            * Uma embaixo da outra, e não "X a Y" numa linha só:
-            * dois valores grandes lado a lado não cabem no
-            * celular e viram três linhas quebradas no meio.
-            */}
-          <p className="sim-valor mt-1">
-            {formatarMoeda(parcelaMinima)}
-          </p>
-
-          <p className="mt-1 text-lg font-black texto-claro sm:text-xl">
-            <span className="texto-suave text-sm font-bold">e </span>
-            {formatarMoeda(parcelaMaxima)}
-          </p>
-
-          <p className="mt-1.5 text-xs leading-5 texto-suave">
-            por mês, no banco · taxa média de {MINIMA_ESCRITA} a{" "}
-            {MAXIMA_ESCRITA} ao mês, podendo ser{" "}
-            <strong className="texto-claro">maior ou menor</strong>{" "}
-            mediante análise de crédito feita pelo banco.
-          </p>
-
-          <dl className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-            <div className="sim-dado">
-              <dt className="text-xs texto-suave">
-                Valor financiado
-              </dt>
-              <dd className="font-bold texto-claro">
-                {formatarMoeda(financiado)}
-              </dd>
-            </div>
-
-            <div className="sim-dado">
-              <dt className="text-xs texto-suave">Entrada</dt>
-              <dd className="font-bold texto-claro">
-                {paga > 0 ? formatarMoeda(paga) : "—"}
-              </dd>
-            </div>
-
-            <div className="sim-dado">
-              <dt className="text-xs texto-suave">
-                Total a prazo
-              </dt>
-              <dd className="font-bold texto-claro">
-                {formatarMoeda(totalMinimo)} a{" "}
-                {formatarMoeda(totalMaximo)}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      )}
-
-      {/*
-        * O aviso.
-        *
-        * Fica junto do número, não no rodapé da página: quem lê
-        * "R$ 480 por mês" e sai feliz precisa ler na mesma
-        * olhada que aquilo ainda passa por análise. Aviso longe
-        * do número não é aviso, é formalidade.
-        */}
-      <p className="mt-5 text-xs leading-5 texto-suave">
-        Esta é <strong>apenas uma simulação ilustrativa</strong>,
-        calculada com a taxa média mínima de {MINIMA_ESCRITA} e a
-        máxima de {MAXIMA_ESCRITA} ao mês. A taxa final pode ser
-        maior ou menor, mediante análise de crédito feita pelo
-        banco. O valor da parcela e o
-        valor da entrada estão{" "}
-        <strong>sujeitos à análise de crédito</strong> e podem
-        mudar conforme o banco, o prazo e o seu perfil. A
-        simulação sem entrada pode não ser aprovada, conforme a
-        análise de crédito e o ano da moto. Não inclui IOF,
-        tarifas nem seguros.
-      </p>
-
-      {/*
-        * Uma saída só, e ela já leva tudo.
-        *
-        * A mensagem do WhatsApp sai com moto, valor, entrada e
-        * parcela escritos - o vendedor recebe a conta feita e
-        * continua dali. Quem quer a proposta formal continua
-        * achando: o convite para ela fica logo abaixo, na
-        * própria página.
-        */}
-      {/*
-        * O botão chama para o que a pessoa quer de verdade: a
-        * condição real. "Mandar simulação" descreve o clique;
-        * "consultar condições" diz o que ela ganha com ele.
-        */}
-      {temConta && (
-        <div className="mt-6">
-          <a
-            href={linkWhatsApp(mensagem)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="botao-ouro inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold sm:w-auto"
-          >
-            <IconeWhatsApp className="h-5 w-5" />
-            Consultar condições reais
-          </a>
-
-          <p className="mt-2 text-center text-xs texto-suave sm:text-left">
-            A gente consulta os bancos para você. Resposta
-            rápida e sem compromisso.
-          </p>
-        </div>
+        <BarraDoResultado
+          rotulo={`${meses}x no banco · estimativa`}
+          valor={`${formatarMoeda(parcelaMinima)} a ${formatarMoeda(parcelaMaxima)}`}
+          alvo={painel}
+        />
       )}
     </>
   );

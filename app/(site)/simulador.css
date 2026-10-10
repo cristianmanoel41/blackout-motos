@@ -1,101 +1,77 @@
 /*
  * O SIMULADOR DE PAGAMENTO
  *
- * Tela de decisão de dinheiro: precisa parecer peça bem
- * acabada, não formulário. Por isso tudo aqui é camada -
- * moldura de ouro por fora, painel fundo por dentro, e cada
- * passo numa placa própria que sai do painel.
+ * Tela de decisão de dinheiro: tem que passar a confiança de
+ * um simulador de banco, não de panfleto. Por isso é sóbria -
+ * um painel só, passos separados por fio fino em vez de caixa
+ * dentro de caixa, e o ouro guardado para o que importa: a
+ * escolha feita e o número da parcela.
  *
- * O relevo vem de luz e sombra, não de inclinar o card:
- * card torto no celular faz o dedo errar o botão.
+ * No computador a conta fica numa coluna à direita, parada
+ * enquanto a pessoa mexe nos campos: ela vê a parcela mudar
+ * sem rolar a tela. No celular a coluna desce para baixo dos
+ * campos e uma barra no rodapé mostra o número até lá.
  */
 
-/* ---------- A MOLDURA DE FORA ---------- */
+/* ---------- O PAINEL ---------- */
 
 .sim-moldura {
   position: relative;
-  border-radius: 1.75rem;
-  /* Fio de ouro com brilho no canto de cima: o gradiente na
-     borda é o que faz parecer metal, e não linha amarela. */
-  border: 1.5px solid transparent;
-  background:
-    radial-gradient(120% 60% at 15% 0%, rgba(224, 177, 41, 0.1), transparent 55%) padding-box,
-    linear-gradient(165deg, #1d1d24 0%, #111116 45%, #0a0a0d 100%) padding-box,
-    linear-gradient(
-        140deg,
-        rgba(247, 221, 138, 0.95) 0%,
-        rgba(224, 177, 41, 0.35) 22%,
-        rgba(224, 177, 41, 0.12) 50%,
-        rgba(224, 177, 41, 0.35) 78%,
-        rgba(247, 221, 138, 0.8) 100%
-      )
-      border-box;
+  overflow: clip;
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, #141418 0%, #0e0e11 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 6px rgba(0, 0, 0, 0.25),
-    0 30px 60px -28px rgba(0, 0, 0, 0.95),
-    0 0 50px -20px rgba(224, 177, 41, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 30px 60px -30px rgba(0, 0, 0, 0.9);
 }
 
-/* Cantoneiras: o detalhe de joalheria nos quatro cantos. */
-.sim-moldura::before,
-.sim-moldura::after {
-  content: "";
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  pointer-events: none;
-  border-color: rgba(247, 221, 138, 0.85);
-  border-style: solid;
+.sim-cabeca {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.sim-moldura::before {
-  top: 10px;
-  left: 10px;
-  border-width: 2px 0 0 2px;
-  border-top-left-radius: 12px;
+/* A coluna da conta. No celular vem embaixo, separada por fio;
+   no computador fica ao lado, num fundo um tom mais escuro. */
+.sim-lado {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.22);
 }
 
-.sim-moldura::after {
-  bottom: 10px;
-  right: 10px;
-  border-width: 0 2px 2px 0;
-  border-bottom-right-radius: 12px;
+@media (min-width: 1024px) {
+  .sim-lado {
+    border-top: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.07);
+  }
 }
 
-/* ---------- SELO DO TOPO ---------- */
+/* ---------- SELO ---------- */
 
 .sim-selo {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   border-radius: 999px;
-  padding: 0.35rem 0.8rem;
+  padding: 0.3rem 0.7rem;
   font-size: 10.5px;
   font-weight: 800;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #f0c640 !important;
-  background: linear-gradient(180deg, rgba(224, 177, 41, 0.16), rgba(224, 177, 41, 0.05));
-  border: 1px solid rgba(224, 177, 41, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(224, 177, 41, 0.08);
+  border: 1px solid rgba(224, 177, 41, 0.28);
 }
 
-/* ---------- ÍCONE EM RELEVO ---------- */
+/* ---------- ÍCONE ---------- */
 
 .sim-icone {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 0.95rem;
+  border-radius: 0.8rem;
   color: #f0c640 !important;
-  background: linear-gradient(160deg, #2a2a33 0%, #15151a 100%);
-  border: 1px solid rgba(224, 177, 41, 0.35);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
-    0 8px 16px -8px rgba(0, 0, 0, 0.9);
+  background: rgba(224, 177, 41, 0.08);
+  border: 1px solid rgba(224, 177, 41, 0.22);
 }
 
 /* ---------- AS DUAS FORMAS DE PAGAR ---------- */
@@ -104,69 +80,58 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.85rem;
   width: 100%;
-  border-radius: 1.15rem;
-  padding: 1rem;
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
   text-align: left;
   color: #f2f3f5;
-  background: linear-gradient(165deg, #202028 0%, #141419 100%);
+  background: #17171c;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
-    0 14px 26px -16px rgba(0, 0, 0, 0.95);
   transition:
-    transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 @media (hover: hover) {
   .sim-metodo:hover {
-    transform: translateY(-3px);
     border-color: rgba(224, 177, 41, 0.45);
   }
 }
 
-.sim-metodo:active {
-  transform: translateY(1px);
+.sim-metodo:focus-visible,
+.sim-chip:focus-visible {
+  outline: 2px solid #e0b129;
+  outline-offset: 2px;
 }
 
-/* Escolhido: moldura de ouro acesa e o card "levanta". */
+/* Escolhido: fio de ouro e um véu de ouro por dentro. */
 .sim-metodo[aria-pressed="true"] {
-  border-color: transparent;
-  background:
-    radial-gradient(90% 120% at 0% 0%, rgba(224, 177, 41, 0.2), transparent 60%) padding-box,
-    linear-gradient(165deg, #26241c 0%, #15140f 100%) padding-box,
-    linear-gradient(135deg, #f7dd8a, #e0b129 45%, #8a6a12) border-box;
-  border: 1.5px solid transparent;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 18px 34px -16px rgba(224, 177, 41, 0.45),
-    0 0 0 4px rgba(224, 177, 41, 0.08);
+  background: rgba(224, 177, 41, 0.07);
+  border-color: #e0b129;
+  box-shadow: 0 0 0 3px rgba(224, 177, 41, 0.1);
 }
 
 .sim-metodo[aria-pressed="true"] .sim-icone {
   color: #17140a !important;
-  background: linear-gradient(180deg, #f7dd8a 0%, #e0b129 55%, #b88a17 100%);
-  border-color: rgba(0, 0, 0, 0.3);
+  background: #e0b129;
+  border-color: #e0b129;
 }
 
 /* O visto no canto do escolhido. */
 .sim-visto {
   position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
+  top: 50%;
+  right: 1rem;
   display: flex;
-  height: 1.35rem;
-  width: 1.35rem;
+  height: 1.3rem;
+  width: 1.3rem;
+  transform: translateY(-50%);
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   color: #17140a !important;
-  background: linear-gradient(180deg, #f7dd8a, #e0b129);
-  box-shadow: 0 4px 10px -4px rgba(224, 177, 41, 0.8);
+  background: #e0b129;
 }
 
 /* A seta redonda do "Ver as motos do pátio": gira ao abrir. */
@@ -179,8 +144,8 @@
   justify-content: center;
   border-radius: 999px;
   color: #f0c640 !important;
-  background: rgba(224, 177, 41, 0.1);
-  border: 1px solid rgba(224, 177, 41, 0.35);
+  background: rgba(224, 177, 41, 0.08);
+  border: 1px solid rgba(224, 177, 41, 0.3);
   transition: transform 0.3s ease;
 }
 
@@ -191,120 +156,125 @@
 [aria-expanded="true"] > .sim-seta {
   transform: rotate(180deg);
   color: #17140a !important;
-  background: linear-gradient(180deg, #f7dd8a, #e0b129);
-  border-color: rgba(0, 0, 0, 0.3);
+  background: #e0b129;
+  border-color: #e0b129;
 }
 
-/* ---------- CADA PASSO NUMA PLACA ---------- */
+/* ---------- OS PASSOS ---------- */
 
+/* Cada passo é um trecho do formulário, separado do anterior
+   por um fio - não uma caixa: caixa dentro de caixa dentro de
+   moldura deixava a tela pesada e com cara de improviso. */
 .sim-passo {
-  border-radius: 1.25rem;
-  padding: 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
-    0 10px 22px -18px rgba(0, 0, 0, 0.9);
+  padding-block: 1.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-@media (min-width: 640px) {
-  .sim-passo {
-    padding: 1.25rem;
-  }
+.sim-passo:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .sim-passo-titulo {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  margin-bottom: 0.85rem;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
   font-size: 0.9rem;
   font-weight: 800;
   color: #f2f3f5;
 }
 
-/* O número do passo: medalha de ouro em relevo. */
+/* O número do passo: discreto, contornado. */
 .sim-numero {
   display: flex;
   flex-shrink: 0;
-  height: 1.75rem;
-  width: 1.75rem;
+  height: 1.5rem;
+  width: 1.5rem;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 900;
-  color: #17140a !important;
-  background: radial-gradient(circle at 35% 30%, #fff1bf 0%, #f0c640 40%, #b88a17 100%);
-  box-shadow:
-    inset 0 -2px 0 rgba(0, 0, 0, 0.25),
-    0 0 0 3px rgba(224, 177, 41, 0.14),
-    0 6px 12px -6px rgba(224, 177, 41, 0.8);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f0c640 !important;
+  border: 1px solid rgba(224, 177, 41, 0.5);
+  background: rgba(224, 177, 41, 0.06);
 }
 
-/* Campos dentro das placas: afundados, para o dedo saber que
-   é ali que se escreve. */
 .sim-passo input:not([type="range"]) {
   background: #0b0b0e !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  font-size: 1rem !important;
+  font-weight: 700;
 }
 
 .sim-passo input:not([type="range"]):focus {
-  border-color: rgba(224, 177, 41, 0.6) !important;
-  box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.6),
-    0 0 0 3px rgba(224, 177, 41, 0.15) !important;
+  border-color: #e0b129 !important;
+  box-shadow: 0 0 0 3px rgba(224, 177, 41, 0.15) !important;
 }
 
 /* ---------- PRAZOS DO BANCO ---------- */
 
-.sim-chip {
+/* Controle segmentado: os quatro prazos numa peça só. */
+.sim-prazos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
   border-radius: 0.9rem;
-  padding: 0.7rem 0;
-  font-size: 0.95rem;
-  font-weight: 900;
-  color: #e7e9ec;
-  background: linear-gradient(180deg, #24242c 0%, #16161b 100%);
+  background: #0b0b0e;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.5),
-    0 8px 14px -10px rgba(0, 0, 0, 0.9);
-  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.sim-chip:active {
-  transform: translateY(2px);
+.sim-chip {
+  border-radius: 0.65rem;
+  padding: 0.6rem 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #b9bcc4;
+  background: transparent;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .sim-chip:not([aria-pressed="true"]):hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+  }
 }
 
 .sim-chip[aria-pressed="true"] {
   color: #17140a !important;
-  background: linear-gradient(180deg, #f7dd8a 0%, #e0b129 55%, #b88a17 100%);
-  border-color: rgba(0, 0, 0, 0.3);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.2),
-    0 10px 20px -10px rgba(224, 177, 41, 0.85);
+  background: #e0b129;
 }
 
 /* ---------- TABELA DO CARTÃO ---------- */
 
 .sim-tabela {
   overflow: hidden;
-  border-radius: 1rem;
-  background: #0c0c0f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6);
+  border-radius: 0.9rem;
+  background: #0b0b0e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sim-tabela li:last-child button {
+  border-bottom: 0 !important;
 }
 
 .sim-tabela button {
   position: relative;
 }
 
+@media (hover: hover) {
+  .sim-tabela button:not([aria-pressed="true"]):hover {
+    background: rgba(255, 255, 255, 0.03) !important;
+  }
+}
+
 .sim-tabela button[aria-pressed="true"] {
-  background: linear-gradient(90deg, rgba(224, 177, 41, 0.2), rgba(224, 177, 41, 0.04)) !important;
+  background: rgba(224, 177, 41, 0.1) !important;
 }
 
 /* A barra de ouro na linha escolhida. */
@@ -312,130 +282,171 @@
   content: "";
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
+  top: 0;
+  bottom: 0;
   width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #f7dd8a, #e0b129);
+  background: #e0b129;
 }
 
 /* ---------- O RESULTADO ---------- */
 
-/*
- * Parece cartão de banco premium: chapa escura com veio de
- * ouro, borda de metal e um reflexo cruzando na diagonal.
- * É o número que a pessoa veio buscar - tem que ser a peça
- * mais bonita da tela.
- */
+/* O número que a pessoa veio buscar. Sóbrio, com fio de ouro:
+   destaque pela tipografia, não por brilho. */
 .sim-resultado {
-  position: relative;
-  overflow: hidden;
-  border-radius: 1.4rem;
-  padding: 1.35rem;
-  border: 1.5px solid transparent;
-  background:
-    radial-gradient(80% 90% at 100% 0%, rgba(224, 177, 41, 0.28), transparent 60%) padding-box,
-    radial-gradient(60% 70% at 0% 100%, rgba(224, 177, 41, 0.12), transparent 60%) padding-box,
-    linear-gradient(150deg, #2a2618 0%, #15140f 45%, #0b0b0d 100%) padding-box,
-    linear-gradient(135deg, #f7dd8a, #b88a17 35%, #5c4710 60%, #e0b129 100%) border-box;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 26px 50px -22px rgba(0, 0, 0, 0.95),
-    0 0 60px -24px rgba(224, 177, 41, 0.55);
+  border-radius: 1.1rem;
+  padding: 1.25rem;
+  background: linear-gradient(180deg, rgba(224, 177, 41, 0.09), rgba(224, 177, 41, 0.02));
+  border: 1px solid rgba(224, 177, 41, 0.4);
 }
 
-@media (min-width: 640px) {
-  .sim-resultado {
-    padding: 1.75rem;
-  }
-}
-
-/* O reflexo diagonal. */
-.sim-resultado::before {
-  content: "";
-  position: absolute;
-  inset: -40% auto -40% -30%;
-  width: 45%;
-  transform: rotate(18deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
-  pointer-events: none;
-}
-
-.sim-resultado > * {
-  position: relative;
+.sim-rotulo {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f0c640 !important;
 }
 
 .sim-valor {
-  font-size: 2.4rem;
+  font-size: 2.35rem;
   line-height: 1.05;
   font-weight: 900;
   letter-spacing: -0.02em;
-  background: linear-gradient(180deg, #ffffff 0%, #f7dd8a 70%, #e0b129 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  text-shadow: none;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff !important;
 }
 
-@media (min-width: 640px) {
-  .sim-valor {
-    font-size: 3rem;
-  }
+/* As linhas de detalhe: rótulo à esquerda, valor à direita,
+   como num extrato. */
+.sim-linhas {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Os números menores, cada um numa plaquinha. Sobrou um
-   sozinho na última linha do celular, ele ocupa a largura. */
-@media (max-width: 639px) {
-  .sim-resultado dl > .sim-dado:last-child:nth-child(odd) {
-    grid-column: span 2;
-  }
+.sim-linhas > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.55rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sim-linhas > div:last-child {
+  border-bottom: 0;
+}
+
+.sim-linhas dt {
+  color: #a3a7b0 !important;
+}
+
+.sim-linhas dd {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #f2f3f5 !important;
+}
+
+/* O vazio da coluna da conta, antes de haver número. */
+.sim-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1.1rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+}
+
+/* O aviso legal: pequeno, mas junto do número. */
+.sim-aviso {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #9a9ea8 !important;
+}
+
+.sim-aviso strong {
+  color: #d4d6db !important;
+}
+
+.sim-aviso svg {
+  flex-shrink: 0;
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-top: 0.1rem;
+  color: #9a9ea8 !important;
 }
 
 /* Texto escuro em cima do ouro: o tema do site pinta todo
-   texto de claro, e número claro some na medalha. */
-.sim-numero *,
+   texto de claro, e número claro some no ouro. */
 .sim-visto *,
 .sim-chip[aria-pressed="true"] *,
 .sim-metodo[aria-pressed="true"] .sim-icone * {
   color: inherit !important;
 }
 
-/* Os números menores, cada um numa plaquinha. */
-.sim-dado {
-  border-radius: 0.85rem;
-  padding: 0.65rem 0.8rem;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+.sim-numero * {
+  color: inherit !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sim-metodo,
-  .sim-chip {
-    transition: none;
-  }
+/* Os números menores (usado pelo "Vai no cartão"). */
+.sim-dado {
+  border-radius: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  background: #0b0b0e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
-  .sim-metodo:hover {
-    transform: none;
+/* ---------- A BARRA DO CELULAR ---------- */
+
+/* A parcela grudada no rodapé enquanto a conta completa está
+   fora da tela. Só no celular e tablet: no computador a coluna
+   da conta já fica parada ao lado. */
+.sim-barra {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: rgba(10, 10, 12, 0.94);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(224, 177, 41, 0.3);
+  transform: translateY(0);
+  transition: transform 0.25s ease;
+}
+
+.sim-barra[data-escondida="true"] {
+  transform: translateY(110%);
+}
+
+@media (min-width: 1024px) {
+  .sim-barra {
+    display: none;
   }
 }
 
 /* ---------- O AVISO DO SEM ENTRADA ---------- */
 
-/* Âmbar, e não ouro: ouro aqui é botão e destaque bom, e o
-   aviso não pode parecer mais um enfeite da moldura. */
+/* Âmbar, e não ouro: ouro aqui é escolha e número bom, e o
+   aviso não pode parecer mais um enfeite. */
 .sim-alerta {
   display: flex;
   gap: 0.65rem;
   align-items: flex-start;
-  border-radius: 0.9rem;
-  padding: 0.75rem 0.85rem;
-  font-size: 0.8rem;
-  line-height: 1.25rem;
-  color: #f3e3c3 !important;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.2rem;
+  color: #e8dcc4 !important;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .sim-alerta * {
@@ -447,21 +458,23 @@
 }
 
 .sim-alerta[data-aceso="true"] {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.65);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.55);
 }
 
 .sim-alerta-icone {
   flex-shrink: 0;
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   margin-top: 0.1rem;
   color: #fbbf24 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sim-alerta {
+  .sim-metodo,
+  .sim-chip,
+  .sim-alerta,
+  .sim-barra {
     transition: none;
   }
 }

@@ -10,6 +10,7 @@ import {
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import Busca, { type MotoBusca } from "@/components/v2/Busca";
 import AoRolar from "@/components/v2/AoRolar";
+import MenuDoTopo from "@/components/v2/MenuDoTopo";
 
 /*
  * O cabeçalho da versão 2.
@@ -59,24 +60,7 @@ export default function Cabecalho({
             />
           </Link>
 
-          <nav className="hidden items-center gap-7 lg:flex">
-            {MENU.map((item) => (
-              <Link
-                key={item.href}
-                href={endereco(item.href)}
-                aria-current={
-                  item.href === "/" ? "page" : undefined
-                }
-                className={`text-[13px] font-semibold transition ${
-                  item.href === "/"
-                    ? "ouro"
-                    : "suave hover:text-white"
-                }`}
-              >
-                {item.nome}
-              </Link>
-            ))}
-          </nav>
+          <MenuDoTopo />
 
           <Busca
             motos={motos}

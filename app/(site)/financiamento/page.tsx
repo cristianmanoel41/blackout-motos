@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import {
   BadgeCheck,
-  ChevronDown,
+  Building2,
   FileText,
   Repeat2,
   Wallet,
+  Calculator,
 } from "lucide-react";
 import SimuladorDePagamento from "@/components/site/SimuladorDePagamento";
 import VideoComoSimular from "@/components/site/VideoComoSimular";
@@ -22,7 +23,7 @@ import { LOJA } from "@/lib/dados/loja";
  * O simulador vem primeiro, antes de qualquer explicação:
  * quem abre esta tela já quer saber se cabe no mês, e ler
  * quatro passos antes de achar o campo é o caminho mais curto
- * para desistir. Como funciona fica logo abaixo, recolhido.
+ * para desistir. Como funciona fica logo abaixo.
  *
  * A conta usa a taxa de base da loja, que vive numa constante
  * só, e a tela diz que é ilustrativa: taxa e aprovação dependem
@@ -44,6 +45,14 @@ export const metadata: Metadata = {
   title: "Financiamento de motos",
   description: `Financie sua moto na ${LOJA.nome.toUpperCase()} em ${LOJA.cidade}. Aprovação com os principais bancos, entrada facilitada e sua moto usada na troca.`,
 };
+
+/* As três coisas que a pessoa precisa saber antes de simular,
+   tiradas do que a loja já promete no resto do site. */
+const GARANTIAS = [
+  { Icone: Building2, texto: "Principais bancos do mercado" },
+  { Icone: Repeat2, texto: "Sua moto usada na troca" },
+  { Icone: Calculator, texto: "Simulação sem cadastro" },
+];
 
 const PASSOS = [
   {
@@ -93,48 +102,45 @@ export default async function FinanciamentoPage({
   }));
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
-      <header className="text-center">
-        <p className="text-[11px] font-bold uppercase tracking-[0.3em] texto-ouro">
-          Financiamento
-        </p>
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      {/*
+        * O topo à esquerda, como página de banco: título,
+        * a frase do que a loja faz e as três garantias numa
+        * linha. Centralizado e em caixa alta parecia cartaz.
+        */}
+      <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl">
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em] texto-ouro">
+            Financiamento e cartão
+          </p>
 
-        <h1 className="mt-3 text-3xl font-black uppercase leading-tight texto-claro sm:text-4xl">
-          Saia de moto <span className="texto-ouro">nova</span>
-          <br />
-          sem complicação
-        </h1>
+          <h1 className="mt-3 text-3xl font-black leading-tight texto-claro sm:text-[2.6rem]">
+            Saia de moto <span className="texto-ouro">nova</span>{" "}
+            sem complicação
+          </h1>
 
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 texto-suave">
-          Trabalhamos com os principais bancos do mercado.
-          Cuidamos da análise, da documentação e da
-          transferência — você só escolhe a moto.
-        </p>
+          <p className="mt-3 text-sm leading-7 texto-suave sm:text-[15px]">
+            Trabalhamos com os principais bancos do mercado.
+            Cuidamos da análise, da documentação e da
+            transferência — você só escolhe a moto.
+          </p>
 
-        <div className="mt-6 flex justify-center">
+          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-semibold texto-claro">
+            {GARANTIAS.map(({ Icone, texto }) => (
+              <li key={texto} className="flex items-center gap-2">
+                <Icone size={16} className="shrink-0 texto-ouro" aria-hidden="true" />
+                {texto}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="shrink-0">
           <VideoComoSimular />
         </div>
       </header>
 
-      {/*
-        * A conta vem antes da proposta.
-        *
-        * Quem abre esta página quer saber se cabe no mês. O
-        * formulário de baixo responde isso também, mas cobra
-        * nome, CPF e data de nascimento antes - e quem está só
-        * olhando fecha a aba em vez de digitar CPF. A
-        * calculadora responde na hora e de graça; quem gostar
-        * do número manda a simulação no WhatsApp.
-        */}
-      {/*
-        * Um simulador só, com os dois caminhos dentro.
-        *
-        * Eram dois blocos empilhados, cada um pedindo moto e
-        * valor de novo - a página parecia ter se repetido. A
-        * primeira pergunta agora é banco ou cartão, e só depois
-        * dela aparecem os campos daquele caminho.
-        */}
-      <section className="mt-8">
+      <section className="mt-8 sm:mt-10">
         <SimuladorDePagamento
           estoque={doEstoque}
           motoInicial={moto}
@@ -142,40 +148,33 @@ export default async function FinanciamentoPage({
       </section>
 
       {/*
-        * <details> abre e fecha sem script nenhum: a página
-        * continua leve e funciona mesmo se o JavaScript
-        * demorar a carregar no celular.
+        * Como funciona, aberto. Escondido numa sanfona ninguém
+        * abria - e é justamente o que tira o medo de quem nunca
+        * financiou: são quatro passos e a loja faz a parte chata.
         */}
-      <details className="cartao-3d group mt-6 rounded-2xl">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
-          <span className="text-base font-bold texto-claro">
-            Como funciona o financiamento
-          </span>
+      <section className="mt-14 sm:mt-16">
+        <h2 className="text-xl font-black texto-claro sm:text-2xl">
+          Como funciona o <span className="texto-ouro">financiamento</span>
+        </h2>
 
-          <ChevronDown
-            size={20}
-            className="shrink-0 texto-ouro transition group-open:rotate-180"
-          />
-        </summary>
-
-        <div className="grid gap-4 border-t border-white/[.07] p-5 sm:grid-cols-2">
+        <ol className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {PASSOS.map(({ Icone, titulo, texto }) => (
-            <article key={titulo}>
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
-                <Icone size={20} className="texto-ouro" />
+            <li key={titulo} className="border-t border-white/[.08] pt-5">
+              <span className="sim-icone h-10 w-10">
+                <Icone size={18} aria-hidden="true" />
               </span>
 
-              <h2 className="mt-4 text-base font-bold texto-claro">
+              <h3 className="mt-4 text-[15px] font-bold texto-claro">
                 {titulo}
-              </h2>
+              </h3>
 
               <p className="mt-1.5 text-sm leading-6 texto-suave">
                 {texto}
               </p>
-            </article>
+            </li>
           ))}
-        </div>
-      </details>
+        </ol>
+      </section>
     </main>
   );
 }

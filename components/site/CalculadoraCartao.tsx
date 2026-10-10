@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
+import { Info } from "lucide-react";
 import CampoMoeda from "@/components/CampoMoeda";
+import BarraDoResultado from "@/components/site/BarraDoResultado";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { linkWhatsApp } from "@/lib/dados/loja";
@@ -36,10 +39,13 @@ export default function PassosDoCartao({
   preco,
   moto = "",
   primeiroPasso = 1,
+  painel = null,
 }: {
   preco: number;
   moto?: string;
   primeiroPasso?: number;
+  /* A coluna do simulador onde a conta é escrita. */
+  painel?: HTMLElement | null;
 }) {
   const [entrada, setEntrada] = useState("");
   const [escolhida, setEscolhida] = useState(12);
@@ -73,9 +79,111 @@ export default function PassosDoCartao({
   const campo =
     "w-full rounded-xl border px-4 py-3 text-sm outline-none";
 
+  const resumo = (
+    <>
+      {!temConta && (
+        <div className="sim-vazio">
+          <p className="text-sm font-bold texto-claro">
+            {entradaMaior
+              ? "Nada vai no cartão"
+              : "Falta o valor da moto"}
+          </p>
+
+          <p className="max-w-[16rem] text-xs leading-5 texto-suave">
+            {entradaMaior
+              ? "A entrada já cobre o valor da moto."
+              : "Escolha a moto ou digite o valor para ver as parcelas."}
+          </p>
+        </div>
+      )}
+
+      {temConta && (
+        <div className="sim-resultado">
+          <p className="sim-rotulo">
+            No cartão · {conta.parcelas}x
+          </p>
+
+          <p className="sim-valor mt-2">
+            {formatarMoeda(conta.parcela)}
+          </p>
+
+          <p className="mt-1 text-sm texto-suave">
+            por mês, acréscimo incluso
+          </p>
+
+          <dl className="sim-linhas">
+            {paga > 0 && (
+              <div>
+                <dt>Entrada</dt>
+                <dd>{formatarMoeda(paga)}</dd>
+              </div>
+            )}
+
+            <div>
+              <dt>Valor no cartão</dt>
+              <dd>{formatarMoeda(naMaquina)}</dd>
+            </div>
+
+            <div>
+              <dt>Acréscimo</dt>
+              <dd>{formatarMoeda(conta.juros)}</dd>
+            </div>
+
+            <div>
+              <dt>Total no cartão</dt>
+              <dd>{formatarMoeda(conta.total)}</dd>
+            </div>
+
+            {/*
+              * Com entrada, o total no cartão não é o total da
+              * moto - e é o total da moto que a pessoa compara
+              * com o preço anunciado.
+              */}
+            {paga > 0 && (
+              <div>
+                <dt>Total pela moto</dt>
+                <dd>{formatarMoeda(paga + conta.total)}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+
+      {temConta && (
+        <a
+          href={linkWhatsApp(mensagem)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="botao-ouro mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold"
+        >
+          <IconeWhatsApp className="h-5 w-5" />
+          Confirmar no WhatsApp
+        </a>
+      )}
+
+      {/*
+        * O aviso, que aqui é outro.
+        *
+        * No financiamento o risco é a análise mudar o número.
+        * No cartão o número é esse mesmo - o risco é o limite
+        * não cobrir, e isso o site não tem como saber.
+        */}
+      <p className="sim-aviso">
+        <Info aria-hidden="true" />
+        <span>
+          Valores da <strong>tabela da maquininha da loja</strong>,
+          com o acréscimo já incluso na parcela. O que pode mudar é
+          o seu <strong>limite disponível</strong> — e algumas
+          bandeiras limitam o número de parcelas. Confirme com a
+          gente antes de vir.
+        </span>
+      </p>
+    </>
+  );
+
   return (
     <>
-      <div className="sim-passo mt-4">
+      <div className="sim-passo">
         <div className="flex items-start justify-between gap-3">
           <label
             htmlFor="entrada-cartao"
@@ -86,7 +194,7 @@ export default function PassosDoCartao({
           </label>
 
           {preco > 0 && paga > 0 && (
-            <span className="sim-selo mt-0.5 shrink-0 !tracking-[0.08em]">
+            <span className="sim-selo shrink-0">
               {Math.round(porcentagem)}% do valor
             </span>
           )}
@@ -101,12 +209,9 @@ export default function PassosDoCartao({
         />
 
         {/*
-          * A barra, igual à do financiamento.
-          *
-          * Aqui ela mostra uma coisa que o campo não mostra: o
+          * A barra, igual à do financiamento: aqui ela mostra o
           * acréscimo da maquininha encolhendo junto com o valor
-          * parcelado. Puxar a entrada e ver a parcela cair é o
-          * que faz a pessoa entender quanto vale adiantar.
+          * parcelado.
           */}
         {preco > 0 && (
           <>
@@ -118,65 +223,54 @@ export default function PassosDoCartao({
               value={paga}
               onChange={(evento) => setEntrada(evento.target.value)}
               aria-label="Valor da entrada"
-              className="faixa-entrada mt-3 w-full"
+              className="faixa-entrada mt-4 w-full"
             />
 
             <div className="mt-1 flex justify-between text-[11px] texto-suave">
-              <span>sem entrada</span>
+              <span>Sem entrada</span>
               <span>{formatarMoeda(preco)}</span>
             </div>
           </>
         )}
 
-        <p className="mt-2 text-[11px] leading-4 texto-suave">
+        <p className="mt-3 text-[11px] leading-4 texto-suave">
           Em dinheiro, PIX ou débito não tem acréscimo — o
           acréscimo da maquininha cai só sobre o que for
           parcelado.
         </p>
+
+        {/* Quanto sobra para o cartão, dito antes da tabela:
+            é o número de que a tabela toda depende. */}
+        {temConta && paga > 0 && (
+          <p className="sim-dado mt-3 text-sm texto-suave">
+            Vai no cartão:{" "}
+            <strong className="texto-claro">
+              {formatarMoeda(naMaquina)}
+            </strong>
+          </p>
+        )}
       </div>
-
-      {/*
-        * Quanto sobra para o cartão, dito antes da tabela.
-        *
-        * É o número de que a tabela toda depende. Sem ele à
-        * mostra, quem pôs entrada vê vinte e quatro parcelas e
-        * não sabe de que valor elas saíram.
-        */}
-      {temConta && paga > 0 && (
-        <p className="sim-dado mt-4 px-4 py-3 text-sm texto-suave">
-          Vai no cartão:{" "}
-          <strong className="texto-claro">
-            {formatarMoeda(naMaquina)}
-          </strong>
-        </p>
-      )}
-
-      {entradaMaior && (
-        <p className="mt-5 text-sm leading-6 texto-suave">
-          A entrada já cobre o valor — nesse caso não precisa
-          passar nada no cartão.
-        </p>
-      )}
 
       {/*
         * A tabela inteira, não quatro botões.
         *
-        * No financiamento são quatro prazos e o dedo acerta de
-        * primeira. Aqui são vinte e quatro, e o que a pessoa
-        * quer é justamente COMPARAR: ver a parcela caindo e o
-        * total subindo, e decidir onde parar. Esconder vinte
-        * linhas para mostrar quatro seria esconder a decisão.
-        *
-        * E é comparando que aparece o 12x: ele custa menos no
-        * total do que o 11x. Quem só visse quatro botões nunca
-        * saberia disso.
+        * Aqui são vinte e quatro prazos, e o que a pessoa quer é
+        * justamente COMPARAR: ver a parcela caindo e o total
+        * subindo. E é comparando que aparece o 12x: ele custa
+        * menos no total do que o 11x.
         */}
       {temConta && (
-        <div className="sim-passo mt-4">
-          <p className="sim-passo-titulo">
-            <span className="sim-numero">{primeiroPasso + 1}</span>
-            Em quantas vezes
-          </p>
+        <div className="sim-passo">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="sim-passo-titulo">
+              <span className="sim-numero">{primeiroPasso + 1}</span>
+              Em quantas vezes
+            </p>
+
+            <p className="hidden text-[11px] texto-suave sm:block">
+              Parcela · total e acréscimo
+            </p>
+          </div>
 
           <ul className="sim-tabela">
             {CARTAO.map((linha) => {
@@ -189,25 +283,21 @@ export default function PassosDoCartao({
                     type="button"
                     onClick={() => setEscolhida(linha.parcelas)}
                     aria-pressed={atual}
-                    className={`flex w-full items-baseline gap-3 border-b border-[rgba(255,255,255,0.06)] px-4 py-2.5 text-left transition ${
-                      atual
-                        ? "bg-[rgba(224,177,41,0.12)]"
-                        : "bg-transparent"
-                    }`}
+                    className="flex w-full items-baseline gap-3 border-b border-[rgba(255,255,255,0.06)] bg-transparent px-4 py-2.5 text-left transition"
                   >
                     <span
-                      className={`w-10 shrink-0 text-sm font-bold ${
+                      className={`w-10 shrink-0 text-sm font-bold tabular-nums ${
                         atual ? "texto-ouro" : "texto-suave"
                       }`}
                     >
                       {linha.parcelas}x
                     </span>
 
-                    <span className="min-w-0 flex-1 text-sm font-bold texto-claro">
+                    <span className="min-w-0 flex-1 text-sm font-bold tabular-nums texto-claro">
                       {formatarMoeda(item.parcela)}
                     </span>
 
-                    <span className="shrink-0 text-right text-[11px] leading-4 texto-suave">
+                    <span className="shrink-0 text-right text-[11px] leading-4 tabular-nums texto-suave">
                       {formatarMoeda(item.total)}
                       <br />
                       {linha.promocional ? (
@@ -230,110 +320,17 @@ export default function PassosDoCartao({
               );
             })}
           </ul>
-
-          <p className="mt-1.5 text-[11px] leading-4 texto-suave">
-            À esquerda a parcela; à direita o total e o
-            acréscimo.
-          </p>
         </div>
       )}
 
-      {temConta && (
-        <div className="sim-resultado mt-5">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] texto-ouro">
-            {conta.parcelas} parcelas de
-          </p>
-
-          <p className="sim-valor mt-1">
-            {formatarMoeda(conta.parcela)}
-          </p>
-
-          <p className="mt-1 text-xs texto-suave">
-            no cartão, acréscimo incluso
-          </p>
-
-          <dl
-            className={`mt-4 grid grid-cols-2 gap-2 text-sm ${
-              paga > 0 ? "sm:grid-cols-4" : "sm:grid-cols-3"
-            }`}
-          >
-            {paga > 0 && (
-              <div className="sim-dado">
-                <dt className="text-xs texto-suave">Entrada</dt>
-                <dd className="font-bold texto-claro">
-                  {formatarMoeda(paga)}
-                </dd>
-              </div>
-            )}
-
-            <div className="sim-dado">
-              <dt className="text-xs texto-suave">No cartão</dt>
-              <dd className="font-bold texto-claro">
-                {formatarMoeda(naMaquina)}
-              </dd>
-            </div>
-
-            <div className="sim-dado">
-              <dt className="text-xs texto-suave">Acréscimo</dt>
-              <dd className="font-bold texto-claro">
-                {formatarMoeda(conta.juros)}
-              </dd>
-            </div>
-
-            <div className="sim-dado">
-              <dt className="text-xs texto-suave">
-                Total no cartão
-              </dt>
-              <dd className="font-bold texto-claro">
-                {formatarMoeda(conta.total)}
-              </dd>
-            </div>
-          </dl>
-
-          {/*
-            * Com entrada, o total no cartão não é o total da
-            * moto - e é o total da moto que a pessoa compara
-            * com o preço anunciado.
-            */}
-          {paga > 0 && (
-            <p className="mt-3 text-xs leading-5 texto-suave">
-              Entrada mais cartão:{" "}
-              <strong className="texto-claro">
-                {formatarMoeda(paga + conta.total)}
-              </strong>{" "}
-              pela moto.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/*
-        * O aviso, que aqui é outro.
-        *
-        * No financiamento o risco é a análise mudar o número.
-        * No cartão o número é esse mesmo - o risco é o limite
-        * não cobrir, e isso o site não tem como saber. Dizer
-        * "sujeito a análise de crédito" aqui seria copiar um
-        * aviso que não vale e deixar de dar o que vale.
-        */}
-      <p className="mt-5 text-xs leading-5 texto-suave">
-        Valores da <strong>tabela da maquininha da loja</strong>,
-        com o acréscimo já incluso na parcela. O que pode mudar é
-        o seu <strong>limite disponível</strong> — e algumas
-        bandeiras limitam o número de parcelas. Confirme com a
-        gente antes de vir.
-      </p>
+      {painel && createPortal(resumo, painel)}
 
       {temConta && (
-        <a
-          href={linkWhatsApp(mensagem)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="botao-ouro mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold sm:w-auto"
-        >
-          <IconeWhatsApp className="h-5 w-5" />
-          Confirmar no WhatsApp
-        </a>
+        <BarraDoResultado
+          rotulo={`${conta.parcelas}x no cartão`}
+          valor={formatarMoeda(conta.parcela)}
+          alvo={painel}
+        />
       )}
     </>
   );

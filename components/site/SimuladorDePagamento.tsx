@@ -83,6 +83,9 @@ export default function SimuladorDePagamento({
   const [moto, setMoto] = useState(motoInicial);
   const [valor, setValor] = useState("");
 
+  /* Onde cada caminho escreve a conta: a coluna da direita. */
+  const [painel, setPainel] = useState<HTMLDivElement | null>(null);
+
   /*
    * Escolher moto preenche o valor.
    *
@@ -127,147 +130,190 @@ export default function SimuladorDePagamento({
     "w-full rounded-xl border px-4 py-3 text-sm outline-none";
 
   return (
-    <div className="sim-moldura p-5 sm:p-8">
-      <span className="sim-selo">
-        <Calculator size={13} aria-hidden="true" />
-        Simulador
-      </span>
+    <div className="sim-moldura">
+      <div className="sim-cabeca px-5 py-6 sm:px-8">
+        <h2 className="text-2xl font-black texto-claro sm:text-[1.75rem]">
+          Simule o seu <span className="texto-ouro">pagamento</span>
+        </h2>
 
-      <h2 className="mt-3 text-2xl font-black texto-claro sm:text-3xl">
-        Simule o seu <span className="texto-ouro">pagamento</span>
-      </h2>
-
-      <p className="mt-2 text-sm leading-6 texto-suave">
-        Sem cadastro e sem compromisso — a conta acontece aqui
-        mesmo, no seu celular.
-      </p>
-
-      <div className="sim-passo mt-6">
-        <p className="sim-passo-titulo">
-          <span className="sim-numero">1</span>
-          Como você quer pagar?
+        <p className="mt-1.5 text-sm leading-6 texto-suave">
+          Sem cadastro e sem compromisso — a conta acontece aqui
+          mesmo, na hora.
         </p>
-
-        {/*
-          * Dois cards grandes, com o que cada um é escrito
-          * embaixo.
-          *
-          * "Financiamento" e "Cartão" sozinhos obrigam a pessoa
-          * a saber a diferença antes de escolher. A linha de
-          * baixo responde isso na própria escolha.
-          */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {CAMINHOS.map((caminho) => {
-            const atual = metodo === caminho.chave;
-            const Icone =
-              caminho.chave === "financiamento" ? Landmark : CreditCard;
-
-            return (
-              <button
-                key={caminho.chave}
-                type="button"
-                onClick={() => setMetodo(caminho.chave)}
-                aria-pressed={atual}
-                className="sim-metodo"
-              >
-                <span className="sim-icone h-12 w-12">
-                  <Icone size={22} aria-hidden="true" />
-                </span>
-
-                <span className="min-w-0">
-                  <span className="block text-[15px] font-black texto-claro">
-                    {caminho.nome}
-                  </span>
-
-                  <span className="mt-0.5 block text-xs leading-4 texto-suave">
-                    {caminho.abaixo}
-                  </span>
-                </span>
-
-                {atual && (
-                  <span className="sim-visto" aria-hidden="true">
-                    <Check size={13} strokeWidth={3.5} />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/*
-        * Enquanto não há caminho escolhido, o resto não existe.
+        * Duas colunas no computador: os campos à esquerda e a
+        * conta à direita, parada enquanto a pessoa mexe. Ver a
+        * parcela mudar ao arrastar a entrada é o que faz o
+        * simulador valer - com a conta lá embaixo, ela só via
+        * o número depois de rolar a tela.
         *
-        * Uma tela com seis campos ao mesmo tempo faz a pessoa
-        * decidir por onde começar antes de decidir qualquer
-        * coisa útil - e quem está no celular desiste nessa hora.
+        * No celular a coluna da conta desce para baixo dos
+        * campos, e a barra do rodapé mostra a parcela até lá.
         */}
-      {!escolheu && (
-        <p className="mt-5 text-center text-sm leading-6 texto-suave">
-          Escolha um dos dois acima e a moto, o valor e as
-          parcelas aparecem aqui.
-        </p>
-      )}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="px-5 py-6 sm:px-8 sm:py-7">
+          <div className="sim-passo">
+            <p className="sim-passo-titulo">
+              <span className="sim-numero">1</span>
+              Como você quer pagar?
+            </p>
 
-      {escolheu && (
-        <>
-          {temLista && (
-            <div className="sim-passo mt-4">
-              <p className="sim-passo-titulo">
-                <span className="sim-numero">{passoDaMoto}</span>
-                Escolha a moto
-              </p>
+            {/*
+              * Dois cards grandes, com o que cada um é escrito
+              * embaixo.
+              *
+              * "Financiamento" e "Cartão" sozinhos obrigam a
+              * pessoa a saber a diferença antes de escolher. A
+              * linha de baixo responde isso na própria escolha.
+              */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {CAMINHOS.map((caminho) => {
+                const atual = metodo === caminho.chave;
+                const Icone =
+                  caminho.chave === "financiamento"
+                    ? Landmark
+                    : CreditCard;
 
-              <EscolherMoto
-                valor={moto}
-                aoEscolher={setMoto}
-                estoque={comPreco}
-                rolagemInterna={false}
-                comecaFechada
-              />
+                return (
+                  <button
+                    key={caminho.chave}
+                    type="button"
+                    onClick={() => setMetodo(caminho.chave)}
+                    aria-pressed={atual}
+                    className="sim-metodo pr-10"
+                  >
+                    <span className="sim-icone h-11 w-11">
+                      <Icone size={20} aria-hidden="true" />
+                    </span>
+
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-black texto-claro">
+                        {caminho.nome}
+                      </span>
+
+                      <span className="mt-0.5 block text-xs leading-4 texto-suave">
+                        {caminho.abaixo}
+                      </span>
+                    </span>
+
+                    {atual && (
+                      <span className="sim-visto" aria-hidden="true">
+                        <Check size={13} strokeWidth={3.5} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          )}
-
-          <div className="sim-passo mt-4">
-            <label
-              htmlFor="valor-simulado"
-              className="sim-passo-titulo"
-            >
-              <span className="sim-numero">{passoDoValor}</span>
-              Valor da moto
-            </label>
-
-            <CampoMoeda
-              id="valor-simulado"
-              value={valor}
-              onChange={setValor}
-              placeholder="0,00"
-              className={campo}
-            />
-
-            {metodo === "cartao" && (
-              <p className="mt-2 text-[11px] leading-4 texto-suave">
-                Escolher a moto preenche o preço. A entrada, no
-                passo seguinte, desconta o que vai no cartão.
-              </p>
-            )}
           </div>
 
-          {metodo === "financiamento" ? (
-            <PassosDoFinanciamento
-              preco={preco}
-              moto={moto}
-              primeiroPasso={proximoPasso}
-            />
-          ) : (
-            <PassosDoCartao
-              preco={preco}
-              moto={moto}
-              primeiroPasso={proximoPasso}
-            />
+          {/*
+            * Enquanto não há caminho escolhido, o resto não
+            * existe. Uma tela com seis campos ao mesmo tempo faz
+            * a pessoa decidir por onde começar antes de decidir
+            * qualquer coisa útil - e no celular ela desiste
+            * nessa hora.
+            */}
+          {escolheu && (
+            <>
+              {temLista && (
+                <div className="sim-passo">
+                  <p className="sim-passo-titulo">
+                    <span className="sim-numero">{passoDaMoto}</span>
+                    Escolha a moto
+                  </p>
+
+                  <EscolherMoto
+                    valor={moto}
+                    aoEscolher={setMoto}
+                    estoque={comPreco}
+                    rolagemInterna={false}
+                    comecaFechada
+                  />
+                </div>
+              )}
+
+              <div className="sim-passo">
+                <label
+                  htmlFor="valor-simulado"
+                  className="sim-passo-titulo"
+                >
+                  <span className="sim-numero">{passoDoValor}</span>
+                  Valor da moto
+                </label>
+
+                <CampoMoeda
+                  id="valor-simulado"
+                  value={valor}
+                  onChange={setValor}
+                  placeholder="0,00"
+                  className={campo}
+                />
+
+                {metodo === "cartao" && (
+                  <p className="mt-2 text-[11px] leading-4 texto-suave">
+                    Escolher a moto preenche o preço. A entrada, no
+                    passo seguinte, desconta o que vai no cartão.
+                  </p>
+                )}
+              </div>
+
+              {metodo === "financiamento" ? (
+                <PassosDoFinanciamento
+                  preco={preco}
+                  moto={moto}
+                  primeiroPasso={proximoPasso}
+                  painel={painel}
+                />
+              ) : (
+                <PassosDoCartao
+                  preco={preco}
+                  moto={moto}
+                  primeiroPasso={proximoPasso}
+                  painel={painel}
+                />
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+
+        {/*
+          * A coluna da conta. Cada caminho escreve a sua aqui
+          * dentro (por portal), porque é ele que sabe os
+          * números; enquanto nenhum foi escolhido, fica o
+          * aviso de onde o número vai aparecer.
+          *
+          * É <section> e não <aside> de propósito: o CSS do
+          * sistema da loja estiliza "aside > div" (o menu
+          * lateral) e esmagava esta coluna.
+          */}
+        <section
+          className="sim-lado px-5 py-6 sm:px-8 sm:py-7"
+          aria-live="polite"
+          aria-label="Resultado da simulação"
+        >
+          <div ref={setPainel} className="scroll-mt-24 lg:sticky lg:top-24">
+            {!escolheu && (
+              <div className="sim-vazio">
+                <span className="sim-icone h-11 w-11">
+                  <Calculator size={20} aria-hidden="true" />
+                </span>
+
+                <p className="text-sm font-bold texto-claro">
+                  Sua parcela aparece aqui
+                </p>
+
+                <p className="max-w-[16rem] text-xs leading-5 texto-suave">
+                  Escolha como quer pagar e a moto. A conta é
+                  feita na hora.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
