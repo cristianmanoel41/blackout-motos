@@ -13,9 +13,11 @@ import { ChevronDown } from "lucide-react";
  * conta completa aparece na tela - as duas juntas seriam o
  * mesmo número duas vezes.
  *
- * Vai para o <body> por portal: dentro do simulador, qualquer
- * animação de entrada com transform prenderia o `fixed` na
- * caixa em vez de na tela.
+ * Vai por portal para a raiz do site (.site-blackout): dentro
+ * do simulador, qualquer animação de entrada com transform
+ * prenderia o `fixed` na caixa em vez de na tela. E não para o
+ * <body>, porque os estilos do site (botão de ouro, cores do
+ * texto) só valem dentro da raiz.
  */
 export default function BarraDoResultado({
   rotulo,
@@ -67,13 +69,13 @@ export default function BarraDoResultado({
           onClick={() =>
             alvo?.scrollIntoView({ behavior: "smooth", block: "start" })
           }
-          className="botao-ouro inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold"
+          aria-label="Ver detalhes da simulação"
+          className="botao-ouro inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
         >
-          Ver detalhes
-          <ChevronDown size={16} aria-hidden="true" />
+          <ChevronDown size={20} aria-hidden="true" />
         </button>
       </div>
     </div>,
-    document.body
+    document.querySelector(".site-blackout") || document.body
   );
 }
