@@ -20,6 +20,7 @@ export default function GlobalBackButton() {
        tela do sistema, e tem o proprio menu. */
     pathname === "/v2" ||
     pathname === "/estoque" ||
+    pathname === "/encontre-sua-moto" ||
     pathname.startsWith("/estoque/") ||
     pathname === "/financiamento" ||
     pathname.startsWith("/financiamento/") ||

@@ -249,7 +249,7 @@ export default async function MotoPage({
               {nome}
             </h1>
 
-            <dl className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+            <dl className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
               {ladrilhos.map((item) => (
                 <div key={item.rotulo} className="ficha-ladrilho min-w-0">
                   <dt className="text-[11px] uppercase tracking-wider suave">{item.rotulo}</dt>

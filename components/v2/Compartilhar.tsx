@@ -54,7 +54,11 @@ export default function Compartilhar({
       onClick={compartilhar}
       className={`botao-vidro flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold ${className}`}
     >
-      {copiou ? <Check size={16} className="ouro" /> : <Share2 size={16} />}
+      {copiou ? (
+        <Check size={16} className="ouro shrink-0" />
+      ) : (
+        <Share2 size={16} className="shrink-0" />
+      )}
       {copiou ? "Link copiado" : "Compartilhar"}
     </button>
   );

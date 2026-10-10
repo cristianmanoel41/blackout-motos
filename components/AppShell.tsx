@@ -119,6 +119,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const SITE = [
     '/',
     '/estoque',
+    '/encontre-sua-moto',
     '/financiamento',
     '/sobre',
     '/contato',
