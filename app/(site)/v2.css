@@ -1022,9 +1022,41 @@ body.foto-aberta .v2 .barra-acao {
   box-shadow: 0 0 0 1px rgba(224, 177, 41, 0.4);
 }
 
+/*
+ * O aviso "arraste para o lado" no meio da foto, no celular.
+ * A mãozinha vai e volta para mostrar o gesto; o aviso some
+ * de vez assim que a pessoa troca de foto.
+ */
+.v2 .aviso-arraste {
+  transition: opacity 0.4s ease-out;
+}
+
+.v2 .aviso-arraste[data-sumiu] {
+  opacity: 0;
+}
+
+.v2 .aviso-arraste-mao {
+  animation: arrastar-lado 1.8s ease-in-out infinite;
+}
+
+@keyframes arrastar-lado {
+  0%,
+  100% {
+    transform: translateX(-10px);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .v2 .cinema-fundo {
     transition: none;
+  }
+
+  .v2 .aviso-arraste-mao {
+    animation: none;
   }
 
   html[data-js="sim"] .v2 .cinema-texto > * {

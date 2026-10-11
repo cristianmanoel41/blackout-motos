@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Hand } from "lucide-react";
 import {
   anoDaMoto,
   categoriaDaMoto,
@@ -56,6 +56,9 @@ export default function HeroCinema({
   quantas: number;
 }) {
   const [atual, setAtual] = useState(0);
+  /* Some o aviso "arraste" quando a pessoa troca a moto - a
+     troca sozinha, a cada sete segundos, não conta. */
+  const [jaTrocou, setJaTrocou] = useState(false);
   const parado = useRef(false);
   const toqueX = useRef<number | null>(null);
 
@@ -79,6 +82,7 @@ export default function HeroCinema({
   if (total === 0) return null;
 
   function passar(quanto: number) {
+    setJaTrocou(true);
     setAtual((indice) => (indice + quanto + total) % total);
   }
 
@@ -247,6 +251,24 @@ export default function HeroCinema({
             )}
 
             <span aria-hidden="true" className="reflexo-fixo" />
+
+            {/* O mesmo aviso da galeria da ficha: no celular,
+                quem não sabe que dá para arrastar não vê a
+                segunda moto. Some na primeira troca. */}
+            {total > 1 && (
+              <span
+                aria-hidden="true"
+                data-sumiu={jaTrocou ? "" : undefined}
+                className="aviso-arraste pointer-events-none absolute inset-0 z-[2] flex items-center justify-center lg:hidden"
+              >
+                <span className="flex items-center gap-1.5 rounded-full bg-black/65 py-2 pl-2.5 pr-4 text-[13px] font-semibold text-white ring-1 ring-white/20 backdrop-blur">
+                  <ChevronLeft size={16} className="text-white/70" />
+                  <Hand size={18} className="aviso-arraste-mao ouro" />
+                  <ChevronRight size={16} className="text-white/70" />
+                  <span className="ml-1">Arraste para ver mais motos</span>
+                </span>
+              </span>
+            )}
           </Link>
         </div>
 
@@ -267,7 +289,10 @@ export default function HeroCinema({
                 <li key={item.id}>
                   <button
                     type="button"
-                    onClick={() => setAtual(posicao)}
+                    onClick={() => {
+                      setJaTrocou(true);
+                      setAtual(posicao);
+                    }}
                     aria-label={`Mostrar moto ${posicao + 1}`}
                     aria-current={posicao === atual}
                     className={`cinema-indice titulo text-[13px] ${

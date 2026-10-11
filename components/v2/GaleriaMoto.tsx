@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Expand,
+  Hand,
   PlayCircle,
   X,
   ZoomIn,
@@ -49,6 +50,8 @@ export default function GaleriaMoto({
   const [ampliada, setAmpliada] = useState(false);
   const [origem, setOrigem] = useState("50% 50%");
   const [principalPronta, setPrincipalPronta] = useState(false);
+  /* Some o aviso "arraste para o lado" depois da primeira troca. */
+  const [jaTrocou, setJaTrocou] = useState(false);
 
   const toqueX = useRef<number | null>(null);
   const trilhoMini = useRef<HTMLDivElement>(null);
@@ -60,6 +63,7 @@ export default function GaleriaMoto({
     (quanto: number) => {
       if (total === 0) return;
       setAmpliada(false);
+      setJaTrocou(true);
       setIndice((agora) => (agora + quanto + total) % total);
     },
     [total]
@@ -232,6 +236,28 @@ export default function GaleriaMoto({
             >
               <ChevronRight size={20} />
             </button>
+
+            {/*
+              * No celular não há setas, e quem chega na ficha não
+              * sabe que dá para arrastar - via a primeira foto e
+              * descia. O aviso fica no meio da foto até a pessoa
+              * trocar a primeira vez. Não bloqueia o toque: tocar
+              * nele ainda abre a tela cheia.
+              */}
+            {atual.tipo === "foto" && (
+              <div
+                aria-hidden="true"
+                data-sumiu={jaTrocou ? "" : undefined}
+                className="aviso-arraste pointer-events-none absolute inset-0 z-[2] flex items-center justify-center sm:hidden"
+              >
+                <span className="flex items-center gap-1.5 rounded-full bg-black/65 py-2 pl-2.5 pr-4 text-[13px] font-semibold text-white ring-1 ring-white/20 backdrop-blur">
+                  <ChevronLeft size={16} className="text-white/70" />
+                  <Hand size={18} className="aviso-arraste-mao ouro" />
+                  <ChevronRight size={16} className="text-white/70" />
+                  <span className="ml-1">Arraste para ver mais fotos</span>
+                </span>
+              </div>
+            )}
           </>
         )}
 
@@ -265,6 +291,7 @@ export default function GaleriaMoto({
               type="button"
               onClick={() => {
                 setAmpliada(false);
+                setJaTrocou(true);
                 setIndice(posicao);
               }}
               aria-label={
