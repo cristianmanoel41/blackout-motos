@@ -190,14 +190,23 @@ export async function GET(request: Request) {
       })
     }
 
-    const receitaDocumentacao = vendas.reduce(
+    /*
+     * Documentacao e dinheiro de passagem: a sobra nao vira
+     * lucro. So pesa quando custou mais do que o cliente pagou
+     * e a loja bancou a diferenca - a mesma regra da tela de
+     * Relatorios, para o painel e a tela nao discordarem.
+     */
+    const resultadoDocumentacao = vendas.reduce(
       (soma, item: any) => {
         if (!item.documentacao_concluida) return soma
 
         return (
           soma +
-          (numero(item.transferencia_cliente) -
-            (custosDocPorVenda[String(item.id)] || 0))
+          Math.min(
+            0,
+            numero(item.transferencia_cliente) -
+              (custosDocPorVenda[String(item.id)] || 0)
+          )
         )
       },
       0
@@ -418,7 +427,7 @@ export async function GET(request: Request) {
 
     const lucroBruto =
       faturamento +
-      receitaDocumentacao +
+      resultadoDocumentacao +
       resumoCapacetes.receitaAvulsa -
       custoMotosVendidas -
       resumoCapacetes.custo
