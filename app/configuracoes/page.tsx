@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MeuUsuario from "@/components/MeuUsuario";
 import CampoMoeda from "@/components/CampoMoeda";
+import { createClient } from "@/lib/supabase/client";
 
 type Configuracoes = {
   nomeLoja: string;
@@ -35,24 +36,78 @@ const configuracaoInicial: Configuracoes = {
   bancoPadrao: "",
 };
 
+const supabase = createClient();
+
+const CHAVE_ANTIGA = "blackout-motos-configuracoes";
+
+function lerDoNavegador(): Partial<Configuracoes> | null {
+  try {
+    const salvo = localStorage.getItem(CHAVE_ANTIGA);
+
+    return salvo ? JSON.parse(salvo) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ConfiguracoesPage() {
   const [config, setConfig] =
     useState<Configuracoes>(configuracaoInicial);
 
   const [salvo, setSalvo] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
 
-  useEffect(() => {
-    const dadosSalvos = localStorage.getItem(
-      "blackout-motos-configuracoes"
-    );
+  /* Veio do navegador e ainda não foi para o banco. */
+  const [doNavegador, setDoNavegador] = useState(false);
 
-    if (dadosSalvos) {
-      try {
-        setConfig(JSON.parse(dadosSalvos));
-      } catch {
-        setConfig(configuracaoInicial);
+  async function carregar() {
+    setCarregando(true);
+    setErro("");
+
+    const { data, error } = await supabase
+      .from("configuracoes_loja")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+
+    setCarregando(false);
+
+    if (error) {
+      setErro(`Não foi possível carregar as configurações: ${error.message}`);
+      return;
+    }
+
+    /*
+     * Antes de 21/10/2026 tudo ficava no localStorage. Enquanto
+     * ninguém salvou pela tela nova, o que este navegador tinha
+     * aparece no formulário, para não se perder no caminho.
+     */
+    if (!data?.atualizado_em) {
+      const antigo = lerDoNavegador();
+
+      if (antigo) {
+        setConfig({ ...configuracaoInicial, ...antigo });
+        setDoNavegador(true);
+        return;
       }
     }
+
+    if (data) {
+      setConfig({
+        nomeLoja: data.nome_loja ?? "",
+        telefone: data.telefone ?? "",
+        endereco: data.endereco ?? "",
+        cidade: data.cidade ?? "",
+        valorTransferencia: String(data.valor_transferencia ?? ""),
+        bancoPadrao: data.banco_padrao ?? "",
+      });
+    }
+  }
+
+  useEffect(() => {
+    carregar();
   }, []);
 
   function atualizarCampo(
@@ -67,12 +122,33 @@ export default function ConfiguracoesPage() {
     setSalvo(false);
   }
 
-  function salvarConfiguracoes() {
-    localStorage.setItem(
-      "blackout-motos-configuracoes",
-      JSON.stringify(config)
-    );
+  async function salvarConfiguracoes() {
+    setSalvando(true);
+    setErro("");
 
+    const { error } = await supabase.from("configuracoes_loja").upsert({
+      id: 1,
+      nome_loja: config.nomeLoja,
+      telefone: config.telefone,
+      endereco: config.endereco,
+      cidade: config.cidade,
+      valor_transferencia: Number(config.valorTransferencia) || 0,
+      banco_padrao: config.bancoPadrao,
+      atualizado_em: new Date().toISOString(),
+    });
+
+    setSalvando(false);
+
+    if (error) {
+      setErro(`Não foi possível salvar: ${error.message}`);
+      return;
+    }
+
+    try {
+      localStorage.removeItem(CHAVE_ANTIGA);
+    } catch {}
+
+    setDoNavegador(false);
     setSalvo(true);
 
     setTimeout(() => {
@@ -108,6 +184,19 @@ export default function ConfiguracoesPage() {
             <span>
               Configurações salvas com sucesso.
             </span>
+          </div>
+        )}
+
+        {erro && (
+          <div className="mb-6 rounded-xl border border-red-700 bg-red-950/40 p-4 text-sm text-red-300">
+            {erro}
+          </div>
+        )}
+
+        {doNavegador && (
+          <div className="mb-6 rounded-xl border border-dourado/40 bg-dourado/5 p-4 text-sm text-dourado">
+            Estes valores estavam salvos só neste navegador. Clique em
+            Salvar Configurações para passá-los ao sistema.
           </div>
         )}
 
@@ -338,11 +427,8 @@ export default function ConfiguracoesPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-texto-suave">
-              Nesta primeira versão, as configurações ficam
-              salvas neste navegador. Depois podemos integrar
-              esta página ao Supabase para que as mesmas
-              configurações sejam usadas em qualquer
-              computador ou celular.
+              As configurações ficam salvas no sistema e valem
+              em qualquer computador ou celular.
             </p>
           </section>
 
@@ -373,10 +459,15 @@ export default function ConfiguracoesPage() {
           <button
             type="button"
             onClick={salvarConfiguracoes}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-dourado px-6 py-4 font-bold text-preto transition hover:bg-dourado-claro"
+            disabled={salvando || carregando}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-dourado px-6 py-4 font-bold text-preto transition hover:bg-dourado-claro disabled:opacity-60"
           >
             <Save size={20} />
-            Salvar Configurações
+            {salvando
+              ? "Salvando..."
+              : carregando
+                ? "Carregando..."
+                : "Salvar Configurações"}
           </button>
         </div>
       </div>

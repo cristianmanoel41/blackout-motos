@@ -162,26 +162,14 @@ function textoDaMoto(moto: Moto) {
  */
 const VALOR_TRANSFERENCIA_PADRAO = 690;
 
-function valorTransferenciaConfigurado() {
-  if (typeof window === "undefined") {
-    return VALOR_TRANSFERENCIA_PADRAO;
-  }
+async function valorTransferenciaConfigurado() {
+  const { data } = await supabase
+    .from("configuracoes_loja")
+    .select("valor_transferencia")
+    .eq("id", 1)
+    .maybeSingle();
 
-  try {
-    const salvo = localStorage.getItem("blackout-motos-configuracoes");
-
-    if (!salvo) {
-      return VALOR_TRANSFERENCIA_PADRAO;
-    }
-
-    const configuracao = JSON.parse(salvo);
-
-    return (
-      Number(configuracao?.valorTransferencia) || VALOR_TRANSFERENCIA_PADRAO
-    );
-  } catch {
-    return VALOR_TRANSFERENCIA_PADRAO;
-  }
+  return Number(data?.valor_transferencia) || VALOR_TRANSFERENCIA_PADRAO;
 }
 
 function novoIdLocal() {
@@ -269,11 +257,11 @@ export default function VendasPage() {
   }, [usuario]);
 
   useEffect(() => {
-    const configurado = valorTransferenciaConfigurado();
+    valorTransferenciaConfigurado().then((configurado) => {
+      setValorTransferencia(String(configurado));
 
-    setValorTransferencia(String(configurado));
-
-    setTransferenciaCliente(String(configurado));
+      setTransferenciaCliente(String(configurado));
+    });
   }, []);
 
   /*
