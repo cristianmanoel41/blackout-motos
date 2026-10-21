@@ -92,7 +92,9 @@ export default async function ImprimirRelatorio({
    */
   const cabecalhos = await headers();
   const host = cabecalhos.get("host") || "localhost:3000";
-  const protocolo = host.startsWith("localhost") ? "http" : "https";
+  const protocolo =
+    cabecalhos.get("x-forwarded-proto")?.split(",")[0] ||
+    (process.env.NODE_ENV === "development" ? "http" : "https");
 
   const resposta = await fetch(
     `${protocolo}://${host}/api/relatorios/mensal?mes=${mes}&ano=${ano}&formato=json`,

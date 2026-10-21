@@ -39,7 +39,11 @@ export default async function LucroDoMes() {
 
   const cabecalhos = await headers();
   const host = cabecalhos.get("host") || "localhost:3000";
-  const protocolo = host.startsWith("localhost") ? "http" : "https";
+  /* Pelo IP da rede ou do Tailscale o dev server também é http:
+     só olhar "localhost" mandava o card buscar https e voltar vazio. */
+  const protocolo =
+    cabecalhos.get("x-forwarded-proto")?.split(",")[0] ||
+    (process.env.NODE_ENV === "development" ? "http" : "https");
 
   let linhas: Array<[string, string]> = [];
 
