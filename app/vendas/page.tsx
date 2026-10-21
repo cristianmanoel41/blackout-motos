@@ -3007,12 +3007,12 @@ export default function VendasPage() {
 
           <button
             type="submit"
-            disabled={salvando || !clienteId}
+            disabled={salvando || (!pelaParceira && !clienteId)}
             className="w-full rounded-xl bg-yellow-500 px-6 py-4 text-base font-bold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {salvando
               ? "Registrando venda..."
-              : !clienteId
+              : !pelaParceira && !clienteId
                 ? "Selecione um Cliente para Continuar"
                 : "Registrar Venda"}
           </button>
