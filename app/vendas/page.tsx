@@ -162,6 +162,9 @@ function textoDaMoto(moto: Moto) {
  */
 const VALOR_TRANSFERENCIA_PADRAO = 690;
 
+/* Desconto que a loja dá no valor da moto, quando dá. */
+const DESCONTO_VENDA = 400;
+
 async function valorTransferenciaConfigurado() {
   const { data } = await supabase
     .from("configuracoes_loja")
@@ -322,6 +325,9 @@ export default function VendasPage() {
   >("avista");
 
   const [valorVenda, setValorVenda] = useState("");
+
+  /* Marcado, o valor da moto já está R$ 400 abaixo do que era. */
+  const [comDesconto, setComDesconto] = useState(false);
 
   const [banco, setBanco] = useState("");
 
@@ -695,6 +701,10 @@ export default function VendasPage() {
           if (rascunho.pelaParceira) {
             setPelaParceira(true);
           }
+
+          if (rascunho.comDesconto) {
+            setComDesconto(true);
+          }
         } catch (e) {
           console.error("Erro ao restaurar venda:", e);
         }
@@ -766,6 +776,7 @@ export default function VendasPage() {
       vendedor,
       tipoVenda,
       valorVenda,
+      comDesconto,
       banco,
       parcelasFinanciamento,
       valorParcelaManual,
@@ -835,7 +846,27 @@ export default function VendasPage() {
 
     if (preco > 0) {
       setValorVenda(String(preco));
+      setComDesconto(false);
     }
+  }
+
+  /*
+   * O desconto de R$ 400 sai do valor da moto, e é esse valor
+   * menor que vai para a venda e para o faturamento. Desmarcar
+   * devolve os R$ 400.
+   */
+  function marcarDesconto(marcado: boolean) {
+    setComDesconto(marcado);
+
+    setValorVenda((anterior) =>
+      String(
+        Math.max(
+          (Number(anterior) || 0) +
+            (marcado ? -DESCONTO_VENDA : DESCONTO_VENDA),
+          0,
+        ),
+      ),
+    );
   }
 
   /*
@@ -983,6 +1014,7 @@ export default function VendasPage() {
     setVendedor(vendedorDoUsuario(usuario?.nome));
     setTipoVenda("avista");
     setValorVenda("");
+    setComDesconto(false);
     setBanco("");
     setParcelasFinanciamento("");
     setValorParcelaManual("");
@@ -1242,7 +1274,15 @@ export default function VendasPage() {
           transferencia_loja: Number(transferenciaLoja) || 0,
           forma_transferencia:
             (Number(transferenciaCliente) || 0) > 0 ? formaTransferencia : null,
-          observacoes: observacoes.trim(),
+          /* Fica escrito na venda que o desconto foi dado. */
+          observacoes: [
+            comDesconto
+              ? `Desconto de ${moeda(DESCONTO_VENDA)} no valor da moto.`
+              : "",
+            observacoes.trim(),
+          ]
+            .filter(Boolean)
+            .join("\n"),
         })
         .select("id")
         .single();
@@ -2003,6 +2043,26 @@ export default function VendasPage() {
                   placeholder="0,00"
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+
+                <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-700 bg-zinc-900 p-4">
+                  <input
+                    type="checkbox"
+                    checked={comDesconto}
+                    onChange={(e) => marcarDesconto(e.target.checked)}
+                    className="mt-1 h-4 w-4 accent-yellow-500"
+                  />
+
+                  <span>
+                    <span className="block font-semibold">
+                      Desconto de {moeda(DESCONTO_VENDA)}
+                    </span>
+
+                    <span className="mt-1 block text-xs text-zinc-400">
+                      Tira {moeda(DESCONTO_VENDA)} do valor da moto. Sem
+                      desconto, deixe desmarcado.
+                    </span>
+                  </span>
+                </label>
 
                 {motoSelecionada &&
                   (precoAnunciado > 0 ? (
