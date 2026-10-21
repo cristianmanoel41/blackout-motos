@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import DocumentosCliente from "@/components/DocumentosCliente";
 import ApagarCliente from "@/components/ApagarCliente";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import { formatarData } from "@/lib/formatadores/data";
 import CardWhatsapp, { linkWhatsapp } from "@/components/CardWhatsapp";
 import { mensagemDeAniversario } from "@/lib/dados/mensagem-aniversario";
 
@@ -1161,8 +1162,11 @@ function Campo({
         />
       ) : (
         <div className="min-h-[48px] rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-white">
-          {value ||
-            "Não informado"}
+          {!value
+            ? "Não informado"
+            : type === "date"
+              ? formatarData(value)
+              : value}
         </div>
       )}
     </div>
