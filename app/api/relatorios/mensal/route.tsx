@@ -166,7 +166,48 @@ export async function GET(request: Request) {
     )
 
     const qtdMotosVendidas = vendas.length
-    const faturamento = vendas.reduce(
+
+    /*
+     * Moto de outra loja (tipo_entrada outra_loja) e do Edvaldo:
+     * o dinheiro da venda e repassado a ele, entao nao e
+     * faturamento nem lucro da loja. Sai da receita e do custo,
+     * como na tela de Relatorios, e aparece numa linha a parte.
+     */
+    const idsDeOutraLoja = new Set<string>()
+    const idsMotosDoMes = vendas
+      .map((venda) => venda.motorcycle_id)
+      .filter(Boolean)
+
+    if (idsMotosDoMes.length > 0) {
+      const { data: motosParceiras, error: erroParceiras } = await supabase
+        .from('motorcycles')
+        .select('id')
+        .eq('tipo_entrada', 'outra_loja')
+        .in('id', idsMotosDoMes)
+
+      if (erroParceiras) {
+        console.error(erroParceiras)
+        return Response.json(
+          { error: 'Não foi possível gerar o relatório.' },
+          { status: 500 }
+        )
+      }
+
+      motosParceiras?.forEach((moto) => idsDeOutraLoja.add(String(moto.id)))
+    }
+
+    const ehDeOutraLoja = (venda: { motorcycle_id?: unknown }) =>
+      idsDeOutraLoja.has(String(venda.motorcycle_id))
+
+    const vendasProprias = vendas.filter((venda) => !ehDeOutraLoja(venda))
+    const vendasDeOutraLoja = vendas.filter(ehDeOutraLoja)
+
+    const totalDeOutraLoja = vendasDeOutraLoja.reduce(
+      (soma, item) => soma + numero(item.valor_total_venda),
+      0
+    )
+
+    const faturamento = vendasProprias.reduce(
       (soma, item) => soma + numero(item.valor_total_venda),
       0
     )
@@ -212,7 +253,7 @@ export async function GET(request: Request) {
       0
     )
 
-    const idsMotosVendidas = vendas
+    const idsMotosVendidas = vendasProprias
       .map((venda) => venda.motorcycle_id)
       .filter((id): id is string => Boolean(id))
 
@@ -506,6 +547,14 @@ export async function GET(request: Request) {
       ['', ''],
       ['FINANCEIRO', ''],
       ['Faturamento', faturamento.toFixed(2)],
+      ...(totalDeOutraLoja > 0
+        ? ([
+            [
+              `Vendas de outra loja (${vendasDeOutraLoja.length}, fora do faturamento)`,
+              totalDeOutraLoja.toFixed(2),
+            ],
+          ] as Array<[string, string]>)
+        : []),
       ['Custo das motos vendidas', custoMotosVendidas.toFixed(2)],
       ['Gastos das motos no mês', totalGastosMotos.toFixed(2)],
       ['Venda avulsa de capacetes', resumoCapacetes.receitaAvulsa.toFixed(2)],
