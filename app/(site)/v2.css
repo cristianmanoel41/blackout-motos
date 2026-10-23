@@ -402,15 +402,15 @@
 }
 
 /*
- * Filtros do estoque em letra preta, como na aba Estoque do
- * sistema: a pílula e o cartão de cilindrada ficam claros, e o
- * escolhido fica dourado.
+ * Filtros do estoque: pílula e cartão de cilindrada pretos com
+ * letra branca, e o escolhido dourado. A borda clara é o que
+ * separa o preto do botão do fundo escuro do painel.
  */
 .v2 .pilula,
 .v2 .cartao-cc {
-  border: 1px solid transparent;
-  background: #f1f2f4;
-  color: #0c0d0f;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #000;
+  color: #fff;
 }
 
 .v2 .cartao-cc {
@@ -423,7 +423,7 @@
 @media (hover: hover) {
   .v2 .pilula:hover,
   .v2 .cartao-cc:hover {
-    color: #0c0d0f;
+    color: #fff;
     border-color: var(--ouro);
   }
 }
