@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import { formatarData } from "@/lib/formatadores/data";
+import { formatarPlaca } from "@/lib/formatadores/placa";
+import { comLogradouro } from "@/lib/formatadores/endereco";
 import HistoricoGeral, {
   type RegistroHistorico,
 } from "@/components/HistoricoGeral";
@@ -35,7 +38,55 @@ type MotoHistorico = {
   cor?: string | null;
   placa?: string | null;
   valor_compra?: number | string | null;
+  ano_fabricacao?: string | number | null;
+  chassi?: string | null;
+  renavam?: string | null;
+  quilometragem?: number | string | null;
 };
+
+type ClienteHistorico = {
+  id: string;
+  nome?: string | null;
+  cpf?: string | null;
+  rg?: string | null;
+  data_nascimento?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  rua?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cep?: string | null;
+};
+
+function formatarCPF(valor: unknown) {
+  const numeros = String(valor || "").replace(/D/g, "");
+
+  if (numeros.length !== 11) return String(valor || "").trim();
+
+  return numeros.replace(/(d{3})(d{3})(d{3})(d{2})/, "$1.$2.$3-$4");
+}
+
+/* Só as linhas que têm valor: campo vazio não vira "-" na ficha. */
+function linhas(pares: Array<[string, unknown]>): Array<[string, string]> {
+  return pares
+    .map(([rotulo, valor]) => [rotulo, String(valor ?? "").trim()] as [string, string])
+    .filter(([, valor]) => valor !== "");
+}
+
+function enderecoDoCliente(cliente: ClienteHistorico) {
+  const rua = [comLogradouro(cliente.rua), cliente.numero, cliente.complemento]
+    .filter(Boolean)
+    .join(", ");
+
+  const cidade = [cliente.cidade, cliente.estado].filter(Boolean).join("/");
+
+  return [rua, cliente.bairro, cidade, cliente.cep ? `CEP ${cliente.cep}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 function erro(mensagem: string) {
   return (
@@ -104,7 +155,11 @@ export default async function HistoricoVendasPage({
           ano_modelo,
           cor,
           placa,
-          valor_compra
+          valor_compra,
+          ano_fabricacao,
+          chassi,
+          renavam,
+          quilometragem
         `
         )
         .in("id", idsMotos);
@@ -123,6 +178,34 @@ export default async function HistoricoVendasPage({
   motos.forEach((moto) => {
     mapaMotos.set(String(moto.id), moto);
   });
+
+  // ==========================================
+  // 2b. CLIENTES DESSAS VENDAS (ficha da venda)
+  // ==========================================
+
+  const idsClientes = Array.from(
+    new Set(
+      listaVendas
+        .map((venda) => venda.customer_id)
+        .filter(Boolean)
+        .map(String)
+    )
+  );
+
+  const mapaClientes = new Map<string, ClienteHistorico>();
+
+  if (idsClientes.length > 0) {
+    const { data: clientesData } = await supabase
+      .from("customers")
+      .select(
+        "id, nome, cpf, rg, data_nascimento, telefone, email, rua, numero, complemento, bairro, cidade, estado, cep"
+      )
+      .in("id", idsClientes);
+
+    ((clientesData || []) as ClienteHistorico[]).forEach((cliente) => {
+      mapaClientes.set(String(cliente.id), cliente);
+    });
+  }
 
   /*
    * O lucro de uma moto é o que ela vendeu menos o que ela
@@ -234,6 +317,10 @@ export default async function HistoricoVendasPage({
         ? gastosPorMoto.get(String(moto.id)) || 0
         : null;
 
+      const cliente = venda.customer_id
+        ? mapaClientes.get(String(venda.customer_id))
+        : undefined;
+
       const lucro = moto
         ? valorVenda -
           (custoCompra || 0) -
@@ -275,6 +362,61 @@ export default async function HistoricoVendasPage({
             : `Entrada ${moeda(
                 venda.entrada_total ?? venda.entrada
               )}`,
+        ficha: {
+          cliente: cliente
+            ? linhas([
+                ["Nome", cliente.nome],
+                ["CPF", formatarCPF(cliente.cpf)],
+                ["RG", cliente.rg],
+                [
+                  "Nascimento",
+                  cliente.data_nascimento
+                    ? formatarData(cliente.data_nascimento)
+                    : "",
+                ],
+                ["Telefone", cliente.telefone || venda.telefone],
+                ["E-mail", cliente.email],
+                ["Endereço", enderecoDoCliente(cliente)],
+              ])
+            : linhas([
+                ["Nome", venda.cliente],
+                ["Telefone", venda.telefone],
+                [
+                  "Observação",
+                  venda.loja_parceira
+                    ? `Vendida pela loja do ${venda.loja_parceira}. Comprador ainda não informado.`
+                    : "Cliente sem cadastro ligado a esta venda.",
+                ],
+              ]),
+          moto: moto
+            ? linhas([
+                ["Código", moto.codigo],
+                [
+                  "Moto",
+                  [moto.marca, moto.modelo, moto.versao]
+                    .filter(Boolean)
+                    .join(" "),
+                ],
+                [
+                  "Ano",
+                  moto.ano_fabricacao && moto.ano_modelo
+                    ? `${moto.ano_fabricacao}/${moto.ano_modelo}`
+                    : moto.ano_modelo || moto.ano_fabricacao,
+                ],
+                ["Cor", moto.cor],
+                ["Placa", moto.placa ? formatarPlaca(moto.placa) : ""],
+                [
+                  "KM",
+                  moto.quilometragem != null && moto.quilometragem !== ""
+                    ? `${new Intl.NumberFormat("pt-BR").format(Number(moto.quilometragem) || 0)} km`
+                    : "",
+                ],
+                ["Chassi", moto.chassi],
+                ["Renavam", moto.renavam],
+              ])
+            : [],
+          observacoes: String(venda.observacoes || "").trim(),
+        },
         extra:
           quantidadeCapacetes > 0
             ? `+ ${quantidadeCapacetes} capacete${

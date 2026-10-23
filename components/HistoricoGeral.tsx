@@ -6,6 +6,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
 import {
   Bike,
+  ChevronDown,
   FileText,
   HardHat,
   Pencil,
@@ -39,7 +40,47 @@ export type RegistroHistorico = {
   /* De onde saiu o lucro daquela moto. */
   custoCompra?: number | null;
   gastos?: number | null;
+
+  /*
+   * O que abre ao clicar na venda de moto: quem comprou e como
+   * a moto saiu (KM, chassi, placa...). Já vem em pares
+   * rótulo/valor, só com o que está preenchido.
+   */
+  ficha?: {
+    cliente: Array<[string, string]>;
+    moto: Array<[string, string]>;
+    observacoes: string;
+  };
 };
+
+function BlocoFicha({
+  titulo,
+  linhas,
+}: {
+  titulo: string;
+  linhas: Array<[string, string]>;
+}) {
+  return (
+    <div className="rounded-xl border border-grafite-claro bg-grafite p-4">
+      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-dourado">
+        {titulo}
+      </h3>
+
+      {linhas.length === 0 ? (
+        <p className="text-sm text-texto-suave">Sem dados.</p>
+      ) : (
+        <dl className="grid gap-2 text-sm">
+          {linhas.map(([rotulo, valor]) => (
+            <div key={rotulo} className="grid grid-cols-[110px_1fr] gap-3">
+              <dt className="text-texto-suave">{rotulo}</dt>
+              <dd className="break-words text-white">{valor}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
 
 const nomesMeses = [
   "Janeiro",
@@ -118,6 +159,9 @@ export default function HistoricoGeral({
     "venda" | "registro"
   >(ordemInicial);
   const [busca, setBusca] = useState("");
+
+  /* A venda com a ficha aberta. Uma por vez. */
+  const [aberta, setAberta] = useState<string | null>(null);
 
   const doPeriodo = useMemo(() => {
     if (periodoTodo) return registros;
@@ -517,10 +561,25 @@ export default function HistoricoGeral({
                   </td>
                 </tr>
 
-                {grupo.itens.map((registro) => (
+                {grupo.itens.map((registro) => {
+                const chave = `${registro.tipo}-${registro.id}`;
+                const temFicha = Boolean(registro.ficha);
+                const estaAberta = aberta === chave;
+
+                return (
+                <Fragment key={chave}>
                 <tr
-                  key={`${registro.tipo}-${registro.id}`}
-                  className="border-b border-grafite-claro last:border-b-0 hover:bg-preto/40"
+                  onClick={(e) => {
+                    if (!temFicha) return;
+
+                    /* Botão e link da linha fazem o deles, sem abrir a ficha. */
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+
+                    setAberta(estaAberta ? null : chave);
+                  }}
+                  className={`border-b border-grafite-claro last:border-b-0 hover:bg-preto/40 ${
+                    temFicha ? "cursor-pointer" : ""
+                  } ${estaAberta ? "bg-preto/40" : ""}`}
                 >
                   <td className="whitespace-nowrap px-4 py-3">
                     {dataBrasil(registro.data)}
@@ -569,8 +628,17 @@ export default function HistoricoGeral({
                   </td>
 
                   <td data-rotulo="Item" className="px-4 py-3">
-                    <div className="font-semibold text-white">
+                    <div className="flex items-center gap-1.5 font-semibold text-white">
                       {registro.titulo}
+
+                      {temFicha && (
+                        <ChevronDown
+                          size={15}
+                          className={`shrink-0 text-dourado transition ${
+                            estaAberta ? "rotate-180" : ""
+                          }`}
+                        />
+                      )}
                     </div>
 
                     {registro.detalhe && (
@@ -716,7 +784,40 @@ export default function HistoricoGeral({
                     </div>
                   </td>
                 </tr>
-                ))}
+
+                {estaAberta && registro.ficha && (
+                  <tr className="border-b border-grafite-claro bg-preto/60">
+                    <td colSpan={9} className="px-4 py-4">
+                      {/* section, e não div: no celular a tabela vira cartão
+                          e o CSS dela mexe em todo "td > div". */}
+                      <section className="w-full text-left font-normal">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <BlocoFicha
+                          titulo="Cliente"
+                          linhas={registro.ficha.cliente}
+                        />
+
+                        <BlocoFicha
+                          titulo="Moto"
+                          linhas={registro.ficha.moto}
+                        />
+                      </div>
+
+                      {registro.ficha.observacoes && (
+                        <p className="mt-4 whitespace-pre-line rounded-xl border border-grafite-claro bg-grafite p-4 text-sm text-texto">
+                          <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-dourado">
+                            Observações da venda
+                          </span>
+                          {registro.ficha.observacoes}
+                        </p>
+                      )}
+                      </section>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+                })}
                 </Fragment>
               ))}
             </tbody>
