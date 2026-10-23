@@ -411,6 +411,38 @@ export function cabeNaFaixa(moto: MotoSite, chave: string) {
  * só pela prateleira. Descartar por falta de dado esconderia
  * moto boa por esquecimento de cadastro.
  */
+/*
+ * AS CILINDRADAS QUE O CLIENTE PROCURA
+ *
+ * Quem procura "160" quer a CG 160 e a Bros 160, e o motor
+ * delas tem 162,7 cc; a NMax 160 tem 155. Por isso a moto entra
+ * pelo nome do modelo primeiro - é o número que a pessoa conhece -
+ * e só sem número no nome vale a cilindrada do cadastro, puxada
+ * para a faixa mais perto.
+ */
+export const CILINDRADAS = ["125", "150", "160", "250", "300"] as const;
+
+const FAIXAS_DE_CILINDRADA: Array<[string, number, number]> = [
+  ["125", 120, 135],
+  ["150", 140, 152],
+  ["160", 153, 170],
+  ["250", 230, 262],
+  ["300", 280, 310],
+];
+
+export function cilindradaDaMoto(moto: MotoSite): string {
+  const nome = [moto.modelo, moto.versao].filter(Boolean).join(" ");
+  const doNome = nome.match(/(?<!d)(125|150|160|250|300)(?!d)/);
+
+  if (doNome) return doNome[1];
+
+  const cc = numero(moto.cilindrada);
+
+  if (cc === null) return "";
+
+  return FAIXAS_DE_CILINDRADA.find(([, de, ate]) => cc >= de && cc <= ate)?.[0] || "";
+}
+
 export type Uso = "trabalho" | "cidade" | "viagem" | "lazer";
 
 export const USOS: { chave: Uso; nome: string; texto: string }[] = [

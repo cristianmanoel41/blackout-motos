@@ -5,9 +5,11 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import CardMoto from "@/components/v2/CardMoto";
 import {
   CATEGORIAS,
+  CILINDRADAS,
   FAIXAS_DE_PRECO,
   cabeNaFaixa,
   categoriaDaMoto,
+  cilindradaDaMoto,
   numero,
   tituloDaMoto,
   type Categoria,
@@ -20,8 +22,9 @@ import {
  * Três camadas, da mais usada para a menos:
  *
  *   1. a busca por texto, sempre à vista;
- *   2. os atalhos de um toque: faixa de preço e tipo de moto;
- *   3. "Mais filtros": marca, modelo, ano, km, cilindrada.
+ *   2. os atalhos de um toque: faixa de preço, tipo de moto e
+ *      cilindrada;
+ *   3. "Mais filtros": marca, modelo, ano, km.
  *
  * No celular a pessoa resolve quase tudo nas duas primeiras sem
  * abrir nada - é o que deixa usar com uma mão só.
@@ -48,6 +51,7 @@ export type FiltrosIniciais = {
   preco?: string;
   tipo?: string;
   marca?: string;
+  cc?: string;
 };
 
 type Ordem = "recentes" | "menor-preco" | "maior-preco" | "menor-km" | "mais-novas";
@@ -109,7 +113,11 @@ export default function EstoqueInterativo({
   const [modelo, setModelo] = useState("");
   const [anoMinimo, setAnoMinimo] = useState("");
   const [kmMaximo, setKmMaximo] = useState("");
-  const [cilindrada, setCilindrada] = useState("");
+  const [cilindrada, setCilindrada] = useState(
+    (CILINDRADAS as readonly string[]).includes(iniciais.cc || "")
+      ? iniciais.cc!
+      : ""
+  );
   const [ordem, setOrdem] = useState<Ordem>("recentes");
   const [abertos, setAbertos] = useState(
     Boolean(iniciais.marca)
@@ -136,9 +144,9 @@ export default function EstoqueInterativo({
       anos: unicos(motos.map(anoDela).filter(Boolean))
         .map(Number)
         .sort((a, b) => b - a),
-      cilindradas: unicos(motos.map((m) => numero(m.cilindrada)))
-        .map(Number)
-        .sort((a, b) => a - b),
+      cilindradas: CILINDRADAS.filter((cc) =>
+        motos.some((m) => cilindradaDaMoto(m) === cc)
+      ),
       tipos: CATEGORIAS.filter(
         (item) =>
           item.chave === "todas" ||
@@ -182,9 +190,7 @@ export default function EstoqueInterativo({
         if (km === null || km > Number(kmMaximo)) return false;
       }
 
-      if (cilindrada && numero(moto.cilindrada) !== Number(cilindrada)) {
-        return false;
-      }
+      if (cilindrada && cilindradaDaMoto(moto) !== cilindrada) return false;
 
       return true;
     });
@@ -225,6 +231,7 @@ export default function EstoqueInterativo({
     definir("preco", preco);
     definir("tipo", tipo === "todas" ? "" : tipo);
     definir("marca", marca);
+    definir("cc", cilindrada);
 
     const texto = parametros.toString();
     const novo = `${window.location.pathname}${texto ? `?${texto}` : ""}`;
@@ -232,11 +239,11 @@ export default function EstoqueInterativo({
     if (novo !== `${window.location.pathname}${window.location.search}`) {
       window.history.replaceState(window.history.state, "", novo);
     }
-  }, [busca, preco, tipo, marca]);
+  }, [busca, preco, tipo, marca, cilindrada]);
 
-  const extras = [marca, modelo, anoMinimo, kmMaximo, cilindrada].filter(Boolean).length;
+  const extras = [marca, modelo, anoMinimo, kmMaximo].filter(Boolean).length;
 
-  const temFiltro = Boolean(busca || preco || tipo !== "todas" || extras);
+  const temFiltro = Boolean(busca || preco || tipo !== "todas" || cilindrada || extras);
 
   function limpar() {
     setBusca("");
@@ -364,10 +371,32 @@ export default function EstoqueInterativo({
           </div>
         )}
 
+        {opcoes.cilindradas.length > 0 && (
+          <div
+            role="group"
+            aria-label="Cilindrada"
+            className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none]"
+          >
+            {opcoes.cilindradas.map((cc) => (
+              <button
+                key={cc}
+                type="button"
+                aria-pressed={cilindrada === cc}
+                onClick={() => setCilindrada((atual) => (atual === cc ? "" : cc))}
+                className={`min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-[13px] ${
+                  cilindrada === cc ? "pilula pilula-ligada" : "pilula"
+                }`}
+              >
+                {cc} cc
+              </button>
+            ))}
+          </div>
+        )}
+
         {abertos && (
           <div
             id="mais-filtros"
-            className="mt-4 grid gap-3 border-t border-white/[.07] pt-4 sm:grid-cols-2 lg:grid-cols-5"
+            className="mt-4 grid gap-3 border-t border-white/[.07] pt-4 sm:grid-cols-2 lg:grid-cols-4"
           >
             <select
               value={marca}
@@ -427,22 +456,6 @@ export default function EstoqueInterativo({
               ))}
             </select>
 
-            {/* Cilindrada só quando o cadastro tem: senão é filtro vazio. */}
-            {opcoes.cilindradas.length > 0 && (
-              <select
-                value={cilindrada}
-                onChange={(e) => setCilindrada(e.target.value)}
-                className={seletor}
-                aria-label="Cilindrada"
-              >
-                <option value="">Qualquer cilindrada</option>
-                {opcoes.cilindradas.map((item) => (
-                  <option key={item} value={item}>
-                    {item} cc
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
         )}
 

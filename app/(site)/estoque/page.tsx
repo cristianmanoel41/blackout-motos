@@ -109,6 +109,7 @@ export default async function EstoquePage({
               preco: texto(parametros.preco),
               tipo: texto(parametros.tipo),
               marca: texto(parametros.marca),
+              cc: texto(parametros.cc),
             }}
           />
         )}
