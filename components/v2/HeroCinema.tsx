@@ -37,12 +37,12 @@ import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
  * escura, preenche o fundo - o clima de cinema vem dela, sem
  * cortar a moto e sem inventar cenário.
  *
- * A troca é sozinha, a cada sete segundos, e para quando o
+ * A troca é sozinha, a cada cinco segundos, e para quando o
  * mouse está em cima, quando a aba está escondida e para quem
  * pediu menos movimento. No celular, arrastar troca a moto.
  */
 
-const TEMPO = 7000;
+const TEMPO = 5000;
 
 export default function HeroCinema({
   motos,
@@ -57,7 +57,7 @@ export default function HeroCinema({
 }) {
   const [atual, setAtual] = useState(0);
   /* Some o aviso "arraste" quando a pessoa troca a moto - a
-     troca sozinha, a cada sete segundos, não conta. */
+     troca sozinha, a cada cinco segundos, não conta. */
   const [jaTrocou, setJaTrocou] = useState(false);
   const parado = useRef(false);
   const toqueX = useRef<number | null>(null);
