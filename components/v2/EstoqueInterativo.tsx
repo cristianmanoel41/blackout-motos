@@ -158,10 +158,16 @@ export default function EstoqueInterativo({
     };
   }, [motos, marca]);
 
-  const filtradas = useMemo(() => {
+  /*
+   * Todos os filtros menos a cilindrada. Fica separado porque a
+   * contagem de cada cilindrada (como na aba Estoque do sistema)
+   * acompanha os outros filtros: "160 cc · 3 motos" quer dizer
+   * três dentro do preço e do tipo escolhidos.
+   */
+  const semCilindrada = useMemo(() => {
     const termos = semAcento(busca).split(/\s+/).filter(Boolean);
 
-    const lista = motos.filter((moto) => {
+    return motos.filter((moto) => {
       const texto = semAcento(
         [moto.marca, moto.modelo, moto.versao, moto.cor, anoDela(moto)]
           .filter(Boolean)
@@ -190,10 +196,25 @@ export default function EstoqueInterativo({
         if (km === null || km > Number(kmMaximo)) return false;
       }
 
-      if (cilindrada && cilindradaDaMoto(moto) !== cilindrada) return false;
-
       return true;
     });
+  }, [motos, busca, preco, tipo, marca, modelo, anoMinimo, kmMaximo]);
+
+  const porCilindrada = useMemo(() => {
+    const contagem: Record<string, number> = {};
+
+    semCilindrada.forEach((moto) => {
+      const cc = cilindradaDaMoto(moto);
+      if (cc) contagem[cc] = (contagem[cc] || 0) + 1;
+    });
+
+    return contagem;
+  }, [semCilindrada]);
+
+  const filtradas = useMemo(() => {
+    const lista = cilindrada
+      ? semCilindrada.filter((moto) => cilindradaDaMoto(moto) === cilindrada)
+      : semCilindrada;
 
     /* Sem preço vai para o fim em qualquer ordem de preço. */
     const precoOu = (m: MotoSite, vazio: number) =>
@@ -216,7 +237,7 @@ export default function EstoqueInterativo({
         /* A lista já vem da mais nova entrada para a mais antiga. */
         return lista;
     }
-  }, [motos, busca, preco, tipo, marca, modelo, anoMinimo, kmMaximo, cilindrada, ordem]);
+  }, [semCilindrada, cilindrada, ordem]);
 
   /* Os filtros principais vão para o endereço. */
   useEffect(() => {
@@ -372,24 +393,49 @@ export default function EstoqueInterativo({
         )}
 
         {opcoes.cilindradas.length > 0 && (
-          <div
-            role="group"
-            aria-label="Cilindrada"
-            className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none]"
-          >
-            {opcoes.cilindradas.map((cc) => (
-              <button
-                key={cc}
-                type="button"
-                aria-pressed={cilindrada === cc}
-                onClick={() => setCilindrada((atual) => (atual === cc ? "" : cc))}
-                className={`min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-[13px] ${
-                  cilindrada === cc ? "pilula pilula-ligada" : "pilula"
-                }`}
-              >
-                {cc} cc
-              </button>
-            ))}
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider ouro">
+              Estoque por cilindrada
+            </p>
+
+            <div
+              role="group"
+              aria-label="Cilindrada"
+              className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none]"
+            >
+              {[
+                { chave: "", nome: "Todas", total: semCilindrada.length },
+                ...opcoes.cilindradas.map((cc) => ({
+                  chave: cc as string,
+                  nome: `${cc} cc`,
+                  total: porCilindrada[cc] || 0,
+                })),
+              ].map((item) => (
+                <button
+                  key={item.chave || "todas"}
+                  type="button"
+                  aria-pressed={cilindrada === item.chave}
+                  onClick={() =>
+                    setCilindrada((atual) =>
+                      atual === item.chave ? "" : item.chave
+                    )
+                  }
+                  className={`cartao-cc min-w-[96px] shrink-0 rounded-xl px-4 py-2.5 text-left ${
+                    cilindrada === item.chave ? "pilula-ligada" : ""
+                  }`}
+                >
+                  <span className="block text-[11px] font-bold uppercase tracking-wide">
+                    {item.nome}
+                  </span>
+                  <span className="mt-0.5 block text-2xl font-black leading-none">
+                    {item.total}
+                  </span>
+                  <span className="block text-[11px]">
+                    {item.total === 1 ? "moto" : "motos"}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

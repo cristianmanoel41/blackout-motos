@@ -432,7 +432,7 @@ const FAIXAS_DE_CILINDRADA: Array<[string, number, number]> = [
 
 export function cilindradaDaMoto(moto: MotoSite): string {
   const nome = [moto.modelo, moto.versao].filter(Boolean).join(" ");
-  const doNome = nome.match(/(?<!d)(125|150|160|250|300)(?!d)/);
+  const doNome = nome.match(/(?<!\d)(125|150|160|250|300)(?!\d)/);
 
   if (doNome) return doNome[1];
 
