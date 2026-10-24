@@ -62,11 +62,24 @@ type ClienteHistorico = {
 };
 
 function formatarCPF(valor: unknown) {
-  const numeros = String(valor || "").replace(/D/g, "");
+  const numeros = String(valor || "").replace(/\D/g, "");
 
   if (numeros.length !== 11) return String(valor || "").trim();
 
-  return numeros.replace(/(d{3})(d{3})(d{3})(d{2})/, "$1.$2.$3-$4");
+  return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+}
+
+/* Garantia da loja: 90 dias contados da data da venda. */
+const DIAS_DE_GARANTIA = 90;
+
+function fimDaGarantia(dataVenda: string | null | undefined) {
+  const [ano, mes, dia] = String(dataVenda || "").split("-").map(Number);
+
+  if (!ano || !mes || !dia) return "";
+
+  const fim = new Date(Date.UTC(ano, mes - 1, dia + DIAS_DE_GARANTIA));
+
+  return fim.toISOString().slice(0, 10);
 }
 
 /* Só as linhas que têm valor: campo vazio não vira "-" na ficha. */
@@ -415,6 +428,7 @@ export default async function HistoricoVendasPage({
                 ["Renavam", moto.renavam],
               ])
             : [],
+          garantiaAte: fimDaGarantia(venda.data_venda),
           observacoes: String(venda.observacoes || "").trim(),
         },
         extra:

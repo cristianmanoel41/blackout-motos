@@ -49,9 +49,60 @@ export type RegistroHistorico = {
   ficha?: {
     cliente: Array<[string, string]>;
     moto: Array<[string, string]>;
+    /* Último dia da garantia (aaaa-mm-dd), vazio sem data de venda. */
+    garantiaAte: string;
     observacoes: string;
   };
 };
+
+/* Hoje no horário de Brasília, em aaaa-mm-dd. */
+function hojeNoBrasil() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date());
+}
+
+function BlocoGarantia({ ate }: { ate: string }) {
+  if (!ate) return null;
+
+  const dias = Math.round(
+    (Date.parse(ate) - Date.parse(hojeNoBrasil())) / 86_400_000
+  );
+
+  const vigente = dias >= 0;
+
+  const situacao =
+    dias > 1
+      ? `Faltam ${dias} dias`
+      : dias === 1
+        ? "Vence amanhã"
+        : dias === 0
+          ? "Vence hoje"
+          : `Vencida há ${-dias} dia${dias === -1 ? "" : "s"}`;
+
+  return (
+    <div
+      className={`mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-4 text-sm ${
+        vigente
+          ? "border-green-700 bg-green-950/30"
+          : "border-grafite-claro bg-grafite"
+      }`}
+    >
+      <span>
+        <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-dourado">
+          Garantia de 90 dias
+        </span>
+        <span className="text-white">Expira em {dataBrasil(ate)}</span>
+      </span>
+
+      <span
+        className={`font-bold ${vigente ? "text-green-400" : "text-red-400"}`}
+      >
+        {situacao}
+      </span>
+    </div>
+  );
+}
 
 function BlocoFicha({
   titulo,
@@ -802,6 +853,8 @@ export default function HistoricoGeral({
                           linhas={registro.ficha.moto}
                         />
                       </div>
+
+                      <BlocoGarantia ate={registro.ficha.garantiaAte} />
 
                       {registro.ficha.observacoes && (
                         <p className="mt-4 whitespace-pre-line rounded-xl border border-grafite-claro bg-grafite p-4 text-sm text-texto">
