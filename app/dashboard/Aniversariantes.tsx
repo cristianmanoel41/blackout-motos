@@ -2,10 +2,10 @@ import Link from "next/link";
 import { Cake, MessageCircle } from "lucide-react";
 import {
   aniversariantes,
-  mensagemDeAniversario,
   type Aniversariante,
 } from "@/lib/dados/aniversariantes";
 import { linkWhatsapp } from "@/components/CardWhatsapp";
+import MandarParabens from "@/components/MandarParabens";
 import styles from "./dashboard.module.css";
 
 /*
@@ -36,11 +36,12 @@ function Quando({ faltam }: { faltam: number }) {
 }
 
 /*
- * O botão que abre a conversa já com a mensagem escrita.
+ * O botão abre a janela de escolher e editar a mensagem antes
+ * de ir para o WhatsApp.
  *
- * Vem nulo quando o telefone do cadastro não dá para usar -
- * melhor não ter botão do que ter um que abre o WhatsApp num
- * número quebrado.
+ * Quando o telefone do cadastro não dá para usar, mostra "sem
+ * telefone" - melhor não ter botão do que ter um que abre o
+ * WhatsApp num número quebrado.
  */
 function Parabenizar({
   pessoa,
@@ -49,12 +50,7 @@ function Parabenizar({
   pessoa: Aniversariante;
   destaque?: boolean;
 }) {
-  const link = linkWhatsapp(
-    pessoa.telefone,
-    mensagemDeAniversario(pessoa.nome)
-  );
-
-  if (!link) {
+  if (!linkWhatsapp(pessoa.telefone)) {
     return (
       <span className="text-[11px] font-bold text-black/40">
         sem telefone
@@ -63,10 +59,9 @@ function Parabenizar({
   }
 
   return (
-    <a
-      href={link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <MandarParabens
+      nome={pessoa.nome}
+      telefone={pessoa.telefone}
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-black transition ${
         destaque
           ? "bg-emerald-500 text-black hover:bg-emerald-400"
@@ -75,7 +70,7 @@ function Parabenizar({
     >
       <MessageCircle size={14} />
       Parabenizar
-    </a>
+    </MandarParabens>
   );
 }
 

@@ -15,8 +15,8 @@ import DocumentosCliente from "@/components/DocumentosCliente";
 import ApagarCliente from "@/components/ApagarCliente";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
-import CardWhatsapp, { linkWhatsapp } from "@/components/CardWhatsapp";
-import { mensagemDeAniversario } from "@/lib/dados/mensagem-aniversario";
+import CardWhatsapp from "@/components/CardWhatsapp";
+import MandarParabens from "@/components/MandarParabens";
 
 type Cliente = {
   id: string;
@@ -436,10 +436,6 @@ export default function ClienteDetalhesPage() {
     setSalvando(false);
   }
 
-  const parabens = cliente
-    ? linkWhatsapp(cliente.telefone, mensagemDeAniversario(cliente.nome))
-    : null;
-
   if (carregando) {
     return (
       <div className="p-6 text-texto-suave">
@@ -579,17 +575,14 @@ export default function ClienteDetalhesPage() {
             * Sem telefone nao ha botao: um que abre o WhatsApp
             * num numero quebrado e pior que nenhum.
             */}
-          {parabens && (
-            <a
-              href={parabens}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 px-4 py-3 text-sm font-bold text-emerald-400 transition hover:bg-emerald-400/10"
-            >
-              <Cake size={16} />
-              Mandar parabéns
-            </a>
-          )}
+          <MandarParabens
+            nome={cliente.nome}
+            telefone={cliente.telefone}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/40 px-4 py-3 text-sm font-bold text-emerald-400 transition hover:bg-emerald-400/10"
+          >
+            <Cake size={16} />
+            Mandar parabéns
+          </MandarParabens>
         </div>
 
         {/* DADOS DO CLIENTE */}
