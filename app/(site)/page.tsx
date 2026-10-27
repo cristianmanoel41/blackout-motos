@@ -167,6 +167,7 @@ export default async function HomePage() {
               totalFotos={totalFotos}
               totalVideos={totalVideos}
               quantos={3}
+              previa={false}
             />
           </div>
         </section>

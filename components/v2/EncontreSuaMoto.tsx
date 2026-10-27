@@ -61,6 +61,7 @@ export default function EncontreSuaMoto({
   totalFotos = {},
   totalVideos = {},
   quantos = 6,
+  previa = true,
 }: {
   motos: MotoSite[];
   slugs: Record<string, string>;
@@ -68,6 +69,8 @@ export default function EncontreSuaMoto({
   totalFotos?: Record<string, number>;
   totalVideos?: Record<string, number>;
   quantos?: number;
+  /* Mostrar algumas motos antes da resposta. A capa não mostra. */
+  previa?: boolean;
 }) {
   const [resposta, setResposta] = useState<Resposta>(VAZIA);
   const avisou = useRef(false);
@@ -267,9 +270,9 @@ export default function EncontreSuaMoto({
           </Link>
         )}
 
-        {(respondeu ? resultado.lista : motos.slice(0, Math.min(quantos, 3))).length > 0 && (
+        {(respondeu ? resultado.lista : (previa ? motos.slice(0, Math.min(quantos, 3)) : [])).length > 0 && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(respondeu ? resultado.lista : motos.slice(0, Math.min(quantos, 3))).map(
+            {(respondeu ? resultado.lista : (previa ? motos.slice(0, Math.min(quantos, 3)) : [])).map(
               (moto) => (
                 <CardMoto
                   key={moto.id}
