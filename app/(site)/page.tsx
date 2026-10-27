@@ -1,15 +1,18 @@
-import Link from "next/link";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
-import { modelosDoEstoque } from "@/lib/dados/moto-site";
+import {
+  anoDaMoto,
+  modelosDoEstoque,
+  nomeDaMoto,
+  precoDaMoto,
+} from "@/lib/dados/moto-site";
 import HeroCinema from "@/components/v2/HeroCinema";
 import BuscaRapida from "@/components/v2/BuscaRapida";
-import CardMoto from "@/components/v2/CardMoto";
-import Carrossel from "@/components/v2/Carrossel";
 import AoEntrar from "@/components/v2/AoEntrar";
 import EncontreSuaMoto from "@/components/v2/EncontreSuaMoto";
 import FaixaMarcas from "@/components/v2/FaixaMarcas";
 import Financiamento from "@/components/v2/Financiamento";
+import SimuladorDePagamento from "@/components/site/SimuladorDePagamento";
 import Diferenciais from "@/components/v2/Diferenciais";
 import CompramosSuaMoto from "@/components/v2/CompramosSuaMoto";
 import AvisarNovidades from "@/components/site/AvisarNovidades";
@@ -23,18 +26,18 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
  *
  *   1. a vitrine de cinema - uma moto de verdade, grande;
  *   2. a busca e os atalhos de preço, no caminho do polegar;
- *   3. as últimas entradas, andando sozinhas;
- *   4. "Encontre sua moto ideal", para quem ainda não escolheu;
- *   5. financiamento, diferenciais, troca, avaliações e o mapa.
+ *   3. "Encontre sua moto ideal", para quem ainda não escolheu;
+ *   4. financiamento e o simulador, o mesmo de /financiamento;
+ *   5. diferenciais, troca, avaliações e o mapa.
  *
  * O estoque é o mesmo do sistema: sai da função pública do
  * banco, que devolve só coluna de vitrine e só moto disponível.
  * Vendeu, some daqui sozinha - nada nesta página tem cadastro
  * próprio nem cópia de dado.
  *
- * A grade "Motos em destaque" saiu em 27/10/2026, a pedido da
- * loja: as motos da capa ficam na vitrine de cinema e no
- * carrossel de últimas entradas; o resto, em /estoque.
+ * A grade "Motos em destaque" e o carrossel de "Últimas
+ * entradas" saíram em 27/10/2026, a pedido da loja: as motos da
+ * capa ficam só na vitrine de cinema; o resto, em /estoque.
  *
  * A vitrine de cinema mostra as motos marcadas com estrela na
  * ficha; sem marcação, as quatro últimas que entraram. A
@@ -46,50 +49,18 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
 
 export const dynamic = "force-dynamic";
 
-function Titulo({
-  rotulo,
-  antes,
-  ouro,
-  texto,
-  link,
-}: {
-  rotulo: string;
-  antes: string;
-  ouro: string;
-  texto: string;
-  link?: { href: string; nome: string };
-}) {
-  return (
-    <AoEntrar className="flex flex-wrap items-end justify-between gap-5">
-      <div>
-        <p className="rotulo">{rotulo}</p>
-        <h2 className="titulo mt-3 text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
-          {antes} <span className="ouro">{ouro}</span>
-        </h2>
-        <p className="mt-2 max-w-xl text-sm suave sm:text-base">{texto}</p>
-      </div>
-
-      {link && (
-        <Link
-          href={link.href}
-          className="botao-vidro inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-3 text-sm"
-        >
-          {link.nome}
-          <ArrowUpRight size={16} />
-        </Link>
-      )}
-    </AoEntrar>
-  );
-}
-
 export default async function HomePage() {
   const { motos, fotos, slugs } = await estoqueDoSite();
 
   const marcadas = motos.filter((m) => m.na_capa);
   const naCapa = marcadas.length > 0 ? marcadas.slice(0, 4) : motos.slice(0, 4);
 
-  /* A lista já vem da entrada mais nova para a mais antiga. */
-  const ultimas = motos.slice(0, 8);
+  /* A lista do simulador, como em /financiamento. */
+  const doEstoque = motos.map((item) => ({
+    nome: `${nomeDaMoto(item)} ${anoDaMoto(item)}`,
+    preco: precoDaMoto(item),
+    capa: fotos.capas[item.id] || "",
+  }));
 
   const totalFotos: Record<string, number> = {};
   const totalVideos: Record<string, number> = {};
@@ -109,38 +80,6 @@ export default async function HomePage() {
       />
 
       {motos.length > 0 && <BuscaRapida quantas={motos.length} />}
-
-      {ultimas.length > 0 && (
-        <section className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
-          <Titulo
-            rotulo="Acabaram de chegar"
-            antes="Últimas"
-            ouro="entradas"
-            texto="As motos mais recentes do nosso pátio, com fotos reais e preço na vitrine."
-            link={{ href: "/estoque", nome: `Ver as ${motos.length} motos` }}
-          />
-
-          <div className="mt-8">
-            <Carrossel rotulo="Últimas entradas">
-              {ultimas.map((moto, posicao) => (
-                <div
-                  key={moto.id}
-                  className="w-[80%] sm:w-[45%] lg:w-[31%] xl:w-[23.5%]"
-                >
-                  <CardMoto
-                    moto={moto}
-                    slug={slugs[moto.id]}
-                    foto={fotos.capas[moto.id]}
-                    fotos={totalFotos[moto.id]}
-                    videos={totalVideos[moto.id]}
-                    prioridade={posicao < 2}
-                  />
-                </div>
-              ))}
-            </Carrossel>
-          </div>
-        </section>
-      )}
 
       <FaixaMarcas />
 
@@ -174,6 +113,13 @@ export default async function HomePage() {
       )}
 
       <Financiamento />
+
+      <section
+        id="simulador"
+        className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-16 pt-8 sm:px-6"
+      >
+        <SimuladorDePagamento estoque={doEstoque} />
+      </section>
 
       <Diferenciais />
 

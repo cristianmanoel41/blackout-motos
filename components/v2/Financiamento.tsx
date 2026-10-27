@@ -15,10 +15,9 @@ import AoEntrar from "@/components/v2/AoEntrar";
  * pela ordem de entrada no pátio e acabava parecendo a oferta
  * da vez - o que não é.
  *
- * Também não repete o simulador: ele já existe em
- * /financiamento, com as financeiras e as contas certas. Dois
- * simuladores no mesmo site dariam dois resultados diferentes
- * no dia em que alguém mexesse em um deles.
+ * O simulador vem logo abaixo desta faixa, na capa: é o mesmo
+ * componente de /financiamento, para os dois nunca darem
+ * resultados diferentes. O botão só desce até ele.
  *
  * Os três pontos falam do que a loja resolve, sem número de
  * juros nem prazo: taxa muda por banco, por perfil e por mês,
@@ -91,7 +90,7 @@ export default function Financiamento() {
               </div>
 
               <Link
-                href="/financiamento"
+                href="#simulador"
                 className="botao-ouro mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-sm sm:w-auto"
               >
                 Simule agora
