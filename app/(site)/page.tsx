@@ -6,7 +6,6 @@ import {
   nomeDaMoto,
   precoDaMoto,
 } from "@/lib/dados/moto-site";
-import BannerFachada from "@/components/v2/BannerFachada";
 import HeroCinema from "@/components/v2/HeroCinema";
 import BuscaRapida from "@/components/v2/BuscaRapida";
 import AoEntrar from "@/components/v2/AoEntrar";
@@ -25,8 +24,7 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
  *
  * A ordem segue o caminho de quem chega pelo anúncio:
  *
- *   1. a fachada da loja, com o caminho para o estoque;
- *   1b. logo abaixo, a vitrine de cinema, trocando de moto sozinha;
+ *   1. a vitrine de cinema, trocando de moto sozinha;
  *   2. a busca e os atalhos de preço, no caminho do polegar;
  *   3. "Encontre sua moto ideal", para quem ainda não escolheu;
  *   4. financiamento e o simulador, o mesmo de /financiamento;
@@ -40,8 +38,10 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
  * A grade "Motos em destaque" e o carrossel de "Últimas
  * entradas" saíram em 27/10/2026, a pedido da loja: as motos da
  * capa ficam só na vitrine de cinema; o resto, em /estoque.
- * No mesmo dia a foto da fachada entrou no topo, e a vitrine
- * de cinema desceu para logo abaixo dela.
+ * A foto da fachada (BannerFachada) ficou no topo por um dia e
+ * saiu para a loja trocar a foto. Para voltar, a foto nova vai
+ * em public/site/ e o banner entra antes da vitrine - que aí
+ * troca o h1 por h2, para a página não ter dois títulos.
  *
  * A vitrine de cinema mostra as motos marcadas com estrela na
  * ficha; sem marcação, as quatro últimas que entraram. A
@@ -76,8 +76,6 @@ export default async function HomePage() {
 
   return (
     <main>
-      <BannerFachada quantas={motos.length} />
-
       <HeroCinema
         motos={naCapa}
         slugs={slugs}
