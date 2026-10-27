@@ -166,7 +166,7 @@ export default function HeroCinema({
             {moto.na_capa ? "Destaque da loja" : "Chegou no pátio"}
           </p>
 
-          <h1 className="mt-3">
+          <h2 className="mt-3">
             <span className="titulo block text-[clamp(2.6rem,7.5vw,5.2rem)] claro">
               {marca || "Moto"}
             </span>
@@ -177,7 +177,7 @@ export default function HeroCinema({
               </span>
               <span aria-hidden="true" className="risco hidden w-32 sm:block" />
             </span>
-          </h1>
+          </h2>
 
           <dl className="mt-6 flex flex-wrap gap-2">
             {ficha.map((item) => (

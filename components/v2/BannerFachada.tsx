@@ -19,9 +19,9 @@ import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 export default function BannerFachada({ quantas }: { quantas: number }) {
   return (
     <section className="relative isolate border-b border-white/[.07]">
-      <div className="relative aspect-[4/3] w-full lg:aspect-auto lg:h-[min(78vh,760px)]">
+      <div className="relative aspect-[3/2] w-full lg:aspect-auto lg:h-[min(78vh,760px)]">
         <Image
-          src="/site/fachada-blackout.jpg"
+          src="/site/fachada-loja.jpg"
           alt={`Fachada da ${LOJA.nome} em ${LOJA.cidade}`}
           fill
           priority
