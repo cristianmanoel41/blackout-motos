@@ -24,14 +24,17 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
  *   1. a vitrine de cinema - uma moto de verdade, grande;
  *   2. a busca e os atalhos de preço, no caminho do polegar;
  *   3. as últimas entradas, andando sozinhas;
- *   4. a seleção de motos em grade, com preço, ano e km;
- *   5. "Encontre sua moto ideal", para quem ainda não escolheu;
- *   6. financiamento, diferenciais, troca, avaliações e o mapa.
+ *   4. "Encontre sua moto ideal", para quem ainda não escolheu;
+ *   5. financiamento, diferenciais, troca, avaliações e o mapa.
  *
  * O estoque é o mesmo do sistema: sai da função pública do
  * banco, que devolve só coluna de vitrine e só moto disponível.
  * Vendeu, some daqui sozinha - nada nesta página tem cadastro
  * próprio nem cópia de dado.
+ *
+ * A grade "Motos em destaque" saiu em 27/10/2026, a pedido da
+ * loja: as motos da capa ficam na vitrine de cinema e no
+ * carrossel de últimas entradas; o resto, em /estoque.
  *
  * A vitrine de cinema mostra as motos marcadas com estrela na
  * ficha; sem marcação, as quatro últimas que entraram. A
@@ -42,8 +45,6 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
  */
 
 export const dynamic = "force-dynamic";
-
-const NA_GRADE = 8;
 
 function Titulo({
   rotulo,
@@ -89,19 +90,6 @@ export default async function HomePage() {
 
   /* A lista já vem da entrada mais nova para a mais antiga. */
   const ultimas = motos.slice(0, 8);
-
-  /*
-   * A seleção da grade: primeiro as marcadas com estrela, depois
-   * as que não estão na fileira de últimas entradas, e só então
-   * o resto - para as duas seções não mostrarem as mesmas motos
-   * quando o pátio tem moto suficiente para isso.
-   */
-  const jaNaFileira = new Set(ultimas.map((m) => m.id));
-  const selecao = [
-    ...marcadas,
-    ...motos.filter((m) => !m.na_capa && !jaNaFileira.has(m.id)),
-    ...motos.filter((m) => !m.na_capa && jaNaFileira.has(m.id)),
-  ].slice(0, NA_GRADE);
 
   const totalFotos: Record<string, number> = {};
   const totalVideos: Record<string, number> = {};
@@ -155,41 +143,6 @@ export default async function HomePage() {
       )}
 
       <FaixaMarcas />
-
-      {selecao.length > 0 && (
-        <section className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
-          <Titulo
-            rotulo="Seleção Blackout"
-            antes="Motos em"
-            ouro="destaque"
-            texto="Revisadas, com procedência e prontas para sair. Toque para ver a galeria completa."
-          />
-
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {selecao.map((moto) => (
-              <AoEntrar key={moto.id} className="h-full">
-                <CardMoto
-                  moto={moto}
-                  slug={slugs[moto.id]}
-                  foto={fotos.capas[moto.id]}
-                  fotos={totalFotos[moto.id]}
-                  videos={totalVideos[moto.id]}
-                />
-              </AoEntrar>
-            ))}
-          </div>
-
-          <div className="mt-10 flex justify-center">
-            <Link
-              href="/estoque"
-              className="botao-ouro inline-flex min-h-12 items-center gap-2 rounded-full px-8 py-3.5 text-sm"
-            >
-              Ver estoque completo
-              <ArrowUpRight size={16} />
-            </Link>
-          </div>
-        </section>
-      )}
 
       {motos.length > 0 && (
         <section className="grao relative border-y border-white/[.07] bg-[#0c0c10]">
