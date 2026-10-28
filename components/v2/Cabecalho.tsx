@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Calculator, Menu, X } from "lucide-react";
+import { Bike, Calculator, Menu, X } from "lucide-react";
 import {
   CONVITE_GERAL,
   linkWhatsApp,
@@ -44,7 +44,7 @@ export default function Cabecalho({
       <AoRolar />
 
       <div className="relative mx-auto max-w-[1400px]">
-        <div className="barra flex items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6">
+        <div className="barra flex items-center gap-1.5 px-4 py-3 min-[390px]:gap-2 sm:gap-4 sm:px-6">
           <Link
             href={INICIO}
             className="shrink-0"
@@ -56,7 +56,7 @@ export default function Cabecalho({
               width={995}
               height={425}
               priority
-              className="h-9 w-auto sm:h-12"
+              className="h-7 w-auto min-[390px]:h-9 sm:h-12"
             />
           </Link>
 
@@ -72,14 +72,27 @@ export default function Cabecalho({
             *
             * Quem pensa em financiar quer saber a parcela antes
             * de falar com alguém - e no celular o menu fica
-            * escondido. No celular os dois botões são menores
-            * para caber com a logo e o menu numa linha só.
+            * escondido. No celular os botões são menores para
+            * caber com a logo e o menu numa linha só.
+            *
+            * O Estoque aparece aqui só no celular (28/10/2026, a
+            * pedido da loja): no computador ele já está no menu,
+            * e no celular o menu fica fechado. Para caber, no
+            * celular o WhatsApp fica só com o ícone.
             */}
           <Link
-            href="/financiamento"
-            className="botao-vidro ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-[11px] font-bold sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] xl:ml-4"
+            href="/estoque"
+            className="botao-vidro ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-2 py-2 text-[11px] min-[390px]:px-2.5 font-bold sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] lg:hidden"
           >
-            <Calculator className="h-3.5 w-3.5 ouro sm:h-4 sm:w-4" />
+            <Bike className="hidden h-3.5 w-3.5 ouro min-[400px]:block sm:h-4 sm:w-4" />
+            Estoque
+          </Link>
+
+          <Link
+            href="/financiamento"
+            className="botao-vidro flex shrink-0 items-center gap-1.5 rounded-full px-2 py-2 text-[11px] min-[390px]:px-2.5 font-bold sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] lg:ml-auto xl:ml-4"
+          >
+            <Calculator className="hidden h-3.5 w-3.5 ouro min-[400px]:block sm:h-4 sm:w-4" />
             Simulador
           </Link>
 
@@ -88,15 +101,11 @@ export default function Cabecalho({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Fale no WhatsApp"
-            className="botao-ouro flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-[11px] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] xl:px-5"
+            className="botao-ouro flex shrink-0 items-center gap-1.5 rounded-full px-2 py-2 text-[11px] min-[390px]:px-2.5 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] xl:px-5"
           >
             <IconeWhatsApp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">
               Fale no WhatsApp
-            </span>
-            {/* Em tela bem estreita fica só o ícone. */}
-            <span className="max-[413px]:hidden sm:hidden">
-              WhatsApp
             </span>
           </a>
 
