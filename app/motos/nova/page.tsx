@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import {
   FileSignature,
+  FileText,
   Save,
   Search,
   Warehouse,
@@ -1864,6 +1865,14 @@ export default function NovaMotoPage() {
                 </Link>
 
                 <a
+                  href={`/documentos/contrato-compra/${motoCriadaId}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
+                >
+                  <FileText size={17} />
+                  Gerar Contrato de Compra
+                </a>
+
+                <a
                   href={`/documentos/procuracao/${motoCriadaId}`}
                   className="inline-flex items-center gap-2 rounded-lg bg-dourado px-4 py-2 text-sm font-bold text-preto transition hover:bg-dourado-claro"
                 >
@@ -1899,7 +1908,12 @@ export default function NovaMotoPage() {
             window.scrollTo({ top: 0, behavior: "smooth" });
             void salvarMoto(evento);
           }}
-          className="space-y-6"
+          /*
+           * Depois de salvar, o formulário sai de cena e fica só o
+           * aviso de cima, com os documentos: com ele aberto dava
+           * para clicar em Registrar de novo e duplicar a compra.
+           */
+          className={motoCriadaId ? "hidden" : "space-y-6"}
         >
 
           <BarraDePassos
@@ -3258,15 +3272,10 @@ export default function NovaMotoPage() {
           {/* AÇÕES */}
 
           <div className="flex flex-col gap-3 md:flex-row md:justify-end">
-            <button
-              type="button"
-              disabled
-              title="Cadastre a moto primeiro para gerar a procuração."
-              className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-dourado px-6 py-3 font-semibold text-dourado opacity-40"
-            >
-              <FileSignature size={18} />
-              Gerar Procuração após salvar
-            </button>
+            <p className="flex items-center gap-2 text-sm text-texto-suave md:mr-auto">
+              <FileSignature size={17} className="shrink-0 text-dourado" />
+              Depois de registrar, aparecem aqui o contrato de compra e a procuração.
+            </p>
 
             <button
               type="submit"
