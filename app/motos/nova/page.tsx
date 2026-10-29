@@ -1,6 +1,12 @@
 "use client";
 
 import {
+  BarraDePassos,
+  BotoesDosPassos,
+  Passo,
+  usePassoAPasso,
+} from "@/components/PassoAPasso";
+import {
   FormEvent,
   useEffect,
   useMemo,
@@ -225,6 +231,16 @@ function moeda(valor: number) {
   return formatarMoeda(valor);
 }
 
+/* As etapas da tela de compra, na ordem em que a moto chega. */
+const PASSOS_DA_COMPRA = [
+  "Entrada",
+  "Moto",
+  "Custos e débitos",
+  "Valores",
+  "Vendedor",
+  "Revisão",
+];
+
 export default function NovaMotoPage() {
   const supabase = createClient();
 
@@ -253,6 +269,52 @@ export default function NovaMotoPage() {
 
   const [erro, setErro] =
     useState("");
+
+  /*
+   * A compra em etapas (components/PassoAPasso.tsx). Avançar
+   * confere o básico de cada etapa; a conferência completa
+   * continua em salvarMoto, que não mudou.
+   */
+  const passos = usePassoAPasso(PASSOS_DA_COMPRA.length, (etapa) => {
+    let falta = "";
+
+    if (etapa === 0 && !form.data_entrada) {
+      falta = "Informe a data de entrada/compra da moto.";
+    }
+
+    if (etapa === 1) {
+      if (!form.marca.trim()) falta = "Informe a marca da moto.";
+      else if (!form.modelo.trim()) falta = "Informe o modelo da moto.";
+    }
+
+    if (etapa === 2) {
+      const debitos = [
+        { possui: form.possui_ipva, valor: form.valor_ipva, nome: "IPVA" },
+        { possui: form.possui_multas, valor: form.valor_multas, nome: "multas" },
+        {
+          possui: form.possui_licenciamento,
+          valor: form.valor_licenciamento,
+          nome: "licenciamento",
+        },
+      ];
+
+      for (const debito of debitos) {
+        if (!debito.possui) {
+          falta = `Informe se a moto tem ${debito.nome} a pagar.`;
+          break;
+        }
+
+        if (debito.possui === "sim" && !(Number(debito.valor) > 0)) {
+          falta = `Informe o valor de ${debito.nome} a pagar.`;
+          break;
+        }
+      }
+    }
+
+    setErro(falta);
+
+    return !falta;
+  });
 
   const [mensagem, setMensagem] =
     useState("");
@@ -690,6 +752,7 @@ export default function NovaMotoPage() {
   }
 
   function limpar() {
+    passos.reiniciar();
     setForm({
       ...formInicial,
       data_entrada: hoje(),
@@ -1821,10 +1884,31 @@ export default function NovaMotoPage() {
         )}
 
         <form
-          onSubmit={salvarMoto}
+          onSubmit={(evento) => {
+            /*
+             * Enter num campo no meio do caminho não salva a moto:
+             * vale como Avançar. Só a última etapa grava.
+             */
+            if (!passos.ultima) {
+              evento.preventDefault();
+              passos.avancar();
+              return;
+            }
+
+            /* O erro e o aviso de moto salva ficam no topo. */
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            void salvarMoto(evento);
+          }}
           className="space-y-6"
         >
 
+          <BarraDePassos
+            passos={PASSOS_DA_COMPRA}
+            etapa={passos.etapa}
+            aoIr={passos.irPara}
+          />
+
+          <Passo ativo={passos.etapa === 0} caixa={passos.registrar(0)}>
           {/* ENTRADA / COMPRA */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
@@ -1905,6 +1989,9 @@ export default function NovaMotoPage() {
             </div>
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 1} caixa={passos.registrar(1)}>
           {/* MOTO */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
@@ -2278,6 +2365,9 @@ export default function NovaMotoPage() {
               </label>
             </div>
           </section>
+          </Passo>
+
+          <Passo ativo={passos.etapa === 2} caixa={passos.registrar(2)}>
           {/* CUSTO PADRÃO */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
@@ -2545,6 +2635,9 @@ export default function NovaMotoPage() {
             </div>
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 3} caixa={passos.registrar(3)}>
           {/* VALORES */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
@@ -2793,6 +2886,9 @@ export default function NovaMotoPage() {
             </div>
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 4} caixa={passos.registrar(4)}>
           {/* VENDEDOR / FORNECEDOR */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
@@ -3133,6 +3229,9 @@ export default function NovaMotoPage() {
             )}
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 5} caixa={passos.registrar(5)}>
           {/* OBSERVAÇÕES */}
 
           <section className="rounded-2xl border border-grafite-claro bg-grafite p-5 md:p-7">
@@ -3185,6 +3284,14 @@ export default function NovaMotoPage() {
                     : "Registrar Compra"}
             </button>
           </div>
+          </Passo>
+
+          <BotoesDosPassos
+            etapa={passos.etapa}
+            ultima={passos.ultima}
+            aoVoltar={passos.voltar}
+            aoAvancar={passos.avancar}
+          />
         </form>
       </div>
     </main>

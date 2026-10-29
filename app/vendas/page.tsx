@@ -3,6 +3,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ORIGENS_DA_VENDA } from "@/lib/dados/origem-venda";
+import {
+  BarraDePassos,
+  BotoesDosPassos,
+  Passo,
+  usePassoAPasso,
+} from "@/components/PassoAPasso";
 import { createClient } from "@/lib/supabase/client";
 import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import { fechamentoDaQuinzena, empresaDoTipo } from "@/lib/dados/documentacao";
@@ -179,6 +185,16 @@ async function valorTransferenciaConfigurado() {
 function novoIdLocal() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
+
+/* As etapas da tela de venda, na ordem do balcão. */
+const PASSOS_DA_VENDA = [
+  "Venda",
+  "Cliente",
+  "Valores",
+  "Pagamento",
+  "Documentação",
+  "Revisão",
+];
 
 export default function VendasPage() {
   const [motos, setMotos] = useState<Moto[]>([]);
@@ -365,6 +381,36 @@ export default function VendasPage() {
   const [transferenciaLoja, setTransferenciaLoja] = useState("");
 
   const [observacoes, setObservacoes] = useState("");
+
+  /*
+   * A venda em etapas (components/PassoAPasso.tsx). Avançar
+   * confere o básico de cada etapa; a conferência completa
+   * continua em salvarVenda, que não mudou.
+   */
+  const passos = usePassoAPasso(PASSOS_DA_VENDA.length, (etapa) => {
+    let falta = "";
+
+    if (etapa === 0) {
+      if (!motoId) falta = "Selecione a moto vendida.";
+      else if (!horaVenda) falta = "Informe a hora da venda.";
+      else if (!vendedor) falta = "Selecione o vendedor.";
+    }
+
+    if (etapa === 1 && !pelaParceira && !clienteId) {
+      falta = "É obrigatório selecionar um cliente cadastrado.";
+    }
+
+    if (etapa === 2) {
+      if (!(Number(valorVenda) > 0)) falta = "Informe o valor da moto.";
+      else if (capacetes.some((capacete) => !capacete.modeloId)) {
+        falta = "Escolha o capacete ou remova a linha vazia.";
+      }
+    }
+
+    setErro(falta);
+
+    return !falta;
+  });
 
   const motoSelecionada = motos.find(
     (moto) => String(moto.id) === String(motoId),
@@ -1008,6 +1054,7 @@ export default function VendasPage() {
   }
 
   function limparFormulario() {
+    passos.reiniciar();
     setDataVenda(hoje());
     setHoraVenda(horaAtual());
     setMotoId("");
@@ -1768,9 +1815,30 @@ export default function VendasPage() {
         )}
 
         <form
-          onSubmit={salvarVenda}
+          onSubmit={(evento) => {
+            /*
+             * Enter num campo no meio do caminho não salva a venda:
+             * vale como Avançar. Só a última etapa grava.
+             */
+            if (!passos.ultima) {
+              evento.preventDefault();
+              passos.avancar();
+              return;
+            }
+
+            /* O erro e o aviso de venda salva ficam no topo. */
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            void salvarVenda(evento);
+          }}
           className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 md:p-8"
         >
+          <BarraDePassos
+            passos={PASSOS_DA_VENDA}
+            etapa={passos.etapa}
+            aoIr={passos.irPara}
+          />
+
+          <Passo ativo={passos.etapa === 0} caixa={passos.registrar(0)}>
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
               Dados da Venda
@@ -1972,6 +2040,9 @@ export default function VendasPage() {
             </div>
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 1} caixa={passos.registrar(1)}>
           <section>
             <div className="mb-4 border-b border-zinc-800 pb-3">
               <h2 className="text-lg font-semibold text-yellow-500">
@@ -2077,6 +2148,9 @@ export default function VendasPage() {
             )}
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 2} caixa={passos.registrar(2)}>
           <section>
             <h2 className="mb-4 border-b border-zinc-800 pb-3 text-lg font-semibold text-yellow-500">
               Valor da Moto
@@ -2390,6 +2464,9 @@ export default function VendasPage() {
             )}
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 3} caixa={passos.registrar(3)}>
           <section>
             <div className="mb-4 border-b border-zinc-800 pb-3">
               <h2 className="text-lg font-semibold text-yellow-500">
@@ -2865,6 +2942,9 @@ export default function VendasPage() {
             )}
           </section>
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 4} caixa={passos.registrar(4)}>
           {pelaParceira ? (
             <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h2 className="text-lg font-semibold text-yellow-500">
@@ -3038,6 +3118,9 @@ export default function VendasPage() {
             </>
           )}
 
+          </Passo>
+
+          <Passo ativo={passos.etapa === 5} caixa={passos.registrar(5)}>
           <section>
             <label className="mb-2 block text-sm text-zinc-300">
               Observações
@@ -3116,6 +3199,14 @@ export default function VendasPage() {
                 ? "Selecione um Cliente para Continuar"
                 : "Registrar Venda"}
           </button>
+          </Passo>
+
+          <BotoesDosPassos
+            etapa={passos.etapa}
+            ultima={passos.ultima}
+            aoVoltar={passos.voltar}
+            aoAvancar={passos.avancar}
+          />
         </form>
       </div>
     </main>
