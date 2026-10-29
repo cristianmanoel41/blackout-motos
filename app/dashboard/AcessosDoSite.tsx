@@ -6,6 +6,8 @@ import {
   Calculator,
   Clock,
   Globe,
+  HandCoins,
+  Megaphone,
   MessageCircle,
   Minus,
   Route,
@@ -717,6 +719,99 @@ export default async function AcessosDoSite({
                             origem.whatsapp > 0
                               ? String(origem.whatsapp)
                               : undefined
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Dobravel>
+
+                {/*
+                  * Por campanha: o utm_campaign que o anúncio
+                  * põe no link. É o que diz qual anúncio traz
+                  * conversa, e não só qual rede.
+                  */}
+                <Dobravel
+                  nome="campanhas"
+                  titulo="Por campanha de anúncio"
+                  detalhe="— 30 dias"
+                  icone={
+                    <Megaphone
+                      size={15}
+                      className="text-[#a97800]"
+                    />
+                  }
+                >
+                  {dados.campanhas.length === 0 ? (
+                    <p className="px-3 text-xs font-bold leading-5 text-black/45">
+                      Nenhuma visita com campanha ainda. Ela aparece
+                      quando o link do anúncio leva utm_campaign.
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      {dados.campanhas.map((item) => (
+                        <Linha
+                          key={item.campanha}
+                          titulo={item.campanha}
+                          detalhe={
+                            item.chegadas === 1
+                              ? "1 visita"
+                              : `${item.chegadas} visitas`
+                          }
+                          valor={item.chegadas}
+                          parte={
+                            (item.chegadas /
+                              (dados.campanhas[0]?.chegadas || 1)) *
+                            100
+                          }
+                          aoLado={
+                            item.whatsapp > 0
+                              ? String(item.whatsapp)
+                              : undefined
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Dobravel>
+
+                {/*
+                  * A ponta que paga a conta: de onde veio quem
+                  * comprou, marcado pelo vendedor na venda.
+                  */}
+                <Dobravel
+                  nome="vendas-origem"
+                  titulo="Vendas por origem do cliente"
+                  detalhe="— 30 dias"
+                  padrao
+                  icone={
+                    <HandCoins
+                      size={15}
+                      className="text-[#a97800]"
+                    />
+                  }
+                >
+                  {!dados.vendas.instalado ? (
+                    <p className="px-3 text-xs font-bold leading-5 text-black/45">
+                      Falta rodar no Supabase o SQL da migração 0040
+                      (origem da venda).
+                    </p>
+                  ) : dados.vendas.lista.length === 0 ? (
+                    <p className="px-3 text-xs font-bold text-black/45">
+                      Nenhuma venda nos últimos 30 dias.
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      {dados.vendas.lista.map((item) => (
+                        <Linha
+                          key={item.origem}
+                          titulo={item.origem}
+                          detalhe={formatarMoeda(item.valor)}
+                          valor={item.vendas}
+                          parte={
+                            (item.vendas /
+                              (dados.vendas.lista[0]?.vendas || 1)) *
+                            100
                           }
                         />
                       ))}

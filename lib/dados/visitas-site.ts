@@ -49,6 +49,19 @@ export type Origem = {
   whatsapp: number;
 };
 
+/* Uma campanha de anúncio: o utm_campaign do link. */
+export type Campanha = {
+  campanha: string;
+  chegadas: number;
+  whatsapp: number;
+};
+
+export type VendasPorOrigem = {
+  /* A migração 0040 já rodou no banco. */
+  instalado: boolean;
+  lista: Array<{ origem: string; vendas: number; valor: number }>;
+};
+
 /*
  * Um dia no gráfico.
  *
@@ -115,6 +128,8 @@ export type Visitas = {
   mes: Resumo;
   motos: MotoVista[];
   origens: Origem[];
+  campanhas: Campanha[];
+  vendas: VendasPorOrigem;
   dias: Dia[];
   horas: Hora[];
   comparacao: Comparacao;
@@ -186,6 +201,8 @@ const VAZIO: Visitas = {
   mes: ZERO,
   motos: [],
   origens: [],
+  campanhas: [],
+  vendas: { instalado: false, lista: [] },
   dias: [],
   horas: [],
   comparacao: SEM_RUMO,
@@ -304,6 +321,89 @@ function diaCurto(data: string) {
   return `${partes[2]}/${partes[1]}`;
 }
 
+type Banco = Awaited<ReturnType<typeof createClient>>;
+
+const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
+
+/*
+ * Visitas e cliques no WhatsApp por campanha, nos últimos 30
+ * dias.
+ *
+ * A campanha é o utm_campaign do link do anúncio, e só a tela
+ * de chegada carrega ela (ver /api/visita) - então contar as
+ * linhas de 'pagina' é contar gente chegando. O clique no
+ * WhatsApp leva a campanha da chegada junto.
+ *
+ * Lido direto da tabela, sem função no banco: são poucas
+ * linhas por mês, e assim não há SQL novo para rodar.
+ */
+async function campanhasDoMes(supabase: Banco): Promise<Campanha[]> {
+  const { data, error } = await supabase
+    .from("visitas_site")
+    .select("campanha, tipo")
+    .not("campanha", "is", null)
+    .gte("criado_em", new Date(Date.now() - TRINTA_DIAS).toISOString())
+    .limit(20000);
+
+  if (error || !data) return [];
+
+  const porNome = new Map<string, Campanha>();
+
+  for (const linha of data) {
+    const nome = String(linha.campanha || "").trim();
+
+    if (!nome) continue;
+
+    const atual =
+      porNome.get(nome) || { campanha: nome, chegadas: 0, whatsapp: 0 };
+
+    if (linha.tipo === "whatsapp") atual.whatsapp += 1;
+    else if (linha.tipo === "pagina") atual.chegadas += 1;
+
+    porNome.set(nome, atual);
+  }
+
+  return [...porNome.values()].sort(
+    (a, b) => b.whatsapp - a.whatsapp || b.chegadas - a.chegadas
+  );
+}
+
+/*
+ * As vendas de moto dos últimos 30 dias, pela origem que o
+ * vendedor marcou na tela de venda. Sem a migração 0040 a
+ * coluna não existe, e o painel avisa em vez de mostrar zero.
+ */
+async function vendasPorOrigem(supabase: Banco): Promise<VendasPorOrigem> {
+  const desde = new Date(Date.now() - TRINTA_DIAS)
+    .toISOString()
+    .slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("sales")
+    .select("origem_cliente, valor_venda")
+    .gte("data_venda", desde);
+
+  if (error || !data) return { instalado: false, lista: [] };
+
+  const porOrigem = new Map<string, { origem: string; vendas: number; valor: number }>();
+
+  for (const venda of data) {
+    const origem = String(venda.origem_cliente || "").trim() || "Não informado";
+
+    const atual = porOrigem.get(origem) || { origem, vendas: 0, valor: 0 };
+
+    atual.vendas += 1;
+    atual.valor += Number(venda.valor_venda) || 0;
+
+    porOrigem.set(origem, atual);
+  }
+
+  return {
+    instalado: true,
+    lista: [...porOrigem.values()].sort((a, b) => b.vendas - a.vendas),
+  };
+}
+
 export async function visitasDoSite(): Promise<Visitas> {
   const supabase = await createClient();
 
@@ -318,6 +418,8 @@ export async function visitasDoSite(): Promise<Visitas> {
     simHoje,
     simSemana,
     simMes,
+    campanhas,
+    vendas,
   ] = await Promise.all([
       supabase.rpc("visitas_resumo", { p_dias: 1 }),
       supabase.rpc("visitas_resumo", { p_dias: 7 }),
@@ -332,6 +434,8 @@ export async function visitasDoSite(): Promise<Visitas> {
       supabase.rpc("simulacoes_resumo", { p_dias: 1 }),
       supabase.rpc("simulacoes_resumo", { p_dias: 7 }),
       supabase.rpc("simulacoes_resumo", { p_dias: 30 }),
+      campanhasDoMes(supabase),
+      vendasPorOrigem(supabase),
     ]);
 
   /*
@@ -459,6 +563,9 @@ export async function visitasDoSite(): Promise<Visitas> {
       chegadas: inteiro(linha.chegadas),
       whatsapp: inteiro(linha.whatsapp),
     })),
+
+    campanhas,
+    vendas,
 
     horas: (
       (horas.data || []) as Record<string, unknown>[]

@@ -94,6 +94,26 @@ export function chegadaDaVisita(
 
   const marcada = parametros.get("utm_source");
 
+  /*
+   * O Meta preenche {{site_source_name}} com estas siglas, e é
+   * o que vai no utm_source quando o anúncio usa o parâmetro
+   * dinâmico em vez de um nome escrito à mão.
+   */
+  const SIGLAS_DO_META: Record<string, string> = {
+    ig: "Instagram",
+    fb: "Facebook",
+    msg: "Facebook",
+    an: "Facebook",
+    th: "Threads",
+  };
+
+  if (marcada && SIGLAS_DO_META[marcada.toLowerCase()]) {
+    return {
+      origem: SIGLAS_DO_META[marcada.toLowerCase()],
+      campanha,
+    };
+  }
+
   if (marcada) {
     return {
       origem: pelaReferencia(`https://${marcada}`) || marcada,

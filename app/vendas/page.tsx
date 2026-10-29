@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ORIGENS_DA_VENDA } from "@/lib/dados/origem-venda";
 import { createClient } from "@/lib/supabase/client";
 import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import { fechamentoDaQuinzena, empresaDoTipo } from "@/lib/dados/documentacao";
@@ -242,6 +243,9 @@ export default function VendasPage() {
   const [pelaParceira, setPelaParceira] = useState(false);
 
   const [vendedor, setVendedor] = useState("");
+
+  /* Como o cliente chegou na loja (lib/dados/origem-venda.ts). */
+  const [origemCliente, setOrigemCliente] = useState("");
 
   const { usuario } = useUsuarioAtual();
 
@@ -631,6 +635,10 @@ export default function VendasPage() {
             setVendedor(rascunho.vendedor);
           }
 
+          if (rascunho.origemCliente) {
+            setOrigemCliente(rascunho.origemCliente);
+          }
+
           if (rascunho.tipoVenda) {
             setTipoVenda(rascunho.tipoVenda);
           }
@@ -774,6 +782,7 @@ export default function VendasPage() {
       horaVenda,
       motoId,
       vendedor,
+      origemCliente,
       tipoVenda,
       valorVenda,
       comDesconto,
@@ -1012,6 +1021,7 @@ export default function VendasPage() {
      * na venda seguinte o vendedor já vem preenchido.
      */
     setVendedor(vendedorDoUsuario(usuario?.nome));
+    setOrigemCliente("");
     setTipoVenda("avista");
     setValorVenda("");
     setComDesconto(false);
@@ -1236,9 +1246,7 @@ export default function VendasPage() {
       const entradaCompat =
         tipoVenda === "financiamento" ? pagoNaMoto : valorTotalVenda;
 
-      const { data: vendaCriada, error: vendaError } = await supabase
-        .from("sales")
-        .insert({
+      const dadosVenda: Record<string, unknown> = {
           data_venda: dataVenda,
           hora_venda: horaVenda,
           motorcycle_id: motoId,
@@ -1283,9 +1291,29 @@ export default function VendasPage() {
           ]
             .filter(Boolean)
             .join("\n"),
-        })
+      };
+
+      if (origemCliente) dadosVenda.origem_cliente = origemCliente;
+
+      let { data: vendaCriada, error: vendaError } = await supabase
+        .from("sales")
+        .insert(dadosVenda)
         .select("id")
         .single();
+
+      /*
+       * Sem a migração 0040 o banco não tem a coluna da origem.
+       * A venda não pode travar por isso: grava sem ela.
+       */
+      if (vendaError && String(vendaError.message).includes("origem_cliente")) {
+        delete dadosVenda.origem_cliente;
+
+        ({ data: vendaCriada, error: vendaError } = await supabase
+          .from("sales")
+          .insert(dadosVenda)
+          .select("id")
+          .single());
+      }
 
       if (vendaError || !vendaCriada) {
         throw vendaError || new Error("Não foi possível registrar a venda.");
@@ -1861,6 +1889,30 @@ export default function VendasPage() {
                     )}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Como o cliente chegou
+                </label>
+
+                <select
+                  value={origemCliente}
+                  onChange={(e) => setOrigemCliente(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                >
+                  <option value="">Não sei / não perguntei</option>
+
+                  {ORIGENS_DA_VENDA.map((nome) => (
+                    <option key={nome} value={nome}>
+                      {nome}
+                    </option>
+                  ))}
+                </select>
+
+                <p className="mt-2 text-xs text-zinc-500">
+                  É o que mostra, no painel, quais anúncios viram venda.
+                </p>
               </div>
 
               <div>
