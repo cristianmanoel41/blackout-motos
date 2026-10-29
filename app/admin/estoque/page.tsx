@@ -1211,7 +1211,7 @@ export default function EstoquePage() {
 
         <section className={`${estilo.superficie} ${estilo.entrada} overflow-hidden`}>
           <div className="overflow-x-auto">
-            <table className="w-full sm:min-w-[960px] 2xl:min-w-[1290px] border-collapse tabela-em-cartao">
+            <table className="w-full sm:min-w-[860px] 2xl:min-w-[1290px] border-collapse tabela-em-cartao">
               <thead>
                 <tr className="border-b border-grafite-claro bg-preto/60 text-left text-[11px] uppercase tracking-wide text-texto-suave">
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Foto</th>
@@ -1227,7 +1227,7 @@ export default function EstoquePage() {
                     Valor anunciado
                   </th>
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Status</th>
-                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Data entrada</th>
+                  <th className="px-4 py-3 font-semibold sm:max-2xl:hidden">Data entrada</th>
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 text-center font-semibold">Ações</th>
                 </tr>
               </thead>
@@ -1293,10 +1293,10 @@ export default function EstoquePage() {
                             <img
                               src={capas[idMoto]}
                               alt=""
-                              className="h-12 w-16 rounded-md border border-grafite-claro object-cover"
+                              className="h-12 w-16 rounded-md border border-grafite-claro object-cover sm:max-2xl:h-10 sm:max-2xl:w-12"
                             />
                           ) : (
-                            <div className="flex h-12 w-16 items-center justify-center rounded-md border border-dashed border-grafite-claro text-texto-suave">
+                            <div className="flex h-12 w-16 items-center justify-center rounded-md border border-dashed sm:max-2xl:h-10 sm:max-2xl:w-12 border-grafite-claro text-texto-suave">
                               <Camera size={16} />
                             </div>
                           )}
@@ -1356,7 +1356,7 @@ export default function EstoquePage() {
                           </strong>
                         </td>
 
-                        <td data-rotulo="Placa" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 font-mono text-base font-bold text-zinc-200">
+                        <td data-rotulo="Placa" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 font-mono text-base font-bold text-zinc-200 sm:max-2xl:text-sm">
                           {moto.placa || "—"}
                         </td>
 
@@ -1382,9 +1382,20 @@ export default function EstoquePage() {
                           >
                             {rotuloStatus(moto.status)}
                           </span>
+
+                          {/* No notebook a data de entrada não tem
+                              coluna própria: vem aqui, embaixo. */}
+                          <span className="mt-1 hidden text-xs text-zinc-400 sm:max-2xl:block">
+                            {formatarData(moto.data_entrada).slice(0, 5)}
+                            {diasNoEstoque(moto.data_entrada) !== null
+                              ? ` · ${diasNoEstoque(moto.data_entrada)} ${
+                                  diasNoEstoque(moto.data_entrada) === 1 ? "dia" : "dias"
+                                }`
+                              : ""}
+                          </span>
                         </td>
 
-                        <td data-rotulo="Data entrada" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 text-sm text-zinc-300">
+                        <td data-rotulo="Data entrada" className="whitespace-nowrap px-4 py-3 sm:max-2xl:hidden text-sm text-zinc-300">
                           {formatarData(moto.data_entrada)}
 
                           {diasNoEstoque(moto.data_entrada) !== null && (
