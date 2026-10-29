@@ -791,6 +791,17 @@ export default function VendasPage() {
         });
       }
 
+      /*
+       * Voltando de um cadastro feito no meio da venda, abre na
+       * etapa de onde a pessoa saiu: a moto da troca vai para
+       * o Pagamento, e o cliente novo, para o Cliente.
+       */
+      if (trocaMotoId && trocaValor) {
+        passos.irPara(3);
+      } else if (clienteRecebido && rascunhoSalvo) {
+        passos.irPara(1);
+      }
+
       await carregarMotos();
 
       await carregarCapacetes();
@@ -799,6 +810,8 @@ export default function VendasPage() {
     }
 
     iniciar();
+    /* Roda uma vez, ao abrir a tela. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /*
