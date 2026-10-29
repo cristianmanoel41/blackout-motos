@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 import {
-  Camera,
   Check,
   ChevronDown,
   FileDown,
@@ -449,36 +448,6 @@ export default function EstoquePage() {
   useEffect(() => {
     carregarEstoque();
     carregarVendasPorMes();
-  }, []);
-
-  /*
-   * A foto de capa de cada moto. Procurar a moto certa numa
-   * lista de texto e lento - a foto identifica antes de ler.
-   */
-  const [capas, setCapas] = useState<
-    Record<string, string>
-  >({});
-
-  useEffect(() => {
-    async function carregarCapas() {
-      const { data } = await supabase
-        .from("motorcycle_photos")
-        .select("motorcycle_id, url")
-        .eq("principal", true);
-
-      const mapa: Record<string, string> = {};
-
-      (data || []).forEach((foto: any) => {
-        if (foto.url) {
-          mapa[String(foto.motorcycle_id)] = foto.url;
-        }
-      });
-
-      setCapas(mapa);
-    }
-
-    carregarCapas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function carregarVendasPorMes() {
@@ -1220,7 +1189,6 @@ export default function EstoquePage() {
             <table className="w-full sm:min-w-[860px] 2xl:min-w-[1290px] border-collapse tabela-em-cartao">
               <thead>
                 <tr className="border-b border-grafite-claro bg-preto/60 text-left text-[11px] uppercase tracking-wide text-texto-suave">
-                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Foto</th>
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">ID</th>
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Modelo</th>
                   <th className="px-4 py-3 font-semibold sm:max-2xl:hidden">Marca</th>
@@ -1242,7 +1210,7 @@ export default function EstoquePage() {
                 {carregando ? (
                   <tr>
                     <td
-                      colSpan={13}
+                      colSpan={12}
                       className="px-4 py-16 text-center text-sm text-texto-suave"
                     >
                       Carregando estoque...
@@ -1250,7 +1218,7 @@ export default function EstoquePage() {
                   </tr>
                 ) : motosDaPagina.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="px-4 py-16 text-center">
+                    <td colSpan={12} className="px-4 py-16 text-center">
                       <p className="font-semibold text-texto">
                         Nenhuma moto encontrada.
                       </p>
@@ -1293,21 +1261,6 @@ export default function EstoquePage() {
                         }`}
                         title="Clique para abrir a ficha da moto"
                       >
-                        <td className="px-4 py-3 sm:max-2xl:px-2.5">
-                          {capas[idMoto] ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={capas[idMoto]}
-                              alt=""
-                              className="h-12 w-16 rounded-md border border-grafite-claro object-cover sm:max-2xl:h-10 sm:max-2xl:w-12"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-16 items-center justify-center rounded-md border border-dashed sm:max-2xl:h-10 sm:max-2xl:w-12 border-grafite-claro text-texto-suave">
-                              <Camera size={16} />
-                            </div>
-                          )}
-                        </td>
-
                         <td data-rotulo="ID" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5">
                           <span className="block font-mono text-xs font-semibold text-dourado">
                             {moto.codigo || `#${moto.id}`}
@@ -1500,7 +1453,7 @@ export default function EstoquePage() {
                       {aberta && (
                         <tr className="border-b border-dourado/20 bg-preto/55">
                           <td
-                            colSpan={13}
+                            colSpan={12}
                             className="px-5 py-5"
                           >
                             <div className="rounded-xl border border-dourado/20 bg-grafite p-5">
