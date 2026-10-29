@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import Sidebar, { ZOOM_MAXIMO, ZOOM_MINIMO } from '@/components/Sidebar'
 import styles from './AppShell.module.css'
 
 /*
@@ -105,8 +105,47 @@ function TelaDeLogin({ children }: { children: React.ReactNode }) {
   )
 }
 
+/*
+ * O ZOOM DO PAINEL
+ *
+ * Guardado no navegador, e nao no banco: e uma escolha da
+ * tela de cada aparelho. O notebook da loja quer 80%, o
+ * computador grande quer 100% - a mesma pessoa nos dois.
+ */
+const CHAVE_ZOOM = 'blackout-zoom-painel'
+
+function useZoomDoPainel() {
+  const [zoom, setZoom] = useState(100)
+
+  useEffect(() => {
+    try {
+      const salvo = Number(localStorage.getItem(CHAVE_ZOOM))
+
+      if (salvo >= ZOOM_MINIMO && salvo <= ZOOM_MAXIMO) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setZoom(salvo)
+      }
+    } catch {
+      /* Sem armazenamento: fica em 100%. */
+    }
+  }, [])
+
+  function mudar(novo: number) {
+    setZoom(novo)
+
+    try {
+      localStorage.setItem(CHAVE_ZOOM, String(novo))
+    } catch {
+      /* Vale so ate fechar a aba. */
+    }
+  }
+
+  return [zoom, mudar] as const
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [zoom, mudarZoom] = useZoomDoPainel()
 
   /*
    * Telas que nao sao do sistema: o site da loja, a vitrine
@@ -151,7 +190,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`${styles.legibilidade} relative min-h-screen bg-[#0a0a0c]`}>
-      <Sidebar />
+      <Sidebar zoom={zoom} aoMudarZoom={mudarZoom} />
 
       <main className="relative z-10 min-h-screen w-full pt-16 md:ml-64 md:w-[calc(100%-16rem)] md:pt-0">
         {/*
@@ -160,7 +199,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           * comprida. A folga vale para o painel inteiro, nao
           * so para a tela onde o problema apareceu.
           */}
-        <div className="w-full p-4 pb-28 md:p-6 md:pb-28">
+        {/*
+          * O zoom vale so para o conteudo: o menu fica do mesmo
+          * tamanho, e a tabela larga e que precisa caber.
+          */}
+        <div
+          className="w-full p-4 pb-28 md:p-6 md:pb-28"
+          style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
+        >
           {children}
         </div>
       </main>
