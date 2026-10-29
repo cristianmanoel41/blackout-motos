@@ -96,7 +96,62 @@ export function rastrear(
   if (typeof window === "undefined") return;
   if (typeof window.fbq !== "function") return;
 
-  window.fbq("track", evento, dados);
+  /*
+   * O mesmo id vai no pixel e na cópia do servidor: é por ele
+   * que o Meta sabe que os dois são um evento só.
+   */
+  const id = idDoEvento();
+
+  window.fbq("track", evento, dados, { eventID: id });
+
+  copiarParaOServidor(evento, id, dados);
+}
+
+function idDoEvento() {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+/*
+ * A cópia do evento para /api/meta/evento (API de Conversões).
+ *
+ * Por sendBeacon, como a contagem de visitas: o clique no
+ * WhatsApp troca de página na hora, e só o beacon termina
+ * depois disso. Se a loja não configurou o token, a rota
+ * responde sem fazer nada.
+ */
+function copiarParaOServidor(
+  evento: string,
+  id: string,
+  dados?: Record<string, unknown>
+) {
+  try {
+    const corpo = JSON.stringify({
+      evento,
+      id,
+      url: window.location.href,
+      dados,
+    });
+
+    const enviado = navigator.sendBeacon?.(
+      "/api/meta/evento",
+      new Blob([corpo], { type: "application/json" })
+    );
+
+    if (!enviado) {
+      void fetch("/api/meta/evento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: corpo,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    /* Medição não pode quebrar a tela. */
+  }
 }
 
 function carregarPixel() {
@@ -127,7 +182,11 @@ function carregarPixel() {
   document.head.appendChild(script);
 
   window.fbq("init", PIXEL);
-  window.fbq("track", "PageView");
+
+  const id = idDoEvento();
+
+  window.fbq("track", "PageView", {}, { eventID: id });
+  copiarParaOServidor("PageView", id);
 
   window.dispatchEvent(new Event(PRONTO));
 }

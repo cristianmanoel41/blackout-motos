@@ -92,6 +92,10 @@ export default function AvisarNovidades({
        * Cadastro na lista e o evento mais valioso do site:
        * e dele que o Meta aprende quem vale perseguir.
        */
+      /*
+       * Sem o telefone: a política de privacidade promete
+       * usar o WhatsApp da lista para uma coisa só.
+       */
       rastrear("Lead", {
         content_name: procura.trim() || "moto nova",
       });

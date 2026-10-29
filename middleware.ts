@@ -102,8 +102,8 @@ const SEPARAR_POR_DOMINIO =
  *     enderecos de volta cadastrados naqueles servicos, no
  *     dominio;
  *   - /api/meta/catalogo e /catalogo.xml, que o Meta busca;
- *   - /api/interesse e /api/visita, que as paginas do site
- *     chamam de dentro do dominio;
+ *   - /api/interesse, /api/visita e /api/meta/evento, que as
+ *     paginas do site chamam de dentro do dominio;
  *   - /vitrine/ e /contrato/, que sao links que a loja manda
  *     para o cliente;
  *   - /documentos/ e /recibos/, que sao abertos para imprimir.
@@ -306,6 +306,9 @@ export async function middleware(request: NextRequest) {
     /* A contagem de visitas tambem: quem e medido nao tem
        login, e mandar isso para /login perderia a visita. */
     caminho.startsWith('/api/visita') ||
+    /* A copia dos eventos do pixel para o Meta (API de
+       Conversoes): tambem vem de visitante sem login. */
+    caminho.startsWith('/api/meta/evento') ||
     /* O Meta busca o catalogo sozinho, sem login. */
     caminho.startsWith('/api/meta/catalogo') ||
     caminho === '/catalogo.xml' ||

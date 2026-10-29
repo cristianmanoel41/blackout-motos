@@ -141,6 +141,16 @@ export default function PrivacidadePage() {
           deixou contato.
         </p>
 
+        {process.env.META_CAPI_TOKEN && (
+          <p>
+            Para essa contagem não se perder quando o navegador
+            bloqueia o pixel, nosso servidor manda ao Meta uma
+            cópia dos mesmos registros, com o endereço IP e o
+            tipo de navegador. Nada do que você digita vai junto
+            — nem o nome nem o WhatsApp da lista de interesse.
+          </p>
+        )}
+
         {process.env.NEXT_PUBLIC_GOOGLE_ADS_ID && (
           <p>
             Também anunciamos no Google, e a{" "}
