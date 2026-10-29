@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Fragment,
   useEffect,
@@ -215,6 +216,7 @@ function paginasVisiveis(paginaAtual: number, totalPaginas: number) {
 }
 
 export default function EstoquePage() {
+  const router = useRouter();
   const [motos, setMotos] = useState<Moto[]>([]);
 
   /*
@@ -1269,18 +1271,21 @@ export default function EstoquePage() {
                       <Fragment
                         key={idMoto}
                       >
+                      {/*
+                        * Clicar na linha abre a ficha completa da moto
+                        * (29/10/2026, a pedido da loja). O resumo de
+                        * manual, chave e dono continua na seta.
+                        */}
                       <tr
                         onClick={() =>
-                          alternarDetalhesMoto(
-                            moto
-                          )
+                          router.push(`/motos/${moto.id}`)
                         }
                         className={`${estilo.linha} cursor-pointer border-b border-grafite-claro/70 ${
                           aberta
                             ? "bg-dourado/[0.035]"
                             : ""
                         }`}
-                        title="Clique para ver detalhes da moto"
+                        title="Clique para abrir a ficha da moto"
                       >
                         <td className="px-4 py-3 sm:max-2xl:px-2.5">
                           {capas[idMoto] ? (
