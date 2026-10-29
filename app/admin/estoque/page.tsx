@@ -1209,24 +1209,24 @@ export default function EstoquePage() {
 
         <section className={`${estilo.superficie} ${estilo.entrada} overflow-hidden`}>
           <div className="overflow-x-auto">
-            <table className="w-full sm:min-w-[1290px] border-collapse tabela-em-cartao">
+            <table className="w-full sm:min-w-[960px] 2xl:min-w-[1290px] border-collapse tabela-em-cartao">
               <thead>
                 <tr className="border-b border-grafite-claro bg-preto/60 text-left text-[11px] uppercase tracking-wide text-texto-suave">
-                  <th className="px-4 py-3 font-semibold">Foto</th>
-                  <th className="px-4 py-3 font-semibold">ID</th>
-                  <th className="px-4 py-3 font-semibold">Modelo</th>
-                  <th className="px-4 py-3 font-semibold">Marca</th>
-                  <th className="px-4 py-3 font-semibold">Ano</th>
-                  <th className="px-4 py-3 font-semibold">Cor</th>
-                  <th className="px-4 py-3 font-semibold">Placa</th>
-                  <th className="px-4 py-3 text-right font-semibold">CC</th>
-                  <th className="px-4 py-3 text-right font-semibold">KM</th>
-                  <th className="px-4 py-3 text-right font-semibold">
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Foto</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">ID</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Modelo</th>
+                  <th className="px-4 py-3 font-semibold sm:max-2xl:hidden">Marca</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Ano</th>
+                  <th className="px-4 py-3 font-semibold sm:max-2xl:hidden">Cor</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Placa</th>
+                  <th className="px-4 py-3 text-right font-semibold sm:max-2xl:hidden">CC</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 text-right font-semibold">KM</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 text-right font-semibold">
                     Valor anunciado
                   </th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Data entrada</th>
-                  <th className="px-4 py-3 text-center font-semibold">Ações</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Status</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Data entrada</th>
+                  <th className="px-4 py-3 sm:max-2xl:px-2.5 text-center font-semibold">Ações</th>
                 </tr>
               </thead>
 
@@ -1282,7 +1282,7 @@ export default function EstoquePage() {
                         }`}
                         title="Clique para ver detalhes da moto"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 sm:max-2xl:px-2.5">
                           {capas[idMoto] ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -1297,7 +1297,7 @@ export default function EstoquePage() {
                           )}
                         </td>
 
-                        <td data-rotulo="ID" className="whitespace-nowrap px-4 py-3">
+                        <td data-rotulo="ID" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5">
                           <span className="block font-mono text-xs font-semibold text-dourado">
                             {moto.codigo || `#${moto.id}`}
                           </span>
@@ -1313,8 +1313,8 @@ export default function EstoquePage() {
                           )}
                         </td>
 
-                        <td data-rotulo="Modelo" className="px-4 py-3">
-                          <div className="min-w-[180px]">
+                        <td data-rotulo="Modelo" className="px-4 py-3 sm:max-2xl:px-2.5">
+                          <div className="min-w-[180px] sm:max-2xl:min-w-[150px]">
                             <p className="font-semibold text-white">
                               {moto.modelo || "Sem modelo"}
                             </p>
@@ -1323,42 +1323,53 @@ export default function EstoquePage() {
                                 {moto.versao}
                               </p>
                             )}
+                            {/* No notebook Marca, Cor e CC não têm coluna
+                                própria: aparecem aqui, numa linha só. */}
+                            <p className="mt-0.5 hidden text-xs text-zinc-400 sm:max-2xl:block">
+                              {[
+                                moto.marca,
+                                moto.cor,
+                                moto.cilindrada ? `${moto.cilindrada}cc` : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
                           </div>
                         </td>
 
-                        <td data-rotulo="Marca" className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
+                        <td data-rotulo="Marca" className="whitespace-nowrap px-4 py-3 sm:max-2xl:hidden text-sm text-zinc-300">
                           {moto.marca || "—"}
                         </td>
 
-                        <td data-rotulo="Ano" className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
+                        <td data-rotulo="Ano" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 text-sm text-zinc-300">
                           {anoFab}/{anoMod}
                         </td>
 
-                        <td data-rotulo="Cor" className="whitespace-nowrap px-4 py-3 text-sm">
+                        <td data-rotulo="Cor" className="whitespace-nowrap px-4 py-3 sm:max-2xl:hidden text-sm">
                           <strong className="font-bold text-white">
                             {moto.cor || "—"}
                           </strong>
                         </td>
 
-                        <td data-rotulo="Placa" className="whitespace-nowrap px-4 py-3 font-mono text-base font-bold text-zinc-200">
+                        <td data-rotulo="Placa" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 font-mono text-base font-bold text-zinc-200">
                           {moto.placa || "—"}
                         </td>
 
-                        <td data-rotulo="CC" className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
+                        <td data-rotulo="CC" className="whitespace-nowrap px-4 py-3 sm:max-2xl:hidden text-right text-sm text-zinc-300">
                           {moto.cilindrada
                             ? `${moto.cilindrada}cc`
                             : "—"}
                         </td>
 
-                        <td data-rotulo="KM" className="whitespace-nowrap px-4 py-3 text-right text-sm text-zinc-300">
+                        <td data-rotulo="KM" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 text-right text-sm text-zinc-300">
                           {formatarKm(moto.quilometragem)}
                         </td>
 
-                        <td data-rotulo="Valor anunciado" className="whitespace-nowrap px-4 py-3 text-right font-bold text-dourado">
+                        <td data-rotulo="Valor anunciado" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 text-right font-bold text-dourado">
                           {formatarMoeda(Number(moto.preco_anunciado || 0))}
                         </td>
 
-                        <td data-rotulo="Status" className="whitespace-nowrap px-4 py-3">
+                        <td data-rotulo="Status" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5">
                           <span
                             className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${classeStatus(
                               moto.status
@@ -1368,7 +1379,7 @@ export default function EstoquePage() {
                           </span>
                         </td>
 
-                        <td data-rotulo="Data entrada" className="whitespace-nowrap px-4 py-3 text-sm text-zinc-300">
+                        <td data-rotulo="Data entrada" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 text-sm text-zinc-300">
                           {formatarData(moto.data_entrada)}
 
                           {diasNoEstoque(moto.data_entrada) !== null && (
@@ -1383,7 +1394,7 @@ export default function EstoquePage() {
                         </td>
 
                         <td
-                          className="px-4 py-3"
+                          className="px-4 py-3 sm:max-2xl:px-2.5"
                           onClick={(event) =>
                             event.stopPropagation()
                           }

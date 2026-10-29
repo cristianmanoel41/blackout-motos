@@ -143,9 +143,40 @@ function useZoomDoPainel() {
   return [zoom, mudar] as const
 }
 
+/* O menu recolhido, só com os ícones. Também por aparelho. */
+const CHAVE_MENU = 'blackout-menu-recolhido'
+
+function useMenuRecolhido() {
+  const [recolhido, setRecolhido] = useState(false)
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(CHAVE_MENU) === 'sim') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setRecolhido(true)
+      }
+    } catch {
+      /* Sem armazenamento: menu aberto. */
+    }
+  }, [])
+
+  function mudar(novo: boolean) {
+    setRecolhido(novo)
+
+    try {
+      localStorage.setItem(CHAVE_MENU, novo ? 'sim' : 'nao')
+    } catch {
+      /* Vale so ate fechar a aba. */
+    }
+  }
+
+  return [recolhido, mudar] as const
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [zoom, mudarZoom] = useZoomDoPainel()
+  const [recolhido, mudarMenu] = useMenuRecolhido()
 
   /*
    * Telas que nao sao do sistema: o site da loja, a vitrine
@@ -190,9 +221,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`${styles.legibilidade} relative min-h-screen bg-[#0a0a0c]`}>
-      <Sidebar zoom={zoom} aoMudarZoom={mudarZoom} />
+      <Sidebar
+        zoom={zoom}
+        aoMudarZoom={mudarZoom}
+        recolhido={recolhido}
+        aoRecolher={mudarMenu}
+      />
 
-      <main className="relative z-10 min-h-screen w-full pt-16 md:ml-64 md:w-[calc(100%-16rem)] md:pt-0">
+      <main
+        className={`relative z-10 min-h-screen w-full pt-16 md:pt-0 ${
+          recolhido
+            ? 'md:ml-[76px] md:w-[calc(100%-76px)]'
+            : 'md:ml-64 md:w-[calc(100%-16rem)]'
+        }`}
+      >
         {/*
           * pb-28: o botao de voltar e fixo no canto de baixo
           * e cobriria a ultima linha de qualquer tela

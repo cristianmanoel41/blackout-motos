@@ -14,6 +14,8 @@ import {
   BellRing,
   Menu,
   Package,
+  PanelLeftClose,
+  PanelLeftOpen,
   PlusCircle,
   Receipt,
   Settings,
@@ -56,10 +58,19 @@ const DEGRAU = 10
 export default function Sidebar({
   zoom = 100,
   aoMudarZoom,
+  recolhido = false,
+  aoRecolher,
 }: {
   zoom?: number
   aoMudarZoom?: (zoom: number) => void
+  /* Menu só com os ícones, no computador. No celular o menu
+     é a gaveta de sempre e isto não vale. */
+  recolhido?: boolean
+  aoRecolher?: (recolhido: boolean) => void
 }) {
+  /* As classes que só valem no computador com o menu recolhido. */
+  const seRecolhido = (classes: string) => (recolhido ? classes : '')
+
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -92,11 +103,11 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex altura-da-tela w-64 flex-col border-r border-black/[.07] bg-white shadow-[10px_0_35px_rgba(15,23,42,.05)] transition-transform duration-200 ${
+        className={`fixed left-0 top-0 z-50 flex altura-da-tela w-64 flex-col ${seRecolhido('md:w-[76px]')} border-r border-black/[.07] bg-white shadow-[10px_0_35px_rgba(15,23,42,.05)] transition-transform duration-200 ${
           aberto ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className="relative flex h-32 shrink-0 items-center justify-center border-b border-black/[.07] px-4">
+        <div className={`relative flex h-32 shrink-0 items-center justify-center border-b border-black/[.07] px-4 ${seRecolhido('md:h-20 md:px-2')}`}>
           <Link
             href="/dashboard"
             onClick={() => setAberto(false)}
@@ -111,7 +122,7 @@ export default function Sidebar({
               de fundo preto, apagado por mix-blend-mode screen
               mais um contraste alto. Os dois truques sairam junto.
             */}
-            <span className="relative block h-[88px] w-[214px]">
+            <span className={`relative block h-[88px] w-[214px] ${seRecolhido('md:h-10 md:w-14')}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-blackout-marca.png"
@@ -131,7 +142,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
+        <nav className={`flex-1 space-y-1.5 overflow-y-auto px-3 py-4 ${seRecolhido('md:px-2')}`}>
           {menuItems.map((item) => {
             const Icone = item.icon
             const ativo =
@@ -142,7 +153,8 @@ export default function Sidebar({
                 key={item.href}
                 href={item.href}
                 onClick={() => setAberto(false)}
-                className={`group relative flex items-center gap-3 overflow-hidden rounded-xl border px-3 py-3 text-sm font-extrabold transition-all duration-200 ${
+                title={recolhido ? item.label : undefined}
+                className={`group relative flex items-center gap-3 ${seRecolhido('md:justify-center md:px-0')} overflow-hidden rounded-xl border px-3 py-3 text-sm font-extrabold transition-all duration-200 ${
                   ativo
                     ? 'menu-item-ativo -translate-y-px'
                     : 'border-transparent bg-white text-black/65 hover:-translate-y-px hover:border-black/[.07] hover:bg-[#fafafa] hover:text-black hover:shadow-[0_7px_18px_rgba(15,23,42,.06)]'
@@ -161,7 +173,7 @@ export default function Sidebar({
                   }
                 />
 
-                <span className={ativo ? '!text-white' : ''}>
+                <span className={`${ativo ? '!text-white' : ''} ${seRecolhido('md:hidden')}`}>
                   {item.label}
                 </span>
               </Link>
@@ -169,8 +181,25 @@ export default function Sidebar({
           })}
         </nav>
 
-        <div className="border-t border-white/[.07] p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
-          <div className="mb-3 rounded-2xl border border-[#a97800]/35 bg-[linear-gradient(145deg,#1d1a12,#141210)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_8px_20px_rgba(0,0,0,.35)]">
+        <div className={`border-t border-white/[.07] p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] ${seRecolhido('md:px-2')}`}>
+          {/*
+            * Recolher o menu deixa só os ícones e dá à tela uns
+            * 180px a mais: é o que faz a tabela larga caber no
+            * notebook sem diminuir a letra.
+            */}
+          {aoRecolher && (
+            <button
+              type="button"
+              onClick={() => aoRecolher(!recolhido)}
+              title={recolhido ? 'Abrir o menu' : 'Recolher o menu'}
+              className={`mb-2 hidden w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-extrabold text-black/60 transition hover:bg-white/10 hover:text-[#f0c640] md:flex ${seRecolhido('md:justify-center md:px-0')}`}
+            >
+              {recolhido ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+              <span className={seRecolhido('md:hidden')}>Recolher menu</span>
+            </button>
+          )}
+
+          <div className={`mb-3 rounded-2xl border border-[#a97800]/35 ${seRecolhido('md:hidden')} bg-[linear-gradient(145deg,#1d1a12,#141210)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_8px_20px_rgba(0,0,0,.35)]`}>
             <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#e0b129]">
               Blackout Motos
             </p>
@@ -227,10 +256,11 @@ export default function Sidebar({
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-extrabold text-black/60 transition hover:bg-red-500/10 hover:text-red-400"
+            title={recolhido ? 'Sair' : undefined}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-extrabold text-black/60 transition hover:bg-red-500/10 hover:text-red-400 ${seRecolhido('md:justify-center md:px-0')}`}
           >
             <LogOut size={18} />
-            Sair
+            <span className={seRecolhido('md:hidden')}>Sair</span>
           </button>
         </div>
       </aside>
