@@ -1122,7 +1122,13 @@ export default function EstoquePage() {
         </section>
 
         <section className="mb-4 rounded-2xl border border-grafite-claro bg-grafite p-3 md:p-4">
-          <div className="grid gap-3 xl:grid-cols-[minmax(280px,1.6fr)_180px_200px_150px_auto]">
+          {/*
+            * Seis filtros: em tela de notebook ficam em duas linhas
+            * de três, do mesmo tamanho; só em tela larga cabem
+            * numa linha. As larguras fixas de antes estouravam a
+            * caixa no notebook.
+            */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(260px,1.6fr)_repeat(4,minmax(0,1fr))_auto]">
             <label className="relative block">
               <Search
                 size={18}
@@ -1140,7 +1146,7 @@ export default function EstoquePage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
+              className="w-full min-w-0 rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
             >
               <option value="todos">Status: Todos</option>
               <option value="disponivel">Disponível</option>
@@ -1155,7 +1161,7 @@ export default function EstoquePage() {
             <select
               value={marca}
               onChange={(e) => setMarca(e.target.value)}
-              className="rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
+              className="w-full min-w-0 rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
             >
               <option value="todas">Marca: Todas</option>
               {marcas.map((item) => (
@@ -1168,7 +1174,7 @@ export default function EstoquePage() {
             <select
               value={ano}
               onChange={(e) => setAno(e.target.value)}
-              className="rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
+              className="w-full min-w-0 rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
             >
               <option value="todos">Ano: Todos</option>
               {anos.map((item) => (
@@ -1181,7 +1187,7 @@ export default function EstoquePage() {
             <select
               value={ordem}
               onChange={(e) => setOrdem(e.target.value)}
-              className="rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
+              className="w-full min-w-0 rounded-xl border border-grafite-claro bg-preto px-4 py-3 text-sm text-texto outline-none focus:border-dourado"
             >
               <option value="entrada-recente">
                 Entrada: mais recente
