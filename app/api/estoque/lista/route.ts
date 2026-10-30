@@ -3,6 +3,13 @@ import path from "path";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
+import {
+  agruparPorCilindrada,
+  anosDaMoto,
+  nomeDaMoto,
+  quilometros,
+  valorDaLista,
+} from "@/lib/dados/lista-estoque";
 
 /*
  * A lista do estoque disponível, em Word.
@@ -23,59 +30,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-/* "CG 160 FAN CBS - VERMELHA": a marca fica de fora, porque ela
-   já está implícita no modelo e tomaria espaço da coluna. */
-function nomeDaMoto(moto: Record<string, unknown>) {
-  const nome = [moto.modelo, moto.versao]
-    .map((parte) => String(parte || "").trim())
-    .filter(Boolean)
-    .join(" ");
-
-  const cor = String(moto.cor || "").trim();
-
-  return (
-    [nome, cor]
-      .filter(Boolean)
-      .join(" - ")
-      .toUpperCase()
-      /*
-       * O "i" de injecao continua minusculo: a moto se chama
-       * YBR 125i, e "125I" parece erro de digitacao para quem
-       * conhece. Vale so quando vem colado no numero.
-       */
-      .replace(/(\d)I\b/g, "$1i")
-  );
-}
-
-function numero(valor: unknown) {
-  const conta = Number(valor || 0);
-
-  return Number.isFinite(conta) && conta > 0
-    ? new Intl.NumberFormat("pt-BR").format(conta)
-    : "";
-}
-
-function dinheiro(valor: unknown) {
-  const conta = Number(valor || 0);
-
-  if (!Number.isFinite(conta) || conta <= 0) return "A consultar";
-
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(conta);
-}
-
-/* "2024/2025", e só um ano quando os dois são iguais ou falta
-   um deles - repetir o mesmo número duas vezes não informa. */
-function anos(moto: Record<string, unknown>) {
-  const fab = String(moto.ano_fabricacao || "").trim();
-  const mod = String(moto.ano_modelo || "").trim();
-
-  if (fab && mod) return `${fab}/${mod}`;
-
-  return fab || mod || "";
-}
+/* A grafia e a ordem das motos ficam em lib/dados/lista-estoque,
+   junto da lista que abre na tela do estoque. */
 
 export async function GET() {
   try {
@@ -98,38 +54,11 @@ export async function GET() {
       });
     }
 
-    /*
-     * Por cilindrada, e dentro dela por marca e modelo.
-     *
-     * Cilindrada primeiro porque é assim que o cliente
-     * pergunta - "o que vocês têm de 160?" -, e quem procura
-     * uma 125 não quer ler a lista inteira.
-     *
-     * A marca é comparada em maiúsculas porque no banco ela
-     * aparece escrita de jeitos diferentes - "Honda" e "HONDA"
-     * são a mesma marca e não podem virar dois grupos.
-     */
     const motos = (data || []).map(
       (moto) => moto as Record<string, unknown>
     );
 
-    const grupos = new Map<number, Record<string, unknown>[]>();
-
-    for (const moto of motos) {
-      const cc = Math.round(Number(moto.cilindrada || 0));
-
-      const chave = Number.isFinite(cc) && cc > 0 ? cc : 0;
-
-      if (!grupos.has(chave)) grupos.set(chave, []);
-
-      grupos.get(chave)!.push(moto);
-    }
-
-    /* Cilindrada sem informar vai para o fim, e não no começo
-       como o zero mandaria. */
-    const cilindradas = [...grupos.keys()].sort(
-      (a, b) => (a || Infinity) - (b || Infinity)
-    );
+    const grupos = agruparPorCilindrada(motos);
 
     const modelo = await fs.readFile(
       path.join(
@@ -194,36 +123,27 @@ export async function GET() {
     const LIVRES_POR_GRUPO = Math.max(
       1,
       Math.floor(
-        (LINHAS_NA_FOLHA - cilindradas.length - motos.length) /
-          Math.max(cilindradas.length, 1)
+        (LINHAS_NA_FOLHA - grupos.length - motos.length) /
+          Math.max(grupos.length, 1)
       )
     );
 
-    for (const cc of cilindradas) {
-      const doGrupo = (grupos.get(cc) || []).sort((a, b) => {
-        const marcaA = String(a.marca || "").toUpperCase();
-        const marcaB = String(b.marca || "").toUpperCase();
-
-        if (marcaA !== marcaB) return marcaA.localeCompare(marcaB);
-
-        return nomeDaMoto(a).localeCompare(nomeDaMoto(b));
-      });
-
+    for (const grupo of grupos) {
       linhas.push({
-        moto: cc > 0 ? `${cc} CC` : "OUTRAS CILINDRADAS",
+        moto: grupo.rotulo,
         placa: "",
         anos: "",
         km: "",
         valor: "",
       });
 
-      for (const moto of doGrupo) {
+      for (const moto of grupo.motos) {
         linhas.push({
           moto: nomeDaMoto(moto),
           placa: String(moto.placa || "").toUpperCase(),
-          anos: anos(moto),
-          km: numero(moto.quilometragem),
-          valor: dinheiro(moto.preco_anunciado),
+          anos: anosDaMoto(moto),
+          km: quilometros(moto.quilometragem),
+          valor: valorDaLista(moto.preco_anunciado),
         });
       }
 

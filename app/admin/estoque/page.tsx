@@ -28,6 +28,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import estilo from "./estoque.module.css";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import ListaDoEstoqueNaTela from "@/components/ListaDoEstoqueNaTela";
 
 const supabase = createClient();
 const ITENS_POR_PAGINA = 12;
@@ -809,6 +810,12 @@ export default function EstoquePage() {
               <Link2 size={18} />
               Compartilhar Estoque
             </Link>
+
+            {/* Só para consultar, sem sair do estoque. */}
+            <ListaDoEstoqueNaTela
+              motos={motos}
+              className={`${estilo.acao} inline-flex items-center justify-center gap-2 rounded-xl border border-grafite-claro px-5 py-3 font-bold text-texto hover:border-dourado hover:text-dourado`}
+            />
 
             {/*
               * Vai para a previa, e nao direto para o arquivo.
