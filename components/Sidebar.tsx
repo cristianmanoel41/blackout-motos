@@ -26,8 +26,6 @@ import {
   Wrench,
   NotebookPen,
   X,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react'
 
 const menuItems = [
@@ -50,19 +48,10 @@ const menuItems = [
   { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ] as const
 
-/* Os degraus do zoom do painel, em porcentagem. */
-export const ZOOM_MINIMO = 60
-export const ZOOM_MAXIMO = 120
-const DEGRAU = 10
-
 export default function Sidebar({
-  zoom = 100,
-  aoMudarZoom,
   recolhido = false,
   aoRecolher,
 }: {
-  zoom?: number
-  aoMudarZoom?: (zoom: number) => void
   /* Menu só com os ícones, no computador. No celular o menu
      é a gaveta de sempre e isto não vale. */
   recolhido?: boolean
@@ -206,51 +195,6 @@ export default function Sidebar({
             <p className="mt-1 text-xs font-bold text-black/50">
               Sistema de gestão
             </p>
-
-            {/*
-              * O zoom do painel. Existe para o notebook da loja,
-              * onde a tela é baixa e as tabelas saíam cortadas:
-              * diminuir o conteúdo faz caber mais coluna. Clicar
-              * no número volta para 100%.
-              */}
-            {aoMudarZoom && (
-              <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-white/[.07] pt-2.5">
-                <span className="text-[10px] font-black uppercase tracking-[.16em] text-black/45">
-                  Zoom
-                </span>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => aoMudarZoom(Math.max(ZOOM_MINIMO, zoom - DEGRAU))}
-                    disabled={zoom <= ZOOM_MINIMO}
-                    aria-label="Diminuir o zoom"
-                    className="rounded-lg p-1.5 text-[#e0b129] transition hover:bg-white/10 disabled:opacity-30"
-                  >
-                    <ZoomOut size={16} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => aoMudarZoom(100)}
-                    title="Voltar para 100%"
-                    className="min-w-[3.25rem] rounded-lg px-1 py-1 text-xs font-black text-black/70 transition hover:bg-white/10"
-                  >
-                    {zoom}%
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => aoMudarZoom(Math.min(ZOOM_MAXIMO, zoom + DEGRAU))}
-                    disabled={zoom >= ZOOM_MAXIMO}
-                    aria-label="Aumentar o zoom"
-                    className="rounded-lg p-1.5 text-[#e0b129] transition hover:bg-white/10 disabled:opacity-30"
-                  >
-                    <ZoomIn size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <button
