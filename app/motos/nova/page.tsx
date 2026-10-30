@@ -10,6 +10,7 @@ import {
   FormEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import Link from "next/link";
@@ -43,6 +44,8 @@ import CampoArquivoDocumento from "@/components/CampoArquivoDocumento";
 import { enviarVistoria } from "@/components/Vistorias";
 import { enviarDocumentoCliente } from "@/components/DocumentosCliente";
 import { LOJA_PARCEIRA } from "@/lib/dados/loja-parceira";
+import { type DadosDoCrlv } from "@/lib/documentos/crlv";
+import { reduzirFotoParaLeitura } from "@/lib/documentos/reduzir-foto";
 
 type TipoEntrada =
   | "estoque_inicial"
@@ -377,6 +380,14 @@ export default function NovaMotoPage() {
   const [arquivoCrlv, setArquivoCrlv] =
     useState<File | null>(null);
 
+  /* A leitura do CRLV escolhido, que preenche chassi e RENAVAM. */
+  const [lendoCrlv, setLendoCrlv] = useState(false);
+  const [recadoCrlv, setRecadoCrlv] = useState<{
+    tipo: "ok" | "erro";
+    texto: string;
+  } | null>(null);
+  const leituraCrlvAtual = useRef(0);
+
   const [arquivoCnh, setArquivoCnh] =
     useState<File | null>(null);
 
@@ -652,6 +663,161 @@ export default function NovaMotoPage() {
 
       return atualizado;
     });
+  }
+
+  /*
+   * LÊ O CRLV ASSIM QUE ELE É ESCOLHIDO
+   *
+   * Chassi e RENAVAM são os dois campos que mais custam caro
+   * digitar errado - e o CRLV é a fonte certa deles. Por isso
+   * os dois são trocados pelo do documento mesmo se já tinha
+   * algo digitado (o recado avisa quando era diferente). O
+   * resto - placa, marca, modelo, anos e cor - só entra onde
+   * estava vazio, para não desfazer o que a busca da placa ou
+   * a pessoa já acertou.
+   *
+   * O arquivo continua sendo guardado na ficha ao salvar, como
+   * antes. A leitura não salva nada.
+   */
+  async function escolherCrlv(arquivo: File | null) {
+    setArquivoCrlv(arquivo);
+    setRecadoCrlv(null);
+
+    const leituraDaVez = ++leituraCrlvAtual.current;
+
+    if (!arquivo) {
+      setLendoCrlv(false);
+      return;
+    }
+
+    setLendoCrlv(true);
+
+    try {
+      const envio = await reduzirFotoParaLeitura(arquivo);
+      const corpo = new FormData();
+      corpo.append(
+        "arquivo",
+        envio,
+        envio === arquivo ? arquivo.name : "crlv.jpg"
+      );
+
+      const resposta = await fetch("/api/motos/ler-crlv", {
+        method: "POST",
+        body: corpo,
+      });
+
+      const resultado = await resposta.json().catch(() => ({}));
+
+      /* Escolheram outro arquivo enquanto este era lido. */
+      if (leituraDaVez !== leituraCrlvAtual.current) return;
+
+      const dados = (resultado?.leitura?.dados || null) as DadosDoCrlv | null;
+
+      if (!resposta.ok || !dados) {
+        setRecadoCrlv({
+          tipo: "erro",
+          texto:
+            resultado?.erro ||
+            "Não foi possível ler o CRLV. Preencha os dados à mão.",
+        });
+        return;
+      }
+
+      const lidos: string[] = [];
+      const trocados: string[] = [];
+
+      if (dados.chassi) {
+        lidos.push("chassi");
+        if (form.chassi.trim() && form.chassi.trim().toUpperCase() !== dados.chassi) {
+          trocados.push("chassi");
+        }
+      }
+
+      if (dados.renavam) {
+        lidos.push("RENAVAM");
+        if (
+          form.renavam.trim() &&
+          form.renavam.replace(/\D/g, "").padStart(11, "0") !== dados.renavam
+        ) {
+          trocados.push("RENAVAM");
+        }
+      }
+
+      const vazio = (valor: string) => !valor.trim();
+
+      if (dados.placa && vazio(form.placa)) lidos.push("placa");
+      if (dados.marca && vazio(form.marca)) lidos.push("marca");
+      if (dados.modelo && vazio(form.modelo)) lidos.push("modelo");
+      if (
+        (dados.ano_fabricacao && vazio(form.ano_fabricacao)) ||
+        (dados.ano_modelo && vazio(form.ano_modelo))
+      ) {
+        lidos.push("ano");
+      }
+      if (dados.cor && vazio(form.cor)) lidos.push("cor");
+
+      setForm((anterior) => ({
+        ...anterior,
+        chassi: dados.chassi || anterior.chassi,
+        renavam: dados.renavam || anterior.renavam,
+        placa:
+          vazio(anterior.placa) && dados.placa
+            ? formatarPlaca(dados.placa)
+            : anterior.placa,
+        /* "HONDA" no documento vira a "Honda" da lista de marcas. */
+        marca:
+          vazio(anterior.marca) && dados.marca
+            ? MARCAS.find(
+                (marca) =>
+                  marca.toUpperCase() === dados.marca!.toUpperCase()
+              ) || dados.marca
+            : anterior.marca,
+        modelo:
+          vazio(anterior.modelo) && dados.modelo
+            ? dados.modelo
+            : anterior.modelo,
+        ano_fabricacao:
+          vazio(anterior.ano_fabricacao) && dados.ano_fabricacao
+            ? String(dados.ano_fabricacao)
+            : anterior.ano_fabricacao,
+        ano_modelo:
+          vazio(anterior.ano_modelo) && dados.ano_modelo
+            ? String(dados.ano_modelo)
+            : anterior.ano_modelo,
+        cor:
+          vazio(anterior.cor) && dados.cor
+            ? dados.cor.charAt(0) + dados.cor.slice(1).toLowerCase()
+            : anterior.cor,
+      }));
+
+      setRecadoCrlv(
+        lidos.length === 0
+          ? {
+              tipo: "erro",
+              texto:
+                "O CRLV foi lido, mas não trouxe chassi nem RENAVAM. Preencha à mão.",
+            }
+          : {
+              tipo: "ok",
+              texto: `Lido do CRLV: ${lidos.join(", ")}. Confira antes de salvar.${
+                trocados.length
+                  ? ` O ${trocados.join(" e o ")} que estava digitado era diferente e foi trocado pelo do documento.`
+                  : ""
+              }`,
+            }
+      );
+    } catch {
+      if (leituraDaVez !== leituraCrlvAtual.current) return;
+
+      setRecadoCrlv({
+        tipo: "erro",
+        texto: "Não foi possível ler o CRLV agora. Preencha os dados à mão.",
+      });
+    } finally {
+      if (leituraDaVez === leituraCrlvAtual.current) {
+        setLendoCrlv(false);
+      }
+    }
   }
 
   async function buscarPlaca() {
@@ -1702,6 +1868,7 @@ export default function NovaMotoPage() {
       }
 
       setArquivoCrlv(null);
+      setRecadoCrlv(null);
       setArquivoCnh(null);
 
       const mensagemDocumentos =
@@ -2299,10 +2466,28 @@ export default function NovaMotoPage() {
             <div className="mt-5 max-w-xl">
               <CampoArquivoDocumento
                 label="CRLV da moto"
-                ajuda="Opcional. Fica guardado na ficha da moto, em Vistorias e CRLV."
+                ajuda="Opcional. Ao escolher, o sistema lê o documento e preenche chassi e RENAVAM. Fica guardado na ficha da moto, em Vistorias e CRLV."
                 arquivo={arquivoCrlv}
-                aoEscolher={setArquivoCrlv}
+                aoEscolher={escolherCrlv}
               />
+
+              {lendoCrlv && (
+                <p className="mt-2 text-xs font-semibold leading-5 text-dourado">
+                  Lendo o CRLV...
+                </p>
+              )}
+
+              {recadoCrlv && (
+                <p
+                  className={`mt-2 text-xs font-semibold leading-5 ${
+                    recadoCrlv.tipo === "ok"
+                      ? "text-green-400"
+                      : "text-amber-400"
+                  }`}
+                >
+                  {recadoCrlv.texto}
+                </p>
+              )}
             </div>
           </section>
 
