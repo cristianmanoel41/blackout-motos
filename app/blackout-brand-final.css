@@ -254,6 +254,16 @@ main form.rounded-2xl {
 }
 
 /*
+ * A lista que abre embaixo de um campo (marca, modelo, capacete)
+ * tambem tem fundo grafite, mas nao e cartao: o "relative" de
+ * cima vencia o "absolute" dela, e a lista caia no meio do
+ * formulario, abrindo um buraco e cobrindo os campos de baixo.
+ */
+main .bg-grafite.absolute {
+  position: absolute;
+}
+
+/*
  * O fio dourado no alto de cada cartao.
  *
  * E a marca aparecendo sem pintar nada de dourado: some nas
