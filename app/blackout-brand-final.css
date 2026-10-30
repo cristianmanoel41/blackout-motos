@@ -130,19 +130,19 @@ aside {
 }
 
 aside > div:first-child {
-  min-height: 112px !important;
-  height: 112px !important;
+  min-height: 88px !important;
+  height: 88px !important;
   padding: 8px 16px !important;
   background: #121417 !important;
 }
 
-aside a[href="/dashboard"] {
+aside > div:first-child a[href="/dashboard"] {
   width: 100% !important;
   justify-content: center !important;
   gap: 0 !important;
 }
 
-aside a[href="/dashboard"] > div:first-child {
+aside > div:first-child a[href="/dashboard"] > div:first-child {
   width: 188px !important;
   height: 84px !important;
   flex: 0 0 188px !important;
@@ -152,11 +152,11 @@ aside a[href="/dashboard"] > div:first-child {
   box-shadow: none !important;
 }
 
-aside a[href="/dashboard"] > div:first-child img {
+aside > div:first-child a[href="/dashboard"] > div:first-child img {
   object-fit: contain !important;
 }
 
-aside a[href="/dashboard"] > div:nth-child(2) {
+aside > div:first-child a[href="/dashboard"] > div:nth-child(2) {
   display: none !important;
 }
 
@@ -473,20 +473,26 @@ a.bg-yellow-400 {
 }
 
 
-/* CORRECAO LOGO ORIGINAL BLACKOUT */
+/* CORRECAO LOGO ORIGINAL BLACKOUT
+ *
+ * Tudo preso ao topo do menu (aside > div:first-child): sem
+ * isso a regra pegava tambem o item Dashboard da lista, que
+ * aponta para o mesmo endereco, e o deixava centralizado.
+ * 88px de altura: no notebook o topo de 112px roubava o
+ * espaco dos itens do menu. */
 aside > div:first-child {
-  min-height: 112px !important;
-  height: 112px !important;
+  min-height: 88px !important;
+  height: 88px !important;
   padding: 10px 18px !important;
   background: #121417 !important;
 }
 
-aside a[href="/dashboard"] {
+aside > div:first-child a[href="/dashboard"] {
   width: 100% !important;
   justify-content: center !important;
 }
 
-aside a[href="/dashboard"] > div:first-child {
+aside > div:first-child a[href="/dashboard"] > div:first-child {
   position: relative !important;
   width: 190px !important;
   height: 86px !important;
@@ -497,7 +503,7 @@ aside a[href="/dashboard"] > div:first-child {
   box-shadow: none !important;
 }
 
-aside a[href="/dashboard"] > div:first-child img {
+aside > div:first-child a[href="/dashboard"] > div:first-child img {
   object-fit: contain !important;
   object-position: center !important;
   transform: none !important;
@@ -505,7 +511,7 @@ aside a[href="/dashboard"] > div:first-child img {
   opacity: 1 !important;
 }
 
-aside a[href="/dashboard"] > div:nth-child(2) {
+aside > div:first-child a[href="/dashboard"] > div:nth-child(2) {
   display: none !important;
 }
 
