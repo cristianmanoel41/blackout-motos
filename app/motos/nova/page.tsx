@@ -41,7 +41,11 @@ import {
 } from "@/lib/formatadores/placa";
 import CampoMoeda from "@/components/CampoMoeda";
 import CampoArquivoDocumento from "@/components/CampoArquivoDocumento";
-import { enviarVistoria } from "@/components/Vistorias";
+import {
+  BUCKET_VISTORIAS,
+  enviarVistoria,
+  nomeArquivoSeguro,
+} from "@/components/Vistorias";
 import { enviarDocumentoCliente } from "@/components/DocumentosCliente";
 import { LOJA_PARCEIRA } from "@/lib/dados/loja-parceira";
 import { type DadosDoCrlv } from "@/lib/documentos/crlv";
@@ -693,17 +697,28 @@ export default function NovaMotoPage() {
     setLendoCrlv(true);
 
     try {
+      /*
+       * O arquivo sobe para o armazenamento e a leitura recebe
+       * só o caminho: a Vercel recusa requisição acima de
+       * 4,5 MB, e PDF escaneado passa disso. A rota apaga a
+       * cópia depois de ler.
+       */
       const envio = await reduzirFotoParaLeitura(arquivo);
-      const corpo = new FormData();
-      corpo.append(
-        "arquivo",
-        envio,
-        envio === arquivo ? arquivo.name : "crlv.jpg"
-      );
+      const nome = envio === arquivo ? arquivo.name : "crlv.jpg";
+      const caminho = `leitura-crlv/${Date.now()}-${nomeArquivoSeguro(nome)}`;
+
+      const { error: erroEnvio } = await supabase.storage
+        .from(BUCKET_VISTORIAS)
+        .upload(caminho, envio, {
+          contentType: envio.type || undefined,
+        });
+
+      if (erroEnvio) throw erroEnvio;
 
       const resposta = await fetch("/api/motos/ler-crlv", {
         method: "POST",
-        body: corpo,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caminho, nome }),
       });
 
       const resultado = await resposta.json().catch(() => ({}));

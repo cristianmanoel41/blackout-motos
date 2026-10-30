@@ -1,9 +1,9 @@
 /*
  * REDUZ A FOTO DE UM DOCUMENTO ANTES DE MANDAR PARA LEITURA
  *
- * Foto de celular passa fácil de 4,5 MB, o máximo que a
- * Vercel aceita numa requisição - e a leitura não precisa de
- * tudo isso: 2000px no lado maior lê o CRLV inteiro. Só a
+ * Foto de celular passa fácil de 5 MB, o máximo de imagem que
+ * a leitura por IA aceita - e a leitura não precisa de tudo
+ * isso: 2000px no lado maior lê o CRLV inteiro. Só a
  * cópia que vai para a leitura é reduzida; o arquivo guardado
  * na ficha continua o original.
  *
