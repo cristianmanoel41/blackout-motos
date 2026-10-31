@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import {
   FileBarChart,
   History,
-  Sparkles,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -35,8 +34,6 @@ const menuItems = [
   { label: 'Vendas', href: '/vendas', icon: ShoppingCart },
   { label: 'Clientes', href: '/clientes', icon: Users },
   { label: 'Anúncios na OLX', href: '/olx', icon: Megaphone },
-  /* A campanha do mês, montada com o pátio de hoje. */
-  { label: 'Marketing', href: '/marketing', icon: Sparkles },
   { label: 'Lista de Interesse', href: '/interessados', icon: BellRing },
   { label: 'Capacetes', href: '/capacetes', icon: Package },
   { label: 'Gastos das Motos', href: '/gastos', icon: Wrench },
