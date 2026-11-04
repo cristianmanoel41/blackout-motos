@@ -58,7 +58,18 @@ type Moto = {
   fornecedor_cep: string | null;
   observacoes: string | null;
   status: string;
+  possui_manual: boolean | null;
+  possui_chave_reserva: boolean | null;
+  unico_dono: boolean | null;
 };
+
+/* Os mesmos itens marcados no cadastro, para ver e corrigir
+   aqui na ficha. Antes só apareciam no "Comprar / Cadastrar". */
+const ITENS_DA_MOTO = [
+  { campo: "possui_manual", rotulo: "Possui manual" },
+  { campo: "possui_chave_reserva", rotulo: "Chave reserva" },
+  { campo: "unico_dono", rotulo: "Único dono" },
+] as const;
 
 export default function DetalheMotoPage() {
   const params = useParams();
@@ -216,7 +227,7 @@ export default function DetalheMotoPage() {
 
   function alterarCampo(
     campo: keyof Moto,
-    valor: string | number | null
+    valor: string | number | boolean | null
   ) {
     if (!form) return;
 
@@ -327,6 +338,12 @@ export default function DetalheMotoPage() {
 
         observacoes:
           form.observacoes?.trim() || null,
+
+        possui_manual: Boolean(form.possui_manual),
+        possui_chave_reserva: Boolean(
+          form.possui_chave_reserva
+        ),
+        unico_dono: Boolean(form.unico_dono),
 
         status: form.status,
       })
@@ -709,6 +726,51 @@ export default function DetalheMotoPage() {
             )}
           </div>
 
+        </div>
+
+        <div className="mt-5 border-t border-grafite-claro pt-4">
+          <p className="mb-3 text-xs text-texto-suave">
+            Itens da moto
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            {ITENS_DA_MOTO.map(({ campo, rotulo }) => {
+              const marcado = Boolean(form[campo]);
+
+              return editando ? (
+                <label
+                  key={campo}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                    marcado
+                      ? "border-dourado bg-dourado/10 text-dourado"
+                      : "border-grafite-claro text-texto"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={marcado}
+                    onChange={(e) =>
+                      alterarCampo(campo, e.target.checked)
+                    }
+                    className="h-4 w-4 accent-yellow-500"
+                  />
+                  <span className="font-semibold">{rotulo}</span>
+                </label>
+              ) : (
+                <span
+                  key={campo}
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+                    marcado
+                      ? "border-dourado bg-dourado/10 text-dourado"
+                      : "border-grafite-claro text-texto-suave line-through opacity-60"
+                  }`}
+                >
+                  {marcado ? "✓ " : ""}
+                  {rotulo}
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
 
