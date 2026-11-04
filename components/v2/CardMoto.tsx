@@ -65,7 +65,7 @@ export default function CardMoto({
 }) {
   const nome = nomeDaMoto(moto);
   const cilindrada = numero(moto.cilindrada);
-  const selos = compacto ? [] : selosDaMoto(moto).slice(0, 2);
+  const selos = compacto ? [] : selosDaMoto(moto);
   const novidade = chegouAgora(moto);
 
   return (
