@@ -13,6 +13,13 @@ import MotoNaCapa from "@/components/MotoNaCapa";
 import LegendaPost from "@/components/LegendaPost";
 import RegistradoPor from "@/components/RegistradoPor";
 import CampoMoeda from "@/components/CampoMoeda";
+import ProprietarioDoDocumento from "@/components/ProprietarioDoDocumento";
+import {
+  colunasDoProprietario,
+  proprietarioDaMoto,
+  proprietarioVazio,
+  temOutroProprietario,
+} from "@/lib/dados/proprietario";
 
 const statusLabel: Record<string, string> = {
   disponivel: "Disponível",
@@ -89,6 +96,17 @@ export default function DetalheMotoPage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [excluindo, setExcluindo] = useState(false);
+
+  /* Moto no nome de outra pessoa (lib/dados/proprietario). */
+  const [outroProprietario, setOutroProprietario] = useState(false);
+  const [proprietario, setProprietario] = useState(proprietarioVazio);
+
+  function lerProprietario(dados: Moto) {
+    const linha = dados as unknown as Record<string, unknown>;
+
+    setOutroProprietario(temOutroProprietario(linha));
+    setProprietario(proprietarioDaMoto(linha));
+  }
   const [versaoAnexos, setVersaoAnexos] = useState(0);
 
   useEffect(() => {
@@ -124,6 +142,7 @@ export default function DetalheMotoPage() {
 
     setMoto(motoData);
     setForm(motoData);
+    lerProprietario(motoData);
     setTotalGastos(total);
     setCarregando(false);
   }
@@ -239,6 +258,7 @@ export default function DetalheMotoPage() {
 
   function cancelarEdicao() {
     setForm(moto);
+    if (moto) lerProprietario(moto);
     setEditando(false);
     setErro("");
   }
@@ -255,6 +275,32 @@ export default function DetalheMotoPage() {
       setErro("Informe o modelo da moto.");
       return;
     }
+
+    /* A coluna só existe depois da migração 0041. Sem ela, a
+       ficha salva o resto como antes. */
+    const temColunaDoProprietario = Boolean(
+      moto && "proprietario_nome" in moto
+    );
+
+    if (outroProprietario) {
+      if (!temColunaDoProprietario) {
+        setErro(
+          "Falta rodar a migração 0041_proprietario_do_documento.sql no Supabase para guardar o proprietário do documento."
+        );
+        return;
+      }
+
+      if (!proprietario.proprietario_nome.trim()) {
+        setErro(
+          "Informe o nome de quem está no documento da moto, ou desmarque a opção da moto no nome de outra pessoa."
+        );
+        return;
+      }
+    }
+
+    const colunasProprietario = temColunaDoProprietario
+      ? colunasDoProprietario(proprietario, outroProprietario)
+      : {};
 
     const confirmar = window.confirm(
       "Deseja salvar as alterações desta moto?"
@@ -345,6 +391,8 @@ export default function DetalheMotoPage() {
         ),
         unico_dono: Boolean(form.unico_dono),
 
+        ...colunasProprietario,
+
         status: form.status,
       })
       .eq("id", id);
@@ -356,7 +404,11 @@ export default function DetalheMotoPage() {
       return;
     }
 
-    setMoto(form);
+    const salva = { ...form, ...colunasProprietario } as Moto;
+
+    setMoto(salva);
+    setForm(salva);
+    lerProprietario(salva);
     setEditando(false);
     setSalvando(false);
 
@@ -969,9 +1021,39 @@ export default function DetalheMotoPage() {
         </div>
 
         <p className="mt-4 text-xs text-texto-suave">
-          Esses dados são usados na procuração e no
-          contrato de compra desta moto.
+          Esses dados são usados no contrato de compra desta
+          moto e, se ela estiver no nome de quem vendeu, na
+          procuração.
         </p>
+      </div>
+
+      {/* PROPRIETÁRIO NO DOCUMENTO */}
+
+      <div className="mb-4 rounded-xl border border-grafite-claro bg-grafite p-5">
+        <h2 className="mb-4 font-semibold text-dourado">
+          Proprietário no Documento
+        </h2>
+
+        <ProprietarioDoDocumento
+          editando={editando}
+          ligado={outroProprietario}
+          aoLigar={setOutroProprietario}
+          dados={proprietario}
+          aoMudar={(parcial) =>
+            setProprietario((anterior) => ({
+              ...anterior,
+              ...parcial,
+            }))
+          }
+        />
+
+        {outroProprietario && !editando && (
+          <p className="mt-4 text-xs text-texto-suave">
+            A procuração sai no nome desta pessoa. O contrato
+            de compra continua com quem vendeu e cita o
+            proprietário.
+          </p>
+        )}
       </div>
 
       {/* OBSERVAÇÕES */}

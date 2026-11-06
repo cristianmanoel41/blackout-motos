@@ -5,6 +5,7 @@ import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
+import { outorganteDaMoto } from "@/lib/dados/proprietario";
 
 export const runtime = "nodejs";
 
@@ -98,21 +99,24 @@ export async function GET(
       );
     }
 
+    /*
+     * Quem assina: o proprietário do documento quando a moto
+     * está no nome de outra pessoa, senão quem vendeu.
+     */
+    const outorgante = outorganteDaMoto(moto);
+    const quem = outorgante.doDono
+      ? "do proprietário no documento"
+      : "de quem vendeu a moto";
+
     const camposObrigatorios = [
-      [
-        "Nome de quem vendeu a moto",
-        moto.fornecedor_nome,
-      ],
-      [
-        "CPF de quem vendeu a moto",
-        moto.fornecedor_cpf,
-      ],
-      ["Rua", moto.fornecedor_rua],
-      ["Número", moto.fornecedor_numero],
-      ["Bairro", moto.fornecedor_bairro],
-      ["Cidade", moto.fornecedor_cidade],
-      ["Estado", moto.fornecedor_estado],
-      ["CEP", moto.fornecedor_cep],
+      [`Nome ${quem}`, outorgante.nome],
+      [`CPF ${quem}`, outorgante.cpf],
+      [`Rua ${quem}`, outorgante.rua],
+      [`Número ${quem}`, outorgante.numero],
+      [`Bairro ${quem}`, outorgante.bairro],
+      [`Cidade ${quem}`, outorgante.cidade],
+      [`Estado ${quem}`, outorgante.estado],
+      [`CEP ${quem}`, outorgante.cep],
       ["Placa", moto.placa],
       ["Renavam", moto.renavam],
       ["Chassi", moto.chassi],
@@ -158,31 +162,31 @@ export async function GET(
 
     doc.render({
       outorgante_nome:
-        moto.fornecedor_nome || "",
+        String(outorgante.nome || ""),
 
       outorgante_cpf:
-        formatarCPF(moto.fornecedor_cpf),
+        formatarCPF(outorgante.cpf),
 
       outorgante_rua:
-        comLogradouro(moto.fornecedor_rua),
+        comLogradouro(outorgante.rua),
 
       outorgante_numero:
-        moto.fornecedor_numero || "",
+        String(outorgante.numero || ""),
 
       outorgante_complemento_texto:
-        complementoEndereco(moto.fornecedor_complemento),
+        complementoEndereco(outorgante.complemento),
 
       outorgante_bairro:
-        moto.fornecedor_bairro || "",
+        String(outorgante.bairro || ""),
 
       outorgante_cidade:
-        moto.fornecedor_cidade || "",
+        String(outorgante.cidade || ""),
 
       outorgante_estado:
-        moto.fornecedor_estado || "",
+        String(outorgante.estado || ""),
 
       outorgante_cep:
-        moto.fornecedor_cep || "",
+        String(outorgante.cep || ""),
 
       moto_placa:
         formatarPlaca(moto.placa),

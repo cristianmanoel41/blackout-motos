@@ -10,6 +10,7 @@ import {
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
+import { temOutroProprietario } from "@/lib/dados/proprietario";
 
 export const runtime = "nodejs";
 
@@ -374,8 +375,24 @@ export async function GET(
       }
     }
 
+    /*
+     * Moto no nome de outra pessoa: o contrato continua com
+     * quem vendeu, e diz em nome de quem está o documento - é
+     * essa pessoa que assina a procuração.
+     */
+    const clausulaProprietario = temOutroProprietario(moto)
+      ? `O veículo está registrado no órgão de trânsito em nome de ${String(
+          moto.proprietario_nome
+        ).trim()}${
+          moto.proprietario_cpf
+            ? `, CPF ${formatarCPF(moto.proprietario_cpf)}`
+            : ""
+        }, proprietário(a) que autoriza esta venda e assina a procuração para a transferência do veículo.`
+      : "";
+
     // o modelo já fecha a frase com ponto
     const observacoesContrato = [
+      clausulaProprietario,
       descricaoTroca,
       moto.observacoes || "",
     ]

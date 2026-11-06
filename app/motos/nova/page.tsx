@@ -50,6 +50,11 @@ import { enviarDocumentoCliente } from "@/components/DocumentosCliente";
 import { LOJA_PARCEIRA } from "@/lib/dados/loja-parceira";
 import { type DadosDoCrlv } from "@/lib/documentos/crlv";
 import { reduzirFotoParaLeitura } from "@/lib/documentos/reduzir-foto";
+import ProprietarioDoDocumento from "@/components/ProprietarioDoDocumento";
+import {
+  colunasDoProprietario,
+  proprietarioVazio,
+} from "@/lib/dados/proprietario";
 
 type TipoEntrada =
   | "estoque_inicial"
@@ -394,6 +399,13 @@ export default function NovaMotoPage() {
 
   const [arquivoCnh, setArquivoCnh] =
     useState<File | null>(null);
+
+  /* Moto no nome de outra pessoa (lib/dados/proprietario). */
+  const [outroProprietario, setOutroProprietario] =
+    useState(false);
+  const [proprietario, setProprietario] = useState(
+    proprietarioVazio
+  );
 
   const ehEstoqueInicial =
     form.tipo_entrada ===
@@ -941,6 +953,8 @@ export default function NovaMotoPage() {
     });
 
     setMotoCriadaId("");
+    setOutroProprietario(false);
+    setProprietario(proprietarioVazio());
     setErro("");
     setMensagem("");
     setMensagemBuscaPlaca("");
@@ -1073,6 +1087,16 @@ export default function NovaMotoPage() {
     ) {
       setErro(
         "Informe o nome de quem vendeu a moto para a loja."
+      );
+      return;
+    }
+
+    if (
+      outroProprietario &&
+      !proprietario.proprietario_nome.trim()
+    ) {
+      setErro(
+        "Informe o nome de quem está no documento da moto, ou desmarque a opção da moto no nome de outra pessoa."
       );
       return;
     }
@@ -1382,6 +1406,12 @@ export default function NovaMotoPage() {
 
           fornecedor_customer_id:
             fornecedorCustomerId,
+
+          /* Só vai quando marcado: assim o cadastro comum
+             continua salvando mesmo antes da migração 0041. */
+          ...(outroProprietario
+            ? colunasDoProprietario(proprietario, true)
+            : {}),
 
           intermediador_nome:
             form.intermediador_nome.trim() ||
@@ -3112,7 +3142,7 @@ export default function NovaMotoPage() {
               </h2>
 
               <p className="mt-1 text-xs text-texto-suave">
-                Estes dados também serão usados futuramente para gerar a procuração.
+                Estes dados vão para o contrato de compra e, se a moto estiver no nome de quem vendeu, para a procuração.
               </p>
             </div>
 
@@ -3325,6 +3355,20 @@ export default function NovaMotoPage() {
                 ajuda="Opcional. Fica guardada no cadastro do cliente, em Documentos. Precisa do nome e do CPF preenchidos."
                 arquivo={arquivoCnh}
                 aoEscolher={setArquivoCnh}
+              />
+            </div>
+
+            <div className="mt-6 border-t border-grafite-claro pt-5">
+              <ProprietarioDoDocumento
+                ligado={outroProprietario}
+                aoLigar={setOutroProprietario}
+                dados={proprietario}
+                aoMudar={(parcial) =>
+                  setProprietario((anterior) => ({
+                    ...anterior,
+                    ...parcial,
+                  }))
+                }
               />
             </div>
           </section>
