@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { BotaoWhatsapp } from "@/components/CardWhatsapp";
+import { LOJA_PARCEIRA } from "@/lib/dados/loja-parceira";
 import {
   Bike,
   ChevronDown,
@@ -36,6 +37,9 @@ export type RegistroHistorico = {
    * balcão não entra nessa conta, então vem nulo.
    */
   lucro?: number | null;
+
+  /* Moto da outra loja: o dinheiro é repassado, não é lucro. */
+  repasse?: boolean;
 
   /* De onde saiu o lucro daquela moto. */
   custoCompra?: number | null;
@@ -339,6 +343,11 @@ export default function HistoricoGeral({
             (typeof registro.lucro === "number"
               ? registro.lucro
               : 0),
+          qtd_repasse:
+            resumo.qtd_repasse + (registro.repasse ? 1 : 0),
+          repasse:
+            resumo.repasse +
+            (registro.repasse ? registro.valor : 0),
         };
       },
       {
@@ -348,6 +357,8 @@ export default function HistoricoGeral({
         qtd_motos: 0,
         qtd_capacetes: 0,
         lucro: 0,
+        qtd_repasse: 0,
+        repasse: 0,
       } as Record<string, number>
     );
   }, [doPeriodo]);
@@ -398,6 +409,15 @@ export default function HistoricoGeral({
           <p className="mt-1 text-xs text-texto-suave">
             Venda menos compra e gastos
           </p>
+
+          {totais.qtd_repasse > 0 && (
+            <p className="mt-1 text-xs text-texto-suave">
+              Fora do lucro: {totais.qtd_repasse} venda
+              {totais.qtd_repasse === 1 ? "" : "s"} da loja{" "}
+              {LOJA_PARCEIRA} ({formatarMoeda(totais.repasse)},
+              repassado)
+            </p>
+          )}
         </div>
 
         <div className="rounded-xl border border-grafite-claro bg-grafite p-4">
@@ -766,7 +786,9 @@ export default function HistoricoGeral({
                   >
                     {typeof registro.lucro === "number"
                       ? formatarMoeda(registro.lucro)
-                      : "-"}
+                      : registro.repasse
+                        ? `Repasse ${LOJA_PARCEIRA}`
+                        : "-"}
 
                     {typeof registro.lucro === "number" && (
                       <span className="mt-1 block text-xs font-normal text-texto-suave">

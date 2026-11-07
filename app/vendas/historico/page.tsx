@@ -42,6 +42,7 @@ type MotoHistorico = {
   chassi?: string | null;
   renavam?: string | null;
   quilometragem?: number | string | null;
+  tipo_entrada?: string | null;
 };
 
 type ClienteHistorico = {
@@ -172,7 +173,8 @@ export default async function HistoricoVendasPage({
           ano_fabricacao,
           chassi,
           renavam,
-          quilometragem
+          quilometragem,
+          tipo_entrada
         `
         )
         .in("id", idsMotos);
@@ -334,11 +336,21 @@ export default async function HistoricoVendasPage({
         ? mapaClientes.get(String(venda.customer_id))
         : undefined;
 
-      const lucro = moto
-        ? valorVenda -
-          (custoCompra || 0) -
-          (gastos || 0)
-        : null;
+      /*
+       * Moto de outra loja (tipo_entrada outra_loja) é do
+       * Edvaldo: o dinheiro da venda é repassado, então não é
+       * lucro da loja - a mesma regra do relatório mensal. Com
+       * valor de compra zero, a conta mostraria a venda inteira
+       * como lucro.
+       */
+      const repasse = moto?.tipo_entrada === "outra_loja";
+
+      const lucro =
+        moto && !repasse
+          ? valorVenda -
+            (custoCompra || 0) -
+            (gastos || 0)
+          : null;
 
       return {
         id: String(venda.id),
@@ -364,6 +376,7 @@ export default async function HistoricoVendasPage({
         vendedor: venda.vendedor || "",
         valor: valorVenda,
         lucro,
+        repasse,
         custoCompra,
         gastos,
         pagamento: venda.forma_pagamento || "-",
