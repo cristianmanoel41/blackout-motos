@@ -1,6 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Camera, PlayCircle, Wallet } from "lucide-react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  Camera,
+  KeyRound,
+  PlayCircle,
+  UserCheck,
+  Wallet,
+} from "lucide-react";
 import {
   anoDaMoto,
   chegouAgora,
@@ -16,6 +24,22 @@ import {
 import { linkWhatsApp } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import Inclinar from "@/components/v2/Inclinar";
+import { formatarMoeda } from "@/lib/formatadores/moeda";
+import { TAXA_MINIMA, parcelaPrice } from "@/lib/dados/parcela";
+
+/*
+ * Os selos em uma linha só, com ícone e nome curto. Escritos
+ * por extenso e em caixa alta, os três quebravam em duas linhas
+ * e o card ficava poluído. O nome inteiro vai no title.
+ */
+const SELO_CURTO: Record<string, { Icone: typeof UserCheck; curto: string }> = {
+  "Único dono": { Icone: UserCheck, curto: "1 dono" },
+  "Com manual": { Icone: BookOpen, curto: "Manual" },
+  "Chave reserva": { Icone: KeyRound, curto: "Chave reserva" },
+};
+
+/* O prazo da parcela que o card mostra. */
+const MESES_DO_CARD = 48;
 
 /*
  * O card de moto do site - um só, para a capa, o estoque, a
@@ -67,6 +91,14 @@ export default function CardMoto({
   const cilindrada = numero(moto.cilindrada);
   const selos = compacto ? [] : selosDaMoto(moto);
   const novidade = chegouAgora(moto);
+
+  /*
+   * A menor parcela possível: sem entrada, na taxa mais baixa
+   * do simulador (lib/dados/parcela). Por isso "a partir de" e
+   * "estimativa" - o simulador mostra a faixa e o aviso inteiro.
+   */
+  const preco = numero(moto.preco_anunciado) || 0;
+  const parcela = parcelaPrice(preco, TAXA_MINIMA, MESES_DO_CARD);
 
   return (
     <Inclinar className="h-full">
@@ -162,23 +194,40 @@ export default function CardMoto({
               href={`/financiamento?moto=${encodeURIComponent(
                 `${nome} ${anoDaMoto(moto)}`
               )}`}
+              title="Estimativa sem entrada, com a menor taxa do simulador. Sujeita à análise de crédito do banco."
               className="mt-1.5 inline-flex w-fit items-center gap-1.5 py-1 text-[12px] font-bold ouro"
             >
               <Wallet size={13} />
-              Simular parcela
+              {parcela > 0 ? (
+                <span>
+                  {MESES_DO_CARD}x a partir de {formatarMoeda(parcela)}
+                  <span className="ml-1 font-normal suave">· estimativa</span>
+                </span>
+              ) : (
+                "Simular parcela"
+              )}
             </Link>
           )}
 
           {selos.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {selos.map((selo) => (
-                <li
-                  key={selo}
-                  className="rounded-md border border-[#e0b129]/25 bg-[#e0b129]/[0.07] px-2 py-1 text-[10px] font-bold uppercase tracking-wide ouro"
-                >
-                  {selo}
-                </li>
-              ))}
+            <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              {selos.map((selo) => {
+                const { Icone, curto } = SELO_CURTO[selo] || {
+                  Icone: UserCheck,
+                  curto: selo,
+                };
+
+                return (
+                  <li
+                    key={selo}
+                    title={selo}
+                    className="flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold claro"
+                  >
+                    <Icone size={13} className="ouro" />
+                    {curto}
+                  </li>
+                );
+              })}
             </ul>
           )}
 
