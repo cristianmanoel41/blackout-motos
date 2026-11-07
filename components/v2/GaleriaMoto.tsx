@@ -240,6 +240,43 @@ export default function GaleriaMoto({
         </div>
       )}
 
+      {/*
+        * Todas as fotos em miniatura, embaixo da vitrine: sem
+        * elas, quem via só as quatro não sabia que havia mais.
+        * Clicar abre a tela cheia naquela foto.
+        */}
+      {mosaico && vitrine.length > 0 && total > 1 && (
+        <div className="mt-3 hidden gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] lg:flex">
+          {midias.map((midia, posicao) => (
+            <button
+              key={midia.url}
+              type="button"
+              onClick={() => abrir(posicao)}
+              aria-label={
+                midia.tipo === "video" ? "Ver vídeo da moto" : `Ver foto ${posicao + 1}`
+              }
+              className="group relative h-24 w-[4.5rem] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black transition duration-300 hover:border-[#e0b129]/70"
+            >
+              {midia.tipo === "video" ? (
+                <span className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-[#1c1c22] to-black text-[11px] font-bold ouro">
+                  <PlayCircle size={22} />
+                  Vídeo
+                </span>
+              ) : (
+                <Image
+                  src={midia.url}
+                  alt=""
+                  fill
+                  sizes="72px"
+                  quality={60}
+                  className="object-cover opacity-75 transition duration-300 group-hover:scale-105 group-hover:opacity-100"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className={mosaico && vitrine.length > 0 ? "lg:hidden" : ""}>
       <div
         onTouchStart={comecou}
