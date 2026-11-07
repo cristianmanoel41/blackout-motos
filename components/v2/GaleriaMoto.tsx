@@ -41,9 +41,18 @@ const ZOOM = 2.2;
 export default function GaleriaMoto({
   midias,
   nome,
+  mosaico = false,
 }: {
   midias: Midia[];
   nome: string;
+  /*
+   * No computador, troca a foto única por uma vitrine de
+   * quatro fotos lado a lado. As fotos da loja são tiradas em
+   * pé, no celular: uma sozinha numa caixa deitada sobrava
+   * faixa dos lados; quatro em pé enchem a largura e mostram a
+   * moto de vários ângulos de uma vez. No celular nada muda.
+   */
+  mosaico?: boolean;
 }) {
   const [indice, setIndice] = useState(0);
   const [cheia, setCheia] = useState(false);
@@ -142,8 +151,95 @@ export default function GaleriaMoto({
 
   if (total === 0) return null;
 
+  /* As quatro primeiras fotos da vitrine, com a posição de cada
+     uma na galeria - é por ela que a tela cheia abre. */
+  const vitrine = midias
+    .map((midia, posicao) => ({ ...midia, posicao }))
+    .filter((midia) => midia.tipo === "foto")
+    .slice(0, 4);
+  const posicaoDoVideo = midias.findIndex((midia) => midia.tipo === "video");
+
+  function abrir(posicao: number) {
+    setAmpliada(false);
+    setIndice(posicao);
+    setCheia(true);
+  }
+
   return (
     <>
+      {mosaico && vitrine.length > 0 && (
+        <div
+          className={`relative hidden h-[min(34rem,62vh)] gap-2 overflow-hidden rounded-[1.4rem] lg:grid ${
+            vitrine.length >= 4
+              ? "grid-cols-4"
+              : vitrine.length === 3
+                ? "grid-cols-3"
+                : vitrine.length === 2
+                  ? "grid-cols-2"
+                  : "grid-cols-1"
+          }`}
+        >
+          {vitrine.map((foto, ordem) => {
+            const ultima = ordem === vitrine.length - 1;
+            const restantes = total - vitrine.length;
+
+            return (
+              <button
+                key={foto.url}
+                type="button"
+                onClick={() => abrir(foto.posicao)}
+                aria-label={`Abrir foto ${foto.posicao + 1} em tela cheia`}
+                className="group relative overflow-hidden bg-black"
+              >
+                <Image
+                  src={foto.url}
+                  alt={ordem === 0 ? `${nome} - foto 1` : ""}
+                  fill
+                  priority={ordem < 2}
+                  sizes="25vw"
+                  quality={80}
+                  className="object-cover transition duration-700 ease-out group-hover:scale-[1.04]"
+                />
+
+                <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+
+                {ultima && restantes > 0 && (
+                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-white backdrop-blur-[2px] transition group-hover:bg-black/45">
+                    <span className="titulo text-3xl">+{restantes}</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.2em]">
+                      Ver todas
+                    </span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          <div className="pointer-events-none absolute bottom-4 left-4 z-[2] flex gap-2">
+            <button
+              type="button"
+              onClick={() => abrir(vitrine[0].posicao)}
+              className="pointer-events-auto flex min-h-10 items-center gap-1.5 rounded-full bg-black/70 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur transition hover:bg-black/85"
+            >
+              <Expand size={13} />
+              {total} {total === 1 ? "foto" : "fotos"}
+            </button>
+
+            {posicaoDoVideo >= 0 && (
+              <button
+                type="button"
+                onClick={() => abrir(posicaoDoVideo)}
+                className="pointer-events-auto flex min-h-10 items-center gap-1.5 rounded-full bg-black/70 px-4 py-2 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur transition hover:bg-black/85"
+              >
+                <PlayCircle size={14} className="ouro" />
+                Ver vídeo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className={mosaico && vitrine.length > 0 ? "lg:hidden" : ""}>
       <div
         onTouchStart={comecou}
         onTouchEnd={terminou}
@@ -323,6 +419,7 @@ export default function GaleriaMoto({
           ))}
         </div>
       )}
+      </div>
 
       {cheia && atual && (
         <div

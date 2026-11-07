@@ -3,9 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
-  CheckCircle2,
+  BookOpen,
   ChevronRight,
+  KeyRound,
+  MapPin,
   Phone,
+  Quote,
+  Repeat,
+  ShieldCheck,
+  UserCheck,
   Wallet,
 } from "lucide-react";
 import { motoPorSlug } from "@/lib/dados/estoque-site";
@@ -13,6 +19,7 @@ import { galeriaOrdenada } from "@/lib/dados/fotos-site";
 import GaleriaMoto, { type Midia } from "@/components/v2/GaleriaMoto";
 import CardMoto from "@/components/v2/CardMoto";
 import Compartilhar from "@/components/v2/Compartilhar";
+import Avaliacoes from "@/components/v2/Avaliacoes";
 import EventoMoto from "@/components/site/EventoMoto";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { linkWhatsApp, LOJA } from "@/lib/dados/loja";
@@ -29,7 +36,6 @@ import {
   numero,
   paraQueServe,
   precoDaMoto,
-  selosDaMoto,
   tituloDaMoto,
   type MotoSite,
 } from "@/lib/dados/moto-site";
@@ -141,7 +147,6 @@ export default async function MotoPage({
   const ano = anoDaMoto(moto);
   const preco = numero(moto.preco_anunciado);
   const cilindrada = numero(moto.cilindrada);
-  const selos = selosDaMoto(moto);
   const frase = paraQueServe(moto);
 
   /* O vídeo entra logo depois da capa: é o segundo que se vê. */
@@ -157,6 +162,27 @@ export default async function MotoPage({
   const simular = `/financiamento?moto=${encodeURIComponent(`${nome} ${ano}`)}`;
 
   const parecidas = motosParecidas(estoque.motos, moto, 4);
+
+  /* O que a moto tem de bom, só do que está marcado na ficha. */
+  const destaques = [
+    moto.unico_dono
+      ? { Icone: UserCheck, titulo: "Único dono", texto: "Só teve um proprietário" }
+      : null,
+    moto.possui_manual
+      ? { Icone: BookOpen, titulo: "Manual", texto: "Acompanha a moto" }
+      : null,
+    moto.possui_chave_reserva
+      ? { Icone: KeyRound, titulo: "Chave reserva", texto: "As duas chaves na entrega" }
+      : null,
+  ].filter(Boolean) as { Icone: typeof UserCheck; titulo: string; texto: string }[];
+
+  /* Os mesmos diferenciais da página inicial. */
+  const garantias = [
+    { Icone: ShieldCheck, titulo: "Motos revisadas", texto: "Com procedência conferida" },
+    { Icone: Wallet, titulo: "Financiamento", texto: "Condições facilitadas" },
+    { Icone: Repeat, titulo: "Aceitamos sua moto", texto: "Como parte do pagamento" },
+    { Icone: MapPin, titulo: "Venha ver de perto", texto: `Loja em ${LOJA.cidade}/${LOJA.estado}` },
+  ];
 
   const ladrilhos = [
     { rotulo: "Ano", valor: ano },
@@ -234,12 +260,12 @@ export default async function MotoPage({
         <span className="truncate claro">{nome}</span>
       </nav>
 
-      <div className="grid gap-7 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:gap-10">
-        <section className="min-w-0">
-          <GaleriaMoto midias={midias} nome={`${nome} ${ano}`} />
-        </section>
+      {/* No computador a vitrine de fotos ocupa a largura toda;
+          no celular continua o carrossel de arrastar. */}
+      <GaleriaMoto midias={midias} nome={`${nome} ${ano}`} mosaico />
 
-        <section className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+      <div className="mt-7 grid gap-7 lg:mt-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:gap-10">
+        <section className="min-w-0 lg:order-2 lg:sticky lg:top-24 lg:self-start">
           <article className="vidro p-5 sm:p-7">
             <p className="text-[12px] font-bold uppercase tracking-[0.25em] ouro">
               {nomeDaCategoria(categoriaDaMoto(moto))} · disponível
@@ -268,18 +294,15 @@ export default async function MotoPage({
               </p>
             </div>
 
-            {(frase || selos.length > 0) && (
-              <ul className="mt-5 space-y-2">
-                {frase && (
-                  <li className="flex items-start gap-2 text-sm claro">
-                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 ouro" />
-                    {frase}
-                  </li>
-                )}
-                {selos.map((selo) => (
-                  <li key={selo} className="flex items-center gap-2 text-sm suave">
-                    <CheckCircle2 size={16} className="shrink-0 ouro" />
-                    {selo}
+            {destaques.length > 0 && (
+              <ul className="mt-5 flex flex-wrap gap-2">
+                {destaques.map(({ Icone, titulo }) => (
+                  <li
+                    key={titulo}
+                    className="flex items-center gap-1.5 rounded-full border border-[#e0b129]/25 bg-[#e0b129]/[0.07] px-3 py-1.5 text-[12px] font-bold claro"
+                  >
+                    <Icone size={14} className="ouro" />
+                    {titulo}
                   </li>
                 ))}
               </ul>
@@ -326,21 +349,73 @@ export default async function MotoPage({
             </div>
           </article>
         </section>
+        <div className="min-w-0 space-y-12 lg:order-1">
+          {(frase || destaques.length > 0) && (
+            <section>
+              <h2 className="titulo text-[1.6rem] claro">
+                Sobre esta <span className="ouro">moto</span>
+              </h2>
+
+              {frase && (
+                <p className="mt-4 flex items-start gap-3 text-[15px] leading-7 claro">
+                  <Quote size={20} className="mt-1 shrink-0 ouro" />
+                  {frase}
+                </p>
+              )}
+
+              {destaques.length > 0 && (
+                <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+                  {destaques.map(({ Icone, titulo, texto }) => (
+                    <div key={titulo} className="vidro flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:gap-3 sm:p-4 sm:text-left">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
+                        <Icone size={20} className="ouro" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold claro">{titulo}</span>
+                        <span className="hidden text-xs suave sm:block">{texto}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          <section>
+            <h2 className="titulo text-[1.6rem] claro">
+              Ficha <span className="ouro">técnica</span>
+            </h2>
+            <div className="mt-5">
+              <FichaTecnica moto={moto} />
+            </div>
+            <p className="mt-3 text-[13px] suave">
+              Dados do nosso cadastro. Confirme os detalhes com o vendedor
+              antes de fechar - e venha ver a moto pessoalmente em{" "}
+              {LOJA.cidade}.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="titulo text-[1.6rem] claro">
+              Comprando na <span className="ouro">Blackout</span>
+            </h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {garantias.map(({ Icone, titulo, texto }) => (
+                <div key={titulo} className="flex items-start gap-3 rounded-2xl border border-white/[.07] bg-[#111115] p-4">
+                  <Icone size={20} className="mt-0.5 shrink-0 ouro" />
+                  <span>
+                    <span className="block text-sm font-bold claro">{titulo}</span>
+                    <span className="block text-[13px] suave">{texto}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
 
-      <section className="mt-12">
-        <h2 className="titulo text-[1.6rem] claro">
-          Ficha <span className="ouro">técnica</span>
-        </h2>
-        <div className="mt-5">
-          <FichaTecnica moto={moto} />
-        </div>
-        <p className="mt-3 text-[13px] suave">
-          Dados do nosso cadastro. Confirme os detalhes com o vendedor
-          antes de fechar - e venha ver a moto pessoalmente em{" "}
-          {LOJA.cidade}.
-        </p>
-      </section>
+
+
 
       {parecidas.length > 0 && (
         <section className="mt-14">
@@ -367,6 +442,11 @@ export default async function MotoPage({
           </div>
         </section>
       )}
+
+      {/* Quem está decidindo quer saber se a loja é séria. */}
+      <div className="mt-14">
+        <Avaliacoes />
+      </div>
 
       {/*
         * A barra do pé, só no celular.
