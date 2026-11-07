@@ -20,6 +20,7 @@ import GaleriaMoto, { type Midia } from "@/components/v2/GaleriaMoto";
 import CardMoto from "@/components/v2/CardMoto";
 import Compartilhar from "@/components/v2/Compartilhar";
 import Avaliacoes from "@/components/v2/Avaliacoes";
+import ParcelaNaHora from "@/components/v2/ParcelaNaHora";
 import EventoMoto from "@/components/site/EventoMoto";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import { linkWhatsApp, LOJA } from "@/lib/dados/loja";
@@ -265,7 +266,7 @@ export default async function MotoPage({
       <GaleriaMoto midias={midias} nome={`${nome} ${ano}`} mosaico />
 
       <div className="mt-7 grid gap-7 lg:mt-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:gap-10">
-        <section className="min-w-0 lg:order-2 lg:sticky lg:top-24 lg:self-start">
+        <section className="min-w-0 lg:order-2">
           <article className="vidro p-5 sm:p-7">
             <p className="text-[12px] font-bold uppercase tracking-[0.25em] ouro">
               {nomeDaCategoria(categoriaDaMoto(moto))} · disponível
@@ -347,6 +348,12 @@ export default async function MotoPage({
                 </a>
               </div>
             </div>
+
+            <ParcelaNaHora
+              preco={preco || 0}
+              moto={`${nome} ${ano}`}
+              simulador={simular}
+            />
           </article>
         </section>
         <div className="min-w-0 space-y-12 lg:order-1">
