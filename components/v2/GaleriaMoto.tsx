@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   ChevronLeft,
@@ -421,7 +422,13 @@ export default function GaleriaMoto({
       )}
       </div>
 
-      {cheia && atual && (
+      {/*
+        * A tela cheia vai para fora da página, como as outras
+        * janelas do site: dentro dela algum efeito de entrada
+        * prende o "fixed", e no computador a foto abria numa
+        * faixa no meio da tela em vez de ocupar tudo.
+        */}
+      {cheia && atual && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -523,7 +530,8 @@ export default function GaleriaMoto({
               ? "Toque na foto ou use dois dedos para ampliar · arraste para trocar"
               : "Arraste para o lado para voltar às fotos"}
           </p>
-        </div>
+        </div>,
+        document.querySelector(".site-blackout") || document.body
       )}
     </>
   );
