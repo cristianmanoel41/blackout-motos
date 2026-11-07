@@ -261,13 +261,17 @@ export default function Pixel() {
   if (!MEDE || decidiu) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4">
-      <div className="cartao-3d mx-auto flex max-w-4xl flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
-        <p className="flex-1 text-sm leading-6 texto-suave">
-          Usamos cookies para entender quais motos são mais
-          vistas e mostrar nossos anúncios a quem procura
-          moto. Você pode recusar e continuar navegando
-          normalmente.{" "}
+    /*
+     * Uma barra fina, não um cartão: a tarja grande cobria os
+     * cards da moto na primeira visita - justo a primeira
+     * impressão. O que ela diz continua o mesmo: para que serve,
+     * onde ler mais, e recusar com o mesmo peso de aceitar.
+     */
+    <div className="fixed inset-x-0 bottom-0 z-50 px-3 pb-3">
+      <div className="cartao-3d mx-auto flex max-w-3xl items-center gap-3 rounded-xl px-4 py-2.5">
+        <p className="flex-1 text-xs leading-5 texto-suave">
+          Usamos cookies para saber quais motos são mais vistas
+          e para nossos anúncios.{" "}
           <Link
             href="/privacidade"
             className="font-bold texto-ouro underline"
@@ -277,11 +281,11 @@ export default function Pixel() {
           .
         </p>
 
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 gap-1.5">
           <button
             type="button"
             onClick={() => responder(false)}
-            className="botao-vidro rounded-full px-5 py-2.5 text-sm font-bold"
+            className="botao-vidro rounded-full px-3.5 py-2 text-xs font-bold"
           >
             Recusar
           </button>
@@ -289,7 +293,7 @@ export default function Pixel() {
           <button
             type="button"
             onClick={() => responder(true)}
-            className="botao-ouro rounded-full px-6 py-2.5 text-sm font-bold"
+            className="botao-ouro rounded-full px-4 py-2 text-xs font-bold"
           >
             Aceitar
           </button>
