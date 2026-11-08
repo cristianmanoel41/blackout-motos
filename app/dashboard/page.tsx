@@ -14,6 +14,7 @@ import { nomeAPartirDoEmail, primeiroNome } from '@/lib/dados/nome-do-usuario'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
 import LucroDoMes from './LucroDoMes'
+import LucroPorMes, { LucroPorMesCarregando } from './LucroPorMes'
 import DestaquesDoSite from './DestaquesDoSite'
 import styles from './dashboard.module.css'
 
@@ -215,6 +216,12 @@ export default async function DashboardPage() {
         * aniversario nao.
         */}
       <Aniversariantes />
+
+      {/* O lucro mês a mês, logo depois dos números do mês:
+          o card diz quanto, o gráfico diz se é bom. */}
+      <Suspense fallback={<LucroPorMesCarregando />}>
+        <LucroPorMes />
+      </Suspense>
 
       {/*
         * Quantas entraram e quantas sairam no mes.
