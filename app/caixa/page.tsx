@@ -7,6 +7,10 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { formatarData } from "@/lib/formatadores/data";
 import CampoMoeda from "@/components/CampoMoeda";
 import {
+  motosDosLancamentos,
+  type MotoDoLancamento,
+} from "@/lib/dados/moto-do-lancamento";
+import {
   EMPRESA_DESPACHANTE,
   EMPRESA_VISTORIA,
 } from "@/lib/dados/documentacao";
@@ -19,9 +23,34 @@ import {
   Clock,
   Minus,
   Plus,
+  Bike,
 } from "lucide-react";
 
 const supabase = createClient();
+
+/*
+ * A moto do lançamento, embaixo da descrição.
+ *
+ * Sem ela, "Pix" ou "Vistoria" no extrato não diziam de qual
+ * moto era o dinheiro. Clicar abre a ficha da moto.
+ */
+function MotoDoLancamentoChip({
+  moto,
+}: {
+  moto?: MotoDoLancamento;
+}) {
+  if (!moto) return null;
+
+  return (
+    <Link
+      href={`/motos/${moto.id}`}
+      className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-dourado/30 bg-dourado/10 px-2 py-0.5 text-xs font-semibold text-dourado transition hover:border-dourado"
+    >
+      <Bike size={13} />
+      {moto.nome}
+    </Link>
+  );
+}
 
 const origemLabel: Record<string, string> = {
   venda: "Venda",
@@ -49,6 +78,11 @@ function hoje() {
 
 export default function CaixaPage() {
   const [transacoes, setTransacoes] = useState<any[]>([]);
+  /* id do lançamento -> moto. Chega depois do extrato, para
+     não atrasar a tela. */
+  const [motos, setMotos] = useState<
+    Record<string, MotoDoLancamento>
+  >({});
   const [carregando, setCarregando] = useState(true);
 
 
@@ -178,6 +212,10 @@ export default function CaixaPage() {
     setTransacoes(data || []);
 
     setCarregando(false);
+
+    motosDosLancamentos(supabase, data || [])
+      .then(setMotos)
+      .catch((erroMotos) => console.error(erroMotos));
   }
 
   /*
@@ -1384,6 +1422,10 @@ export default function CaixaPage() {
                           {vencido ? " · atrasado" : ""}
                         </p>
 
+                        <MotoDoLancamentoChip
+                          moto={motos[grupo.itens[0].id]}
+                        />
+
                         {grupo.porMoto && (
                           <p className="mt-1 text-xs">
                             {Object.entries(
@@ -1693,6 +1735,8 @@ export default function CaixaPage() {
                           "Outro"}{" "}
                       · {formatarData(t.data)}
                     </p>
+
+                    <MotoDoLancamentoChip moto={motos[t.id]} />
                   </div>
                 </div>
 
