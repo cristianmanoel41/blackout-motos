@@ -68,6 +68,9 @@ type Moto = {
   possui_manual: boolean | null;
   possui_chave_reserva: boolean | null;
   unico_dono: boolean | null;
+  possui_financiamento?: boolean | null;
+  valor_quitacao?: number | null;
+  financeira_quitacao?: string | null;
 };
 
 /* Os mesmos itens marcados no cadastro, para ver e corrigir
@@ -890,6 +893,72 @@ export default function DetalheMotoPage() {
           />
 
         </div>
+
+        {/*
+          * A quitação, para conferir na ficha.
+          *
+          * Só leitura: ela é lançada no caixa quando a moto é
+          * cadastrada, e mudar o número aqui deixaria o caixa
+          * contando outro valor. O que sobra é o preço pago
+          * menos a quitação - a mesma conta do cadastro e do
+          * contrato -, e acompanha o valor de compra se ele for
+          * corrigido durante a edição.
+          */}
+        {moto.possui_financiamento &&
+          Number(moto.valor_quitacao) > 0 && (
+            <div className="mt-5 border-t border-grafite-claro pt-5">
+              <p className="mb-3 text-sm font-semibold text-white">
+                Financiamento quitado pela loja
+                {moto.financeira_quitacao
+                  ? ` · ${moto.financeira_quitacao}`
+                  : ""}
+              </p>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-xl border border-grafite-claro bg-preto p-4">
+                  <p className="text-xs text-texto-suave">
+                    Preço pago na moto
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-white">
+                    {formatarMoeda(form.valor_compra || 0)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-grafite-claro bg-preto p-4">
+                  <p className="text-xs text-texto-suave">
+                    Quitação ao banco
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-red-300">
+                    − {formatarMoeda(Number(moto.valor_quitacao))}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-dourado/40 bg-dourado/10 p-4">
+                  <p className="text-xs text-texto-suave">
+                    {moto.tipo_entrada === "troca"
+                      ? "Sobra como crédito na compra"
+                      : "Sobra para o cliente"}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-dourado">
+                    {formatarMoeda(
+                      Math.max(
+                        Number(form.valor_compra || 0) -
+                          Number(moto.valor_quitacao),
+                        0
+                      )
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {Number(moto.valor_quitacao) >
+                Number(form.valor_compra || 0) && (
+                <p className="mt-3 text-sm text-red-300">
+                  A quitação está maior que o preço pago na moto.
+                </p>
+              )}
+            </div>
+          )}
       </div>
 
       {/* FORNECEDOR */}

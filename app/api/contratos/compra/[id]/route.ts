@@ -417,7 +417,7 @@ export async function GET(
         valorTotalMoto
       )}, a quantia de ${moedaComSimbolo(
         valorQuitacao
-      )} será paga pela BLACKOUT MOTOS para a quitação do financiamento do veículo${
+      )} será paga pela loja para a quitação do financiamento do veículo${
         banco ? ` junto ao banco/financeira ${banco}` : ""
       }`;
 
