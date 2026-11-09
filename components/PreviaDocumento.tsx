@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Check,
   FileText,
+  Pencil,
   Printer,
+  RotateCcw,
 } from "lucide-react";
 
 function prepararHtmlDocumento(valor: string) {
@@ -238,6 +241,24 @@ export default function PreviaDocumento({
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
+  /*
+   * Editar o texto direto na folha, antes de imprimir.
+   *
+   * Para o ajuste de última hora - uma vírgula, um nome, uma
+   * frase da observação - sem precisar baixar o Word, mexer e
+   * imprimir de lá. Vale só para esta impressão: não muda o
+   * cadastro, nem o arquivo em Word, e some ao recarregar.
+   * Corrigir de vez é no cadastro da moto ou da venda.
+   *
+   * "versao" remonta a folha para desfazer tudo; "medida" faz
+   * a folha se medir de novo quando a edição acaba, porque o
+   * texto pode ter crescido.
+   */
+  const [editando, setEditando] = useState(false);
+  const [alterado, setAlterado] = useState(false);
+  const [versao, setVersao] = useState(0);
+  const [medida, setMedida] = useState(0);
+
   const folhaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -341,7 +362,7 @@ export default function PreviaDocumento({
 
       tamanho -= 0.5;
     }
-  }, [html, espalhar, fonte, entrelinha]);
+  }, [html, espalhar, fonte, entrelinha, medida, versao]);
 
   /*
    * A lista cabe numa folha só, apertando a linha.
@@ -377,7 +398,7 @@ export default function PreviaDocumento({
 
       altura -= 0.2;
     }
-  }, [html, variante]);
+  }, [html, variante, medida, versao]);
 
   return (
     <>
@@ -955,6 +976,19 @@ export default function PreviaDocumento({
           margin-left: 0 !important;
         }
 
+        /* O contorno da edição é só na tela. */
+        @media screen {
+          .editando-documento .documento-word {
+            outline: 2px dashed #e0b129;
+            outline-offset: 6mm;
+            cursor: text;
+          }
+
+          .editando-documento .documento-word:focus {
+            outline-style: solid;
+          }
+        }
+
         @media print {
           html,
           body {
@@ -1072,6 +1106,24 @@ export default function PreviaDocumento({
           </Link>
 
           <div className="flex flex-wrap gap-2">
+            {!erro && !carregando && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (editando) setMedida((n) => n + 1);
+                  setEditando(!editando);
+                }}
+                className={`inline-flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                  editando
+                    ? "border-dourado bg-dourado/15 text-dourado"
+                    : "border-grafite-claro bg-grafite text-texto hover:border-dourado hover:text-dourado"
+                }`}
+              >
+                {editando ? <Check size={17} /> : <Pencil size={17} />}
+                {editando ? "Concluir edição" : "Editar texto"}
+              </button>
+            )}
+
             <a
               href={url}
               className="inline-flex items-center gap-2 rounded-lg border border-grafite-claro bg-grafite px-4 py-3 text-sm font-semibold text-texto transition hover:border-dourado hover:text-dourado"
@@ -1082,7 +1134,17 @@ export default function PreviaDocumento({
 
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => {
+                /* Imprimir no meio da edição: mede antes, para
+                   o texto novo caber na folha. */
+                if (editando) {
+                  setEditando(false);
+                  setMedida((n) => n + 1);
+                  window.setTimeout(() => window.print(), 150);
+                  return;
+                }
+                window.print();
+              }}
               disabled={carregando || !!erro}
               className="inline-flex items-center gap-2 rounded-lg bg-dourado px-5 py-3 text-sm font-bold text-preto transition hover:bg-dourado-claro disabled:opacity-50"
             >
@@ -1093,6 +1155,38 @@ export default function PreviaDocumento({
         </div>
 
         {aviso}
+
+        {(editando || alterado) && (
+          <div className="no-print mx-auto mb-4 max-w-[21cm] px-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dourado/40 bg-dourado/10 px-4 py-3 text-sm text-texto">
+              <p className="leading-5">
+                {editando
+                  ? "Clique no texto da folha e corrija o que precisar. "
+                  : "Texto alterado nesta tela. "}
+                <span className="text-texto-suave">
+                  Vale só para imprimir / salvar PDF agora: não muda o
+                  cadastro nem o arquivo em Word, e some se recarregar a
+                  página.
+                </span>
+              </p>
+
+              {alterado && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditando(false);
+                    setAlterado(false);
+                    setVersao((n) => n + 1);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-grafite-claro bg-grafite px-3 py-2 text-xs font-semibold text-texto transition hover:border-dourado hover:text-dourado"
+                >
+                  <RotateCcw size={14} />
+                  Desfazer alterações
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {erro && (
           <div className="no-print mx-auto mb-6 max-w-[21cm] px-4">
@@ -1106,7 +1200,9 @@ export default function PreviaDocumento({
           ref={folhaRef}
           className={`folha-documento mx-auto min-h-[29.7cm] w-[21cm] max-w-full bg-white px-[2cm] py-[1.5cm] text-black shadow-2xl${
             espalhar ? " documento-espalhado" : ""
-          }${variante ? ` documento-${variante}` : ""}`}
+          }${variante ? ` documento-${variante}` : ""}${
+            editando ? " editando-documento" : ""
+          }`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -1124,7 +1220,12 @@ export default function PreviaDocumento({
 
           {!carregando && !erro && (
             <div
+              key={versao}
               className="documento-word"
+              contentEditable={editando}
+              suppressContentEditableWarning
+              spellCheck={editando}
+              onInput={() => setAlterado(true)}
               dangerouslySetInnerHTML={{ __html: html }}
             />
           )}
