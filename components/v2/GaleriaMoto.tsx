@@ -13,6 +13,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import Compartilhar from "@/components/v2/Compartilhar";
 
 /*
  * A galeria da ficha da moto.
@@ -43,9 +44,12 @@ export default function GaleriaMoto({
   midias,
   nome,
   mosaico = false,
+  textoCompartilhar,
 }: {
   midias: Midia[];
   nome: string;
+  /* Texto que acompanha o link ao compartilhar as fotos. */
+  textoCompartilhar?: string;
   /*
    * No computador, troca a foto única por uma vitrine de
    * quatro fotos lado a lado. As fotos da loja são tiradas em
@@ -78,6 +82,39 @@ export default function GaleriaMoto({
     },
     [total]
   );
+
+  /*
+   * Chegou pelo link compartilhado ("?fotos=3"): abre direto as
+   * fotos em tela cheia, na foto que quem mandou estava vendo.
+   *
+   * O "?fotos" sai do endereço logo em seguida - senão, ao
+   * recarregar a página, as fotos abririam de novo sozinhas.
+   */
+  useEffect(() => {
+    const parametros = new URLSearchParams(window.location.search);
+    if (!parametros.has("fotos") || total === 0) return;
+
+    const numero = Number(parametros.get("fotos"));
+    const posicao =
+      Number.isInteger(numero) && numero >= 1 && numero <= total
+        ? numero - 1
+        : 0;
+
+    parametros.delete("fotos");
+    const resto = parametros.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${resto ? `?${resto}` : ""}`
+    );
+
+    // Abrir a tela cheia ao chegar é o objetivo do link.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIndice(posicao);
+    setCheia(true);
+    // Só na chegada à página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* A miniatura da foto aberta fica sempre à vista. */
   useEffect(() => {
@@ -478,6 +515,13 @@ export default function GaleriaMoto({
             </span>
 
             <div className="flex shrink-0 items-center gap-2">
+              <Compartilhar
+                compacto
+                titulo={nome}
+                texto={textoCompartilhar || `Olha essa ${nome}`}
+                foto={indice + 1}
+              />
+
               {atual.tipo === "foto" && (
                 <button
                   type="button"

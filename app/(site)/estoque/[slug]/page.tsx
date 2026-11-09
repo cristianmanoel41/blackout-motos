@@ -252,7 +252,8 @@ export default async function MotoPage({
 
       <EventoMoto id={moto.id} nome={nome} preco={preco} />
 
-      <nav aria-label="Caminho" className="mb-5 flex items-center gap-1.5 text-[13px] suave">
+      <div className="mb-5 flex items-center justify-between gap-3">
+      <nav aria-label="Caminho" className="flex min-w-0 items-center gap-1.5 text-[13px] suave">
         <Link href="/estoque" className="inline-flex min-h-10 items-center gap-1.5 font-semibold hover:text-white">
           <ArrowLeft size={15} />
           Estoque
@@ -261,9 +262,25 @@ export default async function MotoPage({
         <span className="truncate claro">{nome}</span>
       </nav>
 
+      {/* Bem à vista, em cima das fotos: o link abre direto
+          as fotos desta moto para quem recebe. */}
+      <Compartilhar
+        titulo={`${nome} ${ano}`}
+        texto={`${nome} ${ano} por ${precoDaMoto(moto)} na ${LOJA.nome}`}
+        foto={1}
+        rotulo="Compartilhar fotos"
+        className="!min-h-10 shrink-0 !rounded-full !px-4 !py-2 text-[13px]"
+      />
+      </div>
+
       {/* No computador a vitrine de fotos ocupa a largura toda;
           no celular continua o carrossel de arrastar. */}
-      <GaleriaMoto midias={midias} nome={`${nome} ${ano}`} mosaico />
+      <GaleriaMoto
+        midias={midias}
+        nome={`${nome} ${ano}`}
+        textoCompartilhar={`${nome} ${ano} por ${precoDaMoto(moto)} na ${LOJA.nome}`}
+        mosaico
+      />
 
       <div className="mt-7 grid gap-7 lg:mt-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:gap-10">
         <section className="min-w-0 lg:order-2">
@@ -337,6 +354,7 @@ export default async function MotoPage({
                 <Compartilhar
                   titulo={`${nome} ${ano}`}
                   texto={`${nome} ${ano} por ${precoDaMoto(moto)} na ${LOJA.nome}`}
+                  foto={1}
                 />
 
                 <a
