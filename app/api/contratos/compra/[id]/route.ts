@@ -390,9 +390,58 @@ export async function GET(
         }, proprietário(a) que autoriza esta venda e assina a procuração para a transferência do veículo.`
       : "";
 
+    /*
+     * Moto com financiamento para quitar.
+     *
+     * O recibo diz que o VENDEDOR recebeu o valor total da moto,
+     * mas parte dele vai para o banco. A observação separa as
+     * duas coisas: quanto a loja paga de quitação e quanto sobra
+     * para o cliente - para ninguém achar depois que recebeu (ou
+     * deixou de receber) o valor cheio.
+     *
+     * Os números são os do cadastro da moto (valor_compra e
+     * valor_quitacao), os mesmos que o caixa usa.
+     */
+    const valorQuitacao = moto.possui_financiamento
+      ? Number(moto.valor_quitacao) || 0
+      : 0;
+
+    let clausulaQuitacao = "";
+
+    if (valorQuitacao > 0) {
+      const valorTotalMoto = Number(moto.valor_compra) || 0;
+      const saldo = Math.max(valorTotalMoto - valorQuitacao, 0);
+      const banco = String(moto.financeira_quitacao || "").trim();
+
+      const pagamentoQuitacao = `Do valor total de ${moedaComSimbolo(
+        valorTotalMoto
+      )}, a quantia de ${moedaComSimbolo(
+        valorQuitacao
+      )} será paga pela BLACKOUT MOTOS para a quitação do financiamento do veículo${
+        banco ? ` junto ao banco/financeira ${banco}` : ""
+      }`;
+
+      if (moto.tipo_entrada === "troca") {
+        clausulaQuitacao =
+          saldo > 0
+            ? `${pagamentoQuitacao}, e o saldo de ${moedaComSimbolo(
+                saldo
+              )} foi utilizado como parte do pagamento.`
+            : `${pagamentoQuitacao}, não restando saldo a favor do VENDEDOR.`;
+      } else {
+        clausulaQuitacao =
+          saldo > 0
+            ? `${pagamentoQuitacao}, e o valor restante de ${moedaComSimbolo(
+                saldo
+              )} será repassado ao VENDEDOR.`
+            : `${pagamentoQuitacao}, não restando valor a ser repassado ao VENDEDOR.`;
+      }
+    }
+
     // o modelo já fecha a frase com ponto
     const observacoesContrato = [
       clausulaProprietario,
+      clausulaQuitacao,
       descricaoTroca,
       moto.observacoes || "",
     ]
