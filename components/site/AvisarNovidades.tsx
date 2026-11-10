@@ -118,7 +118,7 @@ export default function AvisarNovidades({
             <Check size={26} className="texto-ouro" />
           </span>
 
-          <h2 className="mt-5 text-2xl font-black uppercase texto-claro">
+          <h2 className="mt-5 text-2xl font-bold tracking-tight texto-claro">
             Pronto, {nome.trim().split(" ")[0]}!
           </h2>
 
@@ -140,7 +140,7 @@ export default function AvisarNovidades({
             <BellRing size={22} className="texto-ouro" />
           </span>
 
-          <h2 className="mt-5 text-2xl font-black uppercase leading-tight texto-claro sm:text-3xl">
+          <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight texto-claro sm:text-3xl">
             {/*
              * No estoque a pergunta cabe: a pessoa acabou de
              * procurar. Na home ela ainda não procurou nada, e

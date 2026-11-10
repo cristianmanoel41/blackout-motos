@@ -13,14 +13,14 @@
  *   - menos "luz" de fundo: a foto da moto é que tem que brilhar.
  */
 
-.v2 {
+.site-blackout.v2 {
   --linha: rgba(255, 255, 255, 0.07);
   --v4-superficie: #101012;
 }
 
 /* ---------- Títulos ---------- */
 
-.v2 .titulo {
+.site-blackout.v2 .titulo {
   font-family: var(--fonte-site), system-ui, sans-serif;
   font-weight: 700;
   text-transform: none;
@@ -28,7 +28,7 @@
   line-height: 1.05;
 }
 
-.v2 .rotulo {
+.site-blackout.v2 .rotulo {
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.16em;
@@ -36,7 +36,7 @@
 
 /* ---------- Cartões ---------- */
 
-.v2 .vidro {
+.site-blackout.v2 .vidro {
   background: var(--v4-superficie);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
@@ -44,59 +44,60 @@
 }
 
 @media (hover: hover) {
-  .v2 .vidro-sobe:hover {
+  .site-blackout.v2 .vidro-sobe:hover {
     transform: translateY(-3px);
     border-color: rgba(255, 255, 255, 0.16);
     box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.9);
   }
 
-  .v2 .vidro:hover .zoom img {
+  .site-blackout.v2 .vidro:hover .zoom img {
     transform: scale(1.03);
   }
 }
 
 /* ---------- Botões ---------- */
 
-.v2 .botao-ouro {
-  background: var(--ouro);
-  color: #0d0c08;
+/* O site.css antigo pinta o botão com !important; aqui também. */
+.site-blackout.v2 .botao-ouro {
+  background: var(--ouro) !important;
+  color: #0d0c08 !important;
   font-weight: 700;
-  border: 1px solid transparent;
-  box-shadow: none;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
 }
 
-.v2 .botao-ouro::after {
+.site-blackout.v2 .botao-ouro::after {
   display: none;
 }
 
 @media (hover: hover) {
-  .v2 .botao-ouro:hover {
+  .site-blackout.v2 .botao-ouro:hover {
     filter: none;
-    background: #ecc03f;
+    background: #ecc03f !important;
     transform: none;
-    box-shadow: 0 10px 30px -12px rgba(224, 177, 41, 0.55);
+    box-shadow: 0 10px 30px -12px rgba(224, 177, 41, 0.55) !important;
   }
 
-  .v2 .botao-vidro:hover {
+  .site-blackout.v2 .botao-vidro:hover {
     border-color: rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.07);
     transform: none;
   }
 }
 
-.v2 .botao-vidro {
+.site-blackout.v2 .botao-vidro {
   border-color: rgba(255, 255, 255, 0.14);
   font-weight: 600;
 }
 
-.v2 .pilula,
-.v2 .cartao-cc {
+.site-blackout.v2 .pilula,
+.site-blackout.v2 .cartao-cc {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.1);
   font-weight: 600;
 }
 
-.v2 .pilula-ligada {
+.site-blackout.v2 .pilula-ligada {
   background: var(--ouro);
 }
 
@@ -104,11 +105,43 @@
 
 /* A luz que respira e o grão saem: fundo liso deixa a foto
    da moto ser a única coisa com brilho na tela. */
-.v2 .brasa {
+.site-blackout.v2 .brasa {
   opacity: 0.45;
   animation: none;
 }
 
-.v2 .grao::before {
+.site-blackout.v2 .grao::before {
   display: none;
+}
+
+/* ---------- Peças novas do v4 ---------- */
+
+.site-blackout.v2 .v4-selo {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5e5e8;
+  backdrop-filter: blur(10px);
+}
+
+/* Título em caixa alta escrito à mão nos componentes: no v4
+   todo título fica em caixa normal, igual ao .titulo. */
+.site-blackout.v2 :is(h1, h2, h3).uppercase {
+  text-transform: none;
+  letter-spacing: -0.025em;
+}
+
+/* Cabeçalho mais leve: menos opaco, linha mais fina. */
+.site-blackout.v2 > header,
+.site-blackout.v2 header.sticky {
+  background: rgba(9, 9, 11, 0.72);
+  backdrop-filter: saturate(160%) blur(18px);
+  -webkit-backdrop-filter: saturate(160%) blur(18px);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Faixas de seção sem o fundo de outro tom e sem a borda: o
+   ritmo vem do espaço entre os blocos, não de listras. */
+.site-blackout.v2 main > section.border-y {
+  border-color: transparent;
+  background: transparent;
 }

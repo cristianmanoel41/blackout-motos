@@ -43,11 +43,7 @@ const ITENS = [
 
 export default function Diferenciais() {
   return (
-    <section className="grao relative border-y border-white/[.07] bg-[#0c0c10]">
-      <span
-        className="brasa h-[30rem] w-[30rem]"
-        style={{ top: "-14rem", left: "-10rem" }}
-      />
+    <section className="relative">
 
       <div className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
         <AoEntrar>
@@ -65,21 +61,27 @@ export default function Diferenciais() {
           </p>
         </AoEntrar>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* v4: sem caixa em volta de cada item - uma linha só,
+            separada por fios finos, lida de uma vez. */}
+        <div className="mt-10 grid overflow-hidden rounded-[18px] border border-white/[.08] sm:grid-cols-2 lg:grid-cols-4">
           {ITENS.map(({ Icone, titulo, texto }, i) => (
             <AoEntrar key={titulo} atraso={i * 90}>
-              <div className="vidro vidro-sobe h-full px-6 py-8 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#e0b129]/10 ring-1 ring-[#e0b129]/25">
-                  <Icone size={24} className="ouro" />
+              <div
+                className={`h-full border-white/[.08] bg-white/[.015] px-6 py-8 ${
+                  i < ITENS.length - 1 ? "max-sm:border-b" : ""
+                } ${i < 2 ? "sm:max-lg:border-b" : ""} ${
+                  i % 2 === 0 ? "sm:max-lg:border-r" : ""
+                } ${i < ITENS.length - 1 ? "lg:border-r" : ""}`}
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0b129]/10">
+                  <Icone size={21} className="ouro" />
                 </span>
 
-                <h3 className="titulo mt-5 text-[1.05rem] claro">
+                <h3 className="mt-5 text-lg font-semibold tracking-tight claro">
                   {titulo}
                 </h3>
 
-                <p className="mt-2 text-[13px] leading-6 suave">
-                  {texto}
-                </p>
+                <p className="mt-1 text-sm suave">{texto}</p>
               </div>
             </AoEntrar>
           ))}

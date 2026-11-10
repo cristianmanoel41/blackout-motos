@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Camera, ClipboardCheck, Zap } from "lucide-react";
 import { linkWhatsApp } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 import AoEntrar from "@/components/v2/AoEntrar";
@@ -22,21 +22,18 @@ export default function CompramosSuaMoto() {
   return (
     <section className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
       <AoEntrar>
-        <div className="vidro grao relative overflow-hidden px-6 py-12 text-center sm:px-10 lg:py-16">
-          <span
-            className="brasa h-[28rem] w-[28rem]"
-            style={{ top: "-14rem", left: "50%", marginLeft: "-14rem" }}
-          />
-
+        {/* v4: texto à esquerda, o caminho em três passos à
+            direita - quem quer vender vê na hora como funciona. */}
+        <div className="vidro relative grid gap-10 overflow-hidden px-6 py-12 sm:px-10 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:px-14 lg:py-16">
           <div className="relative">
             <p className="rotulo">Avaliação sem compromisso</p>
 
-            <h2 className="titulo mx-auto mt-4 max-w-2xl text-[clamp(1.9rem,5vw,3rem)] claro">
+            <h2 className="titulo mt-4 max-w-2xl text-[clamp(1.9rem,5vw,3rem)] claro">
               Compramos sua moto.{" "}
               <span className="ouro">Pagamento no PIX.</span>
             </h2>
 
-            <p className="mx-auto mt-4 max-w-lg text-sm leading-7 suave sm:text-base">
+            <p className="mt-4 max-w-lg text-sm leading-7 suave sm:text-base">
               Venda com segurança, avaliação justa e dinheiro na
               conta no mesmo dia.
             </p>
@@ -52,6 +49,28 @@ export default function CompramosSuaMoto() {
               <ArrowRight size={16} />
             </a>
           </div>
+
+          <ol className="relative space-y-3">
+            {[
+              { Icone: Camera, titulo: "Mande fotos no WhatsApp", texto: "Moto, painel com a km e o documento." },
+              { Icone: ClipboardCheck, titulo: "Receba a avaliação", texto: "Proposta justa, sem compromisso." },
+              { Icone: Zap, titulo: "Dinheiro no PIX", texto: "Fechou, cai na conta no mesmo dia." },
+            ].map(({ Icone, titulo, texto }, i) => (
+              <li
+                key={titulo}
+                className="flex items-start gap-4 rounded-2xl border border-white/[.08] bg-white/[.02] p-4 sm:p-5"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e0b129]/10">
+                  <Icone size={20} className="ouro" />
+                </span>
+                <span>
+                  <span className="block text-xs font-semibold suave">Passo {i + 1}</span>
+                  <span className="block text-base font-semibold claro">{titulo}</span>
+                  <span className="block text-sm suave">{texto}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       </AoEntrar>
     </section>

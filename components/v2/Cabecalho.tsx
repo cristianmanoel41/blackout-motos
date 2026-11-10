@@ -44,7 +44,7 @@ export default function Cabecalho({
       <AoRolar />
 
       <div className="relative mx-auto max-w-[1400px]">
-        <div className="barra flex items-center gap-1.5 px-4 py-3 min-[390px]:gap-2 sm:gap-4 sm:px-6">
+        <div className="barra flex items-center gap-1.5 px-4 py-2.5 min-[390px]:gap-2 sm:gap-4 sm:px-6">
           <Link
             href={INICIO}
             className="shrink-0"
@@ -56,7 +56,7 @@ export default function Cabecalho({
               width={995}
               height={425}
               priority
-              className="h-7 w-auto min-[390px]:h-9 sm:h-12"
+              className="h-7 w-auto min-[390px]:h-8 sm:h-10"
             />
           </Link>
 
