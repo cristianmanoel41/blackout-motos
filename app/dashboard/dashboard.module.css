@@ -599,3 +599,18 @@ details.panel:not([open]) > .resumoPainel {
     filter: brightness(1.08);
   }
 }
+
+/* v4: o topo do painel é só a saudação, sem faixa com foto. */
+.hero {
+  min-height: 0;
+  padding: 4px 0 !important;
+  border: 0;
+  background: none;
+}
+
+@media (max-width: 767px) {
+  .hero {
+    min-height: 0;
+    background: none;
+  }
+}

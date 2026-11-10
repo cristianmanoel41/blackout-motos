@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, Search } from 'lucide-react'
 import Sidebar from '@/components/Sidebar'
 import BuscaRapida from '@/components/v4/BuscaRapida'
+import { BarraDeBaixo, BotaoNovo } from '@/components/v4/AcoesRapidas'
 import { ITENS_DO_MENU, itemAtivo } from '@/components/v4/menu'
 import styles from './AppShell.module.css'
 
@@ -207,6 +208,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       <BuscaRapida aberta={buscaAberta} aoFechar={() => setBuscaAberta(false)} />
+      <BarraDeBaixo aoBuscar={() => setBuscaAberta(true)} />
 
       <main
         className={`relative z-10 min-h-screen w-full ${
@@ -245,6 +247,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="hidden md:inline">Buscar moto, placa, cliente...</span>
             <kbd className="ml-auto hidden rounded border border-white/10 px-1.5 text-[10.5px] md:inline">Ctrl K</kbd>
           </button>
+          <BotaoNovo />
         </header>
 
         {/*

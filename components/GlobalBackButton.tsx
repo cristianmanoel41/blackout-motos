@@ -43,6 +43,7 @@ export default function GlobalBackButton() {
   return (
     <button
       onClick={handleBack}
+      data-voltar
       style={{
         position: "fixed",
         bottom: "20px",

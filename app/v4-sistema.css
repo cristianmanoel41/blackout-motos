@@ -335,3 +335,59 @@
   width: auto !important;
   justify-content: flex-start !important;
 }
+
+/* ---------- "+ Novo" e a barra de baixo do celular ---------- */
+
+[data-v4] [data-v4-novo] {
+  background: var(--v4-ouro);
+  color: #0b0b0c;
+}
+
+[data-v4] [data-v4-novo]:hover {
+  background: #ecc03f;
+}
+
+[data-v4] [data-v4-flutuante] {
+  background: #141416;
+  border: 1px solid var(--v4-borda-forte);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+[data-v4] nav[data-v4-abas] {
+  background: rgba(12, 12, 14, 0.86);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border-top: 1px solid var(--v4-borda);
+}
+
+[data-v4] nav[data-v4-abas] :is(a, button) {
+  color: #8b8b94;
+}
+
+[data-v4] nav[data-v4-abas] a[data-ativo] {
+  color: #ffffff;
+}
+
+[data-v4] nav[data-v4-abas] a[data-ativo] svg {
+  color: var(--v4-ouro);
+}
+
+/* No celular o Voltar sobe para não cobrir a barra de baixo. */
+@media (max-width: 767px) {
+  body:has([data-v4-abas]) button[data-voltar] {
+    bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+    right: 14px !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* O tema antigo põe todo filho do <main> em "relative, z-index 1",
+   sem camada - vence o sticky e o z-30 do Tailwind. A barra do topo
+   precisa ficar presa e por cima, ou o menu "+ Novo" abre por trás
+   dos cartões. */
+:root [data-v4] main > header[data-v4-topo] {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
