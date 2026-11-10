@@ -309,6 +309,9 @@ export async function middleware(request: NextRequest) {
     /* A copia dos eventos do pixel para o Meta (API de
        Conversoes): tambem vem de visitante sem login. */
     caminho.startsWith('/api/meta/evento') ||
+    /* O chat "Ache sua moto" do site: quem pergunta e
+       visitante. So le o estoque publico (ver a rota). */
+    caminho === '/api/chat-estoque' ||
     /* O Meta busca o catalogo sozinho, sem login. */
     caminho.startsWith('/api/meta/catalogo') ||
     caminho === '/catalogo.xml' ||

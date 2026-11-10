@@ -14,6 +14,7 @@ import LuzDoMouse from "@/components/site/LuzDoMouse";
 import { scriptDoWhatsApp } from "@/components/site/medicao";
 import Cabecalho from "@/components/v2/Cabecalho";
 import Rodape from "@/components/v2/Rodape";
+import ChatEstoque from "@/components/v4/ChatEstoque";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import { avaliacoesDoGoogle } from "@/lib/dados/avaliacoes-google";
 import { anoDaMoto, nomeDaMoto } from "@/lib/dados/moto-site";
@@ -243,6 +244,12 @@ export default async function SiteLayout({
       {children}
 
       <Rodape />
+
+      {/*
+        * "Ache sua moto": o chat que procura no estoque de hoje
+        * pelo que a pessoa escreve ("até 20 mil", "automática").
+        */}
+      <ChatEstoque />
 
       {/*
         * A contagem de acessos, da propria Vercel.
