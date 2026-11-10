@@ -1,0 +1,337 @@
+/*
+ * SISTEMA v4 - ESCURO PREMIUM, MAIS LIMPO
+ *
+ * Vem depois do blackout-brand-final.css e vale só dentro do
+ * painel ([data-v4], no AppShell). A receita antiga dava relevo
+ * a tudo: degradê, fio dourado em cima, risco dourado embaixo,
+ * sombra larga, brilho no hover. Quando tudo brilha, nada se
+ * destaca. Aqui:
+ *
+ *   - superfícies lisas, separadas por borda fina, não sombra;
+ *   - o dourado só no que é ação ou está selecionado;
+ *   - uma letra (Inter) com números de largura fixa, para as
+ *     colunas de dinheiro alinharem;
+ *   - cantos de 14px no cartão, 10px no campo e no botão.
+ *
+ * Nada aqui muda o que a tela faz - é só aparência.
+ */
+
+[data-v4] {
+  --v4-fundo: #09090b;
+  --v4-superficie: #111113;
+  --v4-superficie-2: #18181b;
+  --v4-borda: rgba(255, 255, 255, 0.07);
+  --v4-borda-forte: rgba(255, 255, 255, 0.12);
+  --v4-texto: #ededef;
+  --v4-suave: #9b9ba3;
+  --v4-ouro: #e0b129;
+  --v4-ouro-fundo: rgba(224, 177, 41, 0.1);
+
+  font-family: var(--fonte-site), Inter, system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  background: var(--v4-fundo) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root [data-v4] main {
+  background:
+    radial-gradient(1200px 400px at 70% -120px, rgba(224, 177, 41, 0.05), transparent 70%),
+    var(--v4-fundo) !important;
+}
+
+[data-v4] :where(td, th, .tabular, [class*='text-2xl'], [class*='text-3xl']) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Menu lateral ---------- */
+
+[data-v4] aside[data-v4-menu] {
+  background: #0c0c0e !important;
+  border-right: 1px solid var(--v4-borda) !important;
+  box-shadow: none !important;
+}
+
+[data-v4] aside[data-v4-menu] > div[data-v4-logo] {
+  height: 64px !important;
+  min-height: 64px !important;
+  padding: 0 20px !important;
+  background: transparent !important;
+}
+
+[data-v4] aside[data-v4-menu] [data-v4-grupo] {
+  color: rgba(255, 255, 255, 0.32) !important;
+}
+
+[data-v4] aside[data-v4-menu] nav a {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #a1a1aa !important;
+  transform: none !important;
+  transition: background-color 0.12s ease, color 0.12s ease !important;
+}
+
+[data-v4] aside[data-v4-menu] nav a svg {
+  color: #71717a !important;
+}
+
+[data-v4] aside[data-v4-menu] nav a:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-v4] aside[data-v4-menu] nav a[data-ativo] {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  box-shadow: inset 2px 0 0 var(--v4-ouro) !important;
+}
+
+[data-v4] aside[data-v4-menu] nav a[data-ativo] svg {
+  color: var(--v4-ouro) !important;
+}
+
+[data-v4] aside[data-v4-menu] [data-v4-rodape] {
+  border-top: 1px solid var(--v4-borda);
+}
+
+[data-v4] aside[data-v4-menu] [data-v4-rodape] button {
+  color: #71717a !important;
+}
+
+[data-v4] aside[data-v4-menu] [data-v4-rodape] button:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-v4] aside[data-v4-menu] [data-v4-rodape] button[data-sair]:hover {
+  color: #f87171 !important;
+}
+
+/* ---------- Barra do topo ---------- */
+
+[data-v4] header[data-v4-topo] {
+  background: rgba(9, 9, 11, 0.72);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--v4-borda);
+}
+
+[data-v4] [data-v4-botao-busca] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--v4-borda) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+[data-v4] [data-v4-botao-busca]:hover {
+  border-color: var(--v4-borda-forte) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-v4] [data-v4-busca] {
+  background: #141416;
+  border: 1px solid var(--v4-borda-forte);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+
+:root [data-v4] input[data-v4-busca-campo] {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  height: 56px;
+}
+
+
+/* ---------- Cartões ---------- */
+
+:root [data-v4] main .bg-grafite,
+:root [data-v4] main section.rounded-xl,
+:root [data-v4] main section.rounded-2xl,
+:root [data-v4] main div.rounded-xl.border,
+:root [data-v4] main div.rounded-2xl.border,
+:root [data-v4] main form.rounded-xl,
+:root [data-v4] main form.rounded-2xl {
+  background: var(--v4-superficie) !important;
+  border-color: var(--v4-borda) !important;
+  box-shadow: none !important;
+  border-radius: 14px !important;
+}
+
+:root [data-v4] main .bg-grafite::before,
+:root [data-v4] main .bg-grafite::after,
+:root [data-v4] main section.rounded-xl::before,
+:root [data-v4] main section.rounded-xl::after,
+:root [data-v4] main section.rounded-2xl::before,
+:root [data-v4] main section.rounded-2xl::after,
+:root [data-v4] main div.rounded-xl.border::before,
+:root [data-v4] main div.rounded-xl.border::after,
+:root [data-v4] main div.rounded-2xl.border::before,
+:root [data-v4] main div.rounded-2xl.border::after,
+:root [data-v4] main form.rounded-xl::before,
+:root [data-v4] main form.rounded-xl::after,
+:root [data-v4] main form.rounded-2xl::before,
+:root [data-v4] main form.rounded-2xl::after {
+  content: none !important;
+}
+
+:root [data-v4] main .bg-grafite:hover,
+:root [data-v4] main section.rounded-xl:hover,
+:root [data-v4] main section.rounded-2xl:hover,
+:root [data-v4] main div.rounded-xl.border:hover,
+:root [data-v4] main div.rounded-2xl.border:hover {
+  border-color: var(--v4-borda-forte) !important;
+  box-shadow: none !important;
+}
+
+/* Cartão dentro de cartão: um tom acima, para separar. */
+:root [data-v4] main :is(section, div.border, form).rounded-xl :is(section, div.border).rounded-xl,
+:root [data-v4] main :is(section, div.border, form).rounded-2xl :is(section, div.border).rounded-xl,
+:root [data-v4] main .bg-grafite-claro {
+  background: var(--v4-superficie-2) !important;
+}
+
+/* Texto */
+
+:root [data-v4] main h1 {
+  letter-spacing: -0.025em;
+}
+
+:root [data-v4] main h2,
+:root [data-v4] main h3 {
+  letter-spacing: -0.015em;
+}
+
+/* ---------- Campos ---------- */
+
+:root [data-v4] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+:root [data-v4] select,
+:root [data-v4] textarea {
+  background: #0c0c0e !important;
+  border: 1px solid var(--v4-borda-forte) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease !important;
+}
+
+:root [data-v4] input:not([type='checkbox']):not([type='radio']):hover,
+:root [data-v4] select:hover,
+:root [data-v4] textarea:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+:root [data-v4] input:focus,
+:root [data-v4] select:focus,
+:root [data-v4] textarea:focus {
+  outline: none !important;
+  border-color: rgba(224, 177, 41, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(224, 177, 41, 0.14) !important;
+}
+
+:root [data-v4] input[type='checkbox'],
+:root [data-v4] input[type='radio'] {
+  accent-color: var(--v4-ouro);
+}
+
+/* ---------- Tabelas ---------- */
+
+:root:root [data-v4] main thead {
+  background: transparent !important;
+}
+
+:root:root [data-v4] main thead th {
+  color: #71717a !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--v4-borda) !important;
+}
+
+:root [data-v4] tbody tr {
+  border-color: var(--v4-borda) !important;
+  transition: background-color 0.1s ease;
+}
+
+:root [data-v4] tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025) !important;
+}
+
+/* ---------- Botões ---------- */
+
+:root:root [data-v4] main button.bg-dourado,
+:root:root [data-v4] main a.bg-dourado,
+:root:root [data-v4] main button.bg-yellow-500,
+:root:root [data-v4] main a.bg-yellow-500,
+:root:root [data-v4] main button.bg-yellow-400,
+:root:root [data-v4] main a.bg-yellow-400 {
+  background: var(--v4-ouro) !important;
+  color: #0b0b0c !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+}
+
+:root:root [data-v4] main button.bg-dourado:hover,
+:root:root [data-v4] main a.bg-dourado:hover,
+:root:root [data-v4] main button.bg-yellow-500:hover,
+:root:root [data-v4] main a.bg-yellow-500:hover {
+  background: #ecc03f !important;
+}
+
+:root [data-v4] main button:focus-visible,
+:root [data-v4] main a:focus-visible {
+  outline: 2px solid rgba(224, 177, 41, 0.7);
+  outline-offset: 2px;
+}
+
+:root [data-v4] main button:active,
+:root [data-v4] main a[class*='bg-dourado']:active {
+  transform: scale(0.985) !important;
+}
+
+/* Rolagem mais discreta dentro do painel. */
+[data-v4] ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-v4] ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- Hierarquia do texto ----------
+ *
+ * O painel antigo punha TUDO em negrito (700, com !important),
+ * e a mesma cor em tudo. Sem diferença de peso, título e texto
+ * se confundem. No v4 o AppShell não usa mais aquela regra:
+ * valem os pesos de cada tela (font-bold, font-black...), e o
+ * texto sem peso definido fica no normal.
+ */
+
+[data-v4] {
+  color: var(--v4-texto);
+}
+
+:root [data-v4] :is(button, a) {
+  font-weight: 500;
+}
+
+:root [data-v4] .text-black,
+:root [data-v4] [class~='text-black'] {
+  color: var(--v4-texto) !important;
+}
+
+:root [data-v4] :is(input, textarea)::placeholder {
+  color: #6b6b74 !important;
+}
+
+/* O título da tela: maior e mais firme que o resto. */
+:root [data-v4] main > div > :first-child h1 {
+  font-weight: 700;
+}
+
+/* Logo do menu à esquerda, pequena, sem as regras antigas de
+   190px centralizada. */
+:root [data-v4] aside[data-v4-menu] > div[data-v4-logo] a[href='/dashboard'] {
+  width: auto !important;
+  justify-content: flex-start !important;
+}

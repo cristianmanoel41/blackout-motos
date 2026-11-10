@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { Menu, Search } from 'lucide-react'
 import Sidebar from '@/components/Sidebar'
+import BuscaRapida from '@/components/v4/BuscaRapida'
+import { ITENS_DO_MENU, itemAtivo } from '@/components/v4/menu'
 import styles from './AppShell.module.css'
 
 /*
@@ -138,6 +141,20 @@ function useMenuRecolhido() {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [recolhido, mudarMenu] = useMenuRecolhido()
+  const [menuAberto, setMenuAberto] = useState(false)
+  const [buscaAberta, setBuscaAberta] = useState(false)
+
+  /* Ctrl+K (ou Cmd+K no Mac) abre a busca de qualquer tela. */
+  useEffect(() => {
+    function tecla(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setBuscaAberta((a) => !a)
+      }
+    }
+    window.addEventListener('keydown', tecla)
+    return () => window.removeEventListener('keydown', tecla)
+  }, [])
 
   /*
    * Telas que nao sao do sistema: o site da loja, a vitrine
@@ -181,19 +198,55 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`${styles.legibilidade} relative min-h-screen bg-[#0a0a0c]`}>
+    <div data-v4 className="relative min-h-screen bg-[#0a0a0c]">
       <Sidebar
         recolhido={recolhido}
         aoRecolher={mudarMenu}
+        aberto={menuAberto}
+        aoFechar={() => setMenuAberto(false)}
       />
 
+      <BuscaRapida aberta={buscaAberta} aoFechar={() => setBuscaAberta(false)} />
+
       <main
-        className={`relative z-10 min-h-screen w-full pt-16 md:pt-0 ${
+        className={`relative z-10 min-h-screen w-full ${
           recolhido
             ? 'md:ml-[76px] md:w-[calc(100%-76px)]'
             : 'md:ml-64 md:w-[calc(100%-16rem)]'
         }`}
       >
+        {/*
+          * A barra do topo: o nome da tela, a busca e, no
+          * celular, o botão do menu. Fica presa no alto e com
+          * fundo translúcido, para a tela rolar por baixo.
+          */}
+        <header data-v4-topo className="sticky top-0 z-30 flex h-14 items-center gap-3 px-4 md:px-6">
+          <button
+            type="button"
+            onClick={() => setMenuAberto(true)}
+            className="-ml-1 rounded-lg p-2 text-white/70 hover:bg-white/5 md:hidden"
+            aria-label="Abrir menu"
+          >
+            <Menu size={20} />
+          </button>
+
+          <p className="truncate text-sm font-semibold text-white/90">
+            {ITENS_DO_MENU.find((i) => itemAtivo(pathname, i.href))?.label ||
+              (pathname.startsWith('/motos/') ? 'Ficha da moto' : 'Blackout Motos')}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setBuscaAberta(true)}
+            data-v4-botao-busca
+            className="ml-auto flex h-9 items-center gap-2 rounded-lg px-3 text-[13px] text-white/45 md:w-72"
+          >
+            <Search size={15} />
+            <span className="hidden md:inline">Buscar moto, placa, cliente...</span>
+            <kbd className="ml-auto hidden rounded border border-white/10 px-1.5 text-[10.5px] md:inline">Ctrl K</kbd>
+          </button>
+        </header>
+
         {/*
           * pb-28: o botao de voltar e fixo no canto de baixo
           * e cobriria a ultima linha de qualquer tela

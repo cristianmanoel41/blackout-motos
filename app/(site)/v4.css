@@ -1,0 +1,114 @@
+/*
+ * SITE v4 - ESCURO PREMIUM, MAIS LIMPO
+ *
+ * Vem por último na moldura do site e só ajusta a aparência do
+ * que o v2 já desenha - nenhuma regra de negócio, nenhum texto.
+ * A mesma receita do sistema v4:
+ *
+ *   - cartão liso com borda fina, sem moldura dupla nem brilho
+ *     dourado em volta;
+ *   - título em caixa normal, mais justo: caixa alta em toda
+ *     manchete é o que deixava o site com cara de panfleto;
+ *   - botão dourado chapado, sem o reflexo que atravessa;
+ *   - menos "luz" de fundo: a foto da moto é que tem que brilhar.
+ */
+
+.v2 {
+  --linha: rgba(255, 255, 255, 0.07);
+  --v4-superficie: #101012;
+}
+
+/* ---------- Títulos ---------- */
+
+.v2 .titulo {
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.v2 .rotulo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+/* ---------- Cartões ---------- */
+
+.v2 .vidro {
+  background: var(--v4-superficie);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+@media (hover: hover) {
+  .v2 .vidro-sobe:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.9);
+  }
+
+  .v2 .vidro:hover .zoom img {
+    transform: scale(1.03);
+  }
+}
+
+/* ---------- Botões ---------- */
+
+.v2 .botao-ouro {
+  background: var(--ouro);
+  color: #0d0c08;
+  font-weight: 700;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
+.v2 .botao-ouro::after {
+  display: none;
+}
+
+@media (hover: hover) {
+  .v2 .botao-ouro:hover {
+    filter: none;
+    background: #ecc03f;
+    transform: none;
+    box-shadow: 0 10px 30px -12px rgba(224, 177, 41, 0.55);
+  }
+
+  .v2 .botao-vidro:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.07);
+    transform: none;
+  }
+}
+
+.v2 .botao-vidro {
+  border-color: rgba(255, 255, 255, 0.14);
+  font-weight: 600;
+}
+
+.v2 .pilula,
+.v2 .cartao-cc {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.v2 .pilula-ligada {
+  background: var(--ouro);
+}
+
+/* ---------- Fundo ---------- */
+
+/* A luz que respira e o grão saem: fundo liso deixa a foto
+   da moto ser a única coisa com brilho na tela. */
+.v2 .brasa {
+  opacity: 0.45;
+  animation: none;
+}
+
+.v2 .grao::before {
+  display: none;
+}

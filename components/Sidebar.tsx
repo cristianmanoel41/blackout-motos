@@ -2,63 +2,38 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import {
-  FileBarChart,
-  History,
-  LayoutDashboard,
-  LogOut,
-  Megaphone,
-  BellRing,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PlusCircle,
-  Receipt,
-  Settings,
-  ShoppingCart,
-  Users,
-  Wallet,
-  Warehouse,
-  Wrench,
-  NotebookPen,
-  X,
-} from 'lucide-react'
+import { LogOut, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
+import { GRUPOS_DO_MENU, itemAtivo } from '@/components/v4/menu'
 
-const menuItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Estoque', href: '/admin/estoque', icon: Warehouse },
-  { label: 'Comprar / Cadastrar Moto', href: '/motos/nova', icon: PlusCircle },
-  { label: 'Vendas', href: '/vendas', icon: ShoppingCart },
-  { label: 'Clientes', href: '/clientes', icon: Users },
-  { label: 'Anúncios na OLX', href: '/olx', icon: Megaphone },
-  { label: 'Lista de Interesse', href: '/interessados', icon: BellRing },
-  { label: 'Gastos das Motos', href: '/gastos', icon: Wrench },
-  { label: 'Despesas da Loja', href: '/despesas', icon: Receipt },
-  { label: 'Anotações do Dia', href: '/anotacoes', icon: NotebookPen },
-  { label: 'Caixa', href: '/caixa', icon: Wallet },
-  { label: 'Relatórios', href: '/relatorios', icon: FileBarChart },
-  { label: 'Histórico', href: '/historico', icon: History },
-  { label: 'Configurações', href: '/configuracoes', icon: Settings },
-] as const
+/*
+ * O MENU LATERAL (v4)
+ *
+ * Plano e calmo: fundo liso, item sem caixa nem sombra, e o
+ * item atual marcado por um fundo leve e o ícone dourado. O
+ * dourado sai do resto do menu para valer alguma coisa onde
+ * aparece.
+ *
+ * No celular é a gaveta que a barra do topo abre; quem guarda
+ * se está aberta é o AppShell.
+ */
 
 export default function Sidebar({
   recolhido = false,
   aoRecolher,
+  aberto,
+  aoFechar,
 }: {
-  /* Menu só com os ícones, no computador. No celular o menu
-     é a gaveta de sempre e isto não vale. */
   recolhido?: boolean
   aoRecolher?: (recolhido: boolean) => void
+  aberto: boolean
+  aoFechar: () => void
 }) {
-  /* As classes que só valem no computador com o menu recolhido. */
   const seRecolhido = (classes: string) => (recolhido ? classes : '')
 
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const [aberto, setAberto] = useState(false)
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -68,122 +43,87 @@ export default function Sidebar({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className="fixed left-4 top-4 z-[60] rounded-2xl border border-[#e0b129]/35 bg-gradient-to-b from-[#1b1e22] to-[#101214] p-3 text-[#f0c640] shadow-[0_10px_30px_rgba(0,0,0,.45)] md:hidden"
-        aria-label="Abrir menu"
-      >
-        <Menu size={23} />
-      </button>
-
       {aberto && (
         <button
           type="button"
           aria-label="Fechar menu"
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] md:hidden"
-          onClick={() => setAberto(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={aoFechar}
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex altura-da-tela w-64 flex-col ${seRecolhido('md:w-[76px]')} border-r border-black/[.07] bg-white shadow-[10px_0_35px_rgba(15,23,42,.05)] transition-transform duration-200 ${
+        data-v4-menu
+        className={`fixed left-0 top-0 z-50 flex altura-da-tela w-64 flex-col ${seRecolhido('md:w-[72px]')} transition-transform duration-200 ${
           aberto ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
-        <div className={`relative flex h-[88px] shrink-0 items-center justify-center border-b border-black/[.07] px-4 ${seRecolhido('md:h-20 md:px-2')}`}>
-          <Link
-            href="/dashboard"
-            onClick={() => setAberto(false)}
-            className="flex w-full items-center justify-center"
-          >
-            {/*
-              logo-blackout-marca.png sai do timbre dos contratos,
-              onde a logo esta em 1278x475 - dez vezes mais
-              resolucao que o arquivo antigo.
-              A arte e branca com MOTOS em dourado, e o fundo e
-              transparente de verdade: ate 02/10/2026 era um JPEG
-              de fundo preto, apagado por mix-blend-mode screen
-              mais um contraste alto. Os dois truques sairam junto.
-            */}
-            <span className={`relative block h-[68px] w-[180px] ${seRecolhido('md:h-10 md:w-14')}`}>
+        <div data-v4-logo className={`relative flex h-16 shrink-0 items-center px-5 ${seRecolhido('md:justify-center md:px-2')}`}>
+          <Link href="/dashboard" onClick={aoFechar} className="flex items-center">
+            <span className={`relative block h-9 w-[120px] ${seRecolhido('md:w-10')}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-blackout-marca.png"
                 alt="Blackout Motos"
-                className="h-full w-full object-contain"
+                className={`h-full w-full object-contain ${recolhido ? 'md:object-left' : 'object-left'}`}
               />
             </span>
           </Link>
 
           <button
             type="button"
-            onClick={() => setAberto(false)}
-            className="absolute right-3 top-3 rounded-xl p-2 text-white/55 hover:bg-white/10 hover:text-[#f0c640] md:hidden"
+            onClick={aoFechar}
+            className="absolute right-3 top-3 rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-white md:hidden"
             aria-label="Fechar menu"
           >
-            <X size={21} />
+            <X size={20} />
           </button>
         </div>
 
-        <nav className={`flex-1 space-y-1 overflow-y-auto px-3 py-3 ${seRecolhido('md:px-2')}`}>
-          {menuItems.map((item) => {
-            const Icone = item.icon
-            const ativo =
-              pathname === item.href || pathname.startsWith(`${item.href}/`)
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setAberto(false)}
-                title={recolhido ? item.label : undefined}
-                className={`group relative flex items-center gap-3 ${seRecolhido('md:justify-center md:px-0')} overflow-hidden rounded-xl border px-3 py-2.5 text-sm font-extrabold transition-all duration-200 ${
-                  ativo
-                    ? 'menu-item-ativo -translate-y-px'
-                    : 'border-transparent bg-white text-black/65 hover:-translate-y-px hover:border-black/[.07] hover:bg-[#fafafa] hover:text-black hover:shadow-[0_7px_18px_rgba(15,23,42,.06)]'
-                }`}
+        <nav className={`flex-1 overflow-y-auto px-3 pb-3 ${seRecolhido('md:px-2')}`}>
+          {GRUPOS_DO_MENU.map((grupo) => (
+            <div key={grupo.titulo} className="mt-3 first:mt-0">
+              <p
+                data-v4-grupo
+                className={`mb-1 px-3 text-[10.5px] font-semibold uppercase tracking-[.12em] ${seRecolhido('md:hidden')}`}
               >
-                {ativo && (
-                  <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-[#d3a516] shadow-[0_0_12px_rgba(211,165,22,.55)]" />
-                )}
+                {grupo.titulo}
+              </p>
+              {recolhido && <div className="mx-3 mb-2 hidden h-px bg-white/[.06] md:block" />}
 
-                <Icone
-                  size={18}
-                  className={
-                    ativo
-                      ? '!text-[#e2b72d]'
-                      : 'text-black/45 group-hover:text-[#a97800]'
-                  }
-                />
+              <div className="space-y-0.5">
+                {grupo.itens.map((item) => {
+                  const Icone = item.icon
+                  const ativo = itemAtivo(pathname, item.href)
 
-                <span className={`${ativo ? '!text-white' : ''} ${seRecolhido('md:hidden')}`}>
-                  {item.label}
-                </span>
-              </Link>
-            )
-          })}
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={aoFechar}
+                      title={recolhido ? item.label : undefined}
+                      data-ativo={ativo ? 'sim' : undefined}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-[7px] text-[13.5px] font-medium ${seRecolhido('md:justify-center md:px-0')}`}
+                    >
+                      <Icone size={17} strokeWidth={ativo ? 2.2 : 1.8} />
+                      <span className={seRecolhido('md:hidden')}>{item.label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        {/*
-          * O rodapé numa linha só: Recolher e Sair lado a lado.
-          * Era um bloco de três andares, com um cartão "Sistema
-          * de gestão" que repetia a logo - no notebook ele
-          * comia metade da lista do menu.
-          *
-          * Recolher o menu deixa só os ícones e dá à tela uns
-          * 180px a mais: é o que faz a tabela larga caber no
-          * notebook sem diminuir a letra.
-          */}
-        <div className={`flex gap-1 border-t border-white/[.07] p-2 pb-[max(.5rem,env(safe-area-inset-bottom))] ${seRecolhido('md:flex-col')}`}>
+        <div data-v4-rodape className={`flex gap-1 p-2 pb-[max(.5rem,env(safe-area-inset-bottom))] ${seRecolhido('md:flex-col')}`}>
           {aoRecolher && (
             <button
               type="button"
               onClick={() => aoRecolher(!recolhido)}
               title={recolhido ? 'Abrir o menu' : 'Recolher o menu'}
-              className="hidden flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-sm font-extrabold text-black/60 transition hover:bg-white/10 hover:text-[#f0c640] md:flex"
+              className="hidden flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2 text-[13px] font-medium md:flex"
             >
-              {recolhido ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+              {recolhido ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
               <span className={seRecolhido('md:hidden')}>Recolher</span>
             </button>
           )}
@@ -192,9 +132,10 @@ export default function Sidebar({
             type="button"
             onClick={handleLogout}
             title={recolhido ? 'Sair' : undefined}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-sm font-extrabold text-black/60 transition hover:bg-red-500/10 hover:text-red-400"
+            data-sair
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2 text-[13px] font-medium"
           >
-            <LogOut size={18} />
+            <LogOut size={17} />
             <span className={seRecolhido('md:hidden')}>Sair</span>
           </button>
         </div>

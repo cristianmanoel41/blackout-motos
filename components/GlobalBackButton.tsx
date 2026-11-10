@@ -48,15 +48,18 @@ export default function GlobalBackButton() {
         bottom: "20px",
         right: "20px",
         zIndex: 99999,
-        backgroundColor: "#d4af37",
-        color: "#000000",
-        border: "none",
-        borderRadius: "10px",
-        padding: "12px 18px",
-        fontSize: "15px",
-        fontWeight: "700",
+        /* v4: discreto, para não brigar com o botão dourado
+           de ação da tela. */
+        backgroundColor: "rgba(24,24,27,.85)",
+        color: "#ededef",
+        border: "1px solid rgba(255,255,255,.12)",
+        borderRadius: "999px",
+        padding: "10px 16px",
+        fontSize: "14px",
+        fontWeight: "500",
         cursor: "pointer",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
       }}
     >
       ← Voltar

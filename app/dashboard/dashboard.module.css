@@ -448,3 +448,154 @@ details.panel:not([open]) > .resumoPainel {
   padding: 14px 22px;
   border-radius: 24px;
 }
+
+/*
+ * ============================================================
+ * v4 - O PAINEL MAIS LIMPO
+ * ============================================================
+ *
+ * Por cima de tudo acima, sem apagar nada (para voltar atrás é
+ * só tirar este bloco). Cartão liso com borda fina; o número
+ * grande em branco e o dourado só no ícone e no que é ação;
+ * nada de risco dourado, listra, brilho ou cartão que pula.
+ */
+
+.hero {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.hero::after {
+  display: none;
+}
+
+.metricCard,
+.panel,
+.miniCard,
+.goldPanel {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #111113;
+  box-shadow: none;
+}
+
+.goldPanel {
+  border-color: rgba(224, 177, 41, 0.35);
+  background:
+    radial-gradient(600px 200px at 100% 0%, rgba(224, 177, 41, 0.07), transparent 70%),
+    #111113;
+}
+
+.metricCard {
+  border-radius: 14px;
+}
+
+.panel {
+  border-radius: 14px;
+}
+
+.miniCard {
+  border-radius: 12px;
+}
+
+.metricCard::before,
+.metricCard::after {
+  display: none;
+}
+
+.metricValue,
+.metricCard p.metricValue,
+.metricCard p.metricValue span,
+.metricCard [class~='text-black'],
+.miniCard [class~='text-black'],
+.goldPanel [class~='text-black'] {
+  color: #fafafa !important;
+  text-shadow: none;
+  letter-spacing: -0.02em;
+}
+
+.metricValueNegative,
+.metricCard p.metricValueNegative,
+.metricCard p.metricValueNegative span {
+  text-shadow: none;
+}
+
+.metricCard p,
+.metricCard span,
+.panel h2,
+.panel h3,
+.panel th,
+.miniCard p {
+  text-shadow: none;
+}
+
+.icon3d {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(224, 177, 41, 0.2);
+  background: rgba(224, 177, 41, 0.08);
+  color: #e0b129;
+  box-shadow: none;
+}
+
+.dataPill,
+.panel .dataPill {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+}
+
+.darkButton {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+
+.goldButton {
+  border: 1px solid transparent;
+  background: #e0b129;
+  box-shadow: none;
+}
+
+.rankBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+.rankFill {
+  background: #e0b129;
+  box-shadow: none;
+}
+
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025) !important;
+}
+
+.resumoPainel {
+  border-radius: 14px 14px 0 0;
+}
+
+.resumoPainel:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+details.panel:not([open]) > .resumoPainel {
+  border-radius: 14px;
+}
+
+@media (hover: hover) {
+  .metricCard:hover,
+  .miniCard:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+  }
+
+  .darkButton:hover,
+  .goldButton:hover {
+    transform: none;
+    filter: brightness(1.08);
+  }
+}
