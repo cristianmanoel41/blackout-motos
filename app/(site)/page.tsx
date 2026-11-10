@@ -12,7 +12,6 @@ import BuscaRapida from "@/components/v2/BuscaRapida";
 import AoEntrar from "@/components/v2/AoEntrar";
 import EncontreSuaMoto from "@/components/v2/EncontreSuaMoto";
 import FaixaMarcas from "@/components/v2/FaixaMarcas";
-import Financiamento from "@/components/v2/Financiamento";
 import SimuladorDePagamento from "@/components/site/SimuladorDePagamento";
 import Diferenciais from "@/components/v2/Diferenciais";
 import CompramosSuaMoto from "@/components/v2/CompramosSuaMoto";
@@ -29,7 +28,7 @@ import VisiteALoja from "@/components/v2/VisiteALoja";
  *   1b. logo abaixo, a vitrine de cinema, trocando de moto sozinha;
  *   2. a busca e os atalhos de preço, no caminho do polegar;
  *   3. "Encontre sua moto ideal", para quem ainda não escolheu;
- *   4. financiamento e o simulador, o mesmo de /financiamento;
+ *   4. o simulador de pagamento, o mesmo de /financiamento;
  *   5. diferenciais, troca, avaliações e o mapa.
  *
  * O estoque é o mesmo do sistema: sai da função pública do
@@ -119,11 +118,16 @@ export default async function HomePage() {
         </section>
       )}
 
-      <Financiamento />
-
+      {/*
+        * A faixa "Realize seu sonho com financiamento" saiu em
+        * 10/11/2026: com o simulador logo abaixo, a capa falava
+        * de simulação duas vezes seguidas. Fica só o simulador,
+        * que já é a coisa útil. (O componente continua em
+        * components/v2/Financiamento.tsx, se precisar voltar.)
+        */}
       <section
         id="simulador"
-        className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-16 pt-8 sm:px-6"
+        className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-16 pt-14 sm:px-6"
       >
         <SimuladorDePagamento estoque={doEstoque} />
       </section>
