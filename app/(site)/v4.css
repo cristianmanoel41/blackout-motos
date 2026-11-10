@@ -242,3 +242,31 @@
   box-shadow: revert-layer !important;
   border-color: revert-layer !important;
 }
+
+/* ---------- Uma letra só ----------
+ * O site.css antigo põe todo h1/h2/h3, preço e número em
+ * Archivo (a letra de cartaz). No v4 título e texto usam a
+ * mesma família (Inter), e a diferença vem do peso e do
+ * tamanho - é o que dá o ar de produto atual. */
+.site-blackout.v2 :is(h1, h2, h3),
+.site-blackout.v2 :is(.fonte-titulo, .tabular-nums, .preco) {
+  font-family: var(--fonte-site), system-ui, sans-serif;
+}
+
+.site-blackout.v2 :is(h1, h2, h3):is(.font-black, .font-extrabold) {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* O cartão de "moldura" das páginas Sobre e Contato e do
+   formulário de aviso: liso, como os demais. */
+.site-blackout.v2 .cartao-3d {
+  background: #111113 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+}
+
+.site-blackout.v2 .cartao-3d::before,
+.site-blackout.v2 .cartao-3d::after {
+  content: none !important;
+}
