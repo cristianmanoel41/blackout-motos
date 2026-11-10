@@ -135,7 +135,8 @@ export default function CardMoto({
             />
 
             {/* Só entra no site moto disponível - o selo diz isso. */}
-            <span className="absolute left-3 top-3 rounded-full border border-[#e0b129]/40 bg-black/70 px-3 py-1 text-[11px] font-bold uppercase tracking-wider ouro backdrop-blur-sm">
+            <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11.5px] font-semibold text-white ring-1 ring-white/15 backdrop-blur-md">
+              <span className={`h-1.5 w-1.5 rounded-full ${novidade ? "bg-[#e0b129]" : "bg-[#4ade80]"}`} />
               {novidade ? "Chegou agora" : "Disponível"}
             </span>
 

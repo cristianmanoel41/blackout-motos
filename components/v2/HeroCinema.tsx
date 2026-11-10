@@ -158,24 +158,28 @@ export default function HeroCinema({
       <div className="relative mx-auto grid max-w-[1400px] items-center gap-8 px-4 pb-10 pt-8 sm:px-6 lg:min-h-[640px] lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)_3rem] lg:gap-12 lg:py-16">
         {/* O texto. No celular vem depois da foto. */}
         <div key={`texto-${moto.id}`} className="cinema-texto order-2 min-w-0 lg:order-none">
-          <p className="titulo text-[clamp(3rem,7vw,5.5rem)] leading-none text-white/90">
-            {String(atual + 1).padStart(2, "0")}
+          {/* v4: o "02" gigante e a palavra fantasma saíram; o
+              número da moto vira um contador discreto ao lado do
+              selo, e o nome lê como nome: marca pequena em cima,
+              modelo grande embaixo. */}
+          <p className="flex items-center gap-3">
+            <span className="v4-selo inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#e0b129]" />
+              {moto.na_capa ? "Destaque da loja" : "Chegou no pátio"}
+            </span>
+            {total > 1 && (
+              <span className="text-xs font-medium tabular-nums suave">
+                {String(atual + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+              </span>
+            )}
           </p>
 
-          <p className="mt-3 text-[13px] font-bold uppercase tracking-[0.25em] ouro">
-            {moto.na_capa ? "Destaque da loja" : "Chegou no pátio"}
-          </p>
-
-          <h2 className="mt-3">
-            <span className="titulo block text-[clamp(2.6rem,7.5vw,5.2rem)] claro">
+          <h2 className="mt-5">
+            <span className="block text-base font-medium suave sm:text-lg">
               {marca || "Moto"}
             </span>
-
-            <span className="mt-2 flex items-center gap-4">
-              <span className="titulo text-[clamp(1.3rem,3vw,2rem)] text-white/85">
-                {modelo}
-              </span>
-              <span aria-hidden="true" className="risco hidden w-32 sm:block" />
+            <span className="titulo mt-1 block text-[clamp(2.2rem,5.5vw,4rem)] claro">
+              {modelo || marca}
             </span>
           </h2>
 

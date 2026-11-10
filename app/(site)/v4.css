@@ -145,3 +145,100 @@
   border-color: transparent;
   background: transparent;
 }
+
+/* ---------- Vitrine de destaque (HeroCinema) ---------- */
+
+.site-blackout.v2 .cinema {
+  background: #09090b;
+  border-bottom: 0;
+}
+
+/* O fundo desfocado da foto fica bem mais apagado, e sem a
+   mancha dourada: a moto da moldura é o que deve chamar. */
+.site-blackout.v2 .cinema-fundo {
+  filter: blur(60px) saturate(0.9) brightness(0.3);
+}
+
+.site-blackout.v2 .cinema-veu {
+  background:
+    linear-gradient(90deg, rgba(9, 9, 11, 0.96) 0%, rgba(9, 9, 11, 0.7) 55%, rgba(9, 9, 11, 0.55) 100%),
+    linear-gradient(0deg, #09090b 0%, transparent 35%),
+    linear-gradient(180deg, #09090b 0%, transparent 25%);
+}
+
+.site-blackout.v2 .cinema-palavra {
+  display: none;
+}
+
+.site-blackout.v2 .cinema-moldura {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9);
+}
+
+.site-blackout.v2 .ficha-ladrilho {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: none;
+}
+
+.site-blackout.v2 .ficha-ladrilho dt {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.site-blackout.v2 .ficha-ladrilho-ouro {
+  border-color: rgba(224, 177, 41, 0.3);
+  background: rgba(224, 177, 41, 0.06);
+}
+
+.site-blackout.v2 .ficha-ladrilho-ouro dd {
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.site-blackout.v2 .cinema-indice {
+  font-family: var(--fonte-site), system-ui, sans-serif;
+  font-weight: 600;
+}
+
+/* ---------- Cartão da moto ---------- */
+
+/* Nome e preço na letra do texto, firmes, sem a de cartaz. */
+.site-blackout.v2 article.vidro h3.titulo {
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.site-blackout.v2 article.vidro p.titulo.ouro {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* O reflexo que passeava pela foto sai: a foto fica limpa. */
+.site-blackout.v2 article.vidro .reflexo {
+  display: none;
+}
+
+/* O tema do sistema (blackout-brand-final.css) desenha um fio
+   dourado em cima e um risco dourado embaixo de todo cartão
+   "rounded-xl border" dentro de <main> - e o site também tem
+   <main>. No site isso nunca foi de propósito. */
+.site-blackout.v2 main :is(section, div, form):is(.rounded-xl, .rounded-2xl).border::before,
+.site-blackout.v2 main :is(section, div, form):is(.rounded-xl, .rounded-2xl).border::after,
+.site-blackout.v2 main .bg-grafite::before {
+  content: none !important;
+}
+
+/* O mesmo tema do sistema pinta esses cartões com degradê e
+   sombra (!important). "revert-layer" devolve o que o próprio
+   componente pediu nas classes do Tailwind (bg-..., border-...),
+   em vez de inventar outra cor por cima. */
+.site-blackout.v2 main :is(section, div, form):is(.rounded-xl, .rounded-2xl).border,
+.site-blackout.v2 main :is(section, div, form):is(.rounded-xl, .rounded-2xl).border:hover {
+  background: revert-layer !important;
+  box-shadow: revert-layer !important;
+  border-color: revert-layer !important;
+}

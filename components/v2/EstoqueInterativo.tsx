@@ -394,7 +394,7 @@ export default function EstoqueInterativo({
 
         {opcoes.cilindradas.length > 0 && (
           <div className="mt-4">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider ouro">
+            <p className="mb-2 text-sm font-semibold claro">
               Estoque por cilindrada
             </p>
 
@@ -424,7 +424,7 @@ export default function EstoqueInterativo({
                     cilindrada === item.chave ? "pilula-ligada" : ""
                   }`}
                 >
-                  <span className="block text-[11px] font-bold uppercase tracking-wide">
+                  <span className="block text-[11px] font-bold tracking-tight">
                     {item.nome}
                   </span>
                   <span className="mt-0.5 block text-2xl font-black leading-none">
