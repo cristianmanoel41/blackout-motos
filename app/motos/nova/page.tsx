@@ -26,7 +26,6 @@ import CampoPagamentoFeito from "@/components/CampoPagamentoFeito";
 import {
   CUSTOS_PADRAO_COMPRA,
   TOTAL_PADRAO_COMPRA,
-  fechamentoDaQuinzena,
 } from "@/lib/dados/documentacao";
 import CampoComBusca from "@/components/CampoComBusca";
 import {
@@ -1652,6 +1651,11 @@ export default function NovaMotoPage() {
                     motoCriada.codigo ||
                     `${form.marca} ${form.modelo}`
                   }`,
+                /* Escrito por extenso: confirmada na data
+                   da compra, sem baixa manual. */
+                confirmado: true,
+                data_confirmacao:
+                  form.data_entrada,
               });
 
             if (caixaLavagemError) {
@@ -1832,11 +1836,19 @@ export default function NovaMotoPage() {
             await supabase
               .from("cash_transactions")
               .insert(
+                /*
+                 * A cautelar já sai confirmada, na data da
+                 * compra, como a lavagem.
+                 *
+                 * Antes ela nascia pendente para o fechamento
+                 * da quinzena da vistoria, e a loja precisava
+                 * dar baixa em toda compra. A pedido da loja
+                 * (10/11/2026), passa a ser lançada direto.
+                 * As cautelares que já estavam pendentes
+                 * continuam como estão.
+                 */
                 gastosDoc.map((gasto) => ({
-                  data:
-                    fechamentoDaQuinzena(
-                      form.data_entrada
-                    ),
+                  data: form.data_entrada,
                   tipo: "saida",
                   /* Mesma empresa da vistoria de transferência. */
                   origem: "vistoria",
@@ -1849,8 +1861,8 @@ export default function NovaMotoPage() {
                     motoCriada.codigo ||
                     `${form.marca} ${form.modelo}`
                   }`,
-                  confirmado: false,
-                  data_confirmacao: null,
+                  confirmado: true,
+                  data_confirmacao: form.data_entrada,
                 }))
               );
 
