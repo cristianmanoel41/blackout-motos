@@ -23,13 +23,11 @@ import {
   Warehouse,
   Wrench,
   NotebookPen,
-  Sun,
   X,
 } from 'lucide-react'
 
 const menuItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Resumo do Dia', href: '/resumo', icon: Sun },
   { label: 'Estoque', href: '/admin/estoque', icon: Warehouse },
   { label: 'Comprar / Cadastrar Moto', href: '/motos/nova', icon: PlusCircle },
   { label: 'Vendas', href: '/vendas', icon: ShoppingCart },

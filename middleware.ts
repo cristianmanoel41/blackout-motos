@@ -113,7 +113,6 @@ const SEPARAR_POR_DOMINIO =
  */
 const PAGINAS_DO_SISTEMA = [
   '/dashboard',
-  '/resumo',
   '/admin',
   '/vendas',
   '/caixa',
