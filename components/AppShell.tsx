@@ -171,6 +171,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     '/encontre-sua-moto',
     '/financiamento',
     '/sobre',
+    '/compramos-sua-moto',
     '/contato',
     '/privacidade',
     '/termos',

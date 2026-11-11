@@ -174,6 +174,7 @@ export const MENU = [
   { nome: "Início", href: "/" },
   { nome: "Estoque", href: "/estoque" },
   { nome: "Financiamento", href: "/financiamento" },
+  { nome: "Venda sua moto", href: "/compramos-sua-moto" },
   { nome: "Sobre nós", href: "/sobre" },
   { nome: "Contato", href: "/contato" },
 ];

@@ -32,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: "/estoque", prioridade: 0.9 },
     { url: "/encontre-sua-moto", prioridade: 0.7 },
     { url: "/financiamento", prioridade: 0.7 },
+    { url: "/compramos-sua-moto", prioridade: 0.7 },
     { url: "/sobre", prioridade: 0.6 },
     { url: "/contato", prioridade: 0.6 },
     { url: "/privacidade", prioridade: 0.2 },

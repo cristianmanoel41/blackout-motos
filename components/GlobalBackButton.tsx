@@ -25,6 +25,7 @@ export default function GlobalBackButton() {
     pathname === "/financiamento" ||
     pathname.startsWith("/financiamento/") ||
     pathname === "/sobre" ||
+    pathname === "/compramos-sua-moto" ||
     pathname === "/contato" ||
     pathname === "/privacidade" ||
     pathname === "/termos"

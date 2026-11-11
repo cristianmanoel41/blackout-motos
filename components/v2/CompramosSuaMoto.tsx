@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, Camera, ClipboardCheck, Zap } from "lucide-react";
 import { linkWhatsApp } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
@@ -6,10 +7,11 @@ import AoEntrar from "@/components/v2/AoEntrar";
 /*
  * Compramos sua moto.
  *
- * É a seção que traz moto para o pátio, então ela pede uma
- * ação só: chamar no WhatsApp, com a mensagem já escrita. Um
- * formulário aqui daria trabalho ao cliente e ainda pararia
- * numa caixa de entrada que ninguém olha no meio do dia.
+ * É a seção que traz moto para o pátio. Desde 11/11/2026 o
+ * botão principal leva à página /compramos-sua-moto, onde a
+ * pessoa preenche a ficha da moto e envia pelo WhatsApp - a
+ * loja recebe tudo escrito. Quem não quer preencher tem o link
+ * para só chamar no WhatsApp.
  *
  * "Pagamento no PIX" fica no título porque é o que diferencia:
  * a dúvida de quem vende moto é quando o dinheiro cai.
@@ -38,16 +40,26 @@ export default function CompramosSuaMoto() {
               conta no mesmo dia.
             </p>
 
-            <a
-              href={linkWhatsApp(CONVITE)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="botao-ouro mt-8 inline-flex items-center gap-2 rounded-full px-8 py-4 text-sm"
-            >
-              <IconeWhatsApp className="h-4 w-4" />
-              Avaliar minha moto
-              <ArrowRight size={16} />
-            </a>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/compramos-sua-moto"
+                className="botao-ouro inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-sm"
+              >
+                Avaliar minha moto
+                <ArrowRight size={16} />
+              </Link>
+
+              {/* Quem não quer preencher nada ainda pode só chamar. */}
+              <a
+                href={linkWhatsApp(CONVITE)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold suave hover:text-white"
+              >
+                <IconeWhatsApp className="h-4 w-4" />
+                Prefiro chamar no WhatsApp
+              </a>
+            </div>
           </div>
 
           <ol className="relative space-y-3">

@@ -42,6 +42,7 @@ const PAGINAS_DO_SITE = [
   '/financiamento',
   '/encontre-sua-moto',
   '/sobre',
+  '/compramos-sua-moto',
   '/contato',
   '/privacidade',
   '/termos',
@@ -287,6 +288,7 @@ export async function middleware(request: NextRequest) {
     '/financiamento',
     '/encontre-sua-moto',
     '/sobre',
+    '/compramos-sua-moto',
     '/contato',
     /* Privacidade e termos: o TikTok e o Google leem estas
        paginas de fora, sem login. */
