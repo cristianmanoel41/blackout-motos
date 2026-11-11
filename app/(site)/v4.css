@@ -287,6 +287,12 @@
     bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
+  /* O balão de convite também. */
+  .site-blackout.v2:has(.barra-acao) [data-chat-convite],
+  .site-blackout.v2:has(.sim-barra:not([data-escondida="true"])) [data-chat-convite] {
+    bottom: calc(144px + env(safe-area-inset-bottom));
+  }
+
   /* A janela do chat sobe junto, para ficar acima do botão. */
   .site-blackout.v2:has(.barra-acao) [data-chat-janela],
   .site-blackout.v2:has(.sim-barra:not([data-escondida="true"])) [data-chat-janela] {

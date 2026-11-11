@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, MessageCircleMore, SendHorizontal, Sparkles, X } from "lucide-react";
+import { ChevronRight, MessageCircleMore, SendHorizontal, X } from "lucide-react";
 import { linkWhatsApp } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 
@@ -83,6 +83,8 @@ export default function ChatEstoque() {
   const [pensando, setPensando] = useState(false);
   /* No celular o botão só aparece depois que a pessoa sai da primeira tela. */
   const [passouDoTopo, setPassouDoTopo] = useState(false);
+  /* O balão "Procurando moto? Me pergunte aqui", uma vez por visita. */
+  const [convite, setConvite] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
   const ultima = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
@@ -93,7 +95,40 @@ export default function ChatEstoque() {
       atual.length > 0 ? atual : [{ quem: "loja", texto: BOAS_VINDAS, hora: agora() }]
     );
     setAberto(true);
+    setConvite(false);
   }
+
+  /*
+   * O CONVITE
+   *
+   * Um botão redondo no canto não diz "isto é uma conversa". Na
+   * primeira vez que ele aparece, sai dele um balão de fala - como
+   * os chats de atendimento fazem - e some sozinho. Só uma vez por
+   * visita (sessionStorage), para não virar incômodo.
+   */
+  useEffect(() => {
+    const noComputador = window.matchMedia("(min-width: 640px)").matches;
+    if (!(passouDoTopo || noComputador)) return;
+
+    try {
+      if (sessionStorage.getItem("chat-convite")) return;
+    } catch {
+      return;
+    }
+
+    const entra = setTimeout(() => {
+      setConvite(true);
+      try {
+        sessionStorage.setItem("chat-convite", "1");
+      } catch {}
+    }, noComputador ? 4000 : 600);
+    const sai = setTimeout(() => setConvite(false), (noComputador ? 4000 : 600) + 9000);
+
+    return () => {
+      clearTimeout(entra);
+      clearTimeout(sai);
+    };
+  }, [passouDoTopo]);
 
   /*
    * Resposta com motos: a janela para no começo da resposta,
@@ -204,8 +239,8 @@ export default function ChatEstoque() {
         data-chat-botao
         data-aberto={aberto ? "sim" : undefined}
         onClick={() => (aberto ? setAberto(false) : abrir())}
-        className={`fixed bottom-4 right-4 z-[56] flex h-12 items-center justify-center gap-2 rounded-full bg-[#e0b129] text-[14px] font-semibold text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,.85)] ring-2 ring-black/40 transition-all duration-300 hover:bg-[#ecc24a] max-sm:w-12 sm:bottom-6 sm:right-6 ${
-          aberto ? "sm:w-12" : "sm:pl-4 sm:pr-5"
+        className={`fixed bottom-4 right-4 z-[56] flex h-12 items-center justify-center gap-2 rounded-full bg-[#e0b129] text-[14.5px] font-bold text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,.85)] ring-2 ring-black/40 transition-all duration-300 hover:bg-[#ecc24a] sm:bottom-6 sm:right-6 ${
+          aberto ? "w-12" : "pl-3.5 pr-4"
         } ${
           !aberto && !passouDoTopo
             ? "max-sm:pointer-events-none max-sm:translate-y-4 max-sm:scale-75 max-sm:opacity-0"
@@ -217,12 +252,38 @@ export default function ChatEstoque() {
           <X size={22} strokeWidth={2.4} />
         ) : (
           <>
-            <MessageCircleMore size={22} strokeWidth={2.1} className="shrink-0 sm:hidden" />
-            <Sparkles size={18} strokeWidth={2.2} className="shrink-0 max-sm:hidden" />
-            <span className="max-sm:hidden">Ache sua moto</span>
+            {/* Balão de conversa com a bolinha verde de "online". */}
+            <span className="relative shrink-0">
+              <MessageCircleMore size={22} strokeWidth={2.1} />
+              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#16a34a] ring-2 ring-[#e0b129]" />
+            </span>
+            <span className="sm:hidden">Chat</span>
+            <span className="max-sm:hidden">Chat · Ache sua moto</span>
           </>
         )}
       </button>
+
+      {convite && !aberto && (
+        <div
+          data-chat-convite
+          className="fixed bottom-[72px] right-4 z-[56] flex max-w-[250px] items-start gap-2 rounded-2xl rounded-br-sm bg-white py-2.5 pl-3.5 pr-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,.8)] sm:bottom-[84px] sm:right-6"
+          style={{ color: "#111" }}
+        >
+          <button type="button" onClick={abrir} className="text-left text-[13.5px] leading-snug" style={{ color: "#111" }}>
+            <strong className="block" style={{ color: "#111" }}>Oi! 👋 Procurando moto?</strong>
+            Me pergunte aqui no chat, eu procuro no estoque.
+          </button>
+          <button
+            type="button"
+            onClick={() => setConvite(false)}
+            aria-label="Fechar o aviso"
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-black/5"
+            style={{ color: "#666" }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* No celular o site escurece por trás; tocar fora fecha. */}
       {aberto && (
