@@ -51,7 +51,7 @@ const GARANTIAS = [
 export default function CompramosSuaMotoPage() {
   return (
     <main className="mx-auto max-w-[1100px] px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
-      <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#e0b129]">
+      <p className="font-mono text-[11px] uppercase tracking-[0.25em] ouro">
         Avaliação sem compromisso
       </p>
 
@@ -78,9 +78,9 @@ export default function CompramosSuaMotoPage() {
       <ol className="mt-12 grid gap-8 border-y border-white/[.08] py-9 sm:grid-cols-3 sm:gap-10">
         {PASSOS.map((passo) => (
           <li key={passo.numero}>
-            <span className="font-mono text-[12px] text-[#e0b129]">{passo.numero}</span>
+            <span className="font-mono text-[12px] ouro">{passo.numero}</span>
             <h2 className="mt-1.5 text-[16.5px] font-semibold text-white">{passo.titulo}</h2>
-            <p className="mt-2 text-[14px] leading-6 text-white/55">{passo.texto}</p>
+            <p className="mt-2 text-[14px] leading-6 suave">{passo.texto}</p>
           </li>
         ))}
       </ol>

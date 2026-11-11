@@ -318,3 +318,33 @@ body.foto-aberta .site-blackout [data-chat-botao] {
     letter-spacing: -0.02em;
   }
 }
+
+/* ---------------------------------------------------------- */
+/* CAMPO DE LINHA (página "Compramos sua moto")                */
+/* ---------------------------------------------------------- */
+
+/*
+ * Só a linha embaixo, sem caixa - o desenho da referência da
+ * loja. Os campos do site e do tema do sistema vêm com fundo,
+ * borda e sombra em !important (v2.css, blackout-brand-final),
+ * então aqui também precisa de !important e de mais peso.
+ */
+.site-blackout.v2 main :is(input, textarea).campo-linha {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  color: #f2f3f5 !important;
+}
+
+.site-blackout.v2 main :is(input, textarea).campo-linha:focus {
+  border-bottom-color: #e0b129 !important;
+  box-shadow: 0 1px 0 0 #e0b129 !important;
+}
+
+.site-blackout.v2 main :is(input, textarea).campo-linha::placeholder {
+  color: #5c6068 !important;
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MENU } from "@/lib/dados/loja";
+import { MENU_DO_TOPO } from "@/lib/dados/loja";
 
 /*
  * Os links do topo, com o da página aberta aceso.
@@ -25,7 +25,7 @@ export default function MenuDoTopo() {
 
   return (
     <nav className="hidden items-center gap-7 lg:flex">
-      {MENU.map((item) => {
+      {MENU_DO_TOPO.map((item) => {
         const atual = aberto(item.href);
 
         return (

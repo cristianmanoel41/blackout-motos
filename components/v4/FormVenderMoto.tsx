@@ -70,16 +70,16 @@ function Rotulo({ para, children, obrigatorio }: { para?: string; children: Reac
   return (
     <label
       htmlFor={para}
-      className="block font-mono text-[11px] uppercase tracking-[0.22em] text-white/55"
+      className="block font-mono text-[11px] uppercase tracking-[0.22em] suave"
     >
       {children}
-      {obrigatorio && <span className="ml-1.5 text-[#e0b129]">*</span>}
+      {obrigatorio && <span className="ml-1.5 ouro">*</span>}
     </label>
   );
 }
 
 const CAMPO =
-  "mt-2 w-full border-0 border-b border-white/15 bg-transparent px-0 pb-3 pt-1 text-[16px] text-white outline-none transition placeholder:text-white/30 focus:border-[#e0b129]";
+  "campo-linha mt-2 w-full pb-3 pt-1 text-[16px] outline-none transition";
 
 function Campo({
   id,
@@ -105,7 +105,7 @@ function Campo({
       {erro ? (
         <p data-erro className="mt-2 text-[13px] text-[#f87171]">{erro}</p>
       ) : dica ? (
-        <p className="mt-2 text-[13px] text-white/50">{dica}</p>
+        <p className="mt-2 text-[13px] suave">{dica}</p>
       ) : null}
     </div>
   );
@@ -397,7 +397,7 @@ export default function FormVenderMoto() {
       {/* Fotos e vídeos vão na conversa: aqui só a lista do que mandar. */}
       <section className="border-t border-white/[.08] pt-8">
         <h2 className="text-[1.35rem] font-semibold tracking-tight text-white sm:text-[1.5rem]">Fotos e vídeos</h2>
-        <p className="mt-2 max-w-xl text-[14px] leading-6 text-white/55">
+        <p className="mt-2 max-w-xl text-[14px] leading-6 suave">
           Você manda na conversa do WhatsApp, logo depois de enviar. Quanto mais
           completo, mais certa sai a proposta.
         </p>
@@ -445,10 +445,12 @@ export default function FormVenderMoto() {
           className="botao-ouro inline-flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-full px-8 text-[15.5px] sm:w-auto"
         >
           <IconeWhatsApp className="h-5 w-5" />
-          Enviar para avaliação no WhatsApp
+          {/* No celular o nome inteiro quebrava em duas linhas. */}
+          <span className="sm:hidden">Enviar no WhatsApp</span>
+          <span className="max-sm:hidden">Enviar para avaliação no WhatsApp</span>
         </a>
 
-        <p className="mt-4 max-w-xl text-[12.5px] leading-5 text-white/45">
+        <p className="mt-4 max-w-xl text-[12.5px] leading-5 suave">
           Seus dados vão só para o WhatsApp da loja, para a avaliação. A proposta é sem
           compromisso: você decide se fecha.
         </p>

@@ -174,7 +174,20 @@ export const MENU = [
   { nome: "Início", href: "/" },
   { nome: "Estoque", href: "/estoque" },
   { nome: "Financiamento", href: "/financiamento" },
-  { nome: "Venda sua moto", href: "/compramos-sua-moto" },
+  { nome: "Compramos sua moto", href: "/compramos-sua-moto" },
   { nome: "Sobre nós", href: "/sobre" },
   { nome: "Contato", href: "/contato" },
+];
+
+/*
+ * O menu do topo, no computador: Início e os três caminhos que a loja
+ * quer à vista (11/11/2026) - o estoque, a simulação e a compra
+ * da moto do cliente. Sobre e Contato ficam no
+ * rodapé e no menu do celular (MENU, acima).
+ */
+export const MENU_DO_TOPO = [
+  { nome: "Início", href: "/" },
+  { nome: "Estoque", href: "/estoque" },
+  { nome: "Simulação", href: "/financiamento" },
+  { nome: "Compramos sua moto", href: "/compramos-sua-moto" },
 ];
