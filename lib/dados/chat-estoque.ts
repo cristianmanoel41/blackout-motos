@@ -38,6 +38,11 @@ export type Pedido = {
   palavras: string[];
   poucoKm: boolean;
   maisBarata: boolean;
+  maisNova: boolean;
+  /* "Tenho 5 mil de entrada": não é o teto da moto. */
+  entrada: number | null;
+  /* "Parcela de até 600": a conta depende de entrada e prazo. */
+  parcela: number | null;
 };
 
 function semAcento(texto: string) {
@@ -82,7 +87,10 @@ const VAZIAS = new Set(
     "algum boa bom bem ano km cilindrada cc no na nos nas em meu minha pouco pouca " +
     "rodada rodado baixa baixo kilometragem quilometragem novo nova nova seminova " +
     "usada usado oi ola bom dia tarde noite estoque loja financiar financiamento " +
-    "entrada parcela parcelas trabalhar trabalho cidade dia todo"
+    "entrada parcela parcelas trabalhar trabalho cidade dia todo " +
+    "conta conte piada quanto custa custam como funciona onde fica horario " +
+    "aberto abre fecha endereco obrigado obrigada valeu tudo bem voce tu " +
+    "sinal mes reais mensal economica economico gasta gastar ir vir"
   ).split(" ")
 );
 
@@ -120,6 +128,9 @@ export function lerPedido(texto: string): Pedido {
     palavras: [],
     poucoKm: /\b(pouco|pouca|baixa|baixo)\s+(km|quilometragem|kilometragem|rodad[ao])\b/.test(t),
     maisBarata: /\b(mais barat[ao]s?|menor preco|mais em conta)\b/.test(t),
+    maisNova: /\b(mais nov[ao]s?|mais recentes?|0 ?km|zero ?km|mais atual)\b/.test(t),
+    entrada: null,
+    parcela: null,
   };
 
   /* "entre 15 e 20 mil" */
@@ -157,6 +168,37 @@ export function lerPedido(texto: string): Pedido {
     const valor = lerValor(bruto, ehMil ? sufixo : undefined);
     if (valor === null) continue;
 
+    /*
+     * Dinheiro de entrada ou de parcela não é o preço da moto:
+     * "tenho 5 mil de entrada" com teto de 5 mil não acharia
+     * nada, e "parcela de 600" não é moto de 600cc.
+     */
+    const inicio = achado.index ?? 0;
+    /* O texto até o número (a palavra antes, como "de", fica junto). */
+    const antesDele = t.slice(0, inicio + achado[0].indexOf(bruto));
+    const depoisDele = t.slice(inicio + achado[0].length);
+    const colado = (antesRe: RegExp, depoisRe: RegExp) =>
+      antesRe.test(antesDele) || depoisRe.test(depoisDele);
+
+    if (
+      colado(
+        /(entrada|sinal)\s*(de|com|e|=|:)?\s*(r\$\s*)?$/,
+        /^\s*(reais\s*)?(de|na|pra|para|como)?\s*(entrada|sinal)/
+      )
+    ) {
+      if (valor >= 300) pedido.entrada = valor;
+      continue;
+    }
+    if (
+      colado(
+        /(parcelas?|mensalidade|prestacao)\s*(de|ate|=|:|no maximo|maxima)?\s*(r\$\s*)?$/,
+        /^\s*(reais\s*)?(por mes|mensal|mensais|ao mes|na parcela|de parcela)/
+      )
+    ) {
+      if (valor >= 50 && valor < 5000) pedido.parcela = valor;
+      continue;
+    }
+
     /* Ano: 2005 a 2030, escrito sem "mil" nem R$. */
     if (!ehMil && !cifrao && valor >= 2005 && valor <= 2030 && /^\d{4}$/.test(bruto)) {
       pedido.anoMinimo = valor;
@@ -171,6 +213,7 @@ export function lerPedido(texto: string): Pedido {
 
     /* "20 mil" chega aqui como 20000; "20" sozinho com R$, como 20. */
     const reais = valor < 300 && cifrao ? valor * 1000 : valor;
+
     if (reais < 3000 || reais > 500000) continue;
 
     if (antes && /acima|mais de|partir/.test(antes)) pedido.de = reais;
@@ -271,11 +314,12 @@ function descreverPedido(pedido: Pedido) {
   if (pedido.categoria === "esportiva") partes.push("esportiva");
   if (pedido.marca) partes.push(pedido.marca[0].toUpperCase() + pedido.marca.slice(1));
   if (pedido.cilindrada) partes.push(`${pedido.cilindrada}cc`);
-  if (pedido.uso === "trabalho") partes.push("boa para trabalhar");
-  if (pedido.uso === "viagem") partes.push("boa para viajar");
-  if (pedido.uso === "lazer") partes.push("boa para passeio");
+  if (pedido.uso === "trabalho") partes.push("para trabalhar");
+  if (pedido.uso === "viagem") partes.push("para viajar");
+  if (pedido.uso === "lazer") partes.push("para passeio");
   if (pedido.anoMinimo) partes.push(`de ${pedido.anoMinimo} para cima`);
   if (pedido.poucoKm) partes.push("com menos km primeiro");
+  if (pedido.maisNova) partes.push("da mais nova para a mais antiga");
   if (pedido.de !== null && pedido.ate !== null) partes.push(`entre ${brl(pedido.de)} e ${brl(pedido.ate)}`);
   else if (pedido.ate !== null) partes.push(`até ${brl(pedido.ate)}`);
   else if (pedido.de !== null) partes.push(`acima de ${brl(pedido.de)}`);
@@ -309,13 +353,16 @@ export function procurarNoEstoque(
     pedido.uso !== null ||
     palavras.length > 0 ||
     pedido.poucoKm ||
+    pedido.maisNova ||
+    pedido.entrada !== null ||
+    pedido.parcela !== null ||
     pedido.maisBarata;
 
   /*
    * Pediu um modelo pelo nome ("ninja", "fazer") e não tem:
    * dizer isso, em vez de pedir para a pessoa repetir.
    */
-  if (!temFiltro && pedido.palavras.length > 0) {
+  if (!temFiltro && pedido.palavras.length > 0 && pedido.palavras.length <= 2) {
     return {
       motos: [],
       parecidas: false,
@@ -334,12 +381,14 @@ export function procurarNoEstoque(
 
   const preco = (m: MotoSite) => numero(m.preco_anunciado) ?? Infinity;
   const km = (m: MotoSite) => numero(m.quilometragem) ?? Infinity;
+  const ano = (m: MotoSite) => numero(m.ano_modelo) ?? numero(m.ano_fabricacao) ?? 0;
 
   const ordenar = (lista: MotoSite[]) => {
     const copia = [...lista];
 
     if (pedido.poucoKm) copia.sort((a, b) => km(a) - km(b));
-    else if (pedido.maisBarata || pedido.de !== null) copia.sort((a, b) => preco(a) - preco(b));
+    else if (pedido.maisNova) copia.sort((a, b) => ano(b) - ano(a) || km(a) - km(b));
+    else if (pedido.maisBarata || pedido.parcela !== null || pedido.de !== null) copia.sort((a, b) => preco(a) - preco(b));
     /* "Até 20 mil": a mais perto dos 20 primeiro - é o que a pessoa pode pagar. */
     else if (pedido.ate !== null) copia.sort((a, b) => preco(b) - preco(a));
 
@@ -352,12 +401,20 @@ export function procurarNoEstoque(
 
   const descricao = descreverPedido(pedido);
 
+  /* Quem fala da entrada quer saber se dá para financiar o resto. */
+  const sobreEntrada = pedido.entrada
+    ? `Com ${brl(pedido.entrada)} de entrada, o resto dá para financiar; na ficha da moto tem o simulador da parcela. `
+    : pedido.parcela
+      ? `A parcela depende da entrada e do prazo; na ficha de cada moto tem o simulador para ver se fica em ${brl(pedido.parcela)}. `
+      : "";
+
   if (certas.length > 0) {
     const n = certas.length;
     return {
       motos: certas.slice(0, limite),
       parecidas: false,
       resposta:
+        sobreEntrada +
         (n === 1 ? "Achei 1 moto" : `Achei ${n} motos`) +
         (descricao ? ` ${descricao}` : "") +
         (n > limite ? `. Mostro as ${limite} que mais combinam:` : ":"),
