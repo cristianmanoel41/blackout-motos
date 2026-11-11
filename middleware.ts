@@ -103,7 +103,8 @@ const SEPARAR_POR_DOMINIO =
  *     enderecos de volta cadastrados naqueles servicos, no
  *     dominio;
  *   - /api/meta/catalogo e /catalogo.xml, que o Meta busca;
- *   - /api/interesse, /api/visita e /api/meta/evento, que as
+ *   - /api/interesse, /api/oferecer-moto, /api/visita e
+ *     /api/meta/evento, que as
  *     paginas do site chamam de dentro do dominio;
  *   - /vitrine/ e /contrato/, que sao links que a loja manda
  *     para o cliente;
@@ -128,6 +129,7 @@ const PAGINAS_DO_SISTEMA = [
   '/configuracoes',
   '/olx',
   '/interessados',
+  '/motos-oferecidas',
   '/diagnostico',
   '/login',
 ]
@@ -305,6 +307,8 @@ export async function middleware(request: NextRequest) {
     caminho.startsWith('/financiamento/') ||
     /* O cadastro da lista de interesse vem de visitante. */
     caminho.startsWith('/api/interesse') ||
+    /* A ficha "Compramos sua moto": tambem vem de visitante. */
+    caminho === '/api/oferecer-moto' ||
     /* A contagem de visitas tambem: quem e medido nao tem
        login, e mandar isso para /login perderia a visita. */
     caminho.startsWith('/api/visita') ||

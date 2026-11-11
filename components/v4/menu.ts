@@ -1,6 +1,7 @@
 import {
   BellRing,
   FileBarChart,
+  HandCoins,
   History,
   LayoutDashboard,
   Megaphone,
@@ -41,6 +42,7 @@ export const GRUPOS_DO_MENU: { titulo: string; itens: ItemDoMenu[] }[] = [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, busca: 'painel inicio' },
       { label: 'Estoque', href: '/admin/estoque', icon: Warehouse, busca: 'motos patio' },
       { label: 'Comprar moto', href: '/motos/nova', icon: PlusCircle, busca: 'cadastrar nova compra' },
+      { label: 'Motos oferecidas', href: '/motos-oferecidas', icon: HandCoins, busca: 'compramos sua moto avaliacao fichas site vender' },
       { label: 'Vendas', href: '/vendas', icon: ShoppingCart, busca: 'vender' },
       { label: 'Clientes', href: '/clientes', icon: Users, busca: 'cpf pessoas' },
     ],

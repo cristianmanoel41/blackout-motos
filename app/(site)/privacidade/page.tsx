@@ -83,6 +83,18 @@ export default function PrivacidadePage() {
 
         <p>
           <strong className="texto-claro">
+            Compramos sua moto.
+          </strong>{" "}
+          Se você manda a sua moto para avaliação, guardamos a
+          ficha que você preencheu: os dados da moto (inclusive
+          a placa, se você informar), seu <strong>nome</strong>,
+          seu <strong>WhatsApp</strong> e a cidade. Usamos isso
+          só para avaliar a moto e falar com você sobre a
+          proposta.
+        </p>
+
+        <p>
+          <strong className="texto-claro">
             Simulação de financiamento.
           </strong>{" "}
           O que você preenche ali{" "}
@@ -182,7 +194,8 @@ export default function PrivacidadePage() {
 
       <Bloco titulo="Com quem os dados ficam">
         <p>
-          Os contatos da lista de interesse ficam guardados no
+          Os contatos da lista de interesse e as fichas de
+          motos oferecidas ficam guardados no
           Supabase, o banco de dados do nosso sistema, com
           acesso restrito à equipe da loja.
         </p>

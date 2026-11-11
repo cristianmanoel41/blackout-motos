@@ -16,8 +16,9 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
  * volta. Fotos e vídeos vão na própria conversa, logo em seguida
  * (o WhatsApp não aceita anexo por link).
  *
- * Nada é gravado no banco: a escolha da loja em 11/11/2026 foi
- * receber pelo WhatsApp. O botão final é um link de verdade para
+ * Desde 11/11/2026 a ficha também fica guardada no sistema
+ * (tela "Motos oferecidas", /motos-oferecidas), para a loja não
+ * perder quem preencheu e não mandou a mensagem. O botão final é um link de verdade para
  * o wa.me, para a contagem de cliques no WhatsApp do site pegar
  * também este envio.
  *
@@ -195,6 +196,8 @@ export default function FormVenderMoto() {
 
   const [tentou, setTentou] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  /* Campo escondido: gente não vê, robô preenche (ver a rota). */
+  const [armadilha, setArmadilha] = useState("");
 
   /* ---------- o que falta ---------- */
 
@@ -248,6 +251,27 @@ export default function FormVenderMoto() {
 
   /* null = linha opcional não preenchida; "" = o espaço entre os blocos. */
   const mensagem = linhas.filter((linha) => linha !== null).join("\n");
+
+  /*
+   * Guarda a ficha no sistema (tela "Motos oferecidas"), no
+   * mesmo toque que abre o WhatsApp. Não espera a resposta nem
+   * avisa erro: o WhatsApp é o caminho principal, e a pessoa
+   * não pode ficar presa aqui se o banco demorar. "keepalive"
+   * deixa o envio terminar mesmo se o celular trocar de app.
+   */
+  function guardarFicha() {
+    fetch("/api/oferecer-moto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        placa, marca, modelo, versao, anoFab, anoMod, km, cor,
+        intencao, quitada, falta, docEmDia, unicoDono, manual,
+        chaveReserva, sinistro, espera, obs, nome, telefone, cidade,
+        site: armadilha,
+      }),
+    }).catch(() => {});
+  }
 
   return (
     <div className="space-y-12">
@@ -412,6 +436,13 @@ export default function FormVenderMoto() {
       </section>
 
       <div className="border-t border-white/[.08] pt-8">
+        <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+          <label>
+            Não preencha
+            <input tabIndex={-1} autoComplete="off" value={armadilha} onChange={(e) => setArmadilha(e.target.value)} />
+          </label>
+        </div>
+
         {enviado && (
           <p className="mb-5 flex items-start gap-2.5 rounded-xl border border-[#4ade80]/30 bg-[#4ade80]/[.06] px-4 py-3 text-[14px] text-white/90">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#4ade80]" />
@@ -441,6 +472,7 @@ export default function FormVenderMoto() {
               return;
             }
             setEnviado(true);
+            guardarFicha();
           }}
           className="botao-ouro inline-flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-full px-8 text-[15.5px] sm:w-auto"
         >
@@ -451,7 +483,8 @@ export default function FormVenderMoto() {
         </a>
 
         <p className="mt-4 max-w-xl text-[12.5px] leading-5 suave">
-          Seus dados vão só para o WhatsApp da loja, para a avaliação. A proposta é sem
+          Seus dados ficam só com a equipe da loja, para a avaliação (veja a{" "}
+          <a href="/privacidade" className="underline">privacidade</a>). A proposta é sem
           compromisso: você decide se fecha.
         </p>
       </div>
