@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, SendHorizontal, Sparkles, X } from "lucide-react";
+import { ChevronRight, MessageCircleMore, SendHorizontal, Sparkles, X } from "lucide-react";
 import { linkWhatsApp } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
 
@@ -81,8 +81,8 @@ export default function ChatEstoque() {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
   const [pensando, setPensando] = useState(false);
-  /* No celular o botão vira só o ícone enquanto a pessoa desce a página. */
-  const [recolhido, setRecolhido] = useState(false);
+  /* No celular o botão só aparece depois que a pessoa sai da primeira tela. */
+  const [passouDoTopo, setPassouDoTopo] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
   const ultima = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
@@ -124,19 +124,15 @@ export default function ChatEstoque() {
   }, [aberto]);
 
   /*
-   * Descendo a página, o botão encolhe para o ícone e deixa o
-   * conteúdo à vista; subindo (ou no topo), volta com o nome.
-   * A classe só pesa no celular - no computador há espaço.
+   * No celular, a primeira tela tem os botões grandes (ver o
+   * estoque, chamar no WhatsApp) e o chat ficava por cima deles.
+   * Então ele só entra depois que a pessoa rola um pouco.
    */
   useEffect(() => {
-    let antes = window.scrollY;
     function rolou() {
-      const y = window.scrollY;
-      if (y < 120) setRecolhido(false);
-      else if (y > antes + 6) setRecolhido(true);
-      else if (y < antes - 6) setRecolhido(false);
-      antes = y;
+      setPassouDoTopo(window.scrollY > 320);
     }
+    rolou();
     window.addEventListener("scroll", rolou, { passive: true });
     return () => window.removeEventListener("scroll", rolou);
   }, []);
@@ -198,18 +194,22 @@ export default function ChatEstoque() {
 
   return (
     <>
-      {/* O botão redondo: abre o chat e, aberto, vira o X que fecha. */}
+      {/*
+        * O botão redondo: abre o chat e, aberto, vira o X que fecha.
+        * No celular é só o círculo com o ícone (o nome escrito cobria
+        * o texto da página); no computador, com o nome ao lado.
+        */}
       <button
         type="button"
         data-chat-botao
         data-aberto={aberto ? "sim" : undefined}
         onClick={() => (aberto ? setAberto(false) : abrir())}
-        className={`fixed bottom-4 right-4 z-[56] flex h-12 items-center gap-2 rounded-full bg-[#e0b129] text-[14px] font-semibold text-black shadow-[0_10px_30px_-8px_rgba(0,0,0,.8)] transition-all hover:bg-[#ecc24a] sm:bottom-6 sm:right-6 ${
-          aberto
-            ? "w-12 justify-center"
-            : recolhido
-              ? "max-sm:w-12 max-sm:justify-center sm:pl-4 sm:pr-5"
-              : "pl-4 pr-5"
+        className={`fixed bottom-4 right-4 z-[56] flex h-12 items-center justify-center gap-2 rounded-full bg-[#e0b129] text-[14px] font-semibold text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,.85)] ring-2 ring-black/40 transition-all duration-300 hover:bg-[#ecc24a] max-sm:w-12 sm:bottom-6 sm:right-6 ${
+          aberto ? "sm:w-12" : "sm:pl-4 sm:pr-5"
+        } ${
+          !aberto && !passouDoTopo
+            ? "max-sm:pointer-events-none max-sm:translate-y-4 max-sm:scale-75 max-sm:opacity-0"
+            : ""
         }`}
         aria-label={aberto ? "Fechar o chat" : "Abrir o chat para achar sua moto"}
       >
@@ -217,8 +217,9 @@ export default function ChatEstoque() {
           <X size={22} strokeWidth={2.4} />
         ) : (
           <>
-            <Sparkles size={18} strokeWidth={2.2} className="shrink-0" />
-            <span className={recolhido ? "max-sm:hidden" : ""}>Ache sua moto</span>
+            <MessageCircleMore size={22} strokeWidth={2.1} className="shrink-0 sm:hidden" />
+            <Sparkles size={18} strokeWidth={2.2} className="shrink-0 max-sm:hidden" />
+            <span className="max-sm:hidden">Ache sua moto</span>
           </>
         )}
       </button>
