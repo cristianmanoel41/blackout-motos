@@ -57,7 +57,7 @@ export default async function Avaliacoes() {
 
   return (
     <section className="grao relative border-y border-white/[.07] bg-[#0c0c10]">
-      <div className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
+      <div className="relative mx-auto max-w-[1400px] px-4 py-10 sm:px-6 sm:py-16 lg:py-20">
         <AoEntrar className="text-center">
           {/*
             * Estrela só com nota de verdade.

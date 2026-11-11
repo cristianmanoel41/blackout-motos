@@ -36,8 +36,10 @@ const INICIO = "/";
 export default function Rodape() {
   const redes = REDES.filter((rede) => rede.url);
 
+  /* pb-20: o botão "Ache sua moto" flutua no canto e cobria
+     o fim do rodapé (Privacidade, Termos). */
   return (
-    <footer className="border-t border-white/[.07] bg-[#0a0a0d]">
+    <footer className="border-t border-white/[.07] bg-[#0a0a0d] pb-20">
       <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_1fr]">
           <div>

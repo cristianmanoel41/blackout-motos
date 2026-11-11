@@ -79,6 +79,10 @@ export default function Cabecalho({
             * pedido da loja): no computador ele já está no menu,
             * e no celular o menu fica fechado. Para caber, no
             * celular o WhatsApp fica só com o ícone.
+            *
+            * Abaixo de 380px (celular pequeno) o Simulador sai daqui -
+            * continua no menu, como Financiamento - senão o WhatsApp
+            * encostava no botão do menu.
             */}
           <Link
             href="/estoque"
@@ -90,7 +94,7 @@ export default function Cabecalho({
 
           <Link
             href="/financiamento"
-            className="botao-vidro flex shrink-0 items-center gap-1.5 rounded-full px-2 py-2 text-[11px] min-[390px]:px-2.5 font-bold sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] lg:ml-auto xl:ml-4"
+            className="botao-vidro flex shrink-0 items-center gap-1.5 rounded-full px-2 py-2 text-[11px] max-[379px]:hidden min-[390px]:px-2.5 font-bold sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[13px] lg:ml-auto xl:ml-4"
           >
             <Calculator className="hidden h-3.5 w-3.5 ouro min-[400px]:block sm:h-4 sm:w-4" />
             Simulador

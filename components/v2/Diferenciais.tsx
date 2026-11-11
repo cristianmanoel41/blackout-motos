@@ -45,7 +45,7 @@ export default function Diferenciais() {
   return (
     <section className="relative">
 
-      <div className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
+      <div className="relative mx-auto max-w-[1400px] px-4 py-10 sm:px-6 sm:py-16 lg:py-20">
         <AoEntrar>
           <h2 className="titulo text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
             {/* Sem nowrap de proposito. No celular comum a marca
@@ -63,25 +63,27 @@ export default function Diferenciais() {
 
         {/* v4: sem caixa em volta de cada item - uma linha só,
             separada por fios finos, lida de uma vez. */}
-        <div className="mt-10 grid overflow-hidden rounded-[18px] border border-white/[.08] sm:grid-cols-2 lg:grid-cols-4">
+        {/* No celular, 2x2: um embaixo do outro, os quatro
+            ocupavam uma tela e meia para dizer quatro frases. */}
+        <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-[18px] border border-white/[.08] sm:mt-10 lg:grid-cols-4">
           {ITENS.map(({ Icone, titulo, texto }, i) => (
             <AoEntrar key={titulo} atraso={i * 90}>
               <div
-                className={`h-full border-white/[.08] bg-white/[.015] px-6 py-8 ${
-                  i < ITENS.length - 1 ? "max-sm:border-b" : ""
-                } ${i < 2 ? "sm:max-lg:border-b" : ""} ${
-                  i % 2 === 0 ? "sm:max-lg:border-r" : ""
-                } ${i < ITENS.length - 1 ? "lg:border-r" : ""}`}
+                className={`h-full border-white/[.08] bg-white/[.015] px-4 py-5 sm:px-6 sm:py-8 ${
+                  i < 2 ? "max-lg:border-b" : ""
+                } ${i % 2 === 0 ? "max-lg:border-r" : ""} ${
+                  i < ITENS.length - 1 ? "lg:border-r" : ""
+                }`}
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0b129]/10">
-                  <Icone size={21} className="ouro" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e0b129]/10 sm:h-11 sm:w-11">
+                  <Icone size={19} className="ouro" />
                 </span>
 
-                <h3 className="mt-5 text-lg font-semibold tracking-tight claro">
+                <h3 className="mt-3 text-[15px] font-semibold leading-snug tracking-tight claro sm:mt-5 sm:text-lg">
                   {titulo}
                 </h3>
 
-                <p className="mt-1 text-sm suave">{texto}</p>
+                <p className="mt-1 text-[13px] suave sm:text-sm">{texto}</p>
               </div>
             </AoEntrar>
           ))}

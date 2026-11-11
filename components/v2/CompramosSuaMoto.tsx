@@ -24,7 +24,7 @@ export default function CompramosSuaMoto() {
       <AoEntrar>
         {/* v4: texto à esquerda, o caminho em três passos à
             direita - quem quer vender vê na hora como funciona. */}
-        <div className="vidro relative grid gap-10 overflow-hidden px-6 py-12 sm:px-10 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:px-14 lg:py-16">
+        <div className="vidro relative grid gap-8 overflow-hidden px-5 py-9 sm:gap-10 sm:px-10 sm:py-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:px-14 lg:py-16">
           <div className="relative">
             <p className="rotulo">Avaliação sem compromisso</p>
 

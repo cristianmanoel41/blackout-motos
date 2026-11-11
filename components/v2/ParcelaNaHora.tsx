@@ -136,15 +136,24 @@ export default function ParcelaNaHora({
             type="button"
             role="tab"
             aria-selected={forma === chave}
+            aria-label={nome}
             onClick={() => setForma(chave)}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition ${
+            className={`flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg py-2 text-[13px] font-semibold transition ${
               forma === chave
                 ? "bg-[#e0b129] text-black"
                 : "text-white/70 hover:text-white"
             }`}
           >
-            <Icone size={15} />
-            {nome}
+            <Icone size={15} className="shrink-0" />
+            {chave === "cartao" ? (
+              <span>
+                Cartão
+                {/* No celular estreito o nome inteiro quebrava em duas linhas. */}
+                <span className="max-[440px]:hidden"> de crédito</span>
+              </span>
+            ) : (
+              nome
+            )}
           </button>
         ))}
       </div>

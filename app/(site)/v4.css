@@ -270,3 +270,44 @@
 .site-blackout.v2 .cartao-3d::after {
   content: none !important;
 }
+
+/* ---------------------------------------------------------- */
+/* CELULAR: O BOTÃO "ACHE SUA MOTO" NÃO COBRE AS BARRAS        */
+/* ---------------------------------------------------------- */
+
+/*
+ * A ficha da moto (.barra-acao) e o simulador (.sim-barra) têm
+ * uma barra fixa no pé do celular, com o botão de interesse e a
+ * parcela. O chat ficava em cima dela e escondia justamente o
+ * botão do WhatsApp - então ele sobe para acima da barra.
+ */
+@media (max-width: 1023px) {
+  .site-blackout.v2:has(.barra-acao) [data-chat-botao],
+  .site-blackout.v2:has(.sim-barra:not([data-escondida="true"])) [data-chat-botao] {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Foto aberta em tela cheia: nada flutuando por cima. */
+body.foto-aberta .site-blackout [data-chat-botao] {
+  display: none;
+}
+
+
+
+/*
+ * Celular: o estoque em 2 colunas. Nome e preço encolhem para
+ * caber na metade da tela - "R$ 33.900,00" passava da borda do
+ * cartão nos aparelhos de 360px.
+ */
+@media (max-width: 639px) {
+  .site-blackout.v2 article.vidro h3.titulo {
+    font-size: 0.92rem;
+    line-height: 1.3;
+  }
+
+  .site-blackout.v2 article.vidro p.titulo.ouro {
+    font-size: clamp(0.86rem, 4.3vw, 1.1rem);
+    letter-spacing: -0.02em;
+  }
+}

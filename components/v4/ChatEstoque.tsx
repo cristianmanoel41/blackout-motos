@@ -53,6 +53,8 @@ export default function ChatEstoque() {
   const [mensagens, setMensagens] = useState<Mensagem[]>([BOAS_VINDAS]);
   const [texto, setTexto] = useState("");
   const [pensando, setPensando] = useState(false);
+  /* No celular o botão vira só o ícone enquanto a pessoa desce a página. */
+  const [recolhido, setRecolhido] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
   const ultima = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
@@ -81,6 +83,24 @@ export default function ChatEstoque() {
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
   }, [aberto]);
+
+  /*
+   * Descendo a página, o botão encolhe para o ícone e deixa o
+   * conteúdo à vista; subindo (ou no topo), volta com o nome.
+   * A classe só pesa no celular - no computador há espaço.
+   */
+  useEffect(() => {
+    let antes = window.scrollY;
+    function rolou() {
+      const agora = window.scrollY;
+      if (agora < 120) setRecolhido(false);
+      else if (agora > antes + 6) setRecolhido(true);
+      else if (agora < antes - 6) setRecolhido(false);
+      antes = agora;
+    }
+    window.addEventListener("scroll", rolou, { passive: true });
+    return () => window.removeEventListener("scroll", rolou);
+  }, []);
 
   /* Outras partes do site podem abrir o chat: window.dispatchEvent(new Event("abrir-chat-estoque")). */
   useEffect(() => {
@@ -141,12 +161,15 @@ export default function ChatEstoque() {
         <button
           type="button"
           data-chat-botao
+          data-recolhido={recolhido ? "sim" : undefined}
           onClick={() => setAberto(true)}
-          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-[#e0b129] py-3 pl-4 pr-5 text-[14px] font-semibold text-black shadow-[0_10px_30px_-8px_rgba(0,0,0,.7)] transition hover:bg-[#ecc24a] sm:bottom-6 sm:right-6"
+          className={`fixed bottom-4 right-4 z-40 flex h-12 items-center gap-2 rounded-full bg-[#e0b129] text-[14px] font-semibold text-black shadow-[0_10px_30px_-8px_rgba(0,0,0,.7)] transition-all hover:bg-[#ecc24a] sm:bottom-6 sm:right-6 sm:pl-4 sm:pr-5 ${
+            recolhido ? "max-sm:w-12 max-sm:justify-center" : "pl-4 pr-5"
+          }`}
           aria-label="Abrir o chat para achar sua moto"
         >
-          <Sparkles size={17} strokeWidth={2.2} />
-          Ache sua moto
+          <Sparkles size={18} strokeWidth={2.2} className="shrink-0" />
+          <span className={recolhido ? "max-sm:hidden" : ""}>Ache sua moto</span>
         </button>
       )}
 

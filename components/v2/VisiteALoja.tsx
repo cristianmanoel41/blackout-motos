@@ -36,7 +36,7 @@ const MAPA_EMBUTIDO = `https://www.google.com/maps?q=${encodeURIComponent(
 
 export default function VisiteALoja() {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
+    <section className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 sm:py-16 lg:py-20">
       <AoEntrar>
         <h2 className="titulo text-[clamp(1.9rem,4.5vw,2.8rem)] claro">
           Visite nossa <span className="ouro">loja</span>

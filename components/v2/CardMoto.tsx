@@ -163,20 +163,22 @@ export default function CardMoto({
 
         <div
           className={`flex flex-1 flex-col ${
-            compacto ? "p-4" : "p-5"
+            compacto ? "p-3 sm:p-4" : "p-3 sm:p-5"
           }`}
         >
           <Link href={`/estoque/${slug}`} className="block">
-            <h3 className="titulo text-[1.05rem] claro">
+            <h3 className="titulo text-[.92rem] leading-snug claro sm:text-[1.05rem]">
               {nome}
             </h3>
 
-            <p className="mt-1.5 text-[13px] suave">
+            <p className="mt-1 text-[11.5px] suave sm:mt-1.5 sm:text-[13px]">
               {anoDaMoto(moto)} · {kmDaMoto(moto.quilometragem)}
-              {cilindrada ? ` · ${cilindrada} cc` : ""}
+              {cilindrada ? (
+                <span className="max-sm:hidden">{` · ${cilindrada} cc`}</span>
+              ) : null}
             </p>
 
-            <p className="titulo mt-3 text-[1.45rem] ouro">
+            <p className="titulo mt-2 whitespace-nowrap text-[clamp(.9rem,4.6vw,1.1rem)] ouro sm:mt-3 sm:text-[1.45rem]">
               {precoDaMoto(moto)}
             </p>
           </Link>
@@ -196,13 +198,13 @@ export default function CardMoto({
                 `${nome} ${anoDaMoto(moto)}`
               )}`}
               title="Estimativa sem entrada, com a menor taxa do simulador. Sujeita à análise de crédito do banco."
-              className="mt-1.5 inline-flex w-fit items-center gap-1.5 py-1 text-[12px] font-bold ouro"
+              className="mt-1 inline-flex w-fit items-center gap-1.5 py-1 text-[11px] font-bold ouro sm:mt-1.5 sm:text-[12px]"
             >
-              <Wallet size={13} />
+              <Wallet size={13} className="shrink-0 max-sm:hidden" />
               {parcela > 0 ? (
                 <span>
-                  {MESES_DO_CARD}x a partir de {formatarMoeda(parcela)}
-                  <span className="ml-1 font-normal suave">· estimativa</span>
+                  {MESES_DO_CARD}x <span className="max-sm:hidden">a partir </span>de {formatarMoeda(parcela)}
+                  <span className="ml-1 font-normal suave max-sm:hidden">· estimativa</span>
                 </span>
               ) : (
                 "Simular parcela"
@@ -211,7 +213,7 @@ export default function CardMoto({
           )}
 
           {selos.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            <ul className="mt-2 hidden flex-wrap gap-x-3 gap-y-1 sm:flex">
               {selos.map((selo) => {
                 const { Icone, curto } = SELO_CURTO[selo] || {
                   Icone: UserCheck,
@@ -233,12 +235,13 @@ export default function CardMoto({
           )}
 
           {!compacto && (
-            <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
+            <div className="mt-auto grid grid-cols-[1fr_auto] gap-1.5 pt-3 sm:grid-cols-2 sm:gap-2 sm:pt-4">
               <Link
                 href={`/estoque/${slug}`}
                 className="botao-vidro flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-[12px]"
               >
-                Ver detalhes
+                <span className="sm:hidden">Ver</span>
+                <span className="max-sm:hidden">Ver detalhes</span>
                 <ArrowUpRight size={14} />
               </Link>
 
@@ -249,10 +252,11 @@ export default function CardMoto({
                 target="_blank"
                 rel="noopener noreferrer"
                 data-moto-card={moto.id}
-                className="botao-ouro flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-[12px]"
+                aria-label={`Chamar no WhatsApp sobre a ${nome}`}
+                className="botao-ouro flex min-h-11 min-w-11 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-[12px]"
               >
-                <IconeWhatsApp className="h-3.5 w-3.5" />
-                WhatsApp
+                <IconeWhatsApp className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                <span className="max-sm:hidden">WhatsApp</span>
               </a>
             </div>
           )}

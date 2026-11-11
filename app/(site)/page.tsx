@@ -91,7 +91,7 @@ export default async function HomePage() {
 
       {motos.length > 0 && (
         <section className="grao relative border-y border-white/[.07] bg-[#0c0c10]">
-          <div className="relative mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:py-20">
+          <div className="relative mx-auto max-w-[1400px] px-4 py-10 sm:px-6 sm:py-16 lg:py-20">
             <AoEntrar className="mb-8 max-w-2xl">
               <p className="rotulo flex items-center gap-2">
                 <Sparkles size={14} /> Ferramenta
@@ -127,7 +127,7 @@ export default async function HomePage() {
         */}
       <section
         id="simulador"
-        className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-16 pt-14 sm:px-6"
+        className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-10 pt-10 sm:px-6 sm:pb-16 sm:pt-14"
       >
         <SimuladorDePagamento estoque={doEstoque} />
       </section>
