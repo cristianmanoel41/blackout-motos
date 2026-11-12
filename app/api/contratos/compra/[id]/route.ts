@@ -486,11 +486,16 @@ export async function GET(
       ) || 0;
 
     /*
-     * Cada dado do vendedor numa linha só: os espaços de dentro
-     * viram espaço que não quebra. Sem isso o Word partia
-     * "Rua Maurício / Cardoso" ou "12 / 988029889" na virada da
-     * linha. O modelo do Word cola o rótulo no dado do mesmo
-     * jeito ("CPF nº 224...", "CEP 12236-495").
+     * Dados CURTOS do vendedor numa linha só: os espaços de
+     * dentro viram espaço que não quebra. Sem isso o Word partia
+     * "12 / 988029889" na virada da linha. O modelo do Word cola
+     * o rótulo no dado do mesmo jeito ("CPF nº 224...",
+     * "CEP 12236-495").
+     *
+     * Rua, bairro e cidade NÃO: bloco comprido demais não cabe
+     * no fim da linha, desce inteiro, e o justificado do Word
+     * estica os espaços da linha de cima (buraco visto em
+     * 12/11/2026).
      */
     const junto = (valor: unknown) =>
       String(valor ?? "").trim().replace(/\s+/g, " ");
@@ -506,7 +511,7 @@ export async function GET(
         junto(formatarCPF(moto.fornecedor_cpf)),
 
       fornecedor_rua:
-        junto(comLogradouro(moto.fornecedor_rua)),
+        comLogradouro(moto.fornecedor_rua),
 
       fornecedor_numero:
         junto(moto.fornecedor_numero),
@@ -515,10 +520,10 @@ export async function GET(
         complementoEndereco(moto.fornecedor_complemento),
 
       fornecedor_bairro:
-        junto(moto.fornecedor_bairro),
+        moto.fornecedor_bairro || "",
 
       fornecedor_cidade:
-        junto(moto.fornecedor_cidade),
+        moto.fornecedor_cidade || "",
 
       fornecedor_estado:
         junto(moto.fornecedor_estado),
