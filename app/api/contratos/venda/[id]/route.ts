@@ -7,6 +7,7 @@ import { formatarMoeda } from "@/lib/formatadores/moeda";
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
+import { nomeProprio } from "@/lib/formatadores/nome";
 
 export const runtime = "nodejs";
 
@@ -584,10 +585,12 @@ export async function GET(
       );
     }
 
-    const nomeCliente =
+    /* Sempre "Nome Sobrenome da Silva" no documento. */
+    const nomeCliente = nomeProprio(
       cliente?.nome ||
       venda.cliente ||
-      "";
+      ""
+    );
 
     if (!nomeCliente) {
       return Response.json(

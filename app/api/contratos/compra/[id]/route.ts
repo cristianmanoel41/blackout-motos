@@ -10,6 +10,7 @@ import {
 import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
+import { nomeProprio } from "@/lib/formatadores/nome";
 import { temOutroProprietario } from "@/lib/dados/proprietario";
 
 export const runtime = "nodejs";
@@ -352,9 +353,10 @@ export async function GET(
 
         const frases = [
           `Veículo entregue por ${
-            venda.cliente ||
-            moto.fornecedor_nome ||
-            "o VENDEDOR"
+            nomeProprio(
+              venda.cliente ||
+              moto.fornecedor_nome
+            ) || "o VENDEDOR"
           } como parte do pagamento (troca) na compra da moto ${descricaoMotoVendida}, negociada por ${moedaComSimbolo(
             valorTotalVenda
           )}.`,
@@ -381,9 +383,9 @@ export async function GET(
      * essa pessoa que assina a procuração.
      */
     const clausulaProprietario = temOutroProprietario(moto)
-      ? `O veículo está registrado no órgão de trânsito em nome de ${String(
+      ? `O veículo está registrado no órgão de trânsito em nome de ${nomeProprio(
           moto.proprietario_nome
-        ).trim()}${
+        )}${
           moto.proprietario_cpf
             ? `, CPF ${formatarCPF(moto.proprietario_cpf)}`
             : ""
@@ -485,8 +487,7 @@ export async function GET(
 
     doc.render({
       fornecedor_nome:
-        moto.fornecedor_nome ||
-        "",
+        nomeProprio(moto.fornecedor_nome),
 
       fornecedor_rg:
         moto.fornecedor_rg ||

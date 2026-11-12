@@ -5,6 +5,7 @@ import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
+import { nomeProprio } from "@/lib/formatadores/nome";
 import { outorganteDaMoto } from "@/lib/dados/proprietario";
 
 export const runtime = "nodejs";
@@ -162,7 +163,7 @@ export async function GET(
 
     doc.render({
       outorgante_nome:
-        String(outorgante.nome || ""),
+        nomeProprio(outorgante.nome),
 
       outorgante_cpf:
         formatarCPF(outorgante.cpf),
