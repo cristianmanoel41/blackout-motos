@@ -120,7 +120,7 @@ function identificacaoDaTroca(motoTroca: any) {
  * financiado e em qual banco, e fechar com "conforme combinado
  * entre as partes". Exemplo:
  *
- *   entrada de R$ 5.000,00, paga em Pix, e o valor de
+ *   entrada de R$ 5.000,00 paga em Pix, e o valor de
  *   R$ 13.000,00 financiado pelo
  *   banco Santander, em 48x de R$ 420,00, conforme combinado
  *   entre as partes
@@ -210,7 +210,7 @@ function descricaoPagamentos(
     if (entrada > 0) {
       frases.push(
         daMoto.length === 1
-          ? `entrada de ${moeda(entrada)}, paga ${comoFoiPago(daMoto[0], motoTroca)}`
+          ? `entrada de ${moeda(entrada)} paga ${comoFoiPago(daMoto[0], motoTroca)}`
           : `entrada de ${moeda(entrada)}, sendo ${listaEmPortugues(
               daMoto.map((item) => parteDoPagamento(item, motoTroca))
             )}`
