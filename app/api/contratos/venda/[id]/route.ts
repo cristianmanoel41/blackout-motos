@@ -111,99 +111,173 @@ function identificacaoDaTroca(motoTroca: any) {
   return partes.join(", ");
 }
 
+/*
+ * "...a ser pago da seguinte forma: ____."
+ *
+ * Pedido da loja em 12/11/2026: o contrato precisa dizer com
+ * todas as letras quanto foi de entrada (e como), quanto foi
+ * financiado e em qual banco, e fechar com "conforme combinado
+ * entre as partes". Exemplo:
+ *
+ *   entrada de R$ 5.000,00 (cinco mil reais), paga em Pix, e o
+ *   valor de R$ 13.000,00 (treze mil reais) financiado pelo
+ *   banco Santander, em 48x de R$ 420,00, conforme combinado
+ *   entre as partes
+ *
+ * Só muda a redação: os valores são os mesmos gravados na
+ * venda. O ponto final fica no modelo do Word.
+ *
+ * Pagamento de capacete (destino "capacete") não é parte do
+ * preço da moto: sai da entrada e aparece à parte no fim.
+ */
+
+/* "2026-12-15" -> "15/12/2026", sem passar por Date (fuso). */
+function dataEscrita(valor: unknown) {
+  const m = String(valor || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+}
+
+function listaEmPortugues(itens: string[]) {
+  if (itens.length <= 1) return itens[0] || "";
+
+  return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
+}
+
+function comExtenso(valor: number) {
+  const extenso = valorPorExtenso(valor);
+
+  return extenso ? `${moeda(valor)} (${extenso})` : moeda(valor);
+}
+
+/* Como aquela parte foi paga: "em Pix", "no cartão...". */
+function comoFoiPago(item: any, motoTroca?: any) {
+  const valor = Number(item.valor) || 0;
+
+  if (item.tipo === "Cartão") {
+    const parcelas = Number(item.parcelas) || 1;
+
+    const valorParcela =
+      Number(item.valor_parcela) || valor / parcelas;
+
+    return parcelas > 1
+      ? `no cartão de crédito, em ${parcelas}x de ${moeda(valorParcela)}`
+      : "no cartão de crédito, à vista";
+  }
+
+  if (item.tipo === "Moto na troca") {
+    const identificacao =
+      identificacaoDaTroca(motoTroca) || item.observacoes || "";
+
+    return `com a moto recebida na troca${
+      identificacao ? ` (${identificacao})` : ""
+    }`;
+  }
+
+  if (item.tipo === "Pix") return "em Pix";
+  if (item.tipo === "Dinheiro") return "em dinheiro";
+  if (item.tipo === "Transferência") return "por transferência bancária";
+
+  return item.tipo ? `em ${String(item.tipo).toLowerCase()}` : "";
+}
+
+/* "R$ 5.000,00 em Pix" - cada parte com o seu valor. */
+function parteDoPagamento(item: any, motoTroca?: any) {
+  return `${moeda(Number(item.valor) || 0)} ${comoFoiPago(item, motoTroca)}`.trim();
+}
+
 function descricaoPagamentos(
   venda: any,
   componentes: any[],
   motoTroca?: any
 ) {
-  const partes: string[] = [];
+  const todos = (componentes || []).filter(
+    (item) => Number(item.valor) > 0
+  );
 
-  for (const item of componentes || []) {
-    if (item.tipo === "Cartão") {
-      const parcelas =
-        Number(item.parcelas) || 1;
+  const daMoto = todos.filter((item) => item.destino !== "capacete");
+  const doCapacete = todos.filter((item) => item.destino === "capacete");
 
-      const valorParcela =
-        Number(item.valor_parcela) ||
-        Number(item.valor) / parcelas;
+  const financiado = Number(venda.valor_financiado) || 0;
 
-      partes.push(
-        `cartão no valor de ${moeda(
-          item.valor
-        )}, em ${parcelas}x de ${moeda(
-          valorParcela
-        )}`
-      );
-    } else if (
-      item.tipo === "Moto na troca"
-    ) {
-      const identificacao =
-        identificacaoDaTroca(motoTroca) ||
-        item.observacoes ||
-        "";
-
-      partes.push(
-        `moto recebida na troca${
-          identificacao
-            ? ` (${identificacao})`
-            : ""
-        }, considerada pelo valor de ${moeda(
-          item.valor
-        )}`
-      );
-    } else {
-      partes.push(
-        `${item.tipo} no valor de ${moeda(
-          item.valor
-        )}`
-      );
-    }
-  }
-
-  const financiado =
-    Number(venda.valor_financiado) || 0;
+  const frases: string[] = [];
 
   if (financiado > 0) {
-    const parcelas =
-      Number(
-        venda.parcelas_financiamento
-      ) || 0;
+    /* ---- com financiamento: entrada + valor financiado ---- */
 
-    const valorParcela =
-      Number(
-        venda.valor_parcela_financiamento
-      ) ||
-      (parcelas > 0
-        ? financiado / parcelas
-        : 0);
+    const entrada = daMoto.reduce(
+      (soma, item) => soma + (Number(item.valor) || 0),
+      0
+    );
 
-    partes.push(
-      `financiamento de ${moeda(
+    if (entrada > 0) {
+      frases.push(
+        daMoto.length === 1
+          ? `entrada de ${comExtenso(entrada)}, paga ${comoFoiPago(daMoto[0], motoTroca)}`
+          : `entrada de ${comExtenso(entrada)}, sendo ${listaEmPortugues(
+              daMoto.map((item) => parteDoPagamento(item, motoTroca))
+            )}`
+      );
+    }
+
+    const parcelas = Number(venda.parcelas_financiamento) || 0;
+
+    /*
+     * Valor da parcela só se a loja anotou o do banco. Dividir
+     * o financiado pelas parcelas daria um número sem os juros,
+     * menor que o real - e no contrato isso vira problema.
+     */
+    const valorParcela = Number(venda.valor_parcela_financiamento) || 0;
+
+    const primeira = dataEscrita(venda.data_primeira_parcela);
+
+    const banco = String(venda.banco || "").trim();
+
+    const peloBanco = banco
+      ? /^banco\b/i.test(banco)
+        ? ` pelo ${banco}`
+        : ` pelo banco ${banco}`
+      : "";
+
+    const nasParcelas =
+      parcelas > 0
+        ? `, em ${parcelas}x${valorParcela > 0 ? ` de ${moeda(valorParcela)}` : ""}`
+        : "";
+
+    const comPrimeira = primeira
+      ? `, com vencimento da primeira parcela em ${primeira}`
+      : "";
+
+    frases.push(
+      `${entrada > 0 ? "o valor de " : ""}${comExtenso(
         financiado
-      )}${
-        venda.banco
-          ? ` pelo banco/financeira ${venda.banco}`
-          : ""
-      }${
-        parcelas > 0
-          ? `, em ${parcelas}x${
-              valorParcela > 0
-                ? ` de ${moeda(valorParcela)}`
-                : ""
-            }`
-          : ""
-      }`
+      )} financiado${peloBanco}${nasParcelas}${comPrimeira}${entrada > 0 ? "" : ", sem entrada"}`
+    );
+  } else if (daMoto.length > 0) {
+    /* ---- sem financiamento: cada parte com o seu valor ---- */
+
+    frases.push(
+      listaEmPortugues(daMoto.map((item) => parteDoPagamento(item, motoTroca)))
     );
   }
 
-  if (partes.length === 0) {
-    return (
-      venda.forma_pagamento ||
-      "forma de pagamento não informada"
-    );
+  if (frases.length === 0) {
+    const resumo = String(venda.forma_pagamento || "").trim();
+
+    return resumo
+      ? `${resumo}, conforme combinado entre as partes`
+      : "conforme combinado entre as partes";
   }
 
-  return partes.join("; ");
+  let texto = frases.join(", e ");
+
+  if (doCapacete.length > 0) {
+    texto += `; além de ${listaEmPortugues(
+      doCapacete.map((item) => parteDoPagamento(item, motoTroca))
+    )}, referente a capacete`;
+  }
+
+  return `${texto}, conforme combinado entre as partes`;
 }
 
 function transferenciaDescricao(
@@ -668,6 +742,10 @@ export async function GET(
         identificacaoDaTroca(
           motoTroca
         ),
+
+      /* Para uma cláusula própria no Word, se a loja quiser. */
+      financiamento_primeira_parcela:
+        dataEscrita(venda.data_primeira_parcela),
 
       financiamento_banco:
         venda.banco || "",

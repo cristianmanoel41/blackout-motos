@@ -355,6 +355,9 @@ export default function VendasPage() {
 
   const [valorParcelaManual, setValorParcelaManual] = useState("");
 
+  /* Vencimento da 1ª parcela do banco: sai escrito no contrato. */
+  const [dataPrimeiraParcela, setDataPrimeiraParcela] = useState("");
+
   const [componentes, setComponentes] = useState<ComponentePagamento[]>([]);
 
   const [modelosCapacete, setModelosCapacete] = useState<ModeloCapacete[]>([]);
@@ -721,6 +724,10 @@ export default function VendasPage() {
             setValorParcelaManual(rascunho.valorParcelaManual);
           }
 
+          if (rascunho.dataPrimeiraParcela) {
+            setDataPrimeiraParcela(rascunho.dataPrimeiraParcela);
+          }
+
           if (Array.isArray(rascunho.componentes)) {
             /*
              * Rascunho salvo antes da separação
@@ -848,6 +855,7 @@ export default function VendasPage() {
       banco,
       parcelasFinanciamento,
       valorParcelaManual,
+      dataPrimeiraParcela,
       clienteId,
       buscaCliente,
       pelaParceira,
@@ -1088,6 +1096,7 @@ export default function VendasPage() {
     setBanco("");
     setParcelasFinanciamento("");
     setValorParcelaManual("");
+    setDataPrimeiraParcela("");
     setComponentes([]);
     setCapacetes([]);
     setVistoriaTransferencia(null);
@@ -1355,6 +1364,10 @@ export default function VendasPage() {
 
       if (origemCliente) dadosVenda.origem_cliente = origemCliente;
 
+      if (tipoVenda === "financiamento" && dataPrimeiraParcela) {
+        dadosVenda.data_primeira_parcela = dataPrimeiraParcela;
+      }
+
       let { data: vendaCriada, error: vendaError } = await supabase
         .from("sales")
         .insert(dadosVenda)
@@ -1367,6 +1380,20 @@ export default function VendasPage() {
        */
       if (vendaError && String(vendaError.message).includes("origem_cliente")) {
         delete dadosVenda.origem_cliente;
+
+        ({ data: vendaCriada, error: vendaError } = await supabase
+          .from("sales")
+          .insert(dadosVenda)
+          .select("id")
+          .single());
+      }
+
+      /*
+       * Sem a migração 0044 não existe a coluna da 1ª parcela.
+       * Mesma ideia: a venda grava, só sem a data.
+       */
+      if (vendaError && String(vendaError.message).includes("data_primeira_parcela")) {
+        delete dadosVenda.data_primeira_parcela;
 
         ({ data: vendaCriada, error: vendaError } = await supabase
           .from("sales")
@@ -2013,6 +2040,7 @@ export default function VendasPage() {
                       setBanco("");
                       setParcelasFinanciamento("");
                       setValorParcelaManual("");
+                      setDataPrimeiraParcela("");
                     }
 
                     /*
@@ -2287,9 +2315,29 @@ export default function VendasPage() {
                   />
 
                   <p className="mt-2 text-xs text-zinc-500">
-                    Opcional. Anote aqui a parcela que ficou no banco, só para
-                    controle interno. No contrato sai apenas a quantidade de
-                    parcelas.
+                    Opcional. Anote aqui a parcela que ficou no banco. Se
+                    preencher, o valor sai no contrato junto com a quantidade
+                    de parcelas.
+                  </p>
+                </div>
+              )}
+
+              {tipoVenda === "financiamento" && (
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">
+                    Data da 1ª parcela
+                  </label>
+
+                  <input
+                    type="date"
+                    value={dataPrimeiraParcela}
+                    onChange={(e) => setDataPrimeiraParcela(e.target.value)}
+                    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Vencimento da primeira parcela no banco. Sai escrito no
+                    contrato.
                   </p>
                 </div>
               )}
