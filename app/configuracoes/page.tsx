@@ -32,7 +32,7 @@ const configuracaoInicial: Configuracoes = {
   telefone: "",
   endereco: "",
   cidade: "São José dos Campos - SP",
-  valorTransferencia: "690",
+  valorTransferencia: "790",
   bancoPadrao: "",
 };
 
@@ -380,7 +380,7 @@ export default function ConfiguracoesPage() {
                       )
                     }
                     className="w-full rounded-xl border border-grafite-claro bg-preto py-3 pl-12 pr-4 text-white outline-none transition focus:border-dourado"
-                    placeholder="690,00"
+                    placeholder="790,00"
                   />
                 </div>
 

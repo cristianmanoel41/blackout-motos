@@ -165,9 +165,9 @@ function textoDaMoto(moto: Moto) {
 
 /*
  * Valor da transferência do documento. Vem das Configurações
- * da loja; 690 é o padrão que já estava lá.
+ * da loja; 790 é o padrão desde 12/11/2026 (antes 690).
  */
-const VALOR_TRANSFERENCIA_PADRAO = 690;
+const VALOR_TRANSFERENCIA_PADRAO = 790;
 
 /* Desconto que a loja dá no valor da moto, quando dá. */
 const DESCONTO_VENDA = 400;
@@ -371,7 +371,7 @@ export default function VendasPage() {
   /*
    * O cliente paga a documentacao junto, mas nem sempre pelo
    * mesmo caminho da moto: as vezes a moto vai no cartao e os
-   * 690 no Pix. O caixa precisa dizer por onde entrou.
+   * 790 no Pix. O caixa precisa dizer por onde entrou.
    */
   const [formaTransferencia, setFormaTransferencia] =
     useState<TipoPagamento>("Pix");
@@ -1587,10 +1587,10 @@ export default function VendasPage() {
        * A parte da transferencia que a loja assume NAO vira
        * uma saida propria.
        *
-       * Os 690 ja incluem tudo - vistoria, recibo, honorario
+       * Os 790 ja incluem tudo - vistoria, recibo, honorario
        * da Cris e as taxas do Detran - e esses custos saem um
        * a um logo abaixo, cada um no nome de quem recebe. Uma
-       * saida de 690 por cima deles cobraria o mesmo dinheiro
+       * saida de 790 por cima deles cobraria o mesmo dinheiro
        * duas vezes e derrubaria o lucro da moto.
        *
        * Quem paga aparece no resultado da documentacao: sem o
