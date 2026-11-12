@@ -485,46 +485,49 @@ export async function GET(
         moto.valor_compra
       ) || 0;
 
+    /*
+     * Cada dado do vendedor numa linha só: os espaços de dentro
+     * viram espaço que não quebra. Sem isso o Word partia
+     * "Rua Maurício / Cardoso" ou "12 / 988029889" na virada da
+     * linha. O modelo do Word cola o rótulo no dado do mesmo
+     * jeito ("CPF nº 224...", "CEP 12236-495").
+     */
+    const junto = (valor: unknown) =>
+      String(valor ?? "").trim().replace(/\s+/g, " ");
+
     doc.render({
       fornecedor_nome:
         nomeProprio(moto.fornecedor_nome),
 
       fornecedor_rg:
-        moto.fornecedor_rg ||
-        "",
+        junto(moto.fornecedor_rg),
 
       fornecedor_cpf:
-        formatarCPF(moto.fornecedor_cpf),
+        junto(formatarCPF(moto.fornecedor_cpf)),
 
       fornecedor_rua:
-        comLogradouro(moto.fornecedor_rua),
+        junto(comLogradouro(moto.fornecedor_rua)),
 
       fornecedor_numero:
-        moto.fornecedor_numero ||
-        "",
+        junto(moto.fornecedor_numero),
 
       fornecedor_complemento_texto:
         complementoEndereco(moto.fornecedor_complemento),
 
       fornecedor_bairro:
-        moto.fornecedor_bairro ||
-        "",
+        junto(moto.fornecedor_bairro),
 
       fornecedor_cidade:
-        moto.fornecedor_cidade ||
-        "",
+        junto(moto.fornecedor_cidade),
 
       fornecedor_estado:
-        moto.fornecedor_estado ||
-        "",
+        junto(moto.fornecedor_estado),
 
       fornecedor_cep:
-        moto.fornecedor_cep ||
-        "",
+        junto(moto.fornecedor_cep),
 
       fornecedor_telefone:
-        moto.fornecedor_telefone ||
-        "",
+        junto(moto.fornecedor_telefone),
 
       valor_compra:
         moedaSemSimbolo(
