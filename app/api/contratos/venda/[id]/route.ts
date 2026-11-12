@@ -115,17 +115,18 @@ function identificacaoDaTroca(motoTroca: any) {
  * "...a ser pago da seguinte forma: ____."
  *
  * Pedido da loja em 12/11/2026: o contrato precisa dizer com
- * todas as letras quanto foi de entrada (e como), quanto foi
+ * clareza quanto foi de entrada (e como), quanto foi
  * financiado e em qual banco, e fechar com "conforme combinado
  * entre as partes". Exemplo:
  *
- *   entrada de R$ 5.000,00 (cinco mil reais), paga em Pix, e o
- *   valor de R$ 13.000,00 (treze mil reais) financiado pelo
+ *   entrada de R$ 5.000,00, paga em Pix, e o valor de
+ *   R$ 13.000,00 financiado pelo
  *   banco Santander, em 48x de R$ 420,00, conforme combinado
  *   entre as partes
  *
  * Só muda a redação: os valores são os mesmos gravados na
- * venda. O ponto final fica no modelo do Word.
+ * venda. O ponto final fica no modelo do Word. Em 12/11 a loja
+ * pediu os valores só em números, sem o extenso.
  *
  * Pagamento de capacete (destino "capacete") não é parte do
  * preço da moto: sai da entrada e aparece à parte no fim.
@@ -144,11 +145,6 @@ function listaEmPortugues(itens: string[]) {
   return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
 }
 
-function comExtenso(valor: number) {
-  const extenso = valorPorExtenso(valor);
-
-  return extenso ? `${moeda(valor)} (${extenso})` : moeda(valor);
-}
 
 /* Como aquela parte foi paga: "em Pix", "no cartão...". */
 function comoFoiPago(item: any, motoTroca?: any) {
@@ -213,8 +209,8 @@ function descricaoPagamentos(
     if (entrada > 0) {
       frases.push(
         daMoto.length === 1
-          ? `entrada de ${comExtenso(entrada)}, paga ${comoFoiPago(daMoto[0], motoTroca)}`
-          : `entrada de ${comExtenso(entrada)}, sendo ${listaEmPortugues(
+          ? `entrada de ${moeda(entrada)}, paga ${comoFoiPago(daMoto[0], motoTroca)}`
+          : `entrada de ${moeda(entrada)}, sendo ${listaEmPortugues(
               daMoto.map((item) => parteDoPagamento(item, motoTroca))
             )}`
       );
@@ -249,7 +245,7 @@ function descricaoPagamentos(
       : "";
 
     frases.push(
-      `${entrada > 0 ? "o valor de " : ""}${comExtenso(
+      `${entrada > 0 ? "o valor de " : ""}${moeda(
         financiado
       )} financiado${peloBanco}${nasParcelas}${comPrimeira}${entrada > 0 ? "" : ", sem entrada"}`
     );
