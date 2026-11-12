@@ -133,6 +133,18 @@ export default function EditarVendaPage() {
   const [banco, setBanco] =
     useState("");
 
+  /*
+   * Data da 1ª parcela do banco (sai no contrato). Tem botão
+   * de salvar próprio: corrigir a data não pode disparar o
+   * "Salvar alterações", que regrava pagamentos e caixa.
+   */
+  const [primeiraParcela, setPrimeiraParcela] =
+    useState("");
+  const [primeiraParcelaSalva, setPrimeiraParcelaSalva] =
+    useState("");
+  const [avisoPrimeiraParcela, setAvisoPrimeiraParcela] =
+    useState("");
+
   const [
     transferenciaCliente,
     setTransferenciaCliente,
@@ -431,6 +443,13 @@ export default function EditarVendaPage() {
 
     setBanco(
       venda.banco || ""
+    );
+
+    setPrimeiraParcela(
+      venda.data_primeira_parcela || ""
+    );
+    setPrimeiraParcelaSalva(
+      venda.data_primeira_parcela || ""
     );
 
     setTransferenciaCliente(
@@ -1257,6 +1276,30 @@ export default function EditarVendaPage() {
     );
   }
 
+  async function salvarPrimeiraParcela() {
+    setAvisoPrimeiraParcela("");
+
+    const { error } = await supabase
+      .from("sales")
+      .update({
+        data_primeira_parcela:
+          primeiraParcela || null,
+      })
+      .eq("id", id);
+
+    if (error) {
+      setAvisoPrimeiraParcela(
+        `Não foi possível salvar a data: ${error.message}`
+      );
+      return;
+    }
+
+    setPrimeiraParcelaSalva(primeiraParcela);
+    setAvisoPrimeiraParcela(
+      "Data salva. O próximo contrato gerado já sai com ela."
+    );
+  }
+
   async function alternarConclusaoDoc() {
     const novoEstado = !docConcluida;
 
@@ -1792,6 +1835,48 @@ export default function EditarVendaPage() {
                   }
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
                 />
+              </div>
+            )}
+
+            {ehFinanciamento && (
+              <div className="mt-4">
+                <label className="mb-2 block text-sm text-zinc-300">
+                  Data da 1ª parcela
+                </label>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="date"
+                    value={primeiraParcela}
+                    onChange={(e) => {
+                      setPrimeiraParcela(e.target.value);
+                      setAvisoPrimeiraParcela("");
+                    }}
+                    className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 outline-none focus:border-yellow-500"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={salvarPrimeiraParcela}
+                    disabled={primeiraParcela === primeiraParcelaSalva}
+                    className="rounded-xl bg-yellow-500 px-5 py-3 text-sm font-bold text-black transition hover:bg-yellow-400 disabled:opacity-40"
+                  >
+                    Salvar data
+                  </button>
+                </div>
+
+                <p
+                  className={`mt-2 text-xs ${
+                    avisoPrimeiraParcela.startsWith("Não")
+                      ? "text-red-400"
+                      : avisoPrimeiraParcela
+                        ? "text-green-400"
+                        : "text-zinc-500"
+                  }`}
+                >
+                  {avisoPrimeiraParcela ||
+                    "Vencimento da primeira parcela no banco. Sai escrito no contrato. Este botão salva só a data."}
+                </p>
               </div>
             )}
 
