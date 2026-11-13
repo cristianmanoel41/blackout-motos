@@ -61,6 +61,8 @@ export const MARCAS_DE_MOTO: MarcaDeMoto[] = [
       'Factor 150',
       'Fazer 250',
       'Fluo 125',
+      'FZ15 Fazer',
+      'FZ25 Fazer',
       'Lander 250',
       'MT-03',
       'MT-07',
