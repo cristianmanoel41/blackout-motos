@@ -798,9 +798,20 @@ export default function NovaMotoPage() {
                   marca.toUpperCase() === dados.marca!.toUpperCase()
               ) || dados.marca
             : anterior.marca,
+        /* "FZ25 FAZER" vira o "FZ25 Fazer" da lista, quando existe. */
         modelo:
           vazio(anterior.modelo) && dados.modelo
-            ? dados.modelo
+            ? modelosDaMarca(
+                vazio(anterior.marca) && dados.marca
+                  ? MARCAS.find(
+                      (marca) =>
+                        marca.toUpperCase() === dados.marca!.toUpperCase()
+                    ) || dados.marca
+                  : anterior.marca
+              ).find(
+                (modelo) =>
+                  modelo.toUpperCase() === dados.modelo!.toUpperCase()
+              ) || dados.modelo
             : anterior.modelo,
         ano_fabricacao:
           vazio(anterior.ano_fabricacao) && dados.ano_fabricacao
@@ -2237,6 +2248,43 @@ export default function NovaMotoPage() {
               Dados da Moto
             </h2>
 
+            {/*
+              * O CRLV vem antes dos campos (pedido da loja em
+              * 13/11/2026).
+              *
+              * Anexado primeiro, ele encontra os campos vazios e
+              * preenche tudo o que o documento traz: placa, marca,
+              * modelo, anos, cor, chassi e RENAVAM. Embaixo dos
+              * campos, ele só completava chassi e RENAVAM, porque o
+              * resto já tinha sido digitado - ver escolherCrlv.
+              */}
+            <div className="mb-6 max-w-xl border-b border-grafite-claro pb-6">
+              <CampoArquivoDocumento
+                label="CRLV da moto"
+                ajuda="Comece por aqui: ao escolher o documento, o sistema lê e preenche placa, marca, modelo, anos, cor, chassi e RENAVAM. Opcional. Fica guardado na ficha da moto, em Vistorias e CRLV."
+                arquivo={arquivoCrlv}
+                aoEscolher={escolherCrlv}
+              />
+
+              {lendoCrlv && (
+                <p className="mt-2 text-xs font-semibold leading-5 text-dourado">
+                  Lendo o CRLV...
+                </p>
+              )}
+
+              {recadoCrlv && (
+                <p
+                  className={`mt-2 text-xs font-semibold leading-5 ${
+                    recadoCrlv.tipo === "ok"
+                      ? "text-green-400"
+                      : "text-amber-400"
+                  }`}
+                >
+                  {recadoCrlv.texto}
+                </p>
+              )}
+            </div>
+
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               <CampoComBusca
                 label="Marca *"
@@ -2520,32 +2568,6 @@ export default function NovaMotoPage() {
               />
             </div>
 
-            <div className="mt-5 max-w-xl">
-              <CampoArquivoDocumento
-                label="CRLV da moto"
-                ajuda="Opcional. Ao escolher, o sistema lê o documento e preenche chassi e RENAVAM. Fica guardado na ficha da moto, em Vistorias e CRLV."
-                arquivo={arquivoCrlv}
-                aoEscolher={escolherCrlv}
-              />
-
-              {lendoCrlv && (
-                <p className="mt-2 text-xs font-semibold leading-5 text-dourado">
-                  Lendo o CRLV...
-                </p>
-              )}
-
-              {recadoCrlv && (
-                <p
-                  className={`mt-2 text-xs font-semibold leading-5 ${
-                    recadoCrlv.tipo === "ok"
-                      ? "text-green-400"
-                      : "text-amber-400"
-                  }`}
-                >
-                  {recadoCrlv.texto}
-                </p>
-              )}
-            </div>
           </section>
 
 
