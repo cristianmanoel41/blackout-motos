@@ -185,12 +185,22 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card titulo="Motos disponíveis" valor={String(motosDisponiveis ?? 0)} icone={Bike} />
         {/* Clicar abre a lista na ordem em que as vendas foram cadastradas. */}
         <Link href="/vendas/historico?ordem=registro" className="block">
           <Card titulo="Vendas no mês" valor={String(motosVendidasMes)} icone={ShoppingCart} />
         </Link>
+
+        {/*
+          * Motos compradas no mês (pedido da loja em 13/11/2026).
+          *
+          * Mesmo número do quadro "Compradas" mais abaixo: só
+          * compra de verdade. A moto da troca fica de fora porque
+          * não saiu dinheiro para buscá-la - ela aparece no quadro
+          * de baixo como "+ N na troca".
+          */}
+        <Card titulo="Compras no mês" valor={String(motosCompradasMes ?? 0)} icone={ArrowDownCircle} />
 
         {/*
           * O único número do financeiro que ficou no painel.
