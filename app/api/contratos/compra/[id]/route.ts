@@ -441,8 +441,12 @@ export async function GET(
       }
     }
 
-    // o modelo já fecha a frase com ponto
-    const observacoesContrato = [
+    /*
+     * O ponto final vem daqui, e só quando há observação: o
+     * modelo não tem mais o "." fixo, para a linha sair só
+     * "Observação:" quando não há nada (pedido de 13/11/2026).
+     */
+    const observacoesSemPonto = [
       clausulaProprietario,
       clausulaQuitacao,
       descricaoTroca,
@@ -453,6 +457,10 @@ export async function GET(
       )
       .join(" ")
       .replace(/\s*\.\s*$/, "");
+
+    const observacoesContrato = observacoesSemPonto
+      ? `${observacoesSemPonto}.`
+      : "";
 
     const templatePath =
       path.join(
@@ -493,10 +501,14 @@ export async function GET(
      * o rótulo no dado do mesmo jeito ("CPF nº 224...",
      * "CEP 12236-495").
      *
-     * Rua, bairro e cidade NÃO: bloco comprido demais não cabe
-     * no fim da linha, desce inteiro, e o justificado do Word
-     * estica os espaços da linha de cima (buraco visto em
-     * 12/11/2026).
+     * Rua e bairro NÃO: bloco comprido demais não cabe no fim
+     * da linha, desce inteiro, e o justificado do Word estica
+     * os espaços da linha de cima (buraco visto em 12/11/2026).
+     *
+     * A cidade SIM (13/11/2026): a loja aprovou o contrato com
+     * "São José dos Campos - SP" inteiro no começo da linha,
+     * mesmo com os espaços um pouco mais largos na linha de
+     * cima.
      */
     const junto = (valor: unknown) =>
       String(valor ?? "").trim().replace(/\s+/g, " ");
@@ -524,7 +536,7 @@ export async function GET(
         moto.fornecedor_bairro || "",
 
       fornecedor_cidade:
-        moto.fornecedor_cidade || "",
+        junto(moto.fornecedor_cidade),
 
       fornecedor_estado:
         junto(moto.fornecedor_estado),
