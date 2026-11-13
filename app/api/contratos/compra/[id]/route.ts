@@ -569,8 +569,9 @@ export async function GET(
       moto_placa:
         formatarPlaca(moto.placa),
 
+      /* Cor sempre maiúscula, como no CRLV (pedido de 13/11/2026). */
       moto_cor:
-        moto.cor || "",
+        String(moto.cor || "").toLocaleUpperCase("pt-BR"),
 
       moto_renavam:
         moto.renavam || "",

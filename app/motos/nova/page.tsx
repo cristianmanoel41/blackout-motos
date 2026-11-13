@@ -823,7 +823,7 @@ export default function NovaMotoPage() {
             : anterior.ano_modelo,
         cor:
           vazio(anterior.cor) && dados.cor
-            ? dados.cor.charAt(0) + dados.cor.slice(1).toLowerCase()
+            ? dados.cor.toLocaleUpperCase("pt-BR")
             : anterior.cor,
       }));
 
@@ -910,7 +910,9 @@ export default function NovaMotoPage() {
           resultado.ano_modelo ||
           anterior.ano_modelo,
         cor:
-          resultado.cor ||
+          (resultado.cor
+            ? String(resultado.cor).toLocaleUpperCase("pt-BR")
+            : "") ||
           anterior.cor,
         chassi:
           resultado.chassi ||
@@ -1291,8 +1293,9 @@ export default function NovaMotoPage() {
                 )
               : null,
 
+          /* Cor sempre maiúscula, como no CRLV (13/11/2026). */
           cor:
-            form.cor.trim() ||
+            form.cor.trim().toLocaleUpperCase("pt-BR") ||
             null,
 
           placa:
@@ -2387,10 +2390,10 @@ export default function NovaMotoPage() {
                 onChange={(valor) =>
                   atualizarCampo(
                     "cor",
-                    valor
+                    valor.toLocaleUpperCase("pt-BR")
                   )
                 }
-                placeholder="Preta"
+                placeholder="PRETA"
               />
 
               <div>

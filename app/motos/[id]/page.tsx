@@ -321,7 +321,8 @@ export default function DetalheMotoPage() {
         marca: form.marca?.trim(),
         modelo: form.modelo?.trim(),
         versao: form.versao?.trim() || null,
-        cor: form.cor?.trim() || null,
+        /* Cor sempre maiúscula, como no CRLV (13/11/2026). */
+        cor: form.cor?.trim().toLocaleUpperCase("pt-BR") || null,
 
         ano_fabricacao: form.ano_fabricacao
           ? Number(form.ano_fabricacao)
@@ -600,7 +601,7 @@ export default function DetalheMotoPage() {
             label="Cor"
             value={form.cor || ""}
             editando={editando}
-            onChange={(v) => alterarCampo("cor", v)}
+            onChange={(v) => alterarCampo("cor", v.toLocaleUpperCase("pt-BR"))}
           />
 
           <Campo

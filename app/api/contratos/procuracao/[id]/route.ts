@@ -207,8 +207,9 @@ export async function GET(
       moto_ano_modelo:
         moto.ano_modelo || "",
 
+      /* Cor sempre maiúscula, como no CRLV (pedido de 13/11/2026). */
       moto_cor:
-        moto.cor || "",
+        String(moto.cor || "").toLocaleUpperCase("pt-BR"),
 
       moto_renavam:
         moto.renavam || "",
