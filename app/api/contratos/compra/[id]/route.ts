@@ -11,6 +11,7 @@ import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
 import { nomeProprio } from "@/lib/formatadores/nome";
+import { formatarTelefone } from "@/lib/formatadores/telefone";
 import { temOutroProprietario } from "@/lib/dados/proprietario";
 
 export const runtime = "nodejs";
@@ -532,7 +533,7 @@ export async function GET(
         junto(moto.fornecedor_cep),
 
       fornecedor_telefone:
-        junto(moto.fornecedor_telefone),
+        junto(formatarTelefone(moto.fornecedor_telefone)),
 
       valor_compra:
         moedaSemSimbolo(
