@@ -70,10 +70,14 @@ const documentos: Record<string, Documento> = {
      * 14/11/2026: a loja pediu o contrato igual ao da Rosangela,
      * o modelo do Word que usava antes do sistema: letra 11 e
      * espaçamento 1,5 do Word (no navegador, 1,8 - o "simples"
-     * do Word para a Calibri já é 1,22). A folha não estica mais
-     * a letra; só encolhe se o texto não couber.
+     * do Word para a Calibri já é 1,22).
+     *
+     * Em seguida a loja reclamou do espaço vazio no fim da folha:
+     * o teto subiu para 14 e a folha volta a crescer a letra até
+     * encher a página (com o Dogival fica em 13,5). Abaixo dos
+     * 16,5 que a loja achou grande demais.
      */
-    fonte: 11,
+    fonte: 14,
     entrelinha: 1.8,
     /*
      * 14/11/2026: a loja quer a marca d'água à mostra, num
