@@ -166,8 +166,16 @@ export async function GET(
       });
 
     doc.render({
+      /*
+       * Na procuração os nomes do OUTORGANTE e do OUTORGADO saem
+       * em MAIÚSCULAS (pedido de 14/11/2026). Nos contratos
+       * continua "Cristian Manoel da Silva Fonseca".
+       */
       outorgante_nome:
-        nomeProprio(outorgante.nome),
+        String(outorgante.nome || "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLocaleUpperCase("pt-BR"),
 
       outorgante_cpf:
         formatarCPF(outorgante.cpf),
