@@ -67,13 +67,14 @@ const documentos: Record<string, Documento> = {
      * ela desce de meio em meio ponto ate caber. A margem nao
      * corre risco.
      *
-     * 14/11/2026: a loja achou a letra grande demais (a folha
-     * enchia em 16,5). Com o espaço da marca d'água no meio (marcaNoMeio), o teto é 16 e a folha acaba em ~14,5. Com letra menor
-     * cabe mais palavra por linha, então as quebras de linha
-     * mudam em relação ao modelo aprovado em 13/11.
+     * 14/11/2026: a loja pediu o contrato igual ao da Rosangela,
+     * o modelo do Word que usava antes do sistema: letra 11 e
+     * espaçamento 1,5 do Word (no navegador, 1,8 - o "simples"
+     * do Word para a Calibri já é 1,22). A folha não estica mais
+     * a letra; só encolhe se o texto não couber.
      */
-    fonte: 16,
-    entrelinha: 1.5,
+    fonte: 11,
+    entrelinha: 1.8,
     /*
      * 14/11/2026: a loja quer a marca d'água à mostra, num
      * espaço vazio no meio da folha, e não escondida atrás do

@@ -386,13 +386,12 @@ export default function PreviaDocumento({
     const cm = 96 / 2.54;
 
     /*
-     * O buraco tem 65% da altura do logo, e não 100%: o desenho
-     * do capacete e o "MOTOS" são claros e podem encostar no
-     * texto, como no modelo do Word que a loja usa. Com o buraco
-     * inteiro sobrava espaço demais e a letra encolhia (ajuste
-     * de 14/11/2026).
+     * O buraco tem 45% da altura do logo, como no contrato da
+     * Rosangela, o modelo do Word que a loja usa (14/11/2026): o
+     * "BLACKOUT" fica no vazio entre "Observação:" e "O VENDEDOR",
+     * e o capacete e o "MOTOS", que são claros, encostam no texto.
      */
-    const parteDoBuraco = 0.65;
+    const parteDoBuraco = 0.45;
     let alturaDaMarca = 0;
 
     if (marca) marca.style.removeProperty("top");
@@ -413,15 +412,14 @@ export default function PreviaDocumento({
       alturaDaMarca =
         (marca.getBoundingClientRect().width || 13 * cm) * proporcao;
 
-      /*
-       * A linha logo antes de "O VENDEDOR" ("Observação:") fica
-       * no meio do buraco: metade do espaço acima dela, metade
-       * abaixo (pedido de 14/11/2026).
-       */
-      const metade = `${(alturaDaMarca * parteDoBuraco) / 2}px`;
+      ultimoBloco.style.setProperty(
+        "margin-top",
+        `${alturaDaMarca * parteDoBuraco}px`,
+        "important"
+      );
 
-      ultimoBloco.style.setProperty("margin-top", metade, "important");
-      blocoDeCima?.style.setProperty("margin-top", metade, "important");
+      /* Uma linha em branco antes de "Observação:", como no Word. */
+      blocoDeCima?.style.setProperty("margin-top", "1em", "important");
     }
 
     let tamanho = fonte || 15;
@@ -438,18 +436,20 @@ export default function PreviaDocumento({
     }
 
     /*
-     * Com a letra decidida, a marca fica centralizada na linha
-     * do meio ("Observação:"). "important" no próprio elemento
+     * Com a letra decidida, a palavra BLACKOUT (que ocupa do
+     * meio até uns 80% da altura do logo) fica dentro do buraco
+     * entre "Observação:" e "O VENDEDOR": o capacete sobe atrás
+     * da Observação e o "MOTOS" desce atrás de "O VENDEDOR", como
+     * no contrato da Rosangela. "important" no próprio elemento
      * vence o top fixo do CSS, na tela e na impressão.
      */
     if (marcaNoMeio && marca && blocoDeCima && alturaDaMarca) {
       const topoDaFolha = folha.getBoundingClientRect().top;
-      const linha = blocoDeCima.getBoundingClientRect();
-      const meioDaLinha = linha.top + linha.height / 2;
+      const comecoDoBuraco = blocoDeCima.getBoundingClientRect().bottom;
 
       marca.style.setProperty(
         "top",
-        `${meioDaLinha - topoDaFolha - alturaDaMarca / 2}px`,
+        `${comecoDoBuraco - topoDaFolha - alturaDaMarca * 0.42}px`,
         "important"
       );
     }
