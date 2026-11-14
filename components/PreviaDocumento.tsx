@@ -46,6 +46,11 @@ function prepararHtmlDocumento(valor: string) {
     if (texto === "Firma por autenticidade") {
       paragrafo.classList.add("rotulo-assinatura-doc");
     }
+
+    /* O título da procuração: o conversor perde o centralizado do Word. */
+    if (texto === "PROCURAÇÃO") {
+      paragrafo.classList.add("titulo-documento");
+    }
   }
 
   /*
@@ -1059,12 +1064,24 @@ export default function PreviaDocumento({
         }
 
         /* O rotulo acompanha a linha, no canto de baixo. */
+        /* Mais específico que ".documento-espalhado .corpo-documento p",
+           que justifica e zera a margem de todo parágrafo do corpo. */
+        .folha-documento .documento-word p.titulo-documento {
+          text-align: center !important;
+          margin-top: 0.4em !important;
+          margin-bottom: 0.8em !important;
+        }
+
         .documento-word .rotulo-assinatura-doc {
           width: 8cm !important;
           max-width: 100% !important;
           margin-top: 0 !important;
           margin-right: auto !important;
           margin-left: 0 !important;
+          /* Centralizado embaixo da linha e menor, como no modelo
+             da procuração que a loja mandou (14/11/2026). */
+          text-align: center !important;
+          font-size: 0.75em !important;
         }
 
         /* O contorno da edição é só na tela. */

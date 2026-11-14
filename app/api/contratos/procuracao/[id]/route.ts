@@ -3,7 +3,7 @@ import path from "node:path";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { createClient } from "@/lib/supabase/server";
-import { comLogradouro } from "@/lib/formatadores/endereco";
+import { comLogradouro, separarLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
 import { nomeProprio } from "@/lib/formatadores/nome";
 import { outorganteDaMoto } from "@/lib/dados/proprietario";
@@ -180,6 +180,24 @@ export async function GET(
 
       outorgante_complemento_texto:
         complementoEndereco(outorgante.complemento),
+
+      /*
+       * O bloco do OUTORGANTE em três linhas (modelo da loja,
+       * 14/11/2026): "residente na Rua:  Francisco Ricci  nº 101
+       * complemento: APTO 94  Bairro Vila Ema". O "complemento:"
+       * só aparece quando existe.
+       */
+      outorgante_logradouro_tipo:
+        separarLogradouro(outorgante.rua).tipo,
+
+      outorgante_logradouro_nome:
+        separarLogradouro(outorgante.rua).nome,
+
+      outorgante_complemento:
+        String(outorgante.complemento || "").trim(),
+
+      tem_complemento:
+        Boolean(String(outorgante.complemento || "").trim()),
 
       outorgante_bairro:
         String(outorgante.bairro || ""),
