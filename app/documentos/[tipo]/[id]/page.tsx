@@ -64,8 +64,13 @@ const documentos: Record<string, Documento> = {
      * A medicao da folha continua mandando: se 17 nao couber,
      * ela desce de meio em meio ponto ate caber. A margem nao
      * corre risco.
+     *
+     * 14/11/2026: a loja achou a letra grande demais (a folha
+     * enchia em 16,5). O teto desceu para 14. Com letra menor
+     * cabe mais palavra por linha, então as quebras de linha
+     * mudam em relação ao modelo aprovado em 13/11.
      */
-    fonte: 17,
+    fonte: 14,
     entrelinha: 1.5,
   },
 
