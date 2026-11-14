@@ -515,7 +515,10 @@ export async function GET(
      * cima.
      */
     const junto = (valor: unknown) =>
-      String(valor ?? "").trim().replace(/\s+/g, " ");
+      String(valor ?? "").trim().replace(/\s+/g, " ")
+      /* Hifen que nao quebra (U+2011): com a letra menor o navegador
+         partia o CPF em "261.696.188-" / "17" (14/11/2026). */
+      .replace(/-/g, "\u2011");
 
     doc.render({
       fornecedor_nome:

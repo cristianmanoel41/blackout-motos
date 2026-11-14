@@ -205,8 +205,15 @@ export default function PreviaDocumento({
   fonte,
   entrelinha,
   variante,
+  marcaNoMeio = false,
   aviso,
 }: {
+  /*
+   * A marca d'água num espaço vazio no meio da folha, entre o
+   * primeiro bloco do corpo e o último, e não atrás do texto.
+   * Pedido da loja para o contrato de compra (14/11/2026).
+   */
+  marcaNoMeio?: boolean;
   /* Aviso que fica acima da folha e não sai na impressão. */
   aviso?: React.ReactNode;
   url: string;
@@ -350,6 +357,59 @@ export default function PreviaDocumento({
       String(entrelinha || 1.65)
     );
 
+    /*
+     * O espaço da marca d'água (marcaNoMeio).
+     *
+     * O último bloco do corpo ("O VENDEDOR fica ciente...")
+     * desce a altura da marca mais uma folga. Isso é feito ANTES
+     * de medir a letra, para a folha já contar com o buraco e
+     * encolher a letra se precisar, em vez de ir para a página 2.
+     */
+    const marca = folha.querySelector<HTMLElement>(".marca-dagua-documento");
+
+    /*
+     * Onde abrir o espaço: antes de "O VENDEDOR fica ciente...".
+     * Procura pelo texto porque o conversor do Word descarta as
+     * linhas em branco - o corpo chega como um bloco só, e não
+     * dá para contar blocos.
+     */
+    const ultimoBloco =
+      Array.from(
+        folha.querySelectorAll<HTMLElement>(".corpo-documento p")
+      ).find((p) =>
+        (p.textContent || "").trim().startsWith("O VENDEDOR fica ciente")
+      ) || null;
+    const blocoDeCima =
+      (ultimoBloco?.previousElementSibling as HTMLElement | null) || null;
+
+    /* 1cm em pixel de CSS. */
+    const cm = 96 / 2.54;
+    const folga = 0.5 * cm;
+
+    if (marca) marca.style.removeProperty("top");
+    if (ultimoBloco) ultimoBloco.style.removeProperty("margin-top");
+
+    if (marcaNoMeio && marca && ultimoBloco) {
+      /*
+       * A altura vem da proporção do logo, e não de
+       * offsetHeight: na primeira medida a imagem pode não ter
+       * carregado ainda e mediria zero.
+       */
+      const imagem = marca as HTMLImageElement;
+      const proporcao =
+        imagem.naturalWidth && imagem.naturalHeight
+          ? imagem.naturalHeight / imagem.naturalWidth
+          : 700 / 1631;
+      const alturaDaMarca =
+        (marca.getBoundingClientRect().width || 13 * cm) * proporcao;
+
+      ultimoBloco.style.setProperty(
+        "margin-top",
+        `${alturaDaMarca + 2 * folga}px`,
+        "important"
+      );
+    }
+
     let tamanho = fonte || 15;
 
     while (tamanho >= 9) {
@@ -362,7 +422,24 @@ export default function PreviaDocumento({
 
       tamanho -= 0.5;
     }
-  }, [html, espalhar, fonte, entrelinha, medida, versao]);
+
+    /*
+     * Com a letra decidida, a marca vai para o meio do buraco:
+     * logo abaixo do bloco de cima, mais a folga. "important"
+     * no próprio elemento vence o top fixo do CSS, na tela e na
+     * impressão.
+     */
+    if (marcaNoMeio && marca && blocoDeCima) {
+      const topoDaFolha = folha.getBoundingClientRect().top;
+      const fimDoBloco = blocoDeCima.getBoundingClientRect().bottom;
+
+      marca.style.setProperty(
+        "top",
+        `${fimDoBloco - topoDaFolha + folga}px`,
+        "important"
+      );
+    }
+  }, [html, espalhar, fonte, entrelinha, medida, versao, marcaNoMeio]);
 
   /*
    * A lista cabe numa folha só, apertando a linha.

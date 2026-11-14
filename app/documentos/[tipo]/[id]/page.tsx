@@ -27,6 +27,8 @@ type Documento = {
   fonte?: number;
   entrelinha?: number;
   variante?: string;
+  /* Abre um espaço no meio da folha para a marca d'água. */
+  marcaNoMeio?: boolean;
   /*
    * O documento leva dados da moto? Então confere com o CRLV
    * antes de imprimir. "moto" quando o id é da moto, "venda"
@@ -72,6 +74,12 @@ const documentos: Record<string, Documento> = {
      */
     fonte: 14,
     entrelinha: 1.5,
+    /*
+     * 14/11/2026: a loja quer a marca d'água à mostra, num
+     * espaço vazio no meio da folha, e não escondida atrás do
+     * texto.
+     */
+    marcaNoMeio: true,
   },
 
   /*
@@ -122,6 +130,7 @@ export default async function DocumentoPage({
       fonte={documento.fonte}
       entrelinha={documento.entrelinha}
       variante={documento.variante}
+      marcaNoMeio={!!documento.marcaNoMeio}
       aviso={
         documento.conferirCrlv === "moto" ? (
           <AvisoCrlv motoId={id} />
