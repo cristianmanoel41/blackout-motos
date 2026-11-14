@@ -24,6 +24,21 @@ const LOGRADOUROS =
  */
 export function separarLogradouro(valor: unknown) {
   const endereco = String(valor || "").trim();
+
+  /*
+   * "r. das Flores", "tv. A": a lista LOGRADOUROS não pega
+   * essas abreviações (o \b depois do ponto falha), então elas
+   * são tratadas antes.
+   */
+  const curta = endereco.match(/^(r|tv|al|rod)\.\s*/i);
+  if (curta) {
+    const nomes: Record<string, string> = { r: "Rua", tv: "Travessa", al: "Alameda", rod: "Rodovia" };
+    return {
+      tipo: nomes[curta[1].toLocaleLowerCase("pt-BR")],
+      nome: endereco.slice(curta[0].length).trim(),
+    };
+  }
+
   const achado = endereco.match(LOGRADOUROS);
 
   if (!achado) return { tipo: endereco ? "Rua" : "", nome: endereco };
