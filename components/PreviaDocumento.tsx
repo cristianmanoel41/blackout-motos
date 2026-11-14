@@ -397,6 +397,7 @@ export default function PreviaDocumento({
 
     if (marca) marca.style.removeProperty("top");
     if (ultimoBloco) ultimoBloco.style.removeProperty("margin-top");
+    if (blocoDeCima) blocoDeCima.style.removeProperty("margin-top");
 
     if (marcaNoMeio && marca && ultimoBloco) {
       /*
@@ -412,11 +413,15 @@ export default function PreviaDocumento({
       alturaDaMarca =
         (marca.getBoundingClientRect().width || 13 * cm) * proporcao;
 
-      ultimoBloco.style.setProperty(
-        "margin-top",
-        `${alturaDaMarca * parteDoBuraco}px`,
-        "important"
-      );
+      /*
+       * A linha logo antes de "O VENDEDOR" ("Observação:") fica
+       * no meio do buraco: metade do espaço acima dela, metade
+       * abaixo (pedido de 14/11/2026).
+       */
+      const metade = `${(alturaDaMarca * parteDoBuraco) / 2}px`;
+
+      ultimoBloco.style.setProperty("margin-top", metade, "important");
+      blocoDeCima?.style.setProperty("margin-top", metade, "important");
     }
 
     let tamanho = fonte || 15;
@@ -433,19 +438,18 @@ export default function PreviaDocumento({
     }
 
     /*
-     * Com a letra decidida, a marca vai para o meio do buraco:
-     * centralizada nele, sobrando um pouco para cima e para
-     * baixo. "important" no próprio elemento vence o top fixo
-     * do CSS, na tela e na impressão.
+     * Com a letra decidida, a marca fica centralizada na linha
+     * do meio ("Observação:"). "important" no próprio elemento
+     * vence o top fixo do CSS, na tela e na impressão.
      */
     if (marcaNoMeio && marca && blocoDeCima && alturaDaMarca) {
       const topoDaFolha = folha.getBoundingClientRect().top;
-      const fimDoBloco = blocoDeCima.getBoundingClientRect().bottom;
-      const sobra = (alturaDaMarca * (1 - parteDoBuraco)) / 2;
+      const linha = blocoDeCima.getBoundingClientRect();
+      const meioDaLinha = linha.top + linha.height / 2;
 
       marca.style.setProperty(
         "top",
-        `${fimDoBloco - topoDaFolha - sobra}px`,
+        `${meioDaLinha - topoDaFolha - alturaDaMarca / 2}px`,
         "important"
       );
     }
