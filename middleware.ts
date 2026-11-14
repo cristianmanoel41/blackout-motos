@@ -301,33 +301,41 @@ export async function middleware(request: NextRequest) {
     '/sitemap.xml',
   ]
 
+  /*
+   * Endereco exato, e nao "comeca com" (revisao de seguranca
+   * de 13/11/2026): com "comeca com", uma rota nova chamada
+   * /api/visita-admin ou /api/meta/catalogo-interno nasceria
+   * aberta sem ninguem perceber.
+   */
   const rotaEhPublica =
     SITE.includes(caminho) ||
     caminho.startsWith('/estoque/') ||
     caminho.startsWith('/financiamento/') ||
     /* O cadastro da lista de interesse vem de visitante. */
-    caminho.startsWith('/api/interesse') ||
+    caminho === '/api/interesse' ||
     /* A ficha "Compramos sua moto": tambem vem de visitante. */
     caminho === '/api/oferecer-moto' ||
     /* A contagem de visitas tambem: quem e medido nao tem
        login, e mandar isso para /login perderia a visita. */
-    caminho.startsWith('/api/visita') ||
+    caminho === '/api/visita' ||
     /* A copia dos eventos do pixel para o Meta (API de
        Conversoes): tambem vem de visitante sem login. */
-    caminho.startsWith('/api/meta/evento') ||
+    caminho === '/api/meta/evento' ||
     /* O chat "Ache sua moto" do site: quem pergunta e
        visitante. So le o estoque publico (ver a rota). */
     caminho === '/api/chat-estoque' ||
     /* O Meta busca o catalogo sozinho, sem login. */
-    caminho.startsWith('/api/meta/catalogo') ||
+    caminho === '/api/meta/catalogo' ||
+    caminho === '/api/meta/catalogo.xml' ||
+    caminho === '/api/meta/catalogo.csv' ||
     caminho === '/catalogo.xml' ||
     caminho === '/catalogo-minimo.csv' ||
     /* Endereco antigo da capa: entra e e mandado para "/". */
-    caminho.startsWith('/novo') ||
+    caminho === '/novo' ||
     /* Endereco antigo da versao 2: entra e e mandado para "/". */
-    caminho.startsWith('/v2') ||
-    caminho.startsWith('/diagnostico') ||
-    caminho.startsWith('/vitrine') ||
+    caminho === '/v2' ||
+    caminho === '/diagnostico' ||
+    caminho.startsWith('/vitrine/') ||
     /* O contrato assinado que a loja manda no WhatsApp. A
        propria rota confere o token e se o link foi revogado. */
     caminho.startsWith('/contrato/') ||

@@ -7,6 +7,7 @@ import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
 import { nomeProprio } from "@/lib/formatadores/nome";
 import { outorganteDaMoto } from "@/lib/dados/proprietario";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 export const runtime = "nodejs";
 
@@ -79,6 +80,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   try {
     const { id } = await params;
     const supabase = await createClient();

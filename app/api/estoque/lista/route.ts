@@ -10,6 +10,7 @@ import {
   quilometros,
   valorDaLista,
 } from "@/lib/dados/lista-estoque";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * A lista do estoque disponível, em Word.
@@ -34,6 +35,9 @@ export const runtime = "nodejs";
    junto da lista que abre na tela do estoque. */
 
 export async function GET() {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   try {
     const supabase = await createClient();
 

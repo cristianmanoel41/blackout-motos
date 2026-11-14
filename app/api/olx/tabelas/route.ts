@@ -5,6 +5,7 @@ import {
   modelosDaMarca,
   tokenSalvo,
 } from "@/lib/olx";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Baixa as tabelas de codigo da OLX e tenta casar com o que a
@@ -77,6 +78,9 @@ function normalizar(resposta: any): Array<{
 }
 
 export async function GET(requisicao: Request) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   if (
     !new URL(requisicao.url).searchParams.has("conferir")
   ) {
@@ -110,6 +114,9 @@ export async function GET(requisicao: Request) {
 }
 
 export async function POST() {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const supabase = await createClient();
 
   try {

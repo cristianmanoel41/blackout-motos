@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Entrega a foto da moto pelo dominio da loja.
@@ -23,6 +24,9 @@ export async function GET(
   _requisicao: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const { id } = await params;
 
   const supabase = await createClient();

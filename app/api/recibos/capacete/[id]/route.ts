@@ -7,6 +7,7 @@ import {
   montarDadosRecibo,
   nomeArquivoSeguro,
 } from "@/lib/recibos/capacete";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   try {
     const { id } = await params;
 

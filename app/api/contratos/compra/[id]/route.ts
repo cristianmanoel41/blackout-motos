@@ -13,6 +13,7 @@ import { formatarPlaca } from "@/lib/formatadores/placa";
 import { nomeProprio } from "@/lib/formatadores/nome";
 import { formatarTelefone } from "@/lib/formatadores/telefone";
 import { temOutroProprietario } from "@/lib/dados/proprietario";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 export const runtime = "nodejs";
 
@@ -214,6 +215,9 @@ export async function GET(
     }>;
   }
 ) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   try {
     const { id } =
       await params;

@@ -4,6 +4,7 @@ import {
   configurado,
   enderecoDeAutorizacao,
 } from "@/lib/tiktok";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Começa a autorização: manda a loja para a tela do TikTok.
@@ -20,6 +21,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   if (!configurado()) {
     return Response.json(
       {

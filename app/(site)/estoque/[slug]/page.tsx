@@ -247,7 +247,11 @@ export default async function MotoPage({
     >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(dadosEstruturados) }}
+        /* "<" escapado: um "</script>" digitado num campo da moto
+           não fecha a tag e vira código (revisão de 13/11/2026). */
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(dadosEstruturados).replace(/</g, "\\u003c"),
+        }}
       />
 
       <EventoMoto id={moto.id} nome={nome} preco={preco} />

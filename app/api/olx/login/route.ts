@@ -2,6 +2,7 @@ import {
   credenciais,
   enderecoDeLogin,
 } from "@/lib/olx";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Manda a loja para a OLX autorizar o sistema.
@@ -13,6 +14,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(requisicao: Request) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const { id, segredo } = credenciais();
 
   if (!id || !segredo) {

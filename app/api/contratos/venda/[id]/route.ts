@@ -8,6 +8,7 @@ import { valorPorExtenso } from "@/lib/formatadores/extenso";
 import { comLogradouro } from "@/lib/formatadores/endereco";
 import { formatarPlaca } from "@/lib/formatadores/placa";
 import { nomeProprio } from "@/lib/formatadores/nome";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 export const runtime = "nodejs";
 
@@ -374,6 +375,9 @@ export async function GET(
     }>;
   }
 ) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   try {
     const { id } =
       await params;

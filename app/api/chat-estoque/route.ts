@@ -46,18 +46,66 @@ const PEDIDOS_POR_JANELA = 20;
 const JANELA_MS = 5 * 60 * 1000;
 const contagem = new Map<string, { n: number; desde: number }>();
 
-function passouDoLimite(ip: string) {
-  const agora = Date.now();
-  const atual = contagem.get(ip);
+/*
+ * E um teto por dia (revisão de segurança de 13/11/2026): quem
+ * espera os 5 minutos e volta não consegue passar o dia
+ * perguntando. Uma pessoa de verdade não chega perto de 60.
+ */
+const PEDIDOS_POR_DIA = 60;
+const DIA_MS = 24 * 60 * 60 * 1000;
+const contagemDoDia = new Map<string, { n: number; desde: number }>();
 
-  if (!atual || agora - atual.desde > JANELA_MS) {
-    contagem.set(ip, { n: 1, desde: agora });
-    if (contagem.size > 5000) contagem.clear();
+function contar(
+  mapa: Map<string, { n: number; desde: number }>,
+  ip: string,
+  janela: number,
+  limite: number
+) {
+  const agora = Date.now();
+  const atual = mapa.get(ip);
+
+  if (!atual || agora - atual.desde > janela) {
+    mapa.set(ip, { n: 1, desde: agora });
+    if (mapa.size > 5000) mapa.clear();
     return false;
   }
 
   atual.n += 1;
-  return atual.n > PEDIDOS_POR_JANELA;
+  return atual.n > limite;
+}
+
+function passouDoLimite(ip: string) {
+  const naJanela = contar(contagem, ip, JANELA_MS, PEDIDOS_POR_JANELA);
+  const noDia = contar(contagemDoDia, ip, DIA_MS, PEDIDOS_POR_DIA);
+  return naJanela || noDia;
+}
+
+/*
+ * Só responde a pedido que saiu de uma página do próprio site.
+ *
+ * O navegador sempre manda de onde veio o pedido (Origin). Um
+ * script de fora pode mentir, mas outro site não consegue usar
+ * o chat da loja de dentro das páginas dele.
+ */
+function veioDoSite(requisicao: Request) {
+  const origem = requisicao.headers.get("origin");
+  if (!origem) return true;
+
+  try {
+    const host = new URL(origem).hostname;
+    const daqui = new URL(requisicao.url).hostname;
+    return (
+      host === daqui ||
+      host === "blackoutmotos.com.br" ||
+      host === "www.blackoutmotos.com.br" ||
+      host === "localhost" ||
+      host.endsWith(".vercel.app") ||
+      host.endsWith(".ts.net") ||
+      /^(192\.168|10|100)\./.test(host)
+    );
+  } catch {
+    return false;
+  }
 }
 
 type Turno = { quem: "cliente" | "loja"; texto: string };
@@ -105,10 +153,17 @@ ${motos.map(linhaParaIA).join("\n")}`;
 
   const mensagens = [
     { role: "system", content: instrucoes },
-    ...historico.map((t) => ({
-      role: t.quem === "cliente" ? "user" : "assistant",
-      content: t.texto,
-    })),
+    /*
+     * Só as falas do cliente vão para a IA (revisão de 13/11/2026).
+     * As "da loja" vêm do navegador e qualquer um pode inventá-las,
+     * o que deixaria usar o chat como IA de graça.
+     */
+    ...historico
+      .filter((t) => t.quem === "cliente")
+      .map((t) => ({
+        role: "user",
+        content: t.texto,
+      })),
     { role: "user", content: texto },
   ];
 
@@ -152,6 +207,10 @@ ${motos.map(linhaParaIA).join("\n")}`;
 }
 
 export async function POST(requisicao: Request) {
+  if (!veioDoSite(requisicao)) {
+    return Response.json({ error: "Origem não permitida." }, { status: 403 });
+  }
+
   const ip =
     requisicao.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     requisicao.headers.get("x-real-ip") ||

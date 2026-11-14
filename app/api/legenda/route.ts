@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Monta a legenda do post com o que a ficha da moto ja tem.
@@ -332,6 +333,9 @@ const FECHOS = [
 ];
 
 export async function POST(requisicao: Request) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const corpo = await requisicao.json().catch(() => null);
 
   const motorcycleId = String(

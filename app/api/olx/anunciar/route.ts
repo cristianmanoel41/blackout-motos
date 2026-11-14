@@ -14,6 +14,7 @@ import {
   codigoDaCor,
   codigoDoCombustivel,
 } from "@/lib/olx-anuncio";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Publica uma moto na OLX.
@@ -54,6 +55,9 @@ function normalizar(resposta: any): Array<{
 }
 
 export async function POST(requisicao: Request) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const corpo = await requisicao.json().catch(() => null);
 
   const motorcycleId = String(

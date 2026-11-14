@@ -41,6 +41,46 @@ const nextConfig: NextConfig = {
    * Agora ela e a capa, e quem guardou o endereco antigo cai
    * no lugar certo em vez de dar em pagina inexistente.
    */
+  /*
+   * CABEÇALHOS DE PROTEÇÃO (revisão de segurança de 13/11/2026)
+   *
+   * - X-Frame-Options: nenhum site de fora consegue abrir o
+   *   sistema escondido dentro de uma moldura e enganar o
+   *   clique ("apagar", "revogar"). Dentro do próprio endereço
+   *   continua valendo.
+   * - nosniff: o navegador não "adivinha" o tipo de um arquivo
+   *   e roda como script algo que veio como imagem.
+   * - Referrer-Policy: ao sair do site para outro, o endereço
+   *   inteiro não vai junto. Importa no /contrato/<código> e no
+   *   /vitrine/<código>, em que o código está no endereço.
+   * - Permissions-Policy: o site não usa microfone nem
+   *   localização; fica dito que ninguém pode pedir.
+   *
+   * CSP (a lista de onde o site pode buscar script) ficou de
+   * fora de propósito: pixel do Meta, Google Ads, Supabase e
+   * mapa do Google precisariam estar todos na lista, e um
+   * esquecido derruba a medição dos anúncios sem aviso.
+   */
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "microphone=(), geolocation=(), payment=()",
+          },
+        ],
+      },
+    ];
+  },
+
   async redirects() {
     return [
       { source: "/novo", destination: "/", permanent: false },

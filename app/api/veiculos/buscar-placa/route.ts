@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 export const dynamic = "force-dynamic";
 
@@ -152,6 +153,9 @@ function separarMarcaModelo(junto: string) {
 const soDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 export async function GET(request: NextRequest) {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const url = new URL(request.url);
   const placa = limparPlaca(url.searchParams.get("placa") || "");
 

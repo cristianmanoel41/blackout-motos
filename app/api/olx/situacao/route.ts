@@ -3,6 +3,7 @@ import {
   anunciosPublicados,
   tokenSalvo,
 } from "@/lib/olx";
+import { recusarSemLogin } from "@/lib/supabase/exigir-login";
 
 /*
  * Pergunta a OLX o que esta no ar e casa com as motos da loja.
@@ -28,6 +29,9 @@ function listaDeAnuncios(resposta: any): any[] {
 }
 
 export async function POST() {
+  const semLogin = await recusarSemLogin();
+  if (semLogin) return semLogin;
+
   const supabase = await createClient();
 
   try {
