@@ -384,7 +384,16 @@ export default function PreviaDocumento({
 
     /* 1cm em pixel de CSS. */
     const cm = 96 / 2.54;
-    const folga = 0.5 * cm;
+
+    /*
+     * O buraco tem 65% da altura do logo, e não 100%: o desenho
+     * do capacete e o "MOTOS" são claros e podem encostar no
+     * texto, como no modelo do Word que a loja usa. Com o buraco
+     * inteiro sobrava espaço demais e a letra encolhia (ajuste
+     * de 14/11/2026).
+     */
+    const parteDoBuraco = 0.65;
+    let alturaDaMarca = 0;
 
     if (marca) marca.style.removeProperty("top");
     if (ultimoBloco) ultimoBloco.style.removeProperty("margin-top");
@@ -400,12 +409,12 @@ export default function PreviaDocumento({
         imagem.naturalWidth && imagem.naturalHeight
           ? imagem.naturalHeight / imagem.naturalWidth
           : 700 / 1631;
-      const alturaDaMarca =
+      alturaDaMarca =
         (marca.getBoundingClientRect().width || 13 * cm) * proporcao;
 
       ultimoBloco.style.setProperty(
         "margin-top",
-        `${alturaDaMarca + 2 * folga}px`,
+        `${alturaDaMarca * parteDoBuraco}px`,
         "important"
       );
     }
@@ -425,17 +434,18 @@ export default function PreviaDocumento({
 
     /*
      * Com a letra decidida, a marca vai para o meio do buraco:
-     * logo abaixo do bloco de cima, mais a folga. "important"
-     * no próprio elemento vence o top fixo do CSS, na tela e na
-     * impressão.
+     * centralizada nele, sobrando um pouco para cima e para
+     * baixo. "important" no próprio elemento vence o top fixo
+     * do CSS, na tela e na impressão.
      */
-    if (marcaNoMeio && marca && blocoDeCima) {
+    if (marcaNoMeio && marca && blocoDeCima && alturaDaMarca) {
       const topoDaFolha = folha.getBoundingClientRect().top;
       const fimDoBloco = blocoDeCima.getBoundingClientRect().bottom;
+      const sobra = (alturaDaMarca * (1 - parteDoBuraco)) / 2;
 
       marca.style.setProperty(
         "top",
-        `${fimDoBloco - topoDaFolha + folga}px`,
+        `${fimDoBloco - topoDaFolha - sobra}px`,
         "important"
       );
     }

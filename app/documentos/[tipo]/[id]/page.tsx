@@ -68,11 +68,11 @@ const documentos: Record<string, Documento> = {
      * corre risco.
      *
      * 14/11/2026: a loja achou a letra grande demais (a folha
-     * enchia em 16,5). O teto desceu para 14. Com letra menor
+     * enchia em 16,5). Com o espaço da marca d'água no meio (marcaNoMeio), o teto é 16 e a folha acaba em ~14,5. Com letra menor
      * cabe mais palavra por linha, então as quebras de linha
      * mudam em relação ao modelo aprovado em 13/11.
      */
-    fonte: 14,
+    fonte: 16,
     entrelinha: 1.5,
     /*
      * 14/11/2026: a loja quer a marca d'água à mostra, num
