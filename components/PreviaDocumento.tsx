@@ -51,6 +51,15 @@ function prepararHtmlDocumento(valor: string) {
     if (texto === "PROCURAÇÃO") {
       paragrafo.classList.add("titulo-documento");
     }
+
+    /*
+     * OUTORGANTE e OUTORGADO com uma linha em branco depois, como
+     * no modelo da loja (14/11/2026). As linhas vazias do Word
+     * somem na conversão, então o espaço vem daqui.
+     */
+    if (texto.startsWith("OUTORGANTE:") || texto.startsWith("OUTORGADO:")) {
+      paragrafo.classList.add("parte-procuracao-doc");
+    }
   }
 
   /*
@@ -1066,6 +1075,10 @@ export default function PreviaDocumento({
         /* O rotulo acompanha a linha, no canto de baixo. */
         /* Mais específico que ".documento-espalhado .corpo-documento p",
            que justifica e zera a margem de todo parágrafo do corpo. */
+        .folha-documento .documento-word p.parte-procuracao-doc {
+          margin-bottom: 1em !important;
+        }
+
         .folha-documento .documento-word p.titulo-documento {
           text-align: center !important;
           margin-top: 0.4em !important;
