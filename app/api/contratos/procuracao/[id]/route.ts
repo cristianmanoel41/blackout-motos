@@ -191,7 +191,7 @@ export async function GET(
         separarLogradouro(outorgante.rua).tipo,
 
       outorgante_logradouro_nome:
-        separarLogradouro(outorgante.rua).nome,
+        nomeProprio(separarLogradouro(outorgante.rua).nome),
 
       outorgante_complemento:
         String(outorgante.complemento || "").trim(),
@@ -199,14 +199,19 @@ export async function GET(
       tem_complemento:
         Boolean(String(outorgante.complemento || "").trim()),
 
+      /*
+       * Maiúsculas e minúsculas como no modelo da loja (14/11/2026):
+       * "Jardim Sul", "São José dos Campos", "SP". O cadastro
+       * guarda como foi digitado ("JARDIM SUL", "sao jose...").
+       */
       outorgante_bairro:
-        String(outorgante.bairro || ""),
+        nomeProprio(outorgante.bairro),
 
       outorgante_cidade:
-        String(outorgante.cidade || ""),
+        nomeProprio(outorgante.cidade),
 
       outorgante_estado:
-        String(outorgante.estado || ""),
+        String(outorgante.estado || "").toLocaleUpperCase("pt-BR"),
 
       outorgante_cep:
         String(outorgante.cep || ""),
@@ -214,12 +219,15 @@ export async function GET(
       moto_placa:
         formatarPlaca(moto.placa),
 
+      /* Marca e modelo em maiúsculas: "HONDA / CG 160 FAN" (modelo da loja). */
       moto_marca_modelo:
         `${moto.marca || ""} / ${moto.modelo || ""}${
           moto.versao
             ? ` ${moto.versao}`
             : ""
-        }`.trim(),
+        }`
+          .trim()
+          .toLocaleUpperCase("pt-BR"),
 
       moto_ano_fabricacao:
         moto.ano_fabricacao ||
