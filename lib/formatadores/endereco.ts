@@ -28,11 +28,28 @@ export function separarLogradouro(valor: unknown) {
 
   if (!achado) return { tipo: endereco ? "Rua" : "", nome: endereco };
 
-  const tipo = achado[0];
+  /* "av." casa como "av" (o ponto não é letra): o ponto vai junto. */
+  const comPonto = endereco.charAt(achado[0].length) === "." ? achado[0] + "." : achado[0];
+
+  /* Abreviação vira o nome inteiro: "av." -> "Avenida". */
+  const ABREVIACOES: Record<string, string> = {
+    "r.": "Rua",
+    av: "Avenida",
+    "av.": "Avenida",
+    "tv.": "Travessa",
+    "al.": "Alameda",
+    "rod.": "Rodovia",
+    praca: "Praça",
+  };
+
+  const chave = comPonto.toLocaleLowerCase("pt-BR");
+  const tipo =
+    ABREVIACOES[chave] ||
+    chave.charAt(0).toLocaleUpperCase("pt-BR") + chave.slice(1);
 
   return {
-    tipo: tipo.charAt(0).toLocaleUpperCase("pt-BR") + tipo.slice(1).toLocaleLowerCase("pt-BR"),
-    nome: endereco.slice(tipo.length).trim(),
+    tipo,
+    nome: endereco.slice(comPonto.length).trim(),
   };
 }
 
