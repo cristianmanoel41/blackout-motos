@@ -689,12 +689,16 @@ export default function PreviaDocumento({
          * e um paragrafo comum, e sem isto ela grudava na data:
          * o cliente preenchia o dia a mao em cima da linha onde
          * vai a firma.
+         *
+         * 14/11/2026: 20mm virou 10mm. A procuração não leva
+         * carimbo da loja, só a etiqueta do cartório, e o espaço
+         * que sobra vai para a letra crescer.
          */
         .documento-espalhado
           .documento-word
           .data-documento
           + .linha-assinatura-doc {
-          margin-top: 20mm !important;
+          margin-top: 10mm !important;
         }
 
         /*
