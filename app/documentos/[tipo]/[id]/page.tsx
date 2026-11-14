@@ -104,7 +104,13 @@ const documentos: Record<string, Documento> = {
     voltarRotulo: "Voltar para a moto",
     conferirCrlv: "moto",
     espalhar: true,
-    fonte: 12,
+    /*
+     * 14/11/2026: a loja pediu a letra um pouco maior. Em 12 a
+     * folha já estava cheia, então para caber 13 a entrelinha
+     * apertou de 1,65 (o padrão) para 1,4.
+     */
+    fonte: 13,
+    entrelinha: 1.4,
   },
 };
 
