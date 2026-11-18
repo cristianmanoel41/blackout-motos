@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileCheck2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import Dobravel from "@/components/Dobravel";
 import {
   anoParaConferir,
   dataCurta,
@@ -126,23 +127,21 @@ export default async function Licenciamento() {
 
   return (
     <div className={styles.panel}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black text-black">Licenciamento</h2>
-          <p className="text-xs font-bold text-black/45">
-            Pelo final da placa, no calendário do Detran-SP · motos do pátio
-          </p>
-        </div>
-
-        <span
-          className={`${styles.dataPill} flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-black/65`}
-        >
-          <FileCheck2 size={14} className="text-[#a97800]" />
-          {urgentes > 0
-            ? `${urgentes} para conferir`
-            : "nada vencendo agora"}
-        </span>
-      </div>
+      {/*
+        * Abre e fecha pelo título (pedido de 18/11/2026). Fechado,
+        * a contagem continua ao lado do título para o aviso não
+        * sumir junto com a lista; a escolha fica guardada no
+        * navegador, como nos outros blocos do painel.
+        */}
+      <Dobravel
+        titulo="Licenciamento"
+        subtitulo="Pelo final da placa, no calendário do Detran-SP · motos do pátio"
+        nome="licenciamento"
+        padrao
+        grande
+        icone={<FileCheck2 size={17} className="text-[#a97800]" />}
+        detalhe={urgentes > 0 ? `${urgentes} para conferir` : "nada vencendo agora"}
+      >
 
       {semColuna && (
         <p className="mb-3 rounded-xl border border-amber-400/40 px-3 py-2 text-[12px] font-bold text-amber-400">
@@ -230,6 +229,7 @@ export default async function Licenciamento() {
           : {semPlaca.map((l) => l.nome).join(", ")}.
         </p>
       )}
+      </Dobravel>
     </div>
   );
 }
