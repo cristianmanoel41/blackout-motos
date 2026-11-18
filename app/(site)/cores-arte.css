@@ -249,3 +249,10 @@
   :is(p.titulo.ouro, dd.titulo.ouro, p.titulo.ouro *, dd.titulo.ouro *) {
   color: #fff !important;
 }
+
+/* Logo do WhatsApp sempre no verde dele. */
+.site-blackout.site-blackout.site-blackout.v2.v2.v2 .icone-whatsapp,
+.site-blackout.site-blackout.site-blackout.v2.v2.v2 .icone-whatsapp * {
+  color: #25d366 !important;
+  fill: #25d366;
+}
