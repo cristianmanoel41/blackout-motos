@@ -3,9 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, MessageCircleMore, SendHorizontal, X } from "lucide-react";
+import { Calculator, ChevronRight, MessageCircleMore, SendHorizontal, X } from "lucide-react";
 import { linkWhatsApp } from "@/lib/dados/loja";
 import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
+import {
+  comecar,
+  querSimular,
+  responder,
+  type Passo,
+  type Simulacao,
+} from "@/lib/dados/simulador-chat";
 
 /*
  * "ACHE SUA MOTO" - O CHAT DO SITE
@@ -22,6 +29,13 @@ import { IconeWhatsApp } from "@/components/site/IconeWhatsApp";
  * site e, no celular, parecia mais um pedaço da página.
  *
  * Nada é gravado: a conversa vive só nesta aba.
+ *
+ * SIMULAÇÃO NA CONVERSA (18/11/2026): "Simular" no card de uma
+ * moto, a sugestão "Simular uma parcela" ou frases como "quanto
+ * fica financiando?" abrem o simulador de lib/dados/simulador-chat.
+ * Ele pergunta valor, financiamento ou cartão, entrada e prazo,
+ * e a conta sai aqui mesmo no navegador - essas falas não vão
+ * para o servidor nem para a IA.
  */
 
 type MotoDoChat = {
@@ -32,6 +46,8 @@ type MotoDoChat = {
   preco: string;
   slug: string;
   capa: string;
+  /* Preço em número, para a simulação. 0 quando é "Consultar". */
+  valor: number;
 };
 
 type Mensagem = {
@@ -39,10 +55,17 @@ type Mensagem = {
   texto: string;
   hora: string;
   motos?: MotoDoChat[];
+  /* Botões de resposta rápida da simulação (só na última mensagem). */
+  opcoes?: string[];
+  /* A simulação pronta, para mandar no WhatsApp. */
+  whatsapp?: string;
+  /* Fala da simulação: fica fora do histórico que vai ao servidor. */
+  sim?: boolean;
 };
 
 const SUGESTOES = [
   "Moto até R$ 15 mil",
+  "Simular uma parcela",
   "Até 20 mil",
   "Quero uma automática",
   "Uma 160 pra trabalhar",
@@ -50,7 +73,7 @@ const SUGESTOES = [
 ];
 
 const BOAS_VINDAS =
-  "Oi! 👋 Me diz o que você procura, um valor, modelo ou marca, que eu procuro no estoque de hoje.";
+  "Oi! 👋 Me diz o que você procura, um valor, modelo ou marca, que eu procuro no estoque de hoje. Também faço a simulação da parcela com você.";
 
 function agora() {
   return new Date().toLocaleTimeString("pt-BR", {
@@ -81,6 +104,8 @@ export default function ChatEstoque() {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
   const [pensando, setPensando] = useState(false);
+  /* A simulação em andamento; null quando o chat está buscando moto. */
+  const [sim, setSim] = useState<Simulacao | null>(null);
   /* No celular o botão só aparece depois que a pessoa sai da primeira tela. */
   const [passouDoTopo, setPassouDoTopo] = useState(false);
   /* O balão "Procurando moto? Me pergunte aqui", uma vez por visita. */
@@ -137,7 +162,7 @@ export default function ChatEstoque() {
    */
   useEffect(() => {
     const ult = mensagens[mensagens.length - 1];
-    if (!pensando && ult?.quem === "loja" && ult.motos?.length) {
+    if (!pensando && ult?.quem === "loja" && (ult.motos?.length || ult.whatsapp)) {
       ultima.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       fim.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -178,13 +203,57 @@ export default function ChatEstoque() {
     return () => window.removeEventListener("abrir-chat-estoque", abrir);
   }, []);
 
+  /*
+   * Uma rodada da simulação: a fala da pessoa e a resposta, com
+   * uma pausa curta para não parecer que a resposta já estava ali.
+   */
+  function falarDaSimulacao(frase: string, passo: Passo) {
+    setMensagens((atual) => [
+      ...atual,
+      { quem: "cliente", texto: frase, hora: agora(), sim: true },
+    ]);
+    setTexto("");
+    setSim(passo.sim);
+    setPensando(true);
+
+    setTimeout(() => {
+      setMensagens((atual) => [
+        ...atual,
+        {
+          quem: "loja",
+          texto: passo.texto,
+          hora: agora(),
+          sim: true,
+          opcoes: passo.opcoes,
+          whatsapp: passo.whatsapp,
+        },
+      ]);
+      setPensando(false);
+    }, 450);
+  }
+
+  function simularMoto(moto: MotoDoChat) {
+    if (pensando) return;
+    falarDaSimulacao(
+      `Simular a ${moto.nome} ${moto.ano}`,
+      comecar({ nome: moto.nome, ano: moto.ano, valor: moto.valor })
+    );
+  }
+
   async function enviar(frase: string) {
     const limpa = frase.trim();
     if (!limpa || pensando) return;
 
+    /* Simulação: a conta é feita aqui, sem servidor. */
+    if (sim || querSimular(limpa)) {
+      falarDaSimulacao(limpa, sim ? responder(sim, limpa) : comecar(undefined, limpa));
+      return;
+    }
+
     /* A saudação não vai para o servidor: é só da tela. */
     const historico = mensagens
       .slice(1)
+      .filter((m) => !m.sim)
       .map((m) => ({ quem: m.quem, texto: m.texto }));
 
     setMensagens((atual) => [...atual, { quem: "cliente", texto: limpa, hora: agora() }]);
@@ -377,7 +446,41 @@ export default function ChatEstoque() {
                   {m.motos && m.motos.length > 0 && (
                     <div className="mt-2 space-y-1.5 pl-[34px]">
                       {m.motos.map((moto) => (
-                        <CartaoDoChat key={moto.id} moto={moto} />
+                        <CartaoDoChat
+                          key={moto.id}
+                          moto={moto}
+                          aoSimular={() => simularMoto(moto)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {m.whatsapp && (
+                    <div className="mt-2 pl-[34px]">
+                      <a
+                        href={linkWhatsApp(m.whatsapp)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-chat-claro
+                        className="flex items-center justify-center gap-2 rounded-full bg-black px-4 py-2.5 text-[13.5px] font-semibold"
+                      >
+                        <IconeWhatsApp className="h-4 w-4" />
+                        Mandar essa simulação no WhatsApp
+                      </a>
+                    </div>
+                  )}
+
+                  {i === mensagens.length - 1 && !pensando && m.opcoes && m.opcoes.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5 pl-[34px]">
+                      {m.opcoes.map((opcao) => (
+                        <button
+                          key={opcao}
+                          type="button"
+                          onClick={() => enviar(opcao)}
+                          className="rounded-full border border-black/15 bg-white px-3 py-1.5 text-[13px] font-medium hover:bg-black/[.04]"
+                        >
+                          {opcao}
+                        </button>
                       ))}
                     </div>
                   )}
@@ -434,7 +537,7 @@ export default function ChatEstoque() {
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               maxLength={300}
-              placeholder="Escreva uma mensagem…"
+              placeholder={sim ? "Responda aqui…" : "Escreva uma mensagem…"}
               aria-label="O que você procura"
               enterKeyHint="send"
               className="h-11 min-w-0 flex-1 rounded-full border border-black/10 bg-[#f4f4f5] px-4 text-[16px] focus:outline-none focus:ring-1 focus:ring-black/30 sm:text-[14px]"
@@ -455,7 +558,13 @@ export default function ChatEstoque() {
   );
 }
 
-function CartaoDoChat({ moto }: { moto: MotoDoChat }) {
+function CartaoDoChat({
+  moto,
+  aoSimular,
+}: {
+  moto: MotoDoChat;
+  aoSimular: () => void;
+}) {
   const convite = `Olá, tenho interesse na ${moto.nome} ${moto.ano} (${moto.preco}) que vi no site.`;
 
   return (
@@ -480,6 +589,16 @@ function CartaoDoChat({ moto }: { moto: MotoDoChat }) {
         <div className="flex items-center justify-between gap-2">
           <span className="text-[14px] font-bold tabular-nums">{moto.preco}</span>
           <span className="flex items-center gap-1">
+            {moto.valor > 0 && (
+              <button
+                type="button"
+                onClick={aoSimular}
+                className="flex items-center gap-1 rounded-full bg-black/[.06] py-1 pl-2 pr-2.5 text-xs font-medium hover:bg-black/[.1]"
+                aria-label={`Simular a parcela da ${moto.nome}`}
+              >
+                <Calculator size={13} /> Simular
+              </button>
+            )}
             <a
               href={linkWhatsApp(convite)}
               target="_blank"

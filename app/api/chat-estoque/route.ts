@@ -3,6 +3,7 @@ import {
   anoDaMoto,
   kmDaMoto,
   nomeDaMoto,
+  numero,
   precoDaMoto,
   type MotoSite,
 } from "@/lib/dados/moto-site";
@@ -123,6 +124,8 @@ function paraTela(
     preco: precoDaMoto(moto),
     slug: slugs[moto.id],
     capa: capas[moto.id] || "",
+    /* Para o "Simular" do card: a conta roda no navegador. */
+    valor: numero(moto.preco_anunciado) || 0,
   };
 }
 
