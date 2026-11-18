@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server'
 import { nomeAPartirDoEmail, primeiroNome } from '@/lib/dados/nome-do-usuario'
 import AcessosDoSite from './AcessosDoSite'
 import Aniversariantes from './Aniversariantes'
+import Licenciamento from './Licenciamento'
 import LucroDoMes from './LucroDoMes'
 import LucroPorMes, { LucroPorMesCarregando } from './LucroPorMes'
 import DestaquesDoSite from './DestaquesDoSite'
@@ -226,6 +227,13 @@ export default async function DashboardPage() {
         * aniversario nao.
         */}
       <Aniversariantes />
+
+      {/* O licenciamento das motos do pátio pelo final da placa
+          (pedido de 18/11/2026). Junto dos aniversários porque
+          também é aviso com prazo. */}
+      <Suspense fallback={<div className={styles.panel} />}>
+        <Licenciamento />
+      </Suspense>
 
       {/* O lucro mês a mês, logo depois dos números do mês:
           o card diz quanto, o gráfico diz se é bom. */}
