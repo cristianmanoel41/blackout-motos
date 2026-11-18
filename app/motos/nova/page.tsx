@@ -35,6 +35,10 @@ import {
 } from "@/lib/dados/motos";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import {
+  anoParaConferir,
+  situacaoDoLicenciamento,
+} from "@/lib/dados/licenciamento-sp";
+import {
   formatarPlaca,
   limparPlaca,
 } from "@/lib/formatadores/placa";
@@ -1257,6 +1261,14 @@ export default function NovaMotoPage() {
       // 2. CADASTRA A MOTO JÁ VINCULADA AO CLIENTE/FORNECEDOR
       // =====================================================
 
+      const anoDoLicenciamento = anoParaConferir(
+        situacaoDoLicenciamento(formatarPlaca(form.placa), null)
+      );
+      const {
+        data: { user: quemCadastra },
+      } = await supabase.auth.getUser();
+      const usuarioDoCadastro = quemCadastra?.id ?? null;
+
       const {
         data: motoCriada,
         error: motoError,
@@ -1370,6 +1382,21 @@ export default function NovaMotoPage() {
             form.tipo_entrada ===
               "compra_nova" &&
             form.possui_financiamento,
+
+          /*
+           * "Precisa licenciar? Não" = o licenciamento do ano está
+           * pago: a moto já entra conferida no quadro do painel
+           * (app/dashboard/Licenciamento), no ano que está sendo
+           * cobrado agora pelo final da placa. Com "Sim" fica sem
+           * conferência e aparece na lista para a loja acompanhar.
+           */
+          ...(form.possui_licenciamento === "nao" && anoDoLicenciamento
+            ? {
+                licenciamento_conferido_ano: anoDoLicenciamento,
+                licenciamento_conferido_em: new Date().toISOString(),
+                licenciamento_conferido_por: usuarioDoCadastro,
+              }
+            : {}),
 
           fornecedor_nome:
             form.fornecedor_nome.trim() ||
