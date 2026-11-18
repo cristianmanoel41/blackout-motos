@@ -191,6 +191,10 @@ export default async function SiteLayout({
         html, body {
           background-color: #0a0a0c;
           color-scheme: dark;
+          /* Celular: nada passa da largura da tela, então a página
+             não arrasta para os lados. clip (e não hidden) para o
+             cabeçalho fixo continuar grudado no topo. */
+          overflow-x: clip;
         }
       `}</style>
 

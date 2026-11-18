@@ -239,7 +239,7 @@ export default function ChatEstoque() {
         data-chat-botao
         data-aberto={aberto ? "sim" : undefined}
         onClick={() => (aberto ? setAberto(false) : abrir())}
-        className={`fixed bottom-4 right-4 z-[56] flex h-12 items-center justify-center gap-2 rounded-full bg-[#e0b129] text-[14.5px] font-bold text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,.85)] ring-2 ring-black/40 transition-all duration-300 hover:bg-[#ecc24a] sm:bottom-6 sm:right-6 ${
+        className={`fixed bottom-4 right-4 z-[56] flex h-12 items-center justify-center gap-2 rounded-full bg-white text-[14.5px] font-bold text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,.85)] ring-1 ring-black/10 transition-all duration-300 hover:bg-[#f4f4f5] sm:bottom-6 sm:right-6 ${
           aberto ? "w-12" : "pl-3.5 pr-4"
         } ${
           !aberto && !passouDoTopo
@@ -255,7 +255,7 @@ export default function ChatEstoque() {
             {/* Balão de conversa com a bolinha verde de "online". */}
             <span className="relative shrink-0">
               <MessageCircleMore size={22} strokeWidth={2.1} />
-              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#16a34a] ring-2 ring-[#e0b129]" />
+              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#16a34a] ring-2 ring-white" />
             </span>
             <span className="sm:hidden">Chat</span>
             <span className="max-sm:hidden">Chat · Ache sua moto</span>
@@ -301,17 +301,17 @@ export default function ChatEstoque() {
           role="dialog"
           aria-label="Chat Ache sua moto"
           data-chat-janela
-          className="fixed bottom-[76px] left-3 right-3 z-[55] flex h-[min(600px,calc(100dvh-150px))] flex-col overflow-hidden rounded-2xl bg-[#0b0b0d] shadow-[0_24px_70px_-10px_rgba(0,0,0,.95)] ring-1 ring-white/15 sm:bottom-[92px] sm:left-auto sm:right-6 sm:h-[min(600px,calc(100dvh-170px))] sm:w-[380px]"
+          className="fixed bottom-[76px] left-3 right-3 z-[55] flex h-[min(600px,calc(100dvh-150px))] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_70px_-10px_rgba(0,0,0,.95)] ring-1 ring-white/20 sm:bottom-[92px] sm:left-auto sm:right-6 sm:h-[min(600px,calc(100dvh-170px))] sm:w-[380px]"
         >
           {/* Cabeçalho de conversa: quem está do outro lado. */}
-          <header className="flex items-center gap-3 bg-[#e0b129] px-3.5 py-2.5 text-black">
+          <header className="flex items-center gap-3 border-b border-black/10 bg-white px-3.5 py-2.5 text-black">
             <FotoDaLoja tamanho={38} />
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold leading-tight">Blackout Motos</p>
               {/* Cor no style: o tema do sistema (blackout-brand-final.css)
                   troca text-black/70 por cinza-claro em todo o site. */}
-              <p className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "rgba(0,0,0,.68)" }}>
-                <span className="h-2 w-2 rounded-full bg-[#15803d] ring-2 ring-[#e0b129]" />
+              <p data-chat-suave className="flex items-center gap-1.5 text-[12px] font-medium">
+                <span className="h-2 w-2 rounded-full bg-[#15803d] ring-2 ring-white" />
                 Online · procura no estoque de hoje
               </p>
             </div>
@@ -333,14 +333,14 @@ export default function ChatEstoque() {
           <div
             className="flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-3 py-4"
             style={{
-              backgroundColor: "#141417",
+              backgroundColor: "#f4f4f5",
               backgroundImage:
-                "radial-gradient(rgba(224,177,41,.07) 1px, transparent 1px)",
+                "radial-gradient(rgba(0,0,0,.06) 1px, transparent 1px)",
               backgroundSize: "18px 18px",
             }}
             aria-live="polite"
           >
-            <p className="mx-auto w-fit rounded-full bg-black/40 px-3 py-1 text-[11px] text-white/55">
+            <p data-chat-suave className="mx-auto w-fit rounded-full bg-black/[.06] px-3 py-1 text-[11px]">
               Hoje
             </p>
 
@@ -360,19 +360,15 @@ export default function ChatEstoque() {
                       (comFoto ? <FotoDaLoja tamanho={26} /> : <span className="w-[26px] shrink-0" />)}
 
                     <div
+                      data-chat-claro={daLoja ? undefined : ""}
                       className={
                         daLoja
-                          ? "max-w-[82%] rounded-2xl rounded-bl-sm bg-[#26262c] px-3 py-2 text-white shadow-sm"
-                          : "max-w-[82%] rounded-2xl rounded-br-sm bg-[#e0b129] px-3 py-2 text-black shadow-sm"
+                          ? "max-w-[82%] rounded-2xl rounded-bl-sm bg-white px-3 py-2 shadow-sm ring-1 ring-black/5"
+                          : "max-w-[82%] rounded-2xl rounded-br-sm bg-black px-3 py-2 shadow-sm"
                       }
                     >
                       <p className="whitespace-pre-line text-[14px] leading-snug">{m.texto}</p>
-                      <p
-                        className={`mt-0.5 text-right text-[10.5px] ${
-                          daLoja ? "text-white/40" : ""
-                        }`}
-                        style={daLoja ? undefined : { color: "rgba(0,0,0,.55)" }}
-                      >
+                      <p data-chat-suave className="mt-0.5 text-right text-[10.5px]">
                         {m.hora}
                       </p>
                     </div>
@@ -393,13 +389,13 @@ export default function ChatEstoque() {
               <div className="flex items-end gap-2">
                 <span className="w-[26px] shrink-0" />
                 <div
-                  className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-[#26262c] px-3.5 py-3"
+                  className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-white px-3.5 py-3 ring-1 ring-black/5"
                   aria-label="Digitando"
                 >
                   {[0, 1, 2].map((n) => (
                     <span
                       key={n}
-                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/60"
+                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-black/40"
                       style={{ animationDelay: `${n * 120}ms` }}
                     />
                   ))}
@@ -414,7 +410,7 @@ export default function ChatEstoque() {
                     key={s}
                     type="button"
                     onClick={() => enviar(s)}
-                    className="rounded-full border border-[#e0b129]/45 bg-[#e0b129]/[.08] px-3 py-1.5 text-[13px] font-medium text-[#f0c94d] hover:bg-[#e0b129]/15"
+                    className="rounded-full border border-black/15 bg-white px-3 py-1.5 text-[13px] font-medium hover:bg-black/[.04]"
                   >
                     {s}
                   </button>
@@ -431,7 +427,7 @@ export default function ChatEstoque() {
               e.preventDefault();
               enviar(texto);
             }}
-            className="flex items-center gap-2 border-t border-white/10 bg-[#0b0b0d] p-2.5"
+            className="flex items-center gap-2 border-t border-black/10 bg-white p-2.5"
           >
             <input
               ref={campo}
@@ -441,12 +437,13 @@ export default function ChatEstoque() {
               placeholder="Escreva uma mensagem…"
               aria-label="O que você procura"
               enterKeyHint="send"
-              className="h-11 min-w-0 flex-1 rounded-full bg-[#1f1f24] px-4 text-[16px] text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-[#e0b129]/60 sm:text-[14px]"
+              className="h-11 min-w-0 flex-1 rounded-full border border-black/10 bg-[#f4f4f5] px-4 text-[16px] focus:outline-none focus:ring-1 focus:ring-black/30 sm:text-[14px]"
             />
             <button
               type="submit"
               disabled={!texto.trim() || pensando}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#e0b129] text-black transition disabled:opacity-40"
+              data-chat-claro
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-black transition disabled:opacity-40"
               aria-label="Enviar"
             >
               <SendHorizontal size={19} strokeWidth={2.2} />
@@ -462,7 +459,7 @@ function CartaoDoChat({ moto }: { moto: MotoDoChat }) {
   const convite = `Olá, tenho interesse na ${moto.nome} ${moto.ano} (${moto.preco}) que vi no site.`;
 
   return (
-    <div className="flex gap-2.5 rounded-xl bg-[#26262c] p-1.5 shadow-sm">
+    <div className="flex gap-2.5 rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-black/10">
       <Link
         href={`/estoque/${moto.slug}`}
         className="relative h-[58px] w-[78px] shrink-0 overflow-hidden rounded-lg bg-black"
@@ -474,14 +471,14 @@ function CartaoDoChat({ moto }: { moto: MotoDoChat }) {
 
       <div className="flex min-w-0 flex-1 flex-col justify-between pr-0.5">
         <Link href={`/estoque/${moto.slug}`} className="block">
-          <p className="truncate text-[13px] font-semibold text-white">{moto.nome}</p>
-          <p className="text-[11.5px] text-white/50">
+          <p className="truncate text-[13px] font-semibold">{moto.nome}</p>
+          <p data-chat-suave className="text-[11.5px]">
             {moto.ano} · {moto.km}
           </p>
         </Link>
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[14px] font-bold tabular-nums text-[#e0b129]">{moto.preco}</span>
+          <span className="text-[14px] font-bold tabular-nums">{moto.preco}</span>
           <span className="flex items-center gap-1">
             <a
               href={linkWhatsApp(convite)}
@@ -494,7 +491,7 @@ function CartaoDoChat({ moto }: { moto: MotoDoChat }) {
             </a>
             <Link
               href={`/estoque/${moto.slug}`}
-              className="flex items-center rounded-full bg-white/[.08] py-1 pl-2.5 pr-1.5 text-xs font-medium text-white/85 hover:bg-white/[.14]"
+              className="flex items-center rounded-full bg-black/[.06] py-1 pl-2.5 pr-1.5 text-xs font-medium hover:bg-black/[.1]"
             >
               Ver <ChevronRight size={14} />
             </Link>

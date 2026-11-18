@@ -256,3 +256,31 @@
   color: #25d366 !important;
   fill: #25d366;
 }
+
+/* Chat "Ache sua moto": card branco, letra preta, e o botão
+   redondo também branco (18/11/2026). As regras de letra branca
+   acima pegam p/span de todo o site; aqui dentro tudo herda a
+   cor da janela. Balão do cliente e botão de enviar (pretos)
+   marcados com data-chat-claro; texto apagado (hora, "online",
+   ano/km) com data-chat-suave. */
+.site-blackout.site-blackout.site-blackout.v2.v2.v2 :is([data-chat-janela], [data-chat-convite], [data-chat-botao]) {
+  color: #111 !important;
+}
+
+.site-blackout.site-blackout.site-blackout.v2.v2.v2
+  :is([data-chat-janela], [data-chat-convite], [data-chat-botao])
+  *:not(.icone-whatsapp, .icone-whatsapp *) {
+  color: inherit !important;
+}
+
+.site-blackout.site-blackout.site-blackout.v2.v2.v2 [data-chat-janela] [data-chat-claro][data-chat-claro] {
+  color: #fff !important;
+}
+
+.site-blackout.v2 [data-chat-janela] [data-chat-suave] {
+  opacity: 0.55;
+}
+
+.site-blackout.site-blackout.site-blackout.v2.v2.v2 [data-chat-janela] input::placeholder {
+  color: rgba(0, 0, 0, 0.45) !important;
+}
