@@ -462,7 +462,8 @@ export default function ChatEstoque() {
                         target="_blank"
                         rel="noopener noreferrer"
                         data-chat-claro
-                        className="flex items-center justify-center gap-2 rounded-full bg-black px-4 py-2.5 text-[13.5px] font-semibold"
+                        data-whatsapp
+                        className="flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[13.5px] font-semibold"
                       >
                         <IconeWhatsApp className="h-4 w-4" />
                         Mandar essa simulação no WhatsApp
@@ -603,7 +604,8 @@ function CartaoDoChat({
               href={linkWhatsApp(convite)}
               target="_blank"
               rel="noopener noreferrer"
-              className="grid h-7 w-7 place-items-center rounded-full bg-[#25d366]/15 text-[#25d366]"
+              data-whatsapp
+              className="grid h-7 w-7 place-items-center rounded-full"
               aria-label={`Chamar no WhatsApp sobre a ${moto.nome}`}
             >
               <IconeWhatsApp className="h-3.5 w-3.5" />

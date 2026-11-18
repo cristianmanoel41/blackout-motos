@@ -258,7 +258,8 @@ export default function ParcelaNaHora({
           href={linkWhatsApp(mensagem)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#e0b129]/50 px-4 py-2.5 text-sm font-bold ouro transition hover:bg-[#e0b129]/10"
+          data-whatsapp
+          className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition"
         >
           <IconeWhatsApp className="h-4 w-4" />
           Mandar esta simulação

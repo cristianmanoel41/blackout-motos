@@ -283,3 +283,43 @@
 .site-blackout.site-blackout.site-blackout.v2.v2.v2 [data-chat-janela] input::placeholder {
   color: rgba(0, 0, 0, 0.45) !important;
 }
+
+/* Botões do WhatsApp no verde oficial (18/11/2026): fundo #25D366,
+   letra branca e o logo invertido (balão branco, telefone verde),
+   como o próprio WhatsApp usa sobre o verde. Vale para os botões
+   claros/escuros do site que levam o logo e para o que estiver
+   marcado com data-whatsapp. */
+.site-blackout.site-blackout.site-blackout.v2.v2.v2
+  :is(.botao-ouro, .botao-vidro, [data-whatsapp]):has(.icone-whatsapp) {
+  background: #25d366 !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+.site-blackout.site-blackout.site-blackout.v2.v2.v2
+  :is(.botao-ouro, .botao-vidro, [data-whatsapp]):has(.icone-whatsapp)
+  *:not(.icone-whatsapp, .icone-whatsapp *) {
+  color: #fff !important;
+}
+
+@media (hover: hover) {
+  .site-blackout.site-blackout.site-blackout.v2.v2.v2
+    :is(.botao-ouro, .botao-vidro, [data-whatsapp]):has(.icone-whatsapp):hover {
+    background: #1ebe5b !important;
+    box-shadow: 0 10px 30px -12px rgba(37, 211, 102, 0.45) !important;
+  }
+}
+
+.site-blackout.site-blackout.site-blackout.v2.v2.v2
+  :is(.botao-ouro, .botao-vidro, [data-whatsapp])
+  .icone-whatsapp
+  path:first-of-type {
+  fill: #fff !important;
+}
+
+.site-blackout.site-blackout.site-blackout.v2.v2.v2
+  :is(.botao-ouro, .botao-vidro, [data-whatsapp])
+  .icone-whatsapp
+  path:last-of-type {
+  fill: #25d366 !important;
+}
