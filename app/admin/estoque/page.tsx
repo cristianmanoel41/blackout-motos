@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import estilo from "./estoque.module.css";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
 import ListaDoEstoqueNaTela from "@/components/ListaDoEstoqueNaTela";
+import FaltamFotos from "./FaltamFotos";
 
 const supabase = createClient();
 const ITENS_POR_PAGINA = 12;
@@ -992,6 +993,11 @@ export default function EstoquePage() {
             </div>
           )}
         </section>
+
+        <FaltamFotos
+          motos={motos}
+          className={`${estilo.superficie} ${estilo.entrada} mb-4 p-4`}
+        />
 
         <section className={`${estilo.superficie} ${estilo.entrada} mb-4 p-4`}>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">

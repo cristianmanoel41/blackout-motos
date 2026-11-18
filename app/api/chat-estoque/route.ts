@@ -121,6 +121,7 @@ function paraTela(
     nome: nomeDaMoto(moto),
     ano: anoDaMoto(moto),
     km: kmDaMoto(moto.quilometragem),
+    cor: String(moto.cor || "").trim(),
     preco: precoDaMoto(moto),
     slug: slugs[moto.id],
     capa: capas[moto.id] || "",

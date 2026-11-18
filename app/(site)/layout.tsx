@@ -16,6 +16,7 @@ import { scriptDoWhatsApp } from "@/components/site/medicao";
 import Cabecalho from "@/components/v2/Cabecalho";
 import Rodape from "@/components/v2/Rodape";
 import ChatEstoque from "@/components/v4/ChatEstoque";
+import AtualizarSozinho from "@/components/site/AtualizarSozinho";
 import { estoqueDoSite } from "@/lib/dados/estoque-site";
 import { avaliacoesDoGoogle } from "@/lib/dados/avaliacoes-google";
 import { anoDaMoto, nomeDaMoto } from "@/lib/dados/moto-site";
@@ -255,6 +256,7 @@ export default async function SiteLayout({
         * pelo que a pessoa escreve ("até 20 mil", "automática").
         */}
       <ChatEstoque />
+      <AtualizarSozinho />
 
       {/*
         * A contagem de acessos, da propria Vercel.

@@ -324,6 +324,9 @@ export async function middleware(request: NextRequest) {
     /* O chat "Ache sua moto" do site: quem pergunta e
        visitante. So le o estoque publico (ver a rota). */
     caminho === '/api/chat-estoque' ||
+    /* O site aberto pergunta se o estoque mudou, para se
+       atualizar sozinho. So devolve um resumo (hash). */
+    caminho === '/api/site-versao' ||
     /* O Meta busca o catalogo sozinho, sem login. */
     caminho === '/api/meta/catalogo' ||
     caminho === '/api/meta/catalogo.xml' ||

@@ -35,6 +35,10 @@ export type MotoSimulada = {
   nome: string;
   ano: string;
   valor: number;
+  /* Vão na mensagem do WhatsApp: a loja sabe na hora qual
+     unidade é (pedido de 18/11/2026). */
+  cor?: string;
+  km?: string;
 };
 
 export type Simulacao = {
@@ -222,6 +226,7 @@ function resultado(sim: Simulacao, antes: string): Passo {
       "Olá! Simulei no cartão pelo chat do site:",
       "",
       nome ? `Moto: ${nome}` : null,
+      ...daMoto(sim),
       `Valor: ${formatarMoeda(valor)}`,
       entrada > 0 ? `Entrada: ${formatarMoeda(entrada)}` : null,
       `No cartão: ${formatarMoeda(resto)}`,
@@ -243,6 +248,7 @@ function resultado(sim: Simulacao, antes: string): Passo {
       "Olá! Fiz uma simulação no chat do site:",
       "",
       nome ? `Moto: ${nome}` : null,
+      ...daMoto(sim),
       `Valor: ${formatarMoeda(valor)}`,
       `Entrada: ${entrada > 0 ? formatarMoeda(entrada) : "sem entrada"}`,
       `Parcelas: ${prazo}x de ${formatarMoeda(minima)} a ${formatarMoeda(maxima)}`,
@@ -318,6 +324,16 @@ function lerFrase(sim: Simulacao, texto: string): Simulacao {
 }
 
 /* Começa a simulação: de uma moto do card, ou de uma frase. */
+/* Cor e km da moto do card, para a mensagem do WhatsApp. */
+function daMoto(sim: Simulacao): Array<string | null> {
+  const cor = sim.moto?.cor?.trim();
+  const km = sim.moto?.km?.trim();
+  return [
+    cor ? `Cor: ${cor}` : null,
+    km && km !== "—" ? `KM: ${km}` : null,
+  ];
+}
+
 export function comecar(moto?: MotoSimulada, texto = ""): Passo {
   let sim: Simulacao = moto && moto.valor > 0 ? { moto } : {};
   if (texto) sim = lerFrase(sim, texto);

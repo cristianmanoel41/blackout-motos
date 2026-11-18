@@ -43,6 +43,7 @@ type MotoDoChat = {
   nome: string;
   ano: string;
   km: string;
+  cor?: string;
   preco: string;
   slug: string;
   capa: string;
@@ -236,7 +237,7 @@ export default function ChatEstoque() {
     if (pensando) return;
     falarDaSimulacao(
       `Simular a ${moto.nome} ${moto.ano}`,
-      comecar({ nome: moto.nome, ano: moto.ano, valor: moto.valor })
+      comecar({ nome: moto.nome, ano: moto.ano, valor: moto.valor, cor: moto.cor, km: moto.km })
     );
   }
 
