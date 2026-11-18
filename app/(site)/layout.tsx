@@ -3,6 +3,7 @@ import "./site.css";
 import "./v2.css";
 import "./simulador.css";
 import "./v4.css";
+import "./cores-arte.css";
 import {
   fonteSite,
   fonteTitulo,

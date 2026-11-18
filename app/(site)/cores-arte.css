@@ -1,0 +1,251 @@
+/*
+ * CORES DA ARTE DO STORY (CG 160 FAN) - aprovado em 18/11/2026
+ *
+ * Vem por último na moldura do site, depois do v4.css.
+ *
+ *   - tudo preto: fundo, cartões e cabeçalho, com borda fina
+ *     clara separando os cartões;
+ *   - letras brancas; botões principais claros com letra preta,
+ *     igual ao "CHAMA NO WHATSAPP";
+ *   - dourado na informação importante: dados da moto (ano, km,
+ *     motor, cor), ficha técnica, categoria e parcela;
+ *   - preço da moto em branco.
+ *
+ * As regras foram somando na ordem dos pedidos; as do fim do
+ * arquivo valem sobre as do começo.
+ */
+
+.site-blackout.v2 {
+  --ouro: #f2b51d;
+  --ouro-claro: #f7c948;
+  --ouro-texto: #f2b51d;
+  --ouro-fundo: rgba(242, 181, 29, 0.08);
+  --tinta: #0a0a0c;
+  --grafite: #141416;
+  --grafite-claro: #1c1c1f;
+  --fumaca: #a1a1aa;
+  --linha: rgba(255, 255, 255, 0.1);
+  --v4-superficie: #141416;
+  --gelo: rgba(248, 248, 250, 0.97);
+
+  background: var(--tinta);
+  color: #f4f4f5;
+}
+
+/* Cartões: grafite com leve degradê e borda clara fina. */
+.site-blackout.v2 .vidro {
+  background: linear-gradient(180deg, #18181b 0%, #0f0f11 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+}
+
+/* Rótulos pequenos espaçados ("POR APENAS", "FINANCIAMENTO"). */
+.site-blackout.v2 .rotulo {
+  color: #a1a1aa;
+  letter-spacing: 0.24em;
+}
+
+/* Botão principal: claro, letra preta. */
+.site-blackout.v2 .botao-ouro {
+  background: var(--gelo) !important;
+  color: #111113 !important;
+  border: 1px solid transparent !important;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+@media (hover: hover) {
+  .site-blackout.v2 .botao-ouro:hover {
+    background: #ffffff !important;
+    box-shadow: 0 10px 30px -12px rgba(255, 255, 255, 0.2) !important;
+  }
+}
+
+/* Botão secundário: escuro com borda. */
+.site-blackout.v2 .botao-vidro {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f4f4f5;
+  border-radius: 14px;
+}
+
+/* Pílulas: escuras com borda; a escolhida fica branca. */
+.site-blackout.v2 .pilula,
+.site-blackout.v2 .cartao-cc {
+  background: #0e0e10;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f4f4f5;
+}
+
+@media (hover: hover) {
+  .site-blackout.v2 .pilula:hover,
+  .site-blackout.v2 .cartao-cc:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+.site-blackout.v2 .pilula-ligada {
+  background: var(--gelo) !important;
+  color: #111113 !important;
+  border-color: transparent !important;
+}
+
+.site-blackout.v2 .v4-selo {
+  background: rgba(14, 14, 16, 0.75);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f4f4f5;
+}
+
+/* Campos: foco claro em vez de dourado. */
+.site-blackout.v2 main :is(input, select, textarea):focus,
+.site-blackout.v2 input:focus {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Cabeçalho preto neutro. */
+.site-blackout.v2 > header,
+.site-blackout.v2 header.sticky {
+  background: rgba(10, 10, 12, 0.78);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+/* Sem a luz quente de fundo. */
+.site-blackout.v2 .brasa {
+  opacity: 0;
+}
+
+/* Branco translúcido: deixa passar um pouco do fundo. */
+.site-blackout.v2 .botao-ouro,
+.site-blackout.v2 .pilula-ligada {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Card das motos: preto puro, com o botão branco por cima. */
+.site-blackout.v2 article.vidro:has(> a.zoom) {
+  background: #000;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.site-blackout.v2 article.vidro:has(> a.zoom) .botao-vidro {
+  background: #000;
+}
+
+/* ======================================================
+   Letras todas brancas, cards todos pretos e fundo
+   num preto mais claro.
+   ====================================================== */
+
+.site-blackout.v2 {
+  --tinta: #17171a;
+  --grafite: #000;
+  --grafite-claro: #0a0a0b;
+  --v4-superficie: #000;
+  --fumaca: #fff;
+  --ouro-texto: #fff;
+  color: #fff;
+}
+
+/* Todo cartão preto puro. */
+.site-blackout.v2 .vidro,
+.site-blackout.v2 article.vidro:has(> a.zoom) {
+  background: #000;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.site-blackout.v2 .pilula,
+.site-blackout.v2 .cartao-cc,
+.site-blackout.v2 .botao-vidro {
+  background: #000;
+}
+
+.site-blackout.v2 > header,
+.site-blackout.v2 header.sticky {
+  background: rgba(23, 23, 26, 0.85);
+}
+
+/* Letras brancas: cinza, dourado e branco apagado viram branco.
+   Fica de fora o que está dentro do botão branco (letra preta). */
+.site-blackout.v2
+  :is(
+    .suave,
+    .claro,
+    .ouro,
+    .rotulo,
+    h1, h2, h3, h4, p, li, label, small, span, dt, dd,
+    [class*="text-white/"],
+    [class*="text-zinc-"],
+    [class*="text-gray-"],
+    [class*="text-neutral-"],
+    .text-\[\#e0b129\],
+    .text-\[\#f0c94d\],
+    .text-\[\#6b7079\]
+  ):not(.botao-ouro, .botao-ouro *, .pilula-ligada, .pilula-ligada *, .text-\[\#f87171\], .text-\[\#4ade80\], .text-\[\#25d366\]) {
+  color: #fff !important;
+}
+
+.site-blackout.v2 a:not(.botao-ouro, .pilula-ligada) {
+  color: #fff;
+}
+
+.site-blackout.v2 main :is(input, select, textarea) {
+  color: #fff !important;
+}
+
+.site-blackout.v2 main :is(input, textarea)::placeholder,
+.site-blackout.v2 input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Tudo preto: fundo também preto puro. A borda fina separa os cards. */
+.site-blackout.v2 {
+  --tinta: #000;
+  background: #000;
+}
+
+.site-blackout.v2 > header,
+.site-blackout.v2 header.sticky {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.site-blackout.v2 .vidro,
+.site-blackout.v2 article.vidro:has(> a.zoom) {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Dados da moto com letra dourada: ano, km, cilindrada, cor...
+   (linha do card e a ficha técnica da página da moto). */
+.site-blackout.v2 dd,
+.site-blackout.v2 dd *,
+.site-blackout.v2 article.vidro:has(> a.zoom) h3 + p,
+.site-blackout.v2 article.vidro:has(> a.zoom) h3 + p * {
+  color: #f2b51d !important;
+}
+
+/* Ficha técnica também em preto. */
+.site-blackout.v2 .bg-\[\#111115\] {
+  background: #000 !important;
+}
+
+/* Informação importante em dourado: valores da ficha (ano, km,
+   motor, cor...), preço, parcela e categoria - tudo que o site
+   já marcava como .ouro. Classe repetida para vencer a regra
+   das letras brancas lá em cima. */
+.site-blackout.site-blackout.v2.v2
+  :is(
+    dd, dd *,
+    .ouro, .ouro *,
+    article.vidro:has(> a.zoom) h3 + p,
+    article.vidro:has(> a.zoom) h3 + p *
+  ):not(.botao-ouro, .botao-ouro *, .pilula-ligada, .pilula-ligada *) {
+  color: #f2b51d !important;
+}
+
+/* Preço da moto em branco (card, página da moto, barra de baixo
+   e destaque da capa). */
+.site-blackout.site-blackout.site-blackout.v2.v2.v2
+  :is(p.titulo.ouro, dd.titulo.ouro, p.titulo.ouro *, dd.titulo.ouro *) {
+  color: #fff !important;
+}
