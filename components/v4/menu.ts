@@ -1,6 +1,7 @@
 import {
   BellRing,
   FileBarChart,
+  Film,
   HandCoins,
   History,
   LayoutDashboard,
@@ -60,6 +61,7 @@ export const GRUPOS_DO_MENU: { titulo: string; itens: ItemDoMenu[] }[] = [
     titulo: 'Divulgação',
     itens: [
       { label: 'Anúncios na OLX', href: '/olx', icon: Megaphone, busca: 'anuncio' },
+      { label: 'Editor de vídeo', href: '/videos', icon: Film, busca: 'video editar reels tiktok legenda musica' },
       { label: 'Lista de interesse', href: '/interessados', icon: BellRing, busca: 'interessados avise' },
     ],
   },
