@@ -17,12 +17,11 @@ import {
   Upload,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { LOJA } from "@/lib/dados/loja";
 import {
   anoDaMoto,
   kmDaMoto,
   nomeDaMoto,
-  precoDaMoto,
+  numero,
   type MotoSite,
 } from "@/lib/dados/moto-site";
 import {
@@ -33,11 +32,25 @@ import {
   LIMITE_LEGENDA,
   montagemAutomatica,
   tamanhoDoQuadro,
+  timelinePadrao,
+  type Cartoes,
   type Frase,
   type Mostrar,
   type Textos,
   type Trecho,
 } from "@/lib/video/editor";
+
+/*
+ * O padrão de vídeo (PADRAO_VIDEO_BLACKOUT.md) pede Inter/Inter
+ * Display, que o resto do site não usa (o site usa Geist). O
+ * <canvas> só sabe desenhar com uma fonte depois que ela já
+ * carregou no documento - por isso o link aqui, em vez de
+ * `next/font` (que registra a fonte sob um nome interno, não
+ * "Inter", e o lib/video/editor.ts precisa do nome certo para
+ * montar o `ctx.font`).
+ */
+const FONTE_GOOGLE =
+  "https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap";
 
 /*
  * O EDITOR DE VÍDEO (pedido de 19/11/2026)
@@ -106,13 +119,20 @@ export default function EditorDeVideo() {
   const [trechos, setTrechos] = useState<Trecho[]>([]);
   const [motos, setMotos] = useState<MotoDoEditor[]>([]);
   const [motoId, setMotoId] = useState("");
-  const [textos, setTextos] = useState<Textos>({
-    titulo: "",
-    detalhe: "",
-    preco: "",
-    chamada: `Chama no WhatsApp ${LOJA.whatsappExibicao}`,
+  const [textos, setTextos] = useState<Textos>({ marca: "", modelo: "", ano: "", km: "", preco: "" });
+  const [cartoes, setCartoes] = useState<Cartoes>(() => timelinePadrao(0));
+  const [timelineManual, setTimelineManual] = useState(false);
+  const [mostrar, setMostrar] = useState<Mostrar>({
+    logo: true,
+    textos: true,
+    legendas: false,
+    ano: true,
+    km: true,
+    financiamento: true,
+    cartao: true,
+    manual: false,
+    cautelar: false,
   });
-  const [mostrar, setMostrar] = useState<Mostrar>({ logo: true, textos: true, legendas: false });
   const [musica, setMusica] = useState<{ nome: string; url: string } | null>(null);
   const [volumeOriginal, setVolumeOriginal] = useState(1);
   const [volumeMusica, setVolumeMusica] = useState(0.35);
@@ -131,11 +151,12 @@ export default function EditorDeVideo() {
   const audio = useRef<{
     ctx: AudioContext;
     original: GainNode;
+    tratamento: BiquadFilterNode;
     musica: GainNode;
     saida: MediaStreamAudioDestinationNode;
     ligados: WeakSet<HTMLMediaElement>;
   } | null>(null);
-  const config = useRef({ textos, mostrar, frases });
+  const config = useRef({ textos, mostrar, frases, cartoes });
 
   const total = duracaoTotal(trechos);
   const quadro = useMemo(() => tamanhoDoQuadro(trechos), [trechos]);
@@ -155,7 +176,21 @@ export default function EditorDeVideo() {
     const imagem = new Image();
     imagem.src = "/logo-blackout-marca.png";
     logo.current = imagem;
+
+    /* A Inter, para o <canvas> conseguir desenhar os cards do padrão com ela. */
+    if (!document.querySelector(`link[href="${FONTE_GOOGLE}"]`)) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = FONTE_GOOGLE;
+      document.head.appendChild(link);
+    }
   }, []);
+
+  /* A linha do tempo dos cards acompanha a duração sozinha, até alguém mexer num campo dela à mão. */
+  useEffect(() => {
+    if (!timelineManual) setCartoes(timelinePadrao(total));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total]);
 
   useEffect(() => {
     if (audio.current) {
@@ -172,6 +207,7 @@ export default function EditorDeVideo() {
       altura: quadro.altura,
       video,
       tempo: t,
+      duracaoTotal: total,
       logo: logo.current,
       ...config.current,
     });
@@ -185,23 +221,29 @@ export default function EditorDeVideo() {
 
   /* O que o desenho lê durante a reprodução, sempre o mais novo. */
   useEffect(() => {
-    config.current = { textos, mostrar, frases };
+    config.current = { textos, mostrar, frases, cartoes };
     if (estado === "parado") desenharParado();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [textos, mostrar, frases, quadro, estado]);
+  }, [textos, mostrar, frases, cartoes, quadro, estado, total]);
 
   function escolherMoto(id: string) {
     setMotoId(id);
     const moto = motos.find((m) => String(m.id) === id);
     if (!moto) return;
-    setTextos((atual) => ({
-      ...atual,
-      titulo: nomeDaMoto(moto),
-      detalhe: [anoDaMoto(moto), kmDaMoto(moto.quilometragem), String(moto.cor || "").trim()]
-        .filter((p) => p && p !== "—")
-        .join(" · "),
-      preco: precoDaMoto(moto) === "Consultar" ? "" : precoDaMoto(moto),
-    }));
+    const preco = numero(moto.preco_anunciado);
+    setTextos({
+      marca: String(moto.marca || "").trim(),
+      modelo: [moto.modelo, moto.versao].filter(Boolean).join(" ").trim(),
+      ano: anoDaMoto(moto) === "—" ? "" : anoDaMoto(moto),
+      km: kmDaMoto(moto.quilometragem) === "—" ? "" : kmDaMoto(moto.quilometragem),
+      preco: preco ? new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(preco) : "",
+    });
+  }
+
+  /* Cada card do padrão tem o tempo em que aparece; só quem ouve a narração sabe o certo - aqui é só o ponto de partida. */
+  function mudarCartao(campo: keyof Cartoes, valor: number) {
+    setTimelineManual(true);
+    setCartoes((atual) => ({ ...atual, [campo]: Math.max(0, valor) }));
   }
 
   async function anexar(arquivos: FileList | null) {
@@ -264,18 +306,38 @@ export default function EditorDeVideo() {
     setMusica({ nome: arquivo.name, url: URL.createObjectURL(arquivo) });
   }
 
-  /* O som passa todo por aqui: o original e a música, cada um com seu volume. */
+  /*
+   * O som passa todo por aqui: a narração recebe o tratamento do
+   * padrão (passa-altas de 80 Hz para tirar o grave surdo do
+   * microfone do celular, e um compressor para nivelar fala baixa
+   * e alta) antes do volume; a música entra direto, só no volume
+   * dela. O navegador não faz a normalização de loudness do
+   * ffmpeg (loudnorm) - o compressor já deixa a fala bem mais
+   * pareja, que é o que mais se nota ouvindo.
+   */
   function ligarAudio() {
     if (!audio.current) {
       const ctx = new AudioContext();
+      const tratamento = ctx.createBiquadFilter();
+      tratamento.type = "highpass";
+      tratamento.frequency.value = 80;
+
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.ratio.value = 3;
+      compressor.attack.value = 0.01;
+      compressor.release.value = 0.2;
+
       const original = ctx.createGain();
       const musicaGanho = ctx.createGain();
       const saida = ctx.createMediaStreamDestination();
+      tratamento.connect(compressor);
+      compressor.connect(original);
       original.connect(ctx.destination);
       original.connect(saida);
       musicaGanho.connect(ctx.destination);
       musicaGanho.connect(saida);
-      audio.current = { ctx, original, musica: musicaGanho, saida, ligados: new WeakSet() };
+      audio.current = { ctx, original, tratamento, musica: musicaGanho, saida, ligados: new WeakSet() };
     }
     const a = audio.current;
     a.original.gain.value = volumeOriginal;
@@ -283,7 +345,7 @@ export default function EditorDeVideo() {
 
     videos.current.forEach((v) => {
       if (!a.ligados.has(v)) {
-        a.ctx.createMediaElementSource(v).connect(a.original);
+        a.ctx.createMediaElementSource(v).connect(a.tratamento);
         a.ligados.add(v);
       }
     });
@@ -376,7 +438,7 @@ export default function EditorDeVideo() {
       if (!parar.current) {
         const arquivo = new Blob(pedacos, { type: formato.tipo });
         const nomeBase =
-          (textos.titulo || "video")
+          (`${textos.marca} ${textos.modelo}`.trim() || "video")
             .normalize("NFD")
             .replace(/[̀-ͯ]/g, "")
             .toLowerCase()
@@ -576,7 +638,7 @@ export default function EditorDeVideo() {
                 </label>
                 <label className="flex items-center gap-1">
                   <input type="checkbox" checked={mostrar.textos} onChange={(e) => setMostrar({ ...mostrar, textos: e.target.checked })} />
-                  Textos
+                  Cards do padrão
                 </label>
               </div>
             </div>
@@ -590,21 +652,98 @@ export default function EditorDeVideo() {
             </select>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <label className="text-[11px] font-bold text-black/55">
-                Nome da moto
-                <input className={CAMPO} value={textos.titulo} onChange={(e) => setTextos({ ...textos, titulo: e.target.value })} />
+                Marca
+                <input className={CAMPO} value={textos.marca} onChange={(e) => setTextos({ ...textos, marca: e.target.value })} />
               </label>
               <label className="text-[11px] font-bold text-black/55">
-                Ano · km · cor
-                <input className={CAMPO} value={textos.detalhe} onChange={(e) => setTextos({ ...textos, detalhe: e.target.value })} />
+                Modelo
+                <input className={CAMPO} value={textos.modelo} onChange={(e) => setTextos({ ...textos, modelo: e.target.value })} />
               </label>
               <label className="text-[11px] font-bold text-black/55">
-                Preço
-                <input className={CAMPO} value={textos.preco} placeholder="Deixe vazio para não mostrar" onChange={(e) => setTextos({ ...textos, preco: e.target.value })} />
+                Ano
+                <input className={CAMPO} value={textos.ano} onChange={(e) => setTextos({ ...textos, ano: e.target.value })} />
               </label>
               <label className="text-[11px] font-bold text-black/55">
-                Chamada
-                <input className={CAMPO} value={textos.chamada} onChange={(e) => setTextos({ ...textos, chamada: e.target.value })} />
+                Km
+                <input className={CAMPO} value={textos.km} placeholder="ex.: 35 mil km" onChange={(e) => setTextos({ ...textos, km: e.target.value })} />
               </label>
+              <label className="text-[11px] font-bold text-black/55 sm:col-span-2">
+                Preço (só o número, sem R$)
+                <input className={CAMPO} value={textos.preco} placeholder="Deixe vazio para não mostrar preço" onChange={(e) => setTextos({ ...textos, preco: e.target.value })} />
+              </label>
+            </div>
+
+            <div className="mt-4 border-t border-black/10 pt-3">
+              <h3 className="text-xs font-black text-black">Cards opcionais</h3>
+              <p className="mt-1 text-[11px] font-semibold text-black/45">
+                Só liga o que o narrador vai realmente falar nesse vídeo - manual e cautelar dependem da moto.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+                {(
+                  [
+                    ["ano", "Ano"],
+                    ["km", "Quilometragem"],
+                    ["financiamento", "Financiamento"],
+                    ["cartao", "Cartão de crédito"],
+                    ["manual", "Manual / chave reserva"],
+                    ["cautelar", "Cautelar 100% aprovada"],
+                  ] as [keyof Mostrar, string][]
+                ).map(([campo, rotulo]) => (
+                  <label key={campo} className="flex items-center gap-2 text-[11px] font-bold text-black/70">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(mostrar[campo])}
+                      onChange={(e) => setMostrar({ ...mostrar, [campo]: e.target.checked })}
+                    />
+                    {rotulo}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-black/10 pt-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-black">Quando cada card aparece (segundos)</h3>
+                <button
+                  type="button"
+                  className="text-xs font-bold text-black/50 hover:text-[#a97800]"
+                  onClick={() => {
+                    setCartoes(timelinePadrao(total));
+                    setTimelineManual(false);
+                  }}
+                >
+                  recalcular automático
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] font-semibold text-black/45">
+                O ponto de partida é automático; ajuste cada um pelo ouvido, para o card entrar exatamente quando a narração fala daquilo.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {(
+                  [
+                    ["ano", "Card Ano"],
+                    ["manual", "Card Manual"],
+                    ["cautelar", "Card Cautelar"],
+                    ["km", "Card Km"],
+                    ["financiamento", "Card Financ."],
+                    ["cartao", "Card Cartão"],
+                    ["preco", "Painel de preço"],
+                    ["outroDuracao", "Tela final dura"],
+                  ] as [keyof Cartoes, string][]
+                ).map(([campo, rotulo]) => (
+                  <label key={campo} className="text-[11px] font-bold text-black/55">
+                    {rotulo}
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      className={CAMPO}
+                      value={cartoes[campo]}
+                      onChange={(e) => mudarCartao(campo, Number(e.target.value))}
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
           </section>
 
