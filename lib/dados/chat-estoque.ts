@@ -19,6 +19,7 @@ import {
   anoDaMoto,
   categoriaDaMoto,
   cilindradaDaMoto,
+  kmDaMoto,
   nomeDaMoto,
   numero,
   serveParaUso,
@@ -459,7 +460,8 @@ export function linhaParaIA(moto: MotoSite) {
     nomeDaMoto(moto),
     anoDaMoto(moto),
     preco ? `R$ ${preco}` : "preço a consultar",
-    km !== null ? `${km} km` : null,
+    /* Arredondado, igual ao resto do site: a IA fala o mesmo km do card. */
+    km !== null ? kmDaMoto(moto.quilometragem) : null,
     cc ? `${cc}cc` : null,
     categoriaDaMoto(moto),
     moto.cor || null,

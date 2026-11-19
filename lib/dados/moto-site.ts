@@ -128,12 +128,19 @@ export function anoDaMoto(moto: MotoSite) {
   return String(fab || mod || "—");
 }
 
+/*
+ * O km no site sai arredondado no milhar: "10 mil km", "15 mil
+ * km" (pedido de 18/11/2026). O número exato continua no
+ * cadastro e no sistema; para o cliente, a faixa basta.
+ */
 export function kmDaMoto(valor: Numerico) {
   const km = numero(valor);
 
   if (km === null) return "—";
+  if (km <= 0) return "0 km";
+  if (km < 1000) return "menos de 1 mil km";
 
-  return `${new Intl.NumberFormat("pt-BR").format(km)} km`;
+  return `${new Intl.NumberFormat("pt-BR").format(Math.round(km / 1000))} mil km`;
 }
 
 export function precoDaMoto(moto: MotoSite) {
