@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
    */
   allowedDevOrigins: [
     "192.168.15.11",
+    "192.168.15.16",
     "desktop-fap6db3.tail309103.ts.net",
     "*.tail309103.ts.net",
     /*
@@ -34,6 +35,7 @@ const nextConfig: NextConfig = {
      * erro na tela - só fica vazio.
      */
     "100.91.144.52",
+    "100.84.106.81",
   ],
 
   /*

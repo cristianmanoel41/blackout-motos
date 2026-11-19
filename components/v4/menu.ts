@@ -11,6 +11,7 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
+  Sparkles,
   Users,
   Wallet,
   Warehouse,
@@ -68,6 +69,7 @@ export const GRUPOS_DO_MENU: { titulo: string; itens: ItemDoMenu[] }[] = [
   {
     titulo: 'Dia a dia',
     itens: [
+      { label: 'Assistente', href: '/assistente', icon: Sparkles, busca: 'ia chat ajuda conversar pergunta' },
       { label: 'Anotações do dia', href: '/anotacoes', icon: NotebookPen, busca: 'notas' },
       { label: 'Histórico', href: '/historico', icon: History, busca: 'log registro' },
       { label: 'Configurações', href: '/configuracoes', icon: Settings, busca: 'ajustes usuario' },
