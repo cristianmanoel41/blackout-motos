@@ -265,11 +265,11 @@ function vidro(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h
   ctx.stroke();
 }
 
-/* Um degradê preto na vertical, de totalmente transparente a `alfaFinal`. */
-function degrade(ctx: CanvasRenderingContext2D, L: number, y0: number, y1: number, alfaFinal: number) {
+/* Um degradê preto na vertical, de `a0` (em y0) a `a1` (em y1) - mesma ordem do `grad()` do Python, não presume que começa transparente. */
+function degrade(ctx: CanvasRenderingContext2D, L: number, y0: number, y1: number, a0: number, a1: number) {
   const g = ctx.createLinearGradient(0, y0, 0, y1);
-  g.addColorStop(0, "rgba(0,0,0,0)");
-  g.addColorStop(1, `rgba(0,0,0,${alfaFinal})`);
+  g.addColorStop(0, `rgba(0,0,0,${a0})`);
+  g.addColorStop(1, `rgba(0,0,0,${a1})`);
   ctx.fillStyle = g;
   ctx.fillRect(0, Math.min(y0, y1), L, Math.abs(y1 - y0));
 }
@@ -333,7 +333,7 @@ function cardDeInformacao(
   const x0 = (L - largura) / 2;
   const y0 = A - (360 * ey); // topo do card, de baixo para cima - 1560/1920 do padrão
 
-  degrade(ctx, L, A - 520 * ey, A, 0.55);
+  degrade(ctx, L, A - 520 * ey, A, 0, 0.55);
   vidro(ctx, x0, y0, largura, altura, 40 * Math.min(ex, ey));
 
   ctx.fillStyle = GOLD;
@@ -367,7 +367,7 @@ function cardManualEChave(ctx: CanvasRenderingContext2D, L: number, A: number, e
   const x0 = (L - largura) / 2;
   const y0 = A - 420 * ey;
 
-  degrade(ctx, L, A - 580 * ey, A, 0.55);
+  degrade(ctx, L, A - 580 * ey, A, 0, 0.55);
   vidro(ctx, x0, y0, largura, altura, 40 * e);
 
   ctx.fillStyle = GOLD;
@@ -398,12 +398,12 @@ function cabecalho(
   if (op <= 0) return;
   ctx.save();
   ctx.globalAlpha = op;
-  degrade(ctx, L, 0, 300 * ey, 0.65);
+  degrade(ctx, L, 0, 300 * ey, 0.65, 0);
 
   if (logo && logo.naturalWidth) {
-    const w = 170 * ex;
+    const w = 240 * ex;
     const h = (w * logo.naturalHeight) / logo.naturalWidth;
-    ctx.drawImage(logo, 36 * ex, 36 * ey, w, h);
+    ctx.drawImage(logo, 50 * ex, 44 * ey, w, h);
   }
 
   const e = Math.min(ex, ey);
@@ -435,7 +435,7 @@ function painelDePreco(
   ctx.globalAlpha = op;
   const e = Math.min(ex, ey);
 
-  degrade(ctx, L, A - 570 * ey, A, 0.7);
+  degrade(ctx, L, A - 570 * ey, A, 0, 0.7);
   const x0 = 40 * ex;
   const y0 = A - 480 * ey;
   const largura = L - 80 * ex;

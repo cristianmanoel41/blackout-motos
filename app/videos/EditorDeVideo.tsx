@@ -143,6 +143,10 @@ export default function EditorDeVideo() {
   const [aviso, setAviso] = useState("");
   const [pronto, setPronto] = useState<{ url: string; nome: string } | null>(null);
 
+  const [chat, setChat] = useState<{ de: "eu" | "ia"; texto: string }[]>([]);
+  const [pedido, setPedido] = useState("");
+  const [pedindo, setPedindo] = useState(false);
+
   const canvas = useRef<HTMLCanvasElement>(null);
   const videos = useRef(new Map<string, HTMLVideoElement>());
   const audioMusica = useRef<HTMLAudioElement>(null);
@@ -175,15 +179,30 @@ export default function EditorDeVideo() {
 
     const imagem = new Image();
     imagem.src = "/logo-blackout-marca.png";
+    imagem.onload = () => desenharParado();
     logo.current = imagem;
 
-    /* A Inter, para o <canvas> conseguir desenhar os cards do padrão com ela. */
+    /*
+     * A Inter, para o <canvas> conseguir desenhar os cards do
+     * padrão com ela. Só colocar o <link> não basta: o navegador
+     * não baixa o peso até alguém de fato usar, e o <canvas>
+     * desenha síncrono - sem esperar, o primeiro quadro sai com a
+     * fonte do sistema (bem diferente) e só acerta depois de
+     * redesenhar por acaso.
+     */
     if (!document.querySelector(`link[href="${FONTE_GOOGLE}"]`)) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = FONTE_GOOGLE;
       document.head.appendChild(link);
     }
+    Promise.all(
+      ["500", "600", "700", "800", "900"].map((peso) => document.fonts.load(`${peso} 48px Inter`))
+    )
+      .then(() => document.fonts.ready)
+      .then(() => desenharParado())
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* A linha do tempo dos cards acompanha a duração sozinha, até alguém mexer num campo dela à mão. */
@@ -244,6 +263,60 @@ export default function EditorDeVideo() {
   function mudarCartao(campo: keyof Cartoes, valor: number) {
     setTimelineManual(true);
     setCartoes((atual) => ({ ...atual, [campo]: Math.max(0, valor) }));
+  }
+
+  /*
+   * O chat de dentro do editor: manda o pedido junto do estado
+   * atual, e aplica de volta só os campos que a IA mudou (os
+   * outros vêm null). Já aplica direto - sem perguntar antes -
+   * então o campo errado é só corrigir na mão ou pedir de novo.
+   */
+  async function enviarPedido() {
+    const texto = pedido.trim();
+    if (!texto || pedindo) return;
+
+    setChat((atual) => [...atual, { de: "eu", texto }]);
+    setPedido("");
+    setPedindo(true);
+
+    try {
+      const resposta = await fetch("/api/video/assistente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pedido: texto,
+          estado: { duracaoTotal: total, textos, cartoes, mostrar },
+        }),
+      });
+      const dados = await resposta.json().catch(() => null);
+
+      if (!resposta.ok || !dados) {
+        setChat((atual) => [...atual, { de: "ia", texto: dados?.error || "Não consegui entender. Tente de novo." }]);
+        return;
+      }
+
+      if (dados.textos) {
+        const mudancas = Object.fromEntries(Object.entries(dados.textos).filter(([, v]) => v !== null));
+        if (Object.keys(mudancas).length) setTextos((atual) => ({ ...atual, ...mudancas }));
+      }
+      if (dados.cartoes) {
+        const mudancas = Object.fromEntries(Object.entries(dados.cartoes).filter(([, v]) => v !== null));
+        if (Object.keys(mudancas).length) {
+          setTimelineManual(true);
+          setCartoes((atual) => ({ ...atual, ...mudancas }));
+        }
+      }
+      if (dados.mostrar) {
+        const mudancas = Object.fromEntries(Object.entries(dados.mostrar).filter(([, v]) => v !== null));
+        if (Object.keys(mudancas).length) setMostrar((atual) => ({ ...atual, ...mudancas }));
+      }
+
+      setChat((atual) => [...atual, { de: "ia", texto: dados.resposta || "Pronto." }]);
+    } catch {
+      setChat((atual) => [...atual, { de: "ia", texto: "Sem conexão com o servidor. Tente de novo." }]);
+    } finally {
+      setPedindo(false);
+    }
   }
 
   async function anexar(arquivos: FileList | null) {
@@ -504,6 +577,44 @@ export default function EditorDeVideo() {
           {aviso}
         </p>
       )}
+
+      <section className={`${CARTAO} mb-5`}>
+        <h2 className="flex items-center gap-2 font-black text-black">
+          <Sparkles size={16} className="text-[#a97800]" /> Peça pra IA ajustar
+        </h2>
+        <p className="mt-1 text-[11px] font-semibold text-black/45">
+          Ex.: &quot;põe o card do ano aos 8 segundos&quot;, &quot;desliga o cautelar&quot;, &quot;preço 22.900&quot;. Aplica direto nos campos abaixo.
+        </p>
+
+        {chat.length > 0 && (
+          <div className="mt-3 max-h-40 space-y-2 overflow-y-auto rounded-xl border border-black/10 bg-black/[0.03] p-3">
+            {chat.map((m, i) => (
+              <p key={i} className="text-xs font-semibold text-black/80">
+                <span className={m.de === "eu" ? "text-black/50" : "font-black text-[#a97800]"}>
+                  {m.de === "eu" ? "Você: " : "IA: "}
+                </span>
+                {m.texto}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            className={CAMPO}
+            value={pedido}
+            placeholder="Escreva o que você quer mudar…"
+            disabled={pedindo}
+            onChange={(e) => setPedido(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") enviarPedido();
+            }}
+          />
+          <button type="button" className={BOTAO_FORTE} disabled={!pedido.trim() || pedindo} onClick={enviarPedido}>
+            {pedindo ? <Loader2 size={15} className="animate-spin" /> : "Pedir"}
+          </button>
+        </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
         {/* Coluna da esquerda: os ajustes */}
