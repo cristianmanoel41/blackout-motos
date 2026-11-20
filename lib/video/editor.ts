@@ -561,17 +561,28 @@ function telaFinal(
     ctx.font = `600 ${24 * e}px ${FONTE}`;
     textoEspacado(ctx, L / 2, 990 * ey + 24 * e, "POR APENAS", 6 * ex, "c");
 
-    ctx.font = pesoPreto(190 * e);
-    const vw = ctx.measureText(textos.preco).width;
-    ctx.font = pesoForte(64 * e);
-    const rw = ctx.measureText("R$").width;
+    /* Preço largo (ou a fonte de reserva, se a Inter não carregou) não pode passar da borda do vídeo - ver mesma lógica em painelDePreco. */
+    const espacoMaximo = L * 0.86;
+    let tamanhoValor = 190 * e;
+    let rw = 0;
+    let vw = 0;
+    for (let tentativas = 0; tentativas < 8; tentativas += 1) {
+      ctx.font = pesoForte(64 * e * (tamanhoValor / (190 * e)));
+      rw = ctx.measureText("R$").width;
+      ctx.font = pesoPreto(tamanhoValor);
+      vw = ctx.measureText(textos.preco).width;
+      if (rw + 14 * ex + vw <= espacoMaximo || tamanhoValor <= 60 * e) break;
+      tamanhoValor *= 0.88;
+    }
+
     const x0 = L / 2 - (rw + 14 * ex + vw) / 2;
     ctx.textAlign = "left";
+    ctx.font = pesoForte(64 * e * (tamanhoValor / (190 * e)));
     ctx.fillStyle = GOLD;
-    ctx.fillText("R$", x0, 1090 * ey + 64 * e * 0.8);
-    ctx.font = pesoPreto(190 * e);
+    ctx.fillText("R$", x0, 1090 * ey + tamanhoValor * 0.34);
+    ctx.font = pesoPreto(tamanhoValor);
     ctx.fillStyle = TEXTO;
-    ctx.fillText(textos.preco, x0 + rw + 14 * ex, 1020 * ey + 190 * e * 0.78);
+    ctx.fillText(textos.preco, x0 + rw + 14 * ex, 1020 * ey + tamanhoValor * 0.78);
     ctx.textAlign = "center";
   }
 
