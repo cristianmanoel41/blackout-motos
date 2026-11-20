@@ -28,6 +28,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import estilo from "./estoque.module.css";
 import { formatarMoeda } from "@/lib/formatadores/moeda";
+import CopiarValor from "@/components/CopiarValor";
 import ListaDoEstoqueNaTela from "@/components/ListaDoEstoqueNaTela";
 import FaltamFotos from "./FaltamFotos";
 
@@ -1337,7 +1338,12 @@ export default function EstoquePage() {
                         </td>
 
                         <td data-rotulo="Placa" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 font-mono text-base font-bold text-zinc-200 sm:max-2xl:text-sm">
-                          {moto.placa || "—"}
+                          <span className="inline-flex items-center gap-1.5">
+                            {moto.placa || "—"}
+                            {moto.placa && (
+                              <CopiarValor valor={moto.placa} titulo="Copiar placa (pra simulação)" />
+                            )}
+                          </span>
                         </td>
 
                         <td data-rotulo="CC" className="whitespace-nowrap px-4 py-3 sm:max-2xl:hidden text-right text-sm text-zinc-300">
