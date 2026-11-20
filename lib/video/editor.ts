@@ -125,8 +125,14 @@ function opacidadeNaJanela(tempo: number, inicio: number, duracao: number) {
   return 1;
 }
 
-/* Maior lado do vídeo final. 1280 deixa a gravação leve em qualquer computador da loja. */
-const LADO_MAIOR = 1280;
+/*
+ * Maior lado do vídeo final. O padrão pede 1080x1920 de verdade
+ * (revisão de 20/11/2026 - 1280 só dava 720x1280, borrado pro
+ * Reels/TikTok). Em máquina fraca isso pode travar mais na hora
+ * de gravar - por isso a gravação também caiu pra 24 fps (ver
+ * EditorDeVideo.tsx), que pesa menos e ainda fica fluido.
+ */
+const LADO_MAIOR = 1920;
 
 /* Vídeo de venda curto prende mais: a montagem automática para em 1 minuto. */
 export const DURACAO_AUTOMATICA = 60;
@@ -456,16 +462,36 @@ function painelDePreco(
   ctx.font = `600 ${21 * e}px ${FONTE}`;
   textoEspacado(ctx, x0 + 40 * ex, y0 + 120 * ey + 21 * e, "POR APENAS", 5 * ex, "l");
 
-  ctx.font = pesoForte(46 * e);
+  const xd = x0 + largura - 40 * ex;
+
+  /*
+   * O preço não tem largura fixa (de "R$ 13.161" a "R$ 32.900"),
+   * e o espaço à esquerda do traço é limitado - sem medir antes
+   * de desenhar, um preço mais largo (ou a fonte de reserva do
+   * sistema, se a Inter não tiver carregado a tempo) invade o
+   * texto do financiamento à direita.
+   */
+  const espacoPreco = xd - 250 * ex - 20 * ex - (x0 + 40 * ex);
+  let tamanhoPreco = 132 * e;
+  const tamanhoRs = 46 * e;
+  for (let tentativas = 0; tentativas < 8; tentativas += 1) {
+    ctx.font = pesoForte(tamanhoRs * (tamanhoPreco / (132 * e)));
+    const rwTeste = ctx.measureText("R$ ").width;
+    ctx.font = pesoPreto(tamanhoPreco);
+    const pwTeste = ctx.measureText(textos.preco).width;
+    if (rwTeste + pwTeste <= espacoPreco || tamanhoPreco <= 50 * e) break;
+    tamanhoPreco *= 0.88;
+  }
+
+  ctx.font = pesoForte(tamanhoRs * (tamanhoPreco / (132 * e)));
   ctx.fillStyle = GOLD;
   const rs = "R$ ";
-  ctx.fillText(rs, x0 + 40 * ex, y0 + 206 * ey + 46 * e * 0.8);
+  ctx.fillText(rs, x0 + 40 * ex, y0 + 206 * ey + tamanhoPreco * 0.47);
   const rw = ctx.measureText(rs).width;
-  ctx.font = pesoPreto(132 * e);
+  ctx.font = pesoPreto(tamanhoPreco);
   ctx.fillStyle = TEXTO;
-  ctx.fillText(textos.preco, x0 + 40 * ex + rw, y0 + 206 * ey + 132 * e * 0.78);
+  ctx.fillText(textos.preco, x0 + 40 * ex + rw, y0 + 206 * ey + tamanhoPreco * 0.78);
 
-  const xd = x0 + largura - 40 * ex;
   ctx.textAlign = "right";
   ctx.fillStyle = TEXTO2;
   ctx.font = `500 ${18 * e}px ${FONTE}`;

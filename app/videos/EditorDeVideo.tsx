@@ -450,9 +450,10 @@ export default function EditorDeVideo() {
     let gravador: MediaRecorder | null = null;
     const pedacos: Blob[] = [];
     if (gravar && formato && canvas.current) {
-      const fluxo = canvas.current.captureStream(30);
+      /* 24 fps em vez de 30: o vídeo saiu em 1080x1920 (padrão de verdade, revisão de 20/11/2026) - menos quadros por segundo alivia a máquina que está gravando, sem ficar visivelmente menos fluido. */
+      const fluxo = canvas.current.captureStream(24);
       a.saida.stream.getAudioTracks().forEach((faixa) => fluxo.addTrack(faixa));
-      gravador = new MediaRecorder(fluxo, { mimeType: formato.tipo, videoBitsPerSecond: 4_000_000 });
+      gravador = new MediaRecorder(fluxo, { mimeType: formato.tipo, videoBitsPerSecond: 6_000_000 });
       gravador.ondataavailable = (e) => {
         if (e.data.size) pedacos.push(e.data);
       };
@@ -832,28 +833,36 @@ export default function EditorDeVideo() {
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(
                   [
-                    ["ano", "Card Ano"],
-                    ["manual", "Card Manual"],
-                    ["cautelar", "Card Cautelar"],
-                    ["km", "Card Km"],
-                    ["financiamento", "Card Financ."],
-                    ["cartao", "Card Cartão"],
-                    ["preco", "Painel de preço"],
-                    ["outroDuracao", "Tela final dura"],
-                  ] as [keyof Cartoes, string][]
-                ).map(([campo, rotulo]) => (
-                  <label key={campo} className="text-[11px] font-bold text-black/55">
-                    {rotulo}
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.5}
-                      className={CAMPO}
-                      value={cartoes[campo]}
-                      onChange={(e) => mudarCartao(campo, Number(e.target.value))}
-                    />
-                  </label>
-                ))}
+                    ["ano", "Card Ano", "ano"],
+                    ["manual", "Card Manual", "manual"],
+                    ["cautelar", "Card Cautelar", "cautelar"],
+                    ["km", "Card Km", "km"],
+                    ["financiamento", "Card Financ.", "financiamento"],
+                    ["cartao", "Card Cartão", "cartao"],
+                    ["preco", "Painel de preço", null],
+                    ["outroDuracao", "Tela final dura", null],
+                  ] as [keyof Cartoes, string, keyof Mostrar | null][]
+                ).map(([campo, rotulo, campoMostrar]) => {
+                  const ligado = !campoMostrar || mostrar[campoMostrar];
+                  return (
+                    <label
+                      key={campo}
+                      className={`text-[11px] font-bold ${ligado ? "text-black/55" : "text-black/30"}`}
+                    >
+                      {rotulo}
+                      {!ligado && " (desligado)"}
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        className={`${CAMPO} ${!ligado ? "opacity-40" : ""}`}
+                        disabled={!ligado}
+                        value={cartoes[campo]}
+                        onChange={(e) => mudarCartao(campo, Number(e.target.value))}
+                      />
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </section>
