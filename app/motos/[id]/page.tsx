@@ -14,6 +14,7 @@ import LegendaPost from "@/components/LegendaPost";
 import RegistradoPor from "@/components/RegistradoPor";
 import CampoMoeda from "@/components/CampoMoeda";
 import ProprietarioDoDocumento from "@/components/ProprietarioDoDocumento";
+import TabelaFipe from "@/components/TabelaFipe";
 import {
   colunasDoProprietario,
   proprietarioDaMoto,
@@ -71,6 +72,13 @@ type Moto = {
   possui_financiamento?: boolean | null;
   valor_quitacao?: number | null;
   financeira_quitacao?: string | null;
+  fipe_marca_codigo?: string | null;
+  fipe_modelo_codigo?: string | null;
+  fipe_modelo_nome?: string | null;
+  fipe_ano_codigo?: string | null;
+  fipe_valor?: number | null;
+  fipe_mes_referencia?: string | null;
+  fipe_atualizado_em?: string | null;
 };
 
 /* Os mesmos itens marcados no cadastro, para ver e corrigir
@@ -894,6 +902,23 @@ export default function DetalheMotoPage() {
           />
 
         </div>
+
+        <TabelaFipe
+          motoId={moto.id}
+          marca={moto.marca}
+          dados={{
+            fipe_marca_codigo: moto.fipe_marca_codigo ?? null,
+            fipe_modelo_codigo: moto.fipe_modelo_codigo ?? null,
+            fipe_modelo_nome: moto.fipe_modelo_nome ?? null,
+            fipe_ano_codigo: moto.fipe_ano_codigo ?? null,
+            fipe_valor: moto.fipe_valor ?? null,
+            fipe_mes_referencia: moto.fipe_mes_referencia ?? null,
+            fipe_atualizado_em: moto.fipe_atualizado_em ?? null,
+          }}
+          onAtualizado={(novosDados) =>
+            setMoto((atual) => (atual ? { ...atual, ...novosDados } : atual))
+          }
+        />
 
         {/*
           * A quitação, para conferir na ficha.

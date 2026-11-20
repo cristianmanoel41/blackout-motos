@@ -58,7 +58,11 @@ type Moto = {
   unico_dono?: boolean | null;
   /* Aparece na capa do site. Tres motos, escolhidas aqui. */
   na_capa?: boolean | null;
+  fipe_valor?: number | string | null;
 };
+
+/* O Santander libera financiamento até 10% acima da FIPE; passar disso exige entrada do cliente. */
+const LIMITE_SANTANDER = 1.1;
 
 /*
  * Ha quantos dias a moto esta no patio. A data sozinha obriga
@@ -428,6 +432,7 @@ export default function EstoquePage() {
           "possui_chave_reserva",
           "unico_dono",
           "na_capa",
+          "fipe_valor",
         ].join(",")
       )
       .order("data_entrada", {
@@ -1213,6 +1218,9 @@ export default function EstoquePage() {
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 text-right font-semibold">
                     Valor anunciado
                   </th>
+                  <th className="px-4 py-3 font-semibold sm:max-2xl:hidden text-right">
+                    Entrada (Santander)
+                  </th>
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 font-semibold">Status</th>
                   <th className="px-4 py-3 font-semibold sm:max-2xl:hidden">Data entrada</th>
                   <th className="px-4 py-3 sm:max-2xl:px-2.5 text-center font-semibold">Ações</th>
@@ -1344,6 +1352,28 @@ export default function EstoquePage() {
 
                         <td data-rotulo="Valor anunciado" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5 text-right font-bold text-dourado">
                           {formatarMoeda(Number(moto.preco_anunciado || 0))}
+                        </td>
+
+                        <td data-rotulo="Entrada (Santander)" className="whitespace-nowrap px-4 py-3 sm:max-2xl:hidden text-right text-sm">
+                          {moto.fipe_valor ? (
+                            (() => {
+                              const limite = Number(moto.fipe_valor) * LIMITE_SANTANDER;
+                              const entrada = Number(moto.preco_anunciado || 0) - limite;
+                              return entrada > 0 ? (
+                                <span className="font-bold text-amber-400" title={`Limite sem entrada: ${formatarMoeda(limite)}`}>
+                                  {formatarMoeda(entrada)}
+                                </span>
+                              ) : (
+                                <span className="text-zinc-400" title={`Limite sem entrada: ${formatarMoeda(limite)}`}>
+                                  Sem entrada
+                                </span>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-zinc-500" title="Vincule a moto à FIPE na ficha dela">
+                              Sem FIPE
+                            </span>
+                          )}
                         </td>
 
                         <td data-rotulo="Status" className="whitespace-nowrap px-4 py-3 sm:max-2xl:px-2.5">
