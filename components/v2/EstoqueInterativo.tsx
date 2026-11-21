@@ -345,14 +345,16 @@ export default function EstoqueInterativo({
         {/*
           * Os atalhos de um toque.
           *
-          * No celular a fileira rola de lado em vez de quebrar em
-          * três linhas: o polegar arrasta melhor do que procura.
+          * Quebram em linhas também no celular (21/11/2026): a fileira
+          * que rolava de lado aparecia cortada na borda do quadro e
+          * parecia defeito, não rolagem. As cilindradas viram uma
+          * grade de três por linha.
           */}
         {opcoes.faixas.length > 0 && (
           <div
             role="group"
             aria-label="Faixa de preço"
-            className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none]"
+            className="mt-4 flex flex-wrap gap-2"
           >
             {opcoes.faixas.map((faixa) => (
               <button
@@ -374,7 +376,7 @@ export default function EstoqueInterativo({
           <div
             role="group"
             aria-label="Tipo de moto"
-            className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none]"
+            className="mt-2 flex flex-wrap gap-2"
           >
             {opcoes.tipos.map((item) => (
               <button
@@ -401,7 +403,7 @@ export default function EstoqueInterativo({
             <div
               role="group"
               aria-label="Cilindrada"
-              className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none]"
+              className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap"
             >
               {[
                 { chave: "", nome: "Todas", total: semCilindrada.length },
@@ -420,7 +422,7 @@ export default function EstoqueInterativo({
                       atual === item.chave ? "" : item.chave
                     )
                   }
-                  className={`cartao-cc min-w-[96px] shrink-0 rounded-xl px-4 py-2.5 text-left ${
+                  className={`cartao-cc min-w-0 rounded-xl px-3 py-2.5 text-left sm:min-w-[96px] sm:shrink-0 sm:px-4 ${
                     cilindrada === item.chave ? "pilula-ligada" : ""
                   }`}
                 >
