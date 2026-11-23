@@ -116,6 +116,54 @@ export function timelinePadrao(total: number): Cartoes {
   };
 }
 
+/*
+ * Avisa quando dois cards vão se sobrepor na tela (pedido de
+ * 23/11/2026 - ajustar os sete tempos na mão, sem isso, é fácil
+ * de errar e um card cobrir o outro sem ninguém perceber até
+ * assistir o vídeo pronto).
+ *
+ * Só entram os cards ligados (`mostrar`) e com preço preenchido;
+ * a tela final conta como um "card" a mais no fim, pra avisar
+ * também quando algum card não cabe antes dela começar.
+ */
+export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: boolean, total: number): string[] {
+  const candidatos: { chave: string; rotulo: string; inicio: number; duracao: number; ligado: boolean }[] = [
+    { chave: "ano", rotulo: "Ano", inicio: cartoes.ano, duracao: DURACAO_CARD, ligado: mostrar.ano },
+    { chave: "manual", rotulo: "Manual", inicio: cartoes.manual, duracao: DURACAO_CARD, ligado: mostrar.manual },
+    { chave: "cautelar", rotulo: "Cautelar", inicio: cartoes.cautelar, duracao: DURACAO_CARD, ligado: mostrar.cautelar },
+    { chave: "km", rotulo: "Km", inicio: cartoes.km, duracao: DURACAO_CARD, ligado: mostrar.km },
+    { chave: "financiamento", rotulo: "Financiamento", inicio: cartoes.financiamento, duracao: DURACAO_CARD, ligado: mostrar.financiamento },
+    { chave: "cartao", rotulo: "Cartão", inicio: cartoes.cartao, duracao: DURACAO_CARD, ligado: mostrar.cartao },
+    { chave: "preco", rotulo: "Painel de preço", inicio: cartoes.preco, duracao: DURACAO_PRECO, ligado: temPreco },
+  ];
+
+  const janelas = candidatos
+    .filter((c) => c.ligado)
+    .map((c) => ({ rotulo: c.rotulo, inicio: c.inicio, fim: c.inicio + c.duracao }))
+    .sort((a, b) => a.inicio - b.inicio);
+
+  const avisos: string[] = [];
+  for (let i = 0; i < janelas.length - 1; i += 1) {
+    const atual = janelas[i];
+    const proximo = janelas[i + 1];
+    if (proximo.inicio < atual.fim) {
+      avisos.push(
+        `"${atual.rotulo}" só termina aos ${atual.fim.toFixed(1)}s, mas "${proximo.rotulo}" já começa aos ${proximo.inicio.toFixed(1)}s`
+      );
+    }
+  }
+
+  const outroInicio = Math.max(2, total - cartoes.outroDuracao);
+  const ultimo = janelas[janelas.length - 1];
+  if (ultimo && ultimo.fim > outroInicio) {
+    avisos.push(
+      `"${ultimo.rotulo}" só termina aos ${ultimo.fim.toFixed(1)}s, mas a tela final começa aos ${outroInicio.toFixed(1)}s`
+    );
+  }
+
+  return avisos;
+}
+
 /* 0 fora da janela, sobe e desce em JANELA_FADE segundos, 1 no meio - igual ao padrão: card só aparece/some com fade. */
 function opacidadeNaJanela(tempo: number, inicio: number, duracao: number) {
   const fim = inicio + duracao;

@@ -33,6 +33,7 @@ import {
   montagemAutomatica,
   tamanhoDoQuadro,
   timelinePadrao,
+  conflitosDeTempo,
   type Cartoes,
   type Frase,
   type Mostrar,
@@ -138,7 +139,7 @@ export default function EditorDeVideo() {
   const [volumeMusica, setVolumeMusica] = useState(0.35);
   const [frases, setFrases] = useState<Frase[]>([]);
   const [gerandoLegenda, setGerandoLegenda] = useState(false);
-  const [estado, setEstado] = useState<"parado" | "tocando" | "gravando">("parado");
+  const [estado, setEstado] = useState<"parado" | "tocando" | "pausado" | "gravando">("parado");
   const [tempo, setTempo] = useState(0);
   const [aviso, setAviso] = useState("");
   const [pronto, setPronto] = useState<{ url: string; nome: string } | null>(null);
@@ -152,6 +153,9 @@ export default function EditorDeVideo() {
   const audioMusica = useRef<HTMLAudioElement>(null);
   const logo = useRef<HTMLImageElement | null>(null);
   const parar = useRef(false);
+  const pausado = useRef(false);
+  /* O vídeo e o passo de desenho de agora, pra "Retomar" conseguir religar o laço de fora da função reproduzir. */
+  const loopAtivo = useRef<{ v: HTMLVideoElement; passo: () => void } | null>(null);
   const audio = useRef<{
     ctx: AudioContext;
     original: GainNode;
@@ -165,6 +169,10 @@ export default function EditorDeVideo() {
   const total = duracaoTotal(trechos);
   const quadro = useMemo(() => tamanhoDoQuadro(trechos), [trechos]);
   const ocupado = estado !== "parado";
+  const avisosDeTempo = useMemo(
+    () => conflitosDeTempo(cartoes, mostrar, Boolean(textos.preco), total),
+    [cartoes, mostrar, textos.preco, total]
+  );
 
   /* As motos disponíveis, para preencher os textos sozinho. */
   useEffect(() => {
@@ -487,6 +495,8 @@ export default function EditorDeVideo() {
 
       await new Promise<void>((terminou) => {
         const passo = () => {
+          /* Pausado: não desenha nem agenda o próximo quadro - "Retomar" é quem rechama requestAnimationFrame(passo). */
+          if (pausado.current) return;
           const t = base + (v.currentTime - trecho.inicio);
           desenhar(v, t);
           setTempo(t);
@@ -496,6 +506,7 @@ export default function EditorDeVideo() {
           }
           requestAnimationFrame(passo);
         };
+        loopAtivo.current = { v, passo };
         requestAnimationFrame(passo);
       });
 
@@ -524,6 +535,35 @@ export default function EditorDeVideo() {
 
     setEstado("parado");
     setTempo(0);
+    pausado.current = false;
+    loopAtivo.current = null;
+  }
+
+  /* Pausa a prévia no quadro atual - o vídeo e o laço ficam parados, prontos pra "Retomar". Não existe durante a gravação: ela só tem "Cancelar". */
+  function pausarPrevia() {
+    if (estado !== "tocando" || !loopAtivo.current) return;
+    pausado.current = true;
+    loopAtivo.current.v.pause();
+    audioMusica.current?.pause();
+    setEstado("pausado");
+  }
+
+  function retomarPrevia() {
+    if (estado !== "pausado" || !loopAtivo.current) return;
+    pausado.current = false;
+    loopAtivo.current.v.play().catch(() => {});
+    if (musica) audioMusica.current?.play().catch(() => {});
+    setEstado("tocando");
+    requestAnimationFrame(loopAtivo.current.passo);
+  }
+
+  /* Para de vez (sai da prévia) - funciona tocando ou pausado. Durante a gravação, é o "Cancelar". */
+  function pararTudo() {
+    parar.current = true;
+    if (estado === "pausado" && loopAtivo.current) {
+      pausado.current = false;
+      requestAnimationFrame(loopAtivo.current.passo);
+    }
   }
 
   async function gerarLegendas() {
@@ -830,6 +870,20 @@ export default function EditorDeVideo() {
               <p className="mt-1 text-[11px] font-semibold text-black/45">
                 O ponto de partida é automático; ajuste cada um pelo ouvido, para o card entrar exatamente quando a narração fala daquilo.
               </p>
+
+              {avisosDeTempo.length > 0 && (
+                <div className="mt-2 rounded-lg border border-amber-400/60 bg-amber-50 p-2">
+                  <p className="text-[11px] font-black text-black">
+                    ⚠ {avisosDeTempo.length === 1 ? "Um card vai cobrir o outro:" : "Esses cards vão se cobrir:"}
+                  </p>
+                  <ul className="mt-1 space-y-0.5 text-[11px] font-semibold text-black/70">
+                    {avisosDeTempo.map((aviso, i) => (
+                      <li key={i}>• {aviso}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(
                   [
@@ -961,11 +1015,27 @@ export default function EditorDeVideo() {
             />
 
             <div className="mt-3 flex items-center gap-2">
-              {estado === "tocando" ? (
-                <button type="button" className={BOTAO} onClick={() => (parar.current = true)}>
-                  <Pause size={15} /> Parar
-                </button>
-              ) : (
+              {estado === "tocando" && (
+                <>
+                  <button type="button" className={BOTAO} onClick={pausarPrevia}>
+                    <Pause size={15} /> Pausar
+                  </button>
+                  <button type="button" className={BOTAO} onClick={pararTudo}>
+                    Parar
+                  </button>
+                </>
+              )}
+              {estado === "pausado" && (
+                <>
+                  <button type="button" className={BOTAO} onClick={retomarPrevia}>
+                    <Play size={15} /> Retomar
+                  </button>
+                  <button type="button" className={BOTAO} onClick={pararTudo}>
+                    Parar
+                  </button>
+                </>
+              )}
+              {(estado === "parado" || estado === "gravando") && (
                 <button type="button" className={BOTAO} disabled={ocupado || trechos.length === 0} onClick={() => reproduzir(false)}>
                   <Play size={15} /> Ver prévia
                 </button>
@@ -994,7 +1064,7 @@ export default function EditorDeVideo() {
             )}
 
             {estado === "gravando" && (
-              <button type="button" className="mt-2 text-xs font-bold text-black/50 hover:text-red-600" onClick={() => (parar.current = true)}>
+              <button type="button" className="mt-2 text-xs font-bold text-black/50 hover:text-red-600" onClick={pararTudo}>
                 Cancelar
               </button>
             )}
