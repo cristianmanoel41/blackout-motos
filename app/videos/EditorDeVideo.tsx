@@ -34,6 +34,7 @@ import {
   tamanhoDoQuadro,
   timelinePadrao,
   conflitosDeTempo,
+  duracaoDoCard,
   type Cartoes,
   type Frase,
   type Mostrar,
@@ -69,7 +70,124 @@ const FONTE_GOOGLE =
 
 const supabase = createClient();
 
-type MotoDoEditor = MotoSite & { status?: string | null };
+type MotoDoEditor = MotoSite & { status?: string | null; placa?: string | null };
+
+/*
+ * As linhas da "linha do tempo" dos cards (pedido de 23/11/2026:
+ * alinhar o tempo de cada card de um jeito simples). Cada uma:
+ * campo do tempo, nome, chave que liga/desliga (null = painel de
+ * preço, que liga quando tem preço) e quanto tempo fica na tela.
+ */
+type CampoDeCard = Exclude<keyof Cartoes, "outroDuracao" | "duracoes">;
+const LINHAS_DE_CARD: [CampoDeCard, string, keyof Mostrar | null][] = [
+  ["ano", "Ano", "ano"],
+  ["manual", "Manual", "manual"],
+  ["cautelar", "Cautelar", "cautelar"],
+  ["km", "Km", "km"],
+  ["financiamento", "Financ.", "financiamento"],
+  ["cartao", "Cartão", "cartao"],
+  ["preco", "Preço", null],
+];
+const DURACAO_MINIMA = 0.8;
+
+/*
+ * Caixinha de segundos para digitar o valor na mão (pedido de
+ * 23/11/2026). Enquanto digita, guarda o texto; só aplica ao
+ * sair do campo ou no Enter (aceita vírgula). Esc desiste.
+ */
+function CampoSegundos({
+  valor,
+  aoMudar,
+  disabled,
+  rotulo,
+}: {
+  valor: number;
+  aoMudar: (n: number) => void;
+  disabled?: boolean;
+  rotulo: string;
+}) {
+  const [texto, setTexto] = useState<string | null>(null);
+  const desistiu = useRef(false);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      aria-label={rotulo}
+      title={rotulo}
+      disabled={disabled}
+      value={texto ?? valor.toFixed(1)}
+      onFocus={(e) => {
+        desistiu.current = false;
+        setTexto(valor.toFixed(1));
+        e.currentTarget.select();
+      }}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => {
+        const n = Number(String(texto ?? "").replace(",", ".").trim());
+        if (!desistiu.current && texto !== null && texto.trim() !== "" && Number.isFinite(n)) aoMudar(n);
+        setTexto(null);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          desistiu.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      className="h-7 w-12 shrink-0 rounded-md border border-white/15 bg-white/[.06] px-1 text-center text-[11px] font-black tabular-nums text-white outline-none focus:border-[#d4a017] disabled:opacity-40"
+    />
+  );
+}
+
+/*
+ * Salvar os tempos dos cards (pedido de 23/11/2026). Fica no
+ * navegador de quem edita (localStorage): uma cópia por moto e
+ * uma "última", usada quando a moto ainda não tem a dela.
+ */
+const CHAVE_TEMPOS = "editor-video:tempos";
+
+type TemposSalvos = { cartoes: Cartoes; telaFinalDepois: boolean; salvoEm: string };
+
+function gravarTempos(motoId: string, dados: TemposSalvos) {
+  try {
+    const texto = JSON.stringify(dados);
+    localStorage.setItem(`${CHAVE_TEMPOS}:ultimo`, texto);
+    if (motoId) localStorage.setItem(`${CHAVE_TEMPOS}:${motoId}`, texto);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function lerTempos(motoId: string): TemposSalvos | null {
+  try {
+    const texto =
+      (motoId && localStorage.getItem(`${CHAVE_TEMPOS}:${motoId}`)) || localStorage.getItem(`${CHAVE_TEMPOS}:ultimo`);
+    if (!texto) return null;
+    const dados = JSON.parse(texto) as TemposSalvos;
+    return dados && dados.cartoes && typeof dados.cartoes.ano === "number" ? dados : null;
+  } catch {
+    return null;
+  }
+}
+
+/* Troca o texto do botão por um instante, pra mostrar que funcionou. */
+function avisarNoBotao(botao: HTMLButtonElement, texto: string) {
+  const antes = botao.dataset.textoOriginal || botao.textContent || "";
+  botao.dataset.textoOriginal = antes;
+  botao.textContent = texto;
+  window.setTimeout(() => {
+    botao.textContent = antes;
+  }, 1800);
+}
+
+function umaCasa(n: number) {
+  return Math.round(n * 10) / 10;
+}
+
+function semAcento(texto: string) {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
 
 function segundos(n: number) {
   const m = Math.floor(n / 60);
@@ -120,9 +238,21 @@ export default function EditorDeVideo() {
   const [trechos, setTrechos] = useState<Trecho[]>([]);
   const [motos, setMotos] = useState<MotoDoEditor[]>([]);
   const [motoId, setMotoId] = useState("");
+  const [buscaMoto, setBuscaMoto] = useState("");
+  /* Card sendo arrastado na linha do tempo: qual, e onde o dedo pegou (segundos depois do início do card). */
+  const arrasto = useRef<{ campo: CampoDeCard; pegouEm: number; modo: "mover" | "duracao" } | null>(null);
+  const [filtroMoto, setFiltroMoto] = useState<"todas" | "estoque" | "vendidas">("todas");
   const [textos, setTextos] = useState<Textos>({ marca: "", modelo: "", ano: "", km: "", preco: "" });
   const [cartoes, setCartoes] = useState<Cartoes>(() => timelinePadrao(0));
   const [timelineManual, setTimelineManual] = useState(false);
+  /*
+   * Tela final DEPOIS do vídeo, e não por cima do fim dele
+   * (pedido de 23/11/2026: o locutor ainda falava do cartão em
+   * 24x quando a tela final entrava). Ligado, o vídeo ganha
+   * "Tela final dura" segundos a mais no fim, com o último
+   * quadro parado por baixo e só a música tocando.
+   */
+  const [telaFinalDepois, setTelaFinalDepois] = useState(false);
   const [mostrar, setMostrar] = useState<Mostrar>({
     logo: true,
     textos: true,
@@ -155,7 +285,7 @@ export default function EditorDeVideo() {
   const parar = useRef(false);
   const pausado = useRef(false);
   /* O vídeo e o passo de desenho de agora, pra "Retomar" conseguir religar o laço de fora da função reproduzir. */
-  const loopAtivo = useRef<{ v: HTMLVideoElement; passo: () => void } | null>(null);
+  const loopAtivo = useRef<{ v: HTMLVideoElement; passo: () => void; soQuadro?: boolean } | null>(null);
   const audio = useRef<{
     ctx: AudioContext;
     original: GainNode;
@@ -166,9 +296,46 @@ export default function EditorDeVideo() {
   } | null>(null);
   const config = useRef({ textos, mostrar, frases, cartoes });
 
-  const total = duracaoTotal(trechos);
+  const totalVideo = duracaoTotal(trechos);
+  const total = totalVideo + (telaFinalDepois && totalVideo > 0 ? cartoes.outroDuracao : 0);
   const quadro = useMemo(() => tamanhoDoQuadro(trechos), [trechos]);
+
+  /*
+   * Pesquisa e filtro da lista de motos (pedido de 23/11/2026).
+   * A moto já escolhida continua na lista mesmo fora do filtro,
+   * pra o <select> não perder o que está marcado.
+   */
+  const motosDaLista = useMemo(() => {
+    const termos = semAcento(buscaMoto).split(/s+/).filter(Boolean);
+    return motos.filter((m) => {
+      if (String(m.id) === motoId) return true;
+      const vendida = m.status === "vendida";
+      if (filtroMoto === "estoque" && vendida) return false;
+      if (filtroMoto === "vendidas" && !vendida) return false;
+      const texto = semAcento(
+        [m.marca, m.modelo, m.versao, m.cor, m.placa, m.ano_fabricacao, m.ano_modelo, m.cilindrada].filter(Boolean).join(" ")
+      );
+      return termos.every((t) => texto.includes(t));
+    });
+  }, [motos, buscaMoto, filtroMoto, motoId]);
   const ocupado = estado !== "parado";
+  /* Quais cards estão cobrindo outro (ou a tela final) - a linha fica vermelha. */
+  const cardsCobertos = useMemo(() => {
+    const janelas = LINHAS_DE_CARD.filter(([, , chave]) => (chave ? mostrar[chave] : Boolean(textos.preco)))
+      .map(([campo]) => ({ campo, inicio: cartoes[campo], fim: cartoes[campo] + duracaoDoCard(cartoes, campo) }))
+      .sort((a, b) => a.inicio - b.inicio);
+    const cobertos = new Set<string>();
+    for (let i = 0; i < janelas.length - 1; i += 1) {
+      if (janelas[i + 1].inicio < janelas[i].fim) {
+        cobertos.add(janelas[i].campo);
+        cobertos.add(janelas[i + 1].campo);
+      }
+    }
+    const ultimo = janelas[janelas.length - 1];
+    if (ultimo && ultimo.fim > Math.max(2, total - cartoes.outroDuracao)) cobertos.add(ultimo.campo);
+    return cobertos;
+  }, [cartoes, mostrar, textos.preco, total]);
+
   const avisosDeTempo = useMemo(
     () => conflitosDeTempo(cartoes, mostrar, Boolean(textos.preco), total),
     [cartoes, mostrar, textos.preco, total]
@@ -183,7 +350,7 @@ export default function EditorDeVideo() {
     supabase
       .from("motorcycles")
       .select(
-        "id, marca, modelo, versao, cor, ano_fabricacao, ano_modelo, quilometragem, cilindrada, preco_anunciado, data_entrada, status"
+        "id, marca, modelo, versao, cor, ano_fabricacao, ano_modelo, quilometragem, cilindrada, preco_anunciado, data_entrada, status, placa"
       )
       .order("data_entrada", { ascending: false, nullsFirst: false })
       .then(({ data }) => setMotos((data || []) as unknown as MotoDoEditor[]));
@@ -273,7 +440,34 @@ export default function EditorDeVideo() {
   /* Cada card do padrão tem o tempo em que aparece; só quem ouve a narração sabe o certo - aqui é só o ponto de partida. */
   function mudarCartao(campo: keyof Cartoes, valor: number) {
     setTimelineManual(true);
-    setCartoes((atual) => ({ ...atual, [campo]: Math.max(0, valor) }));
+    setCartoes((atual) => ({ ...atual, [campo]: Math.max(0, umaCasa(valor)) }));
+  }
+
+  function mudarDuracao(campo: CampoDeCard, valor: number) {
+    setTimelineManual(true);
+    setCartoes((atual) => ({
+      ...atual,
+      duracoes: { ...atual.duracoes, [campo]: Math.max(DURACAO_MINIMA, umaCasa(valor)) },
+    }));
+  }
+
+  function cardLigado(chave: keyof Mostrar | null) {
+    return chave ? Boolean(mostrar[chave]) : Boolean(textos.preco);
+  }
+
+  /* Empurra pra frente cada card que entra antes do anterior sair, na ordem em que aparecem. */
+  function organizarCards() {
+    setTimelineManual(true);
+    setCartoes((atual) => {
+      const novo = { ...atual };
+      const ligados = LINHAS_DE_CARD.filter(([, , chave]) => cardLigado(chave)).sort((a, b) => atual[a[0]] - atual[b[0]]);
+      let fimAnterior = 0;
+      for (const [campo] of ligados) {
+        if (novo[campo] < fimAnterior) novo[campo] = Math.ceil(fimAnterior * 10 - 1e-6) / 10;
+        fimAnterior = novo[campo] + duracaoDoCard(novo, campo);
+      }
+      return novo;
+    });
   }
 
   /*
@@ -406,21 +600,40 @@ export default function EditorDeVideo() {
       tratamento.type = "highpass";
       tratamento.frequency.value = 80;
 
+      /*
+       * Áudio (revisão de 23/11/2026 - a gravação saía com o som
+       * horrível): o compressor antigo (-20 dB, 3:1) somado ao
+       * ganho automático que o navegador põe nele, mais a música
+       * por cima, passava do 0 dB e estourava (distorção), além de
+       * levantar o chiado. Agora: compressor leve só na voz, e no
+       * fim da mistura um limitador que segura o pico abaixo do
+       * máximo, pra voz + música nunca estourarem.
+       */
       const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.ratio.value = 3;
-      compressor.attack.value = 0.01;
-      compressor.release.value = 0.2;
+      compressor.threshold.value = -16;
+      compressor.knee.value = 12;
+      compressor.ratio.value = 2;
+      compressor.attack.value = 0.008;
+      compressor.release.value = 0.25;
 
       const original = ctx.createGain();
       const musicaGanho = ctx.createGain();
+      const mistura = ctx.createGain();
+      mistura.gain.value = 0.8;
+      const limitador = ctx.createDynamicsCompressor();
+      limitador.threshold.value = -3;
+      limitador.knee.value = 0;
+      limitador.ratio.value = 20;
+      limitador.attack.value = 0.002;
+      limitador.release.value = 0.12;
       const saida = ctx.createMediaStreamDestination();
       tratamento.connect(compressor);
       compressor.connect(original);
-      original.connect(ctx.destination);
-      original.connect(saida);
-      musicaGanho.connect(ctx.destination);
-      musicaGanho.connect(saida);
+      original.connect(mistura);
+      musicaGanho.connect(mistura);
+      mistura.connect(limitador);
+      limitador.connect(ctx.destination);
+      limitador.connect(saida);
       audio.current = { ctx, original, tratamento, musica: musicaGanho, saida, ligados: new WeakSet() };
     }
     const a = audio.current;
@@ -441,7 +654,51 @@ export default function EditorDeVideo() {
     return a;
   }
 
-  async function reproduzir(gravar: boolean) {
+  /*
+   * Barra de adiantar/voltar (pedido de 23/11/2026). Parado: só
+   * mostra o quadro daquele ponto (e "Tocar" começa dali).
+   * Tocando ou pausado: para a reprodução e, quando ela terminar
+   * de parar, recomeça do ponto escolhido (se estava tocando)
+   * ou fica parado mostrando o quadro.
+   */
+  const irPara = useRef<{ t: number; tocar: boolean } | null>(null);
+
+  function localizar(t: number) {
+    let base = 0;
+    for (const trecho of trechos) {
+      const dura = trecho.fim - trecho.inicio;
+      if (t < base + dura) return { trecho, local: trecho.inicio + Math.max(0, t - base) };
+      base += dura;
+    }
+    const ultimo = trechos[trechos.length - 1];
+    return ultimo ? { trecho: ultimo, local: ultimo.fim } : null;
+  }
+
+  async function mostrarQuadro(t: number) {
+    const lugar = localizar(t);
+    setTempo(t);
+    if (!lugar) return;
+    const v = videos.current.get(lugar.trecho.id);
+    if (!v) return;
+    v.currentTime = lugar.local;
+    await esperar(v, "seeked");
+    desenhar(v, t);
+  }
+
+  function procurar(t: number) {
+    const alvo = Math.min(Math.max(0, t), Math.max(0, total - 0.05));
+    if (estado === "gravando") return;
+    if (estado === "parado") {
+      mostrarQuadro(alvo);
+      return;
+    }
+    irPara.current = { t: alvo, tocar: estado === "tocando" || Boolean(irPara.current?.tocar) };
+    setTempo(alvo);
+    pararTudo();
+  }
+
+  async function reproduzir(gravar: boolean, desde = 0) {
+    if (gravar) desde = 0;
     if (trechos.length === 0 || ocupado) return;
 
     const formato = formatoDeGravacao();
@@ -456,7 +713,31 @@ export default function EditorDeVideo() {
     setEstado(gravar ? "gravando" : "tocando");
 
     const a = ligarAudio();
+
+    /*
+     * iPhone (Safari): vídeo só toca se o play() sair direto do
+     * toque no botão - depois de qualquer await, ele recusa e a
+     * prévia fica preta parada em 0:00 (visto em 23/11/2026).
+     * Então aqui, ainda dentro do toque, dá play e pausa em todos
+     * os vídeos e na música: depois disso o Safari libera tocar
+     * cada um deles quando o laço chegar. Espera os pauses
+     * terminarem antes de seguir, pra nenhum pause atrasado parar
+     * o vídeo de verdade.
+     */
+    const liberando = [
+      ...trechos.map((t) => videos.current.get(t.id)),
+      musica ? audioMusica.current : null,
+    ].map((midia) =>
+      midia
+        ? midia
+            .play()
+            .then(() => midia.pause())
+            .catch(() => {})
+        : null
+    );
+
     await a.ctx.resume();
+    await Promise.all(liberando);
 
     let gravador: MediaRecorder | null = null;
     const pedacos: Blob[] = [];
@@ -464,7 +745,12 @@ export default function EditorDeVideo() {
       /* 24 fps em vez de 30: o vídeo saiu em 1080x1920 (padrão de verdade, revisão de 20/11/2026) - menos quadros por segundo alivia a máquina que está gravando, sem ficar visivelmente menos fluido. */
       const fluxo = canvas.current.captureStream(24);
       a.saida.stream.getAudioTracks().forEach((faixa) => fluxo.addTrack(faixa));
-      gravador = new MediaRecorder(fluxo, { mimeType: formato.tipo, videoBitsPerSecond: 6_000_000 });
+      gravador = new MediaRecorder(fluxo, {
+        mimeType: formato.tipo,
+        videoBitsPerSecond: 6_000_000,
+        /* Sem isso o navegador grava o som com qualidade baixa. */
+        audioBitsPerSecond: 192_000,
+      });
       gravador.ondataavailable = (e) => {
         if (e.data.size) pedacos.push(e.data);
       };
@@ -472,7 +758,7 @@ export default function EditorDeVideo() {
 
     const m = audioMusica.current;
     if (m && musica) {
-      m.currentTime = 0;
+      m.currentTime = m.duration ? desde % m.duration : 0;
       m.loop = true;
     }
 
@@ -484,7 +770,13 @@ export default function EditorDeVideo() {
       const v = videos.current.get(trecho.id);
       if (!v) continue;
 
-      v.currentTime = trecho.inicio;
+      /* Começando do meio (barra de adiantar): pula os trechos que já passaram e entra no ponto certo do atual. */
+      const dura = trecho.fim - trecho.inicio;
+      if (base + dura <= desde) {
+        base += dura;
+        continue;
+      }
+      v.currentTime = trecho.inicio + Math.max(0, desde - base);
       await esperar(v, "seeked");
 
       /* Gravador e música só começam com o primeiro quadro pronto, para não abrir com tela preta. */
@@ -517,6 +809,46 @@ export default function EditorDeVideo() {
       base += trecho.fim - trecho.inicio;
     }
 
+    /* A tela final depois do vídeo: o último quadro parado, contando o tempo no relógio (o vídeo já acabou). */
+    const ultimoTrecho = trechos[trechos.length - 1];
+    const ultimoVideo = ultimoTrecho ? videos.current.get(ultimoTrecho.id) : undefined;
+    if (telaFinalDepois && !parar.current && ultimoTrecho && ultimoVideo && total > totalVideo) {
+      ultimoVideo.pause();
+      if (Math.abs(ultimoVideo.currentTime - ultimoTrecho.fim) > 0.2) {
+        ultimoVideo.currentTime = Math.max(ultimoTrecho.inicio, ultimoTrecho.fim - 0.05);
+        await esperar(ultimoVideo, "seeked");
+      }
+      if (!comecou) {
+        comecou = true;
+        gravador?.start(250);
+        if (m && musica) await m.play().catch(() => {});
+      }
+      const extra = total - totalVideo;
+      let decorrido = Math.max(0, desde - totalVideo);
+      let antes: number | null = null;
+      await new Promise<void>((terminou) => {
+        const passo = () => {
+          if (pausado.current) {
+            antes = null;
+            return;
+          }
+          const agora = performance.now();
+          if (antes !== null) decorrido += (agora - antes) / 1000;
+          antes = agora;
+          const t = totalVideo + Math.min(decorrido, extra);
+          desenhar(ultimoVideo, t);
+          setTempo(t);
+          if (parar.current || decorrido >= extra) {
+            terminou();
+            return;
+          }
+          requestAnimationFrame(passo);
+        };
+        loopAtivo.current = { v: ultimoVideo, passo, soQuadro: true };
+        requestAnimationFrame(passo);
+      });
+    }
+
     m?.pause();
 
     if (gravador && formato) {
@@ -540,6 +872,19 @@ export default function EditorDeVideo() {
     setTempo(0);
     pausado.current = false;
     loopAtivo.current = null;
+
+    /* Parou porque alguém mexeu na barra: recomeça (ou só mostra o quadro) do ponto escolhido. */
+    const pedido = irPara.current;
+    irPara.current = null;
+    if (pedido && !gravar) {
+      if (pedido.tocar) reproduzir(false, pedido.t);
+      else mostrarQuadro(pedido.t);
+    }
+  }
+
+  /* "Tocar" parado: começa de onde a barra está (do zero se estiver no fim). */
+  function tocarDaqui() {
+    reproduzir(false, tempo > 0 && tempo < total - 0.3 ? tempo : 0);
   }
 
   /* Pausa a prévia no quadro atual - o vídeo e o laço ficam parados, prontos pra "Retomar". Não existe durante a gravação: ela só tem "Cancelar". */
@@ -554,7 +899,7 @@ export default function EditorDeVideo() {
   function retomarPrevia() {
     if (estado !== "pausado" || !loopAtivo.current) return;
     pausado.current = false;
-    loopAtivo.current.v.play().catch(() => {});
+    if (!loopAtivo.current.soQuadro) loopAtivo.current.v.play().catch(() => {});
     if (musica) audioMusica.current?.play().catch(() => {});
     setEstado("tocando");
     requestAnimationFrame(loopAtivo.current.passo);
@@ -571,7 +916,7 @@ export default function EditorDeVideo() {
 
   async function gerarLegendas() {
     if (trechos.length === 0 || gerandoLegenda) return;
-    if (total > LIMITE_LEGENDA) {
+    if (totalVideo > LIMITE_LEGENDA) {
       setAviso(`A legenda automática vai até ${LIMITE_LEGENDA / 60} minutos de vídeo. Encurte os trechos e tente de novo.`);
       return;
     }
@@ -660,9 +1005,9 @@ export default function EditorDeVideo() {
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
         {/* Coluna da esquerda: os ajustes */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <section className={CARTAO}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-black text-black">1. Vídeos</h2>
@@ -797,11 +1142,32 @@ export default function EditorDeVideo() {
                 </label>
               </div>
             </div>
-            <select className={`${CAMPO} mt-3`} value={motoId} onChange={(e) => escolherMoto(e.target.value)}>
-              <option value="">Escolha a moto (estoque ou vendida) para preencher sozinho…</option>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                className={`${CAMPO} sm:flex-1`}
+                value={buscaMoto}
+                placeholder="Pesquisar moto: modelo, cor, placa, ano…"
+                onChange={(e) => setBuscaMoto(e.target.value)}
+              />
+              <select
+                className={`${CAMPO} sm:w-44`}
+                value={filtroMoto}
+                onChange={(e) => setFiltroMoto(e.target.value as "todas" | "estoque" | "vendidas")}
+              >
+                <option value="todas">Todas</option>
+                <option value="estoque">Só no estoque</option>
+                <option value="vendidas">Só vendidas</option>
+              </select>
+            </div>
+            <select className={`${CAMPO} mt-2`} value={motoId} onChange={(e) => escolherMoto(e.target.value)}>
+              <option value="">
+                {motosDaLista.length === 0
+                  ? "Nenhuma moto encontrada na pesquisa"
+                  : `Escolha a moto para preencher sozinho… (${motosDaLista.length})`}
+              </option>
               {[
-                { rotulo: "No estoque", lista: motos.filter((m) => m.status !== "vendida") },
-                { rotulo: "Já vendidas", lista: motos.filter((m) => m.status === "vendida") },
+                { rotulo: "No estoque", lista: motosDaLista.filter((m) => m.status !== "vendida") },
+                { rotulo: "Já vendidas", lista: motosDaLista.filter((m) => m.status === "vendida") },
               ]
                 .filter((grupo) => grupo.lista.length > 0)
                 .map((grupo) => (
@@ -872,15 +1238,44 @@ export default function EditorDeVideo() {
                   type="button"
                   className="text-xs font-bold text-black/50 hover:text-[#a97800]"
                   onClick={() => {
-                    setCartoes(timelinePadrao(total));
+                    setCartoes((atual) => ({ ...timelinePadrao(total), duracoes: atual.duracoes }));
                     setTimelineManual(false);
                   }}
                 >
                   recalcular automático
                 </button>
               </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-md bg-[#d4a017] px-3 py-1.5 text-[11px] font-black text-[#0b0b0c] hover:bg-[#f0c640]"
+                  onClick={(e) => {
+                    const ok = gravarTempos(motoId, { cartoes, telaFinalDepois, salvoEm: new Date().toISOString() });
+                    avisarNoBotao(e.currentTarget, ok ? "Salvo ✓" : "Não deu para salvar");
+                  }}
+                >
+                  Salvar estes tempos
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-white/15 bg-white/[.06] px-3 py-1.5 text-[11px] font-black text-white hover:border-[#d4a017]"
+                  onClick={(e) => {
+                    const salvos = lerTempos(motoId);
+                    if (!salvos) {
+                      avisarNoBotao(e.currentTarget, "Nada salvo ainda");
+                      return;
+                    }
+                    setTimelineManual(true);
+                    setCartoes(salvos.cartoes);
+                    setTelaFinalDepois(Boolean(salvos.telaFinalDepois));
+                    avisarNoBotao(e.currentTarget, "Tempos aplicados ✓");
+                  }}
+                >
+                  Usar tempos salvos
+                </button>
+              </div>
               <p className="mt-1 text-[11px] font-semibold text-black/45">
-                O ponto de partida é automático; ajuste cada um pelo ouvido, para o card entrar exatamente quando a narração fala daquilo.
+                Aperte Tocar e, ouvindo a narração, clique em Marcar na hora em que o locutor fala de cada coisa. Arraste o bloco para mudar quando entra e puxe a ponta direita (ou use “dura − +”) para mudar quanto tempo fica. Linha vermelha = card cobrindo outro.
               </p>
 
               {avisosDeTempo.length > 0 && (
@@ -896,40 +1291,195 @@ export default function EditorDeVideo() {
                 </div>
               )}
 
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {(
-                  [
-                    ["ano", "Card Ano", "ano"],
-                    ["manual", "Card Manual", "manual"],
-                    ["cautelar", "Card Cautelar", "cautelar"],
-                    ["km", "Card Km", "km"],
-                    ["financiamento", "Card Financ.", "financiamento"],
-                    ["cartao", "Card Cartão", "cartao"],
-                    ["preco", "Painel de preço", null],
-                    ["outroDuracao", "Tela final dura", null],
-                  ] as [keyof Cartoes, string, keyof Mostrar | null][]
-                ).map(([campo, rotulo, campoMostrar]) => {
-                  const ligado = !campoMostrar || mostrar[campoMostrar];
-                  return (
-                    <label
-                      key={campo}
-                      className={`text-[11px] font-bold ${ligado ? "text-black/55" : "text-black/30"}`}
-                    >
-                      {rotulo}
-                      {!ligado && " (desligado)"}
+              {(() => {
+                const podeMarcar = estado !== "gravando" && trechos.length > 0;
+                const pct = (x: number) => (total > 0 ? Math.min(100, Math.max(0, (x / total) * 100)) : 0);
+                const outroInicio = Math.max(2, total - cartoes.outroDuracao);
+                const BOTAO_PEQUENO =
+                  "grid h-7 w-7 shrink-0 place-items-center rounded-md border border-white/15 bg-white/[.06] text-sm font-black text-white hover:border-[#d4a017] disabled:opacity-30";
+                return (
+                  <>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {estado === "tocando" ? (
+                        <button type="button" className={BOTAO} onClick={pausarPrevia}>
+                          <Pause size={15} /> Pausar
+                        </button>
+                      ) : estado === "pausado" ? (
+                        <button type="button" className={BOTAO} onClick={retomarPrevia}>
+                          <Play size={15} /> Continuar
+                        </button>
+                      ) : (
+                        <button type="button" className={BOTAO} disabled={ocupado || trechos.length === 0} onClick={tocarDaqui}>
+                          <Play size={15} /> Tocar para marcar
+                        </button>
+                      )}
+                      {(estado === "tocando" || estado === "pausado") && (
+                        <button type="button" className={BOTAO} onClick={pararTudo}>
+                          Parar
+                        </button>
+                      )}
+                      <span className="text-xs font-black tabular-nums text-black/60">
+                        {tempo.toFixed(1)}s / {total.toFixed(1)}s
+                      </span>
+                      {cardsCobertos.size > 0 && (
+                        <button type="button" className="ml-auto text-xs font-bold text-[#a97800] hover:underline" onClick={organizarCards}>
+                          desencavalar cards sozinho
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="range"
+                      aria-label="Adiantar ou voltar o vídeo"
+                      min={0}
+                      max={Math.max(total, 0.1)}
+                      step={0.1}
+                      value={Math.min(tempo, total)}
+                      disabled={trechos.length === 0 || estado === "gravando"}
+                      onChange={(e) => procurar(Number(e.target.value))}
+                      className="mt-2 block h-6 w-full cursor-pointer accent-[#d4a017] disabled:opacity-40"
+                    />
+
+                    <div className="mt-2 space-y-1.5">
+                      {LINHAS_DE_CARD.map(([campo, rotulo, chave]) => {
+                        const duracao = duracaoDoCard(cartoes, campo);
+                        const ligado = cardLigado(chave);
+                        const coberto = ligado && cardsCobertos.has(campo);
+                        const inicio = cartoes[campo];
+                        return (
+                          <div
+                            key={campo}
+                            className={`flex flex-wrap items-center gap-2 rounded-lg border px-2 py-1.5 sm:flex-nowrap ${
+                              !ligado ? "border-white/5 opacity-40" : coberto ? "border-red-500/70 bg-red-500/10" : "border-white/10 bg-white/[.03]"
+                            }`}
+                          >
+                            <span className="w-16 shrink-0 text-[11px] font-black text-white">
+                              {rotulo}
+                              {!ligado && <span className="block text-[9px] font-bold text-white/50">desligado</span>}
+                            </span>
+                            <div
+                              className={`relative order-last h-7 basis-full touch-none select-none overflow-hidden rounded bg-white/10 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto ${
+                                ligado && total > 0 ? "cursor-grab active:cursor-grabbing" : ""
+                              }`}
+                              title={ligado ? "Arraste o bloco para mudar quando entra; puxe a ponta direita para mudar quanto tempo fica" : undefined}
+                              onPointerDown={(e) => {
+                                if (!ligado || total <= 0) return;
+                                const caixa = e.currentTarget.getBoundingClientRect();
+                                const t = ((e.clientX - caixa.left) / caixa.width) * total;
+                                /*
+                                 * Ponta direita do bloco (12px pra cada lado): muda a duração.
+                                 * No bloco: arrasta mantendo o ponto pego. Fora: o card começa ali.
+                                 */
+                                const folgaPonta = (12 / caixa.width) * total;
+                                const fimCard = inicio + duracao;
+                                e.currentTarget.setPointerCapture(e.pointerId);
+                                if (Math.abs(t - fimCard) <= folgaPonta) {
+                                  arrasto.current = { campo, pegouEm: 0, modo: "duracao" };
+                                  return;
+                                }
+                                const pegouEm = t >= inicio && t <= fimCard ? t - inicio : 0;
+                                arrasto.current = { campo, pegouEm, modo: "mover" };
+                                if (!pegouEm) mudarCartao(campo, Math.min(t, total - duracao));
+                              }}
+                              onPointerMove={(e) => {
+                                const a = arrasto.current;
+                                if (!a || a.campo !== campo) return;
+                                const caixa = e.currentTarget.getBoundingClientRect();
+                                const t = ((e.clientX - caixa.left) / caixa.width) * total;
+                                if (a.modo === "duracao") mudarDuracao(campo, Math.min(t, total) - inicio);
+                                else mudarCartao(campo, Math.min(t - a.pegouEm, total - duracao));
+                              }}
+                              onPointerUp={() => {
+                                arrasto.current = null;
+                              }}
+                              onPointerCancel={() => {
+                                arrasto.current = null;
+                              }}
+                            >
+                              {total > 0 && (
+                                <>
+                                  <div className="absolute inset-y-0 bg-white/20" style={{ left: `${pct(outroInicio)}%`, right: 0 }} title="Tela final" />
+                                  {ligado && (
+                                    <div
+                                      className={`absolute inset-y-0 rounded ${coberto ? "bg-red-500/80" : "bg-[#d4a017]"}`}
+                                      style={{ left: `${pct(inicio)}%`, width: `${pct(duracao)}%` }}
+                                    >
+                                      <span className="absolute inset-y-1 right-0.5 w-1.5 cursor-ew-resize rounded-full bg-[#0b0b0c]/50" />
+                                    </div>
+                                  )}
+                                  {podeMarcar && <div className="absolute inset-y-0 w-0.5 bg-white" style={{ left: `${pct(tempo)}%` }} />}
+                                </>
+                              )}
+                            </div>
+                            <button type="button" className={BOTAO_PEQUENO} disabled={!ligado} onClick={() => mudarCartao(campo, inicio - 0.1)} aria-label={`${rotulo} 0,1 s antes`}>
+                              −
+                            </button>
+                            <span className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-white/60">
+                              <CampoSegundos
+                                valor={inicio}
+                                disabled={!ligado}
+                                rotulo={`${rotulo}: começa em (segundos)`}
+                                aoMudar={(n) => mudarCartao(campo, Math.min(n, Math.max(0, total - duracao)))}
+                              />
+                              <span className="w-12 tabular-nums">até {(inicio + duracao).toFixed(1)}</span>
+                            </span>
+                            <button type="button" className={BOTAO_PEQUENO} disabled={!ligado} onClick={() => mudarCartao(campo, inicio + 0.1)} aria-label={`${rotulo} 0,1 s depois`}>
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              className="h-7 shrink-0 rounded-md bg-[#d4a017] px-2.5 text-[11px] font-black text-[#0b0b0c] hover:bg-[#f0c640] disabled:bg-white/10 disabled:text-white/40"
+                              disabled={!ligado || !podeMarcar}
+                              title={podeMarcar ? "Começa este card no ponto atual do vídeo" : "Anexe um vídeo primeiro"}
+                              onClick={() => mudarCartao(campo, tempo)}
+                            >
+                              Marcar
+                            </button>
+                            <span className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-white/60">
+                              dura
+                              <button type="button" className={BOTAO_PEQUENO} disabled={!ligado} onClick={() => mudarDuracao(campo, duracao - 0.2)} aria-label={`${rotulo}: menos tempo na tela`}>
+                                −
+                              </button>
+                              <CampoSegundos valor={duracao} disabled={!ligado} rotulo={`${rotulo}: fica na tela (segundos)`} aoMudar={(n) => mudarDuracao(campo, n)} />
+                              <button type="button" className={BOTAO_PEQUENO} disabled={!ligado} onClick={() => mudarDuracao(campo, duracao + 0.2)} aria-label={`${rotulo}: mais tempo na tela`}>
+                                +
+                              </button>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <label className="mt-3 flex items-start gap-2 text-[11px] font-bold text-white">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5"
+                        checked={telaFinalDepois}
+                        onChange={(e) => setTelaFinalDepois(e.target.checked)}
+                      />
+                      <span>
+                        Tela final depois do vídeo
+                        <span className="block font-semibold text-white/60">
+                          Não corta a fala do fim: acrescenta o tempo da tela final depois do último trecho, com a imagem parada e só a música.
+                        </span>
+                      </span>
+                    </label>
+
+                    <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-black/55">
+                      Tela final dura
                       <input
                         type="number"
-                        min={0}
+                        min={2}
                         step={0.5}
-                        className={`${CAMPO} ${!ligado ? "opacity-40" : ""}`}
-                        disabled={!ligado}
-                        value={cartoes[campo]}
-                        onChange={(e) => mudarCartao(campo, Number(e.target.value))}
+                        className={`${CAMPO} w-20`}
+                        value={cartoes.outroDuracao}
+                        onChange={(e) => mudarCartao("outroDuracao", Number(e.target.value))}
                       />
+                      segundos (faixa cinza no fim de cada linha)
                     </label>
-                  );
-                })}
-              </div>
+                  </>
+                );
+              })()}
             </div>
           </section>
 
@@ -1016,7 +1566,7 @@ export default function EditorDeVideo() {
         </div>
 
         {/* Coluna da direita: a prévia e o botão de baixar */}
-        <div className="lg:sticky lg:top-4 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
           <section className={CARTAO}>
             <canvas
               ref={canvas}
@@ -1025,6 +1575,25 @@ export default function EditorDeVideo() {
               className="mx-auto block max-h-[70vh] w-full rounded-xl bg-black object-contain"
               style={{ aspectRatio: `${quadro.largura} / ${quadro.altura}` }}
             />
+            <input
+                type="range"
+                aria-label="Adiantar ou voltar o vídeo"
+                min={0}
+                max={Math.max(total, 0.1)}
+                step={0.1}
+                value={Math.min(tempo, total)}
+                disabled={trechos.length === 0 || estado === "gravando"}
+                onChange={(e) => procurar(Number(e.target.value))}
+                className="mt-2 block h-6 w-full cursor-pointer accent-[#d4a017] disabled:opacity-40"
+              />
+            <div className="mt-1 flex justify-center gap-2">
+              <button type="button" className={BOTAO} disabled={trechos.length === 0 || estado === "gravando"} onClick={() => procurar(tempo - 2)}>
+                −2s
+              </button>
+              <button type="button" className={BOTAO} disabled={trechos.length === 0 || estado === "gravando"} onClick={() => procurar(tempo + 2)}>
+                +2s
+              </button>
+            </div>
 
             <div className="mt-3 flex items-center gap-2">
               {estado === "tocando" && (
@@ -1048,7 +1617,7 @@ export default function EditorDeVideo() {
                 </>
               )}
               {(estado === "parado" || estado === "gravando") && (
-                <button type="button" className={BOTAO} disabled={ocupado || trechos.length === 0} onClick={() => reproduzir(false)}>
+                <button type="button" className={BOTAO} disabled={ocupado || trechos.length === 0} onClick={tocarDaqui}>
                   <Play size={15} /> Ver prévia
                 </button>
               )}

@@ -71,6 +71,8 @@ export type Mostrar = {
  */
 export type Cartoes = {
   outroDuracao: number;
+  /* Quanto tempo cada card fica na tela, quando alguém mudou à mão (pedido de 23/11/2026); sem valor = o padrão. */
+  duracoes?: Partial<Record<CampoDoCard, number>>;
   ano: number;
   manual: number;
   cautelar: number;
@@ -84,8 +86,17 @@ export type Cartoes = {
 export const FINANCIAMENTO_MAX_PARCELAS = 48;
 export const CARTAO_MAX_PARCELAS = 24;
 
-const DURACAO_CARD = 3.4;
-const DURACAO_PRECO = 4.6;
+export const DURACAO_CARD = 3.4;
+export const DURACAO_PRECO = 4.6;
+
+export type CampoDoCard = "ano" | "manual" | "cautelar" | "km" | "financiamento" | "cartao" | "preco";
+
+/* A duração de um card: a escolhida na tela, ou o padrão (painel de preço fica mais tempo). */
+export function duracaoDoCard(cartoes: Cartoes, campo: CampoDoCard) {
+  const escolhida = cartoes.duracoes?.[campo];
+  if (typeof escolhida === "number" && escolhida > 0) return escolhida;
+  return campo === "preco" ? DURACAO_PRECO : DURACAO_CARD;
+}
 const JANELA_FADE = 0.4;
 const PRIMEIRO_CARD = 2;
 
@@ -128,13 +139,13 @@ export function timelinePadrao(total: number): Cartoes {
  */
 export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: boolean, total: number): string[] {
   const candidatos: { chave: string; rotulo: string; inicio: number; duracao: number; ligado: boolean }[] = [
-    { chave: "ano", rotulo: "Ano", inicio: cartoes.ano, duracao: DURACAO_CARD, ligado: mostrar.ano },
-    { chave: "manual", rotulo: "Manual", inicio: cartoes.manual, duracao: DURACAO_CARD, ligado: mostrar.manual },
-    { chave: "cautelar", rotulo: "Cautelar", inicio: cartoes.cautelar, duracao: DURACAO_CARD, ligado: mostrar.cautelar },
-    { chave: "km", rotulo: "Km", inicio: cartoes.km, duracao: DURACAO_CARD, ligado: mostrar.km },
-    { chave: "financiamento", rotulo: "Financiamento", inicio: cartoes.financiamento, duracao: DURACAO_CARD, ligado: mostrar.financiamento },
-    { chave: "cartao", rotulo: "Cartão", inicio: cartoes.cartao, duracao: DURACAO_CARD, ligado: mostrar.cartao },
-    { chave: "preco", rotulo: "Painel de preço", inicio: cartoes.preco, duracao: DURACAO_PRECO, ligado: temPreco },
+    { chave: "ano", rotulo: "Ano", inicio: cartoes.ano, duracao: duracaoDoCard(cartoes, "ano"), ligado: mostrar.ano },
+    { chave: "manual", rotulo: "Manual", inicio: cartoes.manual, duracao: duracaoDoCard(cartoes, "manual"), ligado: mostrar.manual },
+    { chave: "cautelar", rotulo: "Cautelar", inicio: cartoes.cautelar, duracao: duracaoDoCard(cartoes, "cautelar"), ligado: mostrar.cautelar },
+    { chave: "km", rotulo: "Km", inicio: cartoes.km, duracao: duracaoDoCard(cartoes, "km"), ligado: mostrar.km },
+    { chave: "financiamento", rotulo: "Financiamento", inicio: cartoes.financiamento, duracao: duracaoDoCard(cartoes, "financiamento"), ligado: mostrar.financiamento },
+    { chave: "cartao", rotulo: "Cartão", inicio: cartoes.cartao, duracao: duracaoDoCard(cartoes, "cartao"), ligado: mostrar.cartao },
+    { chave: "preco", rotulo: "Painel de preço", inicio: cartoes.preco, duracao: duracaoDoCard(cartoes, "preco"), ligado: temPreco },
   ];
 
   const janelas = candidatos
@@ -472,6 +483,8 @@ function cabecalho(
   const e = Math.min(ex, ey);
   const xd = L - 56 * ex;
   ctx.textAlign = "right";
+  /* Marca da moto em dourado, igual ao logo da loja (pedido de 23/11/2026 - antes saía preta). */
+  ctx.fillStyle = GOLD;
   ctx.font = pesoRotulo(20 * e);
   textoEspacado(ctx, xd, 62 * ey + 20 * e * 0.8, textos.marca.toUpperCase(), 5 * ex, "r");
   ctx.font = pesoForte(40 * e);
@@ -599,7 +612,7 @@ function telaFinal(
   }
 
   ctx.textAlign = "center";
-  ctx.fillStyle = TEXTO2;
+  ctx.fillStyle = GOLD;
   ctx.font = pesoRotulo(30 * e);
   textoEspacado(ctx, L / 2, 560 * ey + 30 * e, textos.marca.toUpperCase(), 10 * ex, "c");
 
@@ -679,6 +692,38 @@ function telaFinal(
  * ffmpeg, sem a estabilização - essa só dá para fazer fora do
  * navegador.
  */
+/*
+ * Quanto cada card fica DE FATO na tela: a duração dele, mas
+ * cortada no instante em que o próximo card entra (pedido de
+ * 23/11/2026 - o Financiamento ficava aparecendo por baixo do
+ * Cartão). Assim nunca tem dois cards ao mesmo tempo: o de
+ * antes some com fade e o seguinte entra logo depois.
+ */
+function duracoesNaTela(cartoes: Cartoes, mostrar: Mostrar, textos: Textos) {
+  const ligados: [CampoDoCard, boolean][] = [
+    ["ano", mostrar.ano && Boolean(textos.ano)],
+    ["manual", mostrar.manual],
+    ["cautelar", mostrar.cautelar],
+    ["km", mostrar.km && Boolean(textos.km)],
+    ["financiamento", mostrar.financiamento],
+    ["cartao", mostrar.cartao],
+    ["preco", Boolean(textos.preco)],
+  ];
+  const ordem = ligados
+    .filter(([, ligado]) => ligado)
+    .map(([campo]) => campo)
+    .sort((a, b) => cartoes[a] - cartoes[b]);
+  const resultado = {} as Record<CampoDoCard, number>;
+  for (const [campo] of ligados) resultado[campo] = duracaoDoCard(cartoes, campo);
+  ordem.forEach((campo, i) => {
+    const proximo = ordem[i + 1];
+    if (proximo && cartoes[proximo] > cartoes[campo]) {
+      resultado[campo] = Math.min(resultado[campo], cartoes[proximo] - cartoes[campo]);
+    }
+  });
+  return resultado;
+}
+
 export function desenharQuadro(
   ctx: CanvasRenderingContext2D,
   opcoes: {
@@ -720,14 +765,15 @@ export function desenharQuadro(
   } else if (mostrar.textos && textos.modelo) {
     /* Sem abertura com texto grande (revisão de 19/11/2026): o vídeo começa só com a imagem e o cabeçalho. */
     if (mostrar.logo) cabecalho(ctx, L, ex, ey, logo, textos, 1);
+    const naTela = duracoesNaTela(cartoes, mostrar, textos);
 
-    if (mostrar.ano && textos.ano) cardDeInformacao(ctx, L, A, ex, ey, "ANO", textos.ano, opacidadeNaJanela(tempo, cartoes.ano, DURACAO_CARD));
-    if (mostrar.manual) cardManualEChave(ctx, L, A, ex, ey, opacidadeNaJanela(tempo, cartoes.manual, DURACAO_CARD));
-    if (mostrar.cautelar) cardDeInformacao(ctx, L, A, ex, ey, "CAUTELAR", "100% APROVADA", opacidadeNaJanela(tempo, cartoes.cautelar, DURACAO_CARD));
-    if (mostrar.km && textos.km) cardDeInformacao(ctx, L, A, ex, ey, "QUILOMETRAGEM", textos.km.toUpperCase(), opacidadeNaJanela(tempo, cartoes.km, DURACAO_CARD));
-    if (mostrar.financiamento) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", `ATÉ ${FINANCIAMENTO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.financiamento, DURACAO_CARD));
-    if (mostrar.cartao) cardDeInformacao(ctx, L, A, ex, ey, "CARTÃO DE CRÉDITO", `ATÉ ${CARTAO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.cartao, DURACAO_CARD));
-    painelDePreco(ctx, L, A, ex, ey, textos, opacidadeNaJanela(tempo, cartoes.preco, DURACAO_PRECO));
+    if (mostrar.ano && textos.ano) cardDeInformacao(ctx, L, A, ex, ey, "ANO", textos.ano, opacidadeNaJanela(tempo, cartoes.ano, naTela.ano));
+    if (mostrar.manual) cardManualEChave(ctx, L, A, ex, ey, opacidadeNaJanela(tempo, cartoes.manual, naTela.manual));
+    if (mostrar.cautelar) cardDeInformacao(ctx, L, A, ex, ey, "CAUTELAR", "100% APROVADA", opacidadeNaJanela(tempo, cartoes.cautelar, naTela.cautelar));
+    if (mostrar.km && textos.km) cardDeInformacao(ctx, L, A, ex, ey, "QUILOMETRAGEM", textos.km.toUpperCase(), opacidadeNaJanela(tempo, cartoes.km, naTela.km));
+    if (mostrar.financiamento) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", `ATÉ ${FINANCIAMENTO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.financiamento, naTela.financiamento));
+    if (mostrar.cartao) cardDeInformacao(ctx, L, A, ex, ey, "CARTÃO DE CRÉDITO", `ATÉ ${CARTAO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.cartao, naTela.cartao));
+    painelDePreco(ctx, L, A, ex, ey, textos, opacidadeNaJanela(tempo, cartoes.preco, naTela.preco));
   }
 
   if (mostrar.legendas) {
@@ -752,11 +798,7 @@ export function desenharQuadro(
     }
   }
 
-  /* A barra de progresso dourada, do início ao fim do vídeo todo. */
-  if (mostrar.textos && total > 0) {
-    ctx.fillStyle = GOLD;
-    ctx.fillRect(0, A - 10 * ey, L * Math.min(1, tempo / total), 10 * ey);
-  }
+  /* Sem barra de progresso dourada no rodapé (tirada a pedido em 23/11/2026). */
 
   ctx.restore();
 }
