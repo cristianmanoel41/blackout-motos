@@ -561,8 +561,15 @@ export default function EstoquePage() {
         termos.length === 0 ||
         termos.every((termo) => texto.includes(termo));
 
+      /*
+       * Pesquisando, o filtro padrão ("disponível") não esconde
+       * as vendidas - pedido de 23/11/2026: achar pela busca
+       * qualquer moto que já passou pela loja. Se escolher outro
+       * status na mão, ele continua valendo.
+       */
       const passouStatus =
         status === "todos" ||
+        (termos.length > 0 && status === "disponivel") ||
         normalizarTexto(moto.status) === status;
 
       const passouMarca =
