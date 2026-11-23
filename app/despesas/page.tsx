@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import DespesasLista, {
   type Despesa,
 } from "@/components/DespesasLista";
-import { Plus, Receipt } from "lucide-react";
+import { Plus, Printer, Receipt } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -34,13 +34,23 @@ export default async function DespesasPage() {
           </p>
         </div>
 
-        <Link
-          href="/despesas/nova"
-          className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
-        >
-          <Plus size={18} />
-          Nova Despesa
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/despesas/imprimir"
+            className="flex items-center justify-center gap-2 rounded-lg border border-dourado px-4 py-2 font-semibold text-dourado transition hover:bg-dourado hover:text-preto"
+          >
+            <Printer size={18} />
+            Relatório para o contador
+          </Link>
+
+          <Link
+            href="/despesas/nova"
+            className="flex items-center justify-center gap-2 rounded-lg bg-dourado px-4 py-2 font-semibold text-preto transition hover:bg-dourado-claro"
+          >
+            <Plus size={18} />
+            Nova Despesa
+          </Link>
+        </div>
       </div>
 
       {error && (
