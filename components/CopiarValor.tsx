@@ -11,7 +11,10 @@ import { Check, Copy } from "lucide-react";
 export default function CopiarValor({ valor, titulo }: { valor: string; titulo?: string }) {
   const [copiado, setCopiado] = useState(false);
 
-  async function copiar() {
+  async function copiar(evento: React.MouseEvent) {
+    /* A linha da tabela (Estoque) abre a ficha da moto ao clicar - sem isso, copiar também navegava. */
+    evento.stopPropagation();
+
     try {
       await navigator.clipboard.writeText(valor);
     } catch {
