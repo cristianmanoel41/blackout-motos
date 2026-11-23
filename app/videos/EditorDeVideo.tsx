@@ -174,14 +174,17 @@ export default function EditorDeVideo() {
     [cartoes, mostrar, textos.preco, total]
   );
 
-  /* As motos disponíveis, para preencher os textos sozinho. */
+  /*
+   * As motos para preencher os textos sozinho - todas, inclusive
+   * as vendidas (pedido de 23/11/2026: refazer vídeo de moto que
+   * já saiu). Na lista elas aparecem separadas, embaixo.
+   */
   useEffect(() => {
     supabase
       .from("motorcycles")
       .select(
         "id, marca, modelo, versao, cor, ano_fabricacao, ano_modelo, quilometragem, cilindrada, preco_anunciado, data_entrada, status"
       )
-      .eq("status", "disponivel")
       .order("data_entrada", { ascending: false, nullsFirst: false })
       .then(({ data }) => setMotos((data || []) as unknown as MotoDoEditor[]));
 
@@ -795,12 +798,21 @@ export default function EditorDeVideo() {
               </div>
             </div>
             <select className={`${CAMPO} mt-3`} value={motoId} onChange={(e) => escolherMoto(e.target.value)}>
-              <option value="">Escolha a moto do estoque para preencher sozinho…</option>
-              {motos.map((m) => (
-                <option key={m.id} value={String(m.id)}>
-                  {nomeDaMoto(m)} {anoDaMoto(m)} {m.cor ? `· ${m.cor}` : ""}
-                </option>
-              ))}
+              <option value="">Escolha a moto (estoque ou vendida) para preencher sozinho…</option>
+              {[
+                { rotulo: "No estoque", lista: motos.filter((m) => m.status !== "vendida") },
+                { rotulo: "Já vendidas", lista: motos.filter((m) => m.status === "vendida") },
+              ]
+                .filter((grupo) => grupo.lista.length > 0)
+                .map((grupo) => (
+                  <optgroup key={grupo.rotulo} label={grupo.rotulo}>
+                    {grupo.lista.map((m) => (
+                      <option key={m.id} value={String(m.id)}>
+                        {nomeDaMoto(m)} {anoDaMoto(m)} {m.cor ? `· ${m.cor}` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
             </select>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <label className="text-[11px] font-bold text-black/55">
