@@ -148,7 +148,7 @@ export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: b
     const proximo = janelas[i + 1];
     if (proximo.inicio < atual.fim) {
       avisos.push(
-        `"${atual.rotulo}" só termina aos ${atual.fim.toFixed(1)}s, mas "${proximo.rotulo}" já começa aos ${proximo.inicio.toFixed(1)}s`
+        `"${atual.rotulo}" só termina aos ${atual.fim.toFixed(1)}s, mas "${proximo.rotulo}" já começa aos ${proximo.inicio.toFixed(1)}s → coloque "${proximo.rotulo}" em ${paraCima(atual.fim)}s ou mais`
       );
     }
   }
@@ -157,11 +157,20 @@ export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: b
   const ultimo = janelas[janelas.length - 1];
   if (ultimo && ultimo.fim > outroInicio) {
     avisos.push(
-      `"${ultimo.rotulo}" só termina aos ${ultimo.fim.toFixed(1)}s, mas a tela final começa aos ${outroInicio.toFixed(1)}s`
+      `"${ultimo.rotulo}" só termina aos ${ultimo.fim.toFixed(1)}s, mas a tela final começa aos ${outroInicio.toFixed(1)}s → coloque "${ultimo.rotulo}" em ${paraBaixo(outroInicio - (ultimo.fim - ultimo.inicio))}s ou menos`
     );
   }
 
   return avisos;
+}
+
+/* Sugestão de tempo no aviso: arredonda pra casa de 0.1s sem voltar a cobrir o card vizinho. */
+function paraCima(segundos: number) {
+  return (Math.ceil(segundos * 10 - 1e-6) / 10).toFixed(1);
+}
+
+function paraBaixo(segundos: number) {
+  return (Math.max(0, Math.floor(segundos * 10 + 1e-6)) / 10).toFixed(1);
 }
 
 /* 0 fora da janela, sobe e desce em JANELA_FADE segundos, 1 no meio - igual ao padrão: card só aparece/some com fade. */
