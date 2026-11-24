@@ -15,6 +15,7 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  Wand2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -26,6 +27,7 @@ import {
 } from "@/lib/dados/moto-site";
 import {
   audioDaMontagem,
+  cartoesPelaFala,
   desenharQuadro,
   duracaoTotal,
   formatoDeGravacao,
@@ -38,6 +40,7 @@ import {
   type Cartoes,
   type Frase,
   type Mostrar,
+  type Palavra,
   type Textos,
   type Trecho,
 } from "@/lib/video/editor";
@@ -299,6 +302,8 @@ export default function EditorDeVideo() {
   const [volumeMusica, setVolumeMusica] = useState(0.35);
   const [frases, setFrases] = useState<Frase[]>([]);
   const [gerandoLegenda, setGerandoLegenda] = useState(false);
+  const [montandoTudo, setMontandoTudo] = useState(false);
+  const [avisoMontagem, setAvisoMontagem] = useState("");
   const [estado, setEstado] = useState<"parado" | "tocando" | "pausado" | "gravando">("parado");
   const [tempo, setTempo] = useState(0);
   const [aviso, setAviso] = useState("");
@@ -963,38 +968,93 @@ export default function EditorDeVideo() {
     }
   }
 
-  async function gerarLegendas() {
-    if (trechos.length === 0 || gerandoLegenda) return;
-    if (totalVideo > LIMITE_LEGENDA) {
-      setAviso(`A legenda automática vai até ${LIMITE_LEGENDA / 60} minutos de vídeo. Encurte os trechos e tente de novo.`);
-      return;
+  /* Manda o áudio da montagem pra transcrição. Devolve as frases e as palavras, ou o texto do erro. */
+  async function transcrever(lista: Trecho[]): Promise<{ frases: Frase[]; palavras: Palavra[] } | string> {
+    if (duracaoTotal(lista) > LIMITE_LEGENDA) {
+      return `A legenda automática vai até ${LIMITE_LEGENDA / 60} minutos de vídeo. Encurte os trechos e tente de novo.`;
     }
-
-    setAviso("");
-    setGerandoLegenda(true);
     try {
-      const wav = await audioDaMontagem(trechos);
-      if (!wav) {
-        setAviso("Não achei som nesses vídeos para legendar.");
-        return;
-      }
+      const wav = await audioDaMontagem(lista);
+      if (!wav) return "Não achei som nesses vídeos para legendar.";
       const envio = new FormData();
       envio.append("audio", wav, "audio.wav");
       const resposta = await fetch("/api/video/legendas", { method: "POST", body: envio });
       const dados = await resposta.json();
-      if (!resposta.ok) {
-        setAviso(dados.error || "A legenda falhou. Tente de novo.");
-        return;
-      }
-      const lista = (dados.frases || []) as Frase[];
-      setFrases(lista);
-      setMostrar((atual) => ({ ...atual, legendas: true }));
-      if (lista.length === 0) setAviso("Não entendi fala nenhuma no vídeo.");
+      if (!resposta.ok) return dados.error || "A legenda falhou. Tente de novo.";
+      return { frases: (dados.frases || []) as Frase[], palavras: (dados.palavras || []) as Palavra[] };
     } catch (erro) {
       console.error(erro);
-      setAviso("A legenda falhou. Tente de novo.");
+      return "A legenda falhou. Tente de novo.";
+    }
+  }
+
+  async function gerarLegendas() {
+    if (trechos.length === 0 || gerandoLegenda) return;
+    setAviso("");
+    setGerandoLegenda(true);
+    try {
+      const resultado = await transcrever(trechos);
+      if (typeof resultado === "string") {
+        setAviso(resultado);
+        return;
+      }
+      setFrases(resultado.frases);
+      setMostrar((atual) => ({ ...atual, legendas: true }));
+      if (resultado.frases.length === 0) setAviso("Não entendi fala nenhuma no vídeo.");
     } finally {
       setGerandoLegenda(false);
+    }
+  }
+
+  /*
+   * Montar tudo automático (pedido de 24/11/2026): corta os
+   * trechos, ouve a fala, põe cada card na hora em que ele é
+   * falado, liga a tela final depois do vídeo e deixa a legenda
+   * pronta. Tudo continua ajustável na mão depois.
+   */
+  async function montarTudoAutomatico() {
+    if (trechos.length === 0 || ocupado || gerandoLegenda) return;
+    const novos = montagemAutomatica(trechos);
+    setTrechos(novos);
+    setFrases([]);
+    setAviso("");
+    setAvisoMontagem("");
+    setGerandoLegenda(true);
+    setMontandoTudo(true);
+    try {
+      const resultado = await transcrever(novos);
+      const ligados = LINHAS_DE_CARD.filter(([, , chave]) => cardLigado(chave)).map(([campo]) => campo);
+      const totalNovo = duracaoTotal(novos);
+      const base: Cartoes = { ...timelinePadrao(totalNovo), duracoes: cartoes.duracoes };
+
+      if (typeof resultado === "string") {
+        setTimelineManual(false);
+        setCartoes(base);
+        setAvisoMontagem(`Não consegui ouvir a fala, então os cards não foram posicionados (só cortei os vídeos). Motivo: ${resultado}`);
+        return;
+      }
+
+      const falas = resultado.palavras.length ? resultado.palavras : resultado.frases;
+      const { cartoes: novo, achados } = cartoesPelaFala(falas, base, ligados, totalNovo);
+      setTimelineManual(true);
+      setCartoes(novo);
+      setTelaFinalDepois(true);
+      setFrases(resultado.frases);
+      setMostrar((atual) => ({ ...atual, legendas: resultado.frases.length > 0 }));
+
+      const nomes = (campos: CampoDeCard[]) =>
+        campos.map((c) => LINHAS_DE_CARD.find(([campo]) => campo === c)?.[1] || c).join(", ");
+      const chutados = ligados.filter((c) => !achados.includes(c));
+      setAvisoMontagem(
+        resultado.frases.length === 0
+          ? "Cortei os vídeos, mas não entendi fala nenhuma - os cards ficaram espalhados no tempo padrão. Confira e ajuste."
+          : chutados.length === 0
+            ? "Pronto: montei tudo pela sua fala. Dê o play pra conferir e ajuste o que precisar."
+            : `Pronto: montei pela sua fala. Não ouvi você falar de: ${nomes(chutados)} - ${chutados.length === 1 ? "esse card ficou" : "esses cards ficaram"} num espaço livre, confira.`
+      );
+    } finally {
+      setGerandoLegenda(false);
+      setMontandoTudo(false);
     }
   }
 
@@ -1061,6 +1121,18 @@ export default function EditorDeVideo() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-black text-black">1. Vídeos</h2>
               <div className="flex flex-wrap gap-2">
+                {trechos.length > 0 && (
+                  <button
+                    type="button"
+                    className={BOTAO_FORTE}
+                    disabled={ocupado || gerandoLegenda}
+                    title="Corta os vídeos, ouve a sua fala, põe cada card na hora em que você fala dele e faz a legenda"
+                    onClick={montarTudoAutomatico}
+                  >
+                    {montandoTudo ? <Loader2 size={15} className="animate-spin" /> : <Wand2 size={15} />}
+                    {montandoTudo ? "Montando…" : "Montar tudo automático"}
+                  </button>
+                )}
                 {trechos.length > 1 && (
                   <button
                     type="button"
@@ -1091,6 +1163,12 @@ export default function EditorDeVideo() {
                 </label>
               </div>
             </div>
+
+            {avisoMontagem && (
+              <p className="mt-3 rounded-lg border border-amber-400/60 bg-amber-50 px-3 py-2 text-xs font-bold text-[#0b0b0c]">
+                {avisoMontagem}
+              </p>
+            )}
 
             {trechos.length === 0 ? (
               <p className="mt-3 text-sm font-semibold text-black/55">

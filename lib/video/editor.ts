@@ -262,6 +262,95 @@ export function montagemAutomatica(trechos: Trecho[]): Trecho[] {
   });
 }
 
+/*
+ * MONTAR TUDO AUTOMÁTICO (pedido de 24/11/2026)
+ *
+ * Com a fala transcrita (cada palavra com o seu tempo), põe cada
+ * card no instante em que o vendedor fala daquilo - um pouco
+ * antes, pra o card já estar entrando quando a palavra sai.
+ * Para cada card vale o primeiro sinal da lista que aparecer
+ * (os de cima são mais certeiros), na primeira vez que aparece.
+ *
+ * Card que não foi falado vai para o maior espaço livre entre os
+ * outros; se não couber, fica no tempo padrão. A tela avisa
+ * quais foram "chutados", pra conferir.
+ */
+export type Palavra = { inicio: number; fim: number; texto: string };
+
+const SINAIS_DA_FALA: [CampoDoCard, RegExp[]][] = [
+  ["ano", [/\b(19|20)\d\d\b/, /\bdois mil\b/, /\banos?\b/]],
+  ["manual", [/\bmanual\b/, /\bchave reserva\b/, /\bchaves?\b/]],
+  ["cautelar", [/\bcautelar\b/, /\blaudo\b/, /\bvistori/]],
+  ["km", [/\bquilomet/, /\bkilomet/, /\bkm\b/, /\brodad/]],
+  ["financiamento", [/\bfinanc/]],
+  ["cartao", [/\bcartao\b/, /\bcartoes\b/, /\b(24|vinte e quatro) ?(x|vezes)\b/]],
+  ["preco", [/\bpor apenas\b/, /\bpor (so|somente)\b/, /r\$/, /\bvalor\b/, /\bpreco\b/, /\breais\b/]],
+];
+
+/* Quanto antes da palavra o card começa a entrar. */
+const ANTECIPA_CARD = 0.3;
+
+function normalizarFala(texto: string) {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9$]+/g, " ")
+    .trim();
+}
+
+export function cartoesPelaFala(
+  falas: Palavra[],
+  base: Cartoes,
+  ligados: CampoDoCard[],
+  totalVideo: number
+): { cartoes: Cartoes; achados: CampoDoCard[] } {
+  /* Junta tudo num texto só e guarda onde começa cada palavra, pra voltar do texto pro tempo. */
+  let texto = " ";
+  const marcas: { ate: number; inicio: number }[] = [];
+  for (const f of falas) {
+    const n = normalizarFala(f.texto);
+    if (!n) continue;
+    texto += n + " ";
+    marcas.push({ ate: texto.length, inicio: f.inicio });
+  }
+
+  const novo: Cartoes = { ...base };
+  const achados: CampoDoCard[] = [];
+  for (const [campo, sinais] of SINAIS_DA_FALA) {
+    if (!ligados.includes(campo)) continue;
+    for (const sinal of sinais) {
+      const m = sinal.exec(texto);
+      const marca = m ? marcas.find((x) => m.index < x.ate) : undefined;
+      if (!marca) continue;
+      novo[campo] = arredondar(Math.max(0, marca.inicio - ANTECIPA_CARD));
+      achados.push(campo);
+      break;
+    }
+  }
+
+  /* Os que não foram falados: no maior espaço livre que couber, longe dos achados. */
+  const colocados: CampoDoCard[] = [...achados];
+  for (const campo of ligados) {
+    if (achados.includes(campo)) continue;
+    const dura = duracaoDoCard(novo, campo);
+    const ocupados = colocados
+      .map((c) => [novo[c], novo[c] + duracaoDoCard(novo, c)] as const)
+      .sort((a, b) => a[0] - b[0]);
+    let melhor: { de: number; tamanho: number } | null = null;
+    let livreDesde = PRIMEIRO_CARD;
+    for (const [de, ate] of [...ocupados, [totalVideo, totalVideo] as const]) {
+      const tamanho = de - livreDesde;
+      if (tamanho >= dura && (!melhor || tamanho > melhor.tamanho)) melhor = { de: livreDesde, tamanho };
+      livreDesde = Math.max(livreDesde, ate);
+    }
+    if (melhor) novo[campo] = arredondar(melhor.de + (melhor.tamanho - dura) / 2);
+    colocados.push(campo);
+  }
+
+  return { cartoes: novo, achados };
+}
+
 function arredondar(n: number) {
   return Math.round(n * 10) / 10;
 }
