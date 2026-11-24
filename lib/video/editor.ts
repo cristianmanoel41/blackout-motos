@@ -751,9 +751,16 @@ export function desenharQuadro(
     const escala = Math.min(L / video.videoWidth, A / video.videoHeight);
     const w = video.videoWidth * escala;
     const h = video.videoHeight * escala;
-    ctx.filter = "contrast(1.04) saturate(1.04)";
+    /*
+     * Qualidade da imagem (revisão de 24/11/2026): o vídeo do
+     * celular costuma vir em 4K e é reduzido para 1080x1920 - com
+     * a suavização padrão ("low") a redução serrilha e borra. E o
+     * filtro de contraste que havia aqui era refeito a cada quadro,
+     * pesava a máquina e fazia o vídeo gravado perder quadros.
+     */
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(video, (L - w) / 2, (A - h) / 2, w, h);
-    ctx.filter = "none";
   }
 
   const outroInicio = Math.max(2, total - cartoes.outroDuracao);
@@ -806,7 +813,14 @@ export function desenharQuadro(
 /* O formato que o navegador sabe gravar: MP4 quando dá (abre em tudo), senão WebM. */
 export function formatoDeGravacao() {
   if (typeof MediaRecorder === "undefined") return null;
+  /*
+   * H.264 "High" (avc1.640028) primeiro: o "Baseline 3.0"
+   * (avc1.42E01E) que vinha antes é feito para vídeo pequeno e
+   * deixava o 1080x1920 cheio de borrão e quadradinhos.
+   */
   const opcoes = [
+    "video/mp4;codecs=avc1.640028,mp4a.40.2",
+    "video/mp4;codecs=avc1.4D0028,mp4a.40.2",
     "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
     "video/mp4;codecs=avc1,mp4a",
     "video/mp4",

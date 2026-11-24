@@ -140,15 +140,17 @@ function CampoSegundos({
 }
 
 /*
- * Salvar os tempos dos cards (pedido de 23/11/2026). Fica no
- * navegador de quem edita (localStorage): uma cópia por moto e
- * uma "última", usada quando a moto ainda não tem a dela.
+ * Salvar os tempos dos cards (pedido de 23/11/2026). Vão para o
+ * banco (tabela video_tempos, migração 0047), pra valer em
+ * qualquer aparelho: uma linha por moto e uma "ultimo", usada
+ * quando a moto ainda não tem a dela. Uma cópia fica também no
+ * navegador, pra não perder nada se o banco falhar.
  */
 const CHAVE_TEMPOS = "editor-video:tempos";
 
 type TemposSalvos = { cartoes: Cartoes; telaFinalDepois: boolean; salvoEm: string };
 
-function gravarTempos(motoId: string, dados: TemposSalvos) {
+function gravarTemposAqui(motoId: string, dados: TemposSalvos) {
   try {
     const texto = JSON.stringify(dados);
     localStorage.setItem(`${CHAVE_TEMPOS}:ultimo`, texto);
@@ -159,13 +161,41 @@ function gravarTempos(motoId: string, dados: TemposSalvos) {
   }
 }
 
-function lerTempos(motoId: string): TemposSalvos | null {
+function temposValidos(dados: unknown): TemposSalvos | null {
+  const d = dados as TemposSalvos | null;
+  return d && d.cartoes && typeof d.cartoes.ano === "number" ? d : null;
+}
+
+/* Grava no banco e no navegador. Responde onde conseguiu gravar. */
+async function gravarTempos(motoId: string, dados: TemposSalvos): Promise<"banco" | "aparelho" | "nada"> {
+  const aqui = gravarTemposAqui(motoId, dados);
+  const linhas = [{ chave: "ultimo", dados, atualizado_em: dados.salvoEm }];
+  if (motoId) linhas.push({ chave: motoId, dados, atualizado_em: dados.salvoEm });
+  const { error } = await supabase.from("video_tempos").upsert(linhas, { onConflict: "chave" });
+  if (error) console.error("video_tempos:", error.message);
+  return !error ? "banco" : aqui ? "aparelho" : "nada";
+}
+
+/* Lê do banco (a da moto, senão a última); sem banco, usa a cópia do navegador. */
+async function lerTempos(motoId: string): Promise<TemposSalvos | null> {
+  const chaves = motoId ? [motoId, "ultimo"] : ["ultimo"];
+  const { data, error } = await supabase.from("video_tempos").select("chave, dados").in("chave", chaves);
+  if (!error && data && data.length) {
+    const daMoto = data.find((linha) => linha.chave === motoId);
+    const ultimo = data.find((linha) => linha.chave === "ultimo");
+    const escolhido = temposValidos(daMoto?.dados) || temposValidos(ultimo?.dados);
+    if (escolhido) return escolhido;
+  }
+  if (error) console.error("video_tempos:", error.message);
+  return lerTemposAqui(motoId);
+}
+
+function lerTemposAqui(motoId: string): TemposSalvos | null {
   try {
     const texto =
       (motoId && localStorage.getItem(`${CHAVE_TEMPOS}:${motoId}`)) || localStorage.getItem(`${CHAVE_TEMPOS}:ultimo`);
     if (!texto) return null;
-    const dados = JSON.parse(texto) as TemposSalvos;
-    return dados && dados.cartoes && typeof dados.cartoes.ano === "number" ? dados : null;
+    return temposValidos(JSON.parse(texto));
   } catch {
     return null;
   }
@@ -742,12 +772,17 @@ export default function EditorDeVideo() {
     let gravador: MediaRecorder | null = null;
     const pedacos: Blob[] = [];
     if (gravar && formato && canvas.current) {
-      /* 24 fps em vez de 30: o vídeo saiu em 1080x1920 (padrão de verdade, revisão de 20/11/2026) - menos quadros por segundo alivia a máquina que está gravando, sem ficar visivelmente menos fluido. */
-      const fluxo = canvas.current.captureStream(24);
+      /*
+       * 30 fps, igual ao vídeo do celular (revisão de 24/11/2026):
+       * com 24 o gravador jogava fora 1 a cada 5 quadros e o
+       * movimento saía aos trancos.
+       */
+      const fluxo = canvas.current.captureStream(30);
       a.saida.stream.getAudioTracks().forEach((faixa) => fluxo.addTrack(faixa));
       gravador = new MediaRecorder(fluxo, {
         mimeType: formato.tipo,
-        videoBitsPerSecond: 6_000_000,
+        /* 16 Mbps (antes 6): em 1080x1920 os 6 deixavam a imagem borrada e quadriculada no movimento. */
+        videoBitsPerSecond: 16_000_000,
         /* Sem isso o navegador grava o som com qualidade baixa. */
         audioBitsPerSecond: 192_000,
       });
@@ -764,6 +799,19 @@ export default function EditorDeVideo() {
 
     let base = 0;
     let comecou = false;
+    /*
+     * O relógio da tela só atualiza ~10x por segundo: atualizar a
+     * cada quadro redesenhava a página inteira 60x por segundo e
+     * fazia o vídeo gravado travar (revisão de 24/11/2026).
+     */
+    let relogioEm = 0;
+    const mostrarTempo = (t: number, agora = false) => {
+      const ms = performance.now();
+      if (agora || ms - relogioEm >= 100) {
+        relogioEm = ms;
+        setTempo(t);
+      }
+    };
 
     for (const trecho of trechos) {
       if (parar.current) break;
@@ -794,8 +842,9 @@ export default function EditorDeVideo() {
           if (pausado.current) return;
           const t = base + (v.currentTime - trecho.inicio);
           desenhar(v, t);
-          setTempo(t);
-          if (parar.current || v.ended || v.currentTime >= trecho.fim) {
+          const acabou = parar.current || v.ended || v.currentTime >= trecho.fim;
+          mostrarTempo(t, acabou);
+          if (acabou) {
             terminou();
             return;
           }
@@ -837,7 +886,7 @@ export default function EditorDeVideo() {
           antes = agora;
           const t = totalVideo + Math.min(decorrido, extra);
           desenhar(ultimoVideo, t);
-          setTempo(t);
+          mostrarTempo(t, parar.current || decorrido >= extra);
           if (parar.current || decorrido >= extra) {
             terminou();
             return;
@@ -1249,9 +1298,15 @@ export default function EditorDeVideo() {
                 <button
                   type="button"
                   className="rounded-md bg-[#d4a017] px-3 py-1.5 text-[11px] font-black text-[#0b0b0c] hover:bg-[#f0c640]"
-                  onClick={(e) => {
-                    const ok = gravarTempos(motoId, { cartoes, telaFinalDepois, salvoEm: new Date().toISOString() });
-                    avisarNoBotao(e.currentTarget, ok ? "Salvo ✓" : "Não deu para salvar");
+                  onClick={async (e) => {
+                    const botao = e.currentTarget;
+                    botao.disabled = true;
+                    const onde = await gravarTempos(motoId, { cartoes, telaFinalDepois, salvoEm: new Date().toISOString() });
+                    botao.disabled = false;
+                    avisarNoBotao(
+                      botao,
+                      onde === "banco" ? "Salvo no banco ✓" : onde === "aparelho" ? "Salvo só neste aparelho" : "Não deu para salvar"
+                    );
                   }}
                 >
                   Salvar estes tempos
@@ -1259,16 +1314,19 @@ export default function EditorDeVideo() {
                 <button
                   type="button"
                   className="rounded-md border border-white/15 bg-white/[.06] px-3 py-1.5 text-[11px] font-black text-white hover:border-[#d4a017]"
-                  onClick={(e) => {
-                    const salvos = lerTempos(motoId);
+                  onClick={async (e) => {
+                    const botao = e.currentTarget;
+                    botao.disabled = true;
+                    const salvos = await lerTempos(motoId);
+                    botao.disabled = false;
                     if (!salvos) {
-                      avisarNoBotao(e.currentTarget, "Nada salvo ainda");
+                      avisarNoBotao(botao, "Nada salvo ainda");
                       return;
                     }
                     setTimelineManual(true);
                     setCartoes(salvos.cartoes);
                     setTelaFinalDepois(Boolean(salvos.telaFinalDepois));
-                    avisarNoBotao(e.currentTarget, "Tempos aplicados ✓");
+                    avisarNoBotao(botao, "Tempos aplicados ✓");
                   }}
                 >
                   Usar tempos salvos
