@@ -47,19 +47,47 @@ function inicioDaJanela() {
 
 const ORDEM = { vencido: 0, "vence-este-mes": 1, "vence-mes-que-vem": 2 } as const;
 
+/*
+ * As três urgências, sempre na mesma ordem e cor: vermelho é
+ * venceu, âmbar é vence este mês, azul é aviso de antecedência
+ * (mês que vem). A cor do terceiro caso era "text-black/55" -
+ * o dashboard força TODO "text-black/xx" para o mesmo cinza do
+ * texto comum (veja dashboard.module.css), então esse selo
+ * ficava igual ao resto do texto e não se destacava de nada.
+ */
+const URGENCIA: Record<
+  "vencido" | "vence-este-mes" | "vence-mes-que-vem",
+  { titulo: string; selo: string; bolinha: string; tituloCor: string }
+> = {
+  vencido: {
+    titulo: "Venceu",
+    selo: "border-red-400/50 text-red-400",
+    bolinha: "bg-red-400",
+    tituloCor: "text-red-400",
+  },
+  "vence-este-mes": {
+    titulo: "Vence este mês",
+    selo: "border-amber-400/60 text-amber-400",
+    bolinha: "bg-amber-400",
+    tituloCor: "text-amber-400",
+  },
+  "vence-mes-que-vem": {
+    titulo: "Vence no mês que vem",
+    selo: "border-sky-400/50 text-sky-400",
+    bolinha: "bg-sky-400",
+    tituloCor: "text-sky-400",
+  },
+};
+
 function Etiqueta({ situacao }: { situacao: SituacaoLicenciamento }) {
   if (!("vencimento" in situacao)) return null;
 
   const data = dataCurta(situacao.vencimento);
-  const [texto, cor] =
-    situacao.tipo === "vencido"
-      ? [`venceu em ${data}`, "border-red-400/50 text-red-400"]
-      : situacao.tipo === "vence-este-mes"
-        ? [`vence em ${data}`, "border-amber-400/60 text-amber-400"]
-        : [`vence em ${data}`, "border-white/15 text-black/55"];
+  const info = URGENCIA[situacao.tipo];
+  const texto = situacao.tipo === "vencido" ? `venceu em ${data}` : `vence em ${data}`;
 
   return (
-    <span className={`rounded-md border px-2 py-0.5 text-[11px] font-black ${cor}`}>
+    <span className={`rounded-md border px-2 py-0.5 text-[11px] font-black ${info.selo}`}>
       {texto}
     </span>
   );
@@ -151,38 +179,56 @@ export default async function Licenciamento() {
       )}
 
       {avisos.length > 0 ? (
-        <div className="space-y-1">
-          {avisos.map((linha) => (
-            <div
-              key={linha.id}
-              className={`flex flex-wrap items-center gap-3 rounded-xl px-3 py-2.5 ${
-                linha.situacao.tipo === "vencido" ? styles.goldPanel : ""
-              }`}
-            >
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/motos/${linha.id}`}
-                  className="block truncate text-sm font-black text-black hover:underline"
-                >
-                  {linha.nome}
-                </Link>
-                <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] font-bold text-black/45">
-                  <span>
-                    {linha.placa} · final {"final" in linha.situacao ? linha.situacao.final : ""} ·
-                    licenciamento {"ano" in linha.situacao ? linha.situacao.ano : ""}
-                  </span>
-                  <Etiqueta situacao={linha.situacao} />
-                </p>
-              </div>
+        <div className="space-y-4">
+          {(["vencido", "vence-este-mes", "vence-mes-que-vem"] as const).map((tipo) => {
+            const doGrupo = avisos.filter((l) => l.situacao.tipo === tipo);
+            if (doGrupo.length === 0) return null;
 
-              {!semColuna && (
-                <MarcarLicenciado
-                  motoId={linha.id}
-                  ano={anoParaConferir(linha.situacao) || new Date().getFullYear()}
-                />
-              )}
-            </div>
-          ))}
+            const info = URGENCIA[tipo];
+
+            return (
+              <div key={tipo}>
+                <p
+                  className={`mb-1.5 flex items-center gap-2 text-[11px] font-black uppercase tracking-wide ${info.tituloCor}`}
+                >
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${info.bolinha}`} />
+                  {info.titulo} · {doGrupo.length}
+                </p>
+
+                <div className="space-y-1">
+                  {doGrupo.map((linha) => (
+                    <div
+                      key={linha.id}
+                      className={`flex flex-wrap items-center gap-3 rounded-xl px-3 py-2.5 ${
+                        tipo === "vencido" ? styles.goldPanel : ""
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/motos/${linha.id}`}
+                          className="block truncate text-sm font-black text-black hover:underline"
+                        >
+                          {linha.nome}
+                        </Link>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] font-bold text-black/45">
+                          <span className="font-mono tracking-wide text-black/60">{linha.placa}</span>
+                          <span>licenciamento {"ano" in linha.situacao ? linha.situacao.ano : ""}</span>
+                          <Etiqueta situacao={linha.situacao} />
+                        </p>
+                      </div>
+
+                      {!semColuna && (
+                        <MarcarLicenciado
+                          motoId={linha.id}
+                          ano={anoParaConferir(linha.situacao) || new Date().getFullYear()}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <p className="text-sm font-semibold leading-6 text-black/55">
