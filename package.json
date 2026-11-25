@@ -17,6 +17,7 @@
     "docxtemplater": "^3.69.3",
     "lucide-react": "^1.33.0",
     "mammoth": "^1.12.1",
+    "mp4-muxer": "^5.2.2",
     "next": "16.3.2",
     "pdf-lib": "^1.17.1",
     "pizzip": "^3.2.0",

@@ -44,6 +44,7 @@ import {
   type Textos,
   type Trecho,
 } from "@/lib/video/editor";
+import { gravarQuadroAQuadro, suportaGravacaoSemTravar } from "@/lib/video/gravarSemTravar";
 
 /*
  * O padrão de vídeo (PADRAO_VIDEO_BLACKOUT.md) pede Inter/Inter
@@ -66,9 +67,12 @@ const FONTE_GOOGLE =
  * chamada do WhatsApp. Música e legenda automática são de
  * um clique. Tudo fica ajustável antes de baixar.
  *
- * A edição roda no navegador (lib/video/editor): o vídeo final
- * é gravado em tempo real, então um vídeo de 40 s leva 40 s
- * para ficar pronto - e a aba precisa ficar aberta na frente.
+ * A edição roda no navegador (lib/video/editor). A gravação final
+ * é quadro a quadro, sem depender da velocidade da máquina
+ * (lib/video/gravarSemTravar, pedido de 25/11/2026) - uma máquina
+ * fraca demora mais que a duração do vídeo, mas nunca perde
+ * quadro. Em navegador sem WebCodecs cai para o jeito antigo (em
+ * tempo real, aba precisa ficar aberta na frente).
  */
 
 const supabase = createClient();
@@ -89,6 +93,8 @@ const LINHAS_DE_CARD: [CampoDeCard, string, keyof Mostrar | null][] = [
   ["km", "Km", "km"],
   ["financiamento", "Financ.", "financiamento"],
   ["cartao", "Cartão", "cartao"],
+  ["semEntrada", "Sem entrada", "semEntrada"],
+  ["entradaFacilitada", "Entrada facil.", "entradaFacilitada"],
   ["preco", "Preço", null],
 ];
 const DURACAO_MINIMA = 0.8;
@@ -259,6 +265,18 @@ function esperar(video: HTMLVideoElement, evento: string) {
   });
 }
 
+/* O nome do arquivo baixado: marca + modelo, sem acento nem símbolo. */
+function nomeDoArquivo(textos: Textos) {
+  return (
+    (`${textos.marca} ${textos.modelo}`.trim() || "video")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "video"
+  );
+}
+
 const CAMPO =
   "w-full rounded-xl border border-black/15 bg-white px-3 py-2 text-sm font-semibold text-black outline-none focus:border-[#a97800]";
 const CARTAO = "rounded-2xl border border-black/10 bg-white p-4";
@@ -296,6 +314,8 @@ export default function EditorDeVideo() {
     cartao: true,
     manual: false,
     cautelar: false,
+    semEntrada: false,
+    entradaFacilitada: false,
   });
   const [musica, setMusica] = useState<{ nome: string; url: string } | null>(null);
   const [volumeOriginal, setVolumeOriginal] = useState(1);
@@ -732,12 +752,64 @@ export default function EditorDeVideo() {
     pararTudo();
   }
 
+  /*
+   * Gravação sem travar (pedido de 25/11/2026, lib/video/gravarSemTravar):
+   * desenha e grava quadro a quadro, sem depender da velocidade da
+   * máquina - numa máquina fraca demora mais, mas nunca perde quadro,
+   * e o MP4 já sai aceito pelo WhatsApp de cara. Só entra para a
+   * gravação final; a prévia (sem gravar) continua em tempo real,
+   * que é bem mais leve.
+   */
+  async function gravarSemTravarFluxo() {
+    setEstado("gravando");
+    let relogioEm = 0;
+    const aoProgresso = (t: number) => {
+      const ms = performance.now();
+      if (ms - relogioEm >= 150) {
+        relogioEm = ms;
+        setTempo(t);
+      }
+    };
+    try {
+      const blob = await gravarQuadroAQuadro({
+        trechos,
+        videos: videos.current,
+        musicaUrl: musica?.url || null,
+        volumeOriginal,
+        volumeMusica,
+        canvas: canvas.current!,
+        largura: quadro.largura,
+        altura: quadro.altura,
+        logo: logo.current,
+        mostrar,
+        textos,
+        cartoes,
+        frases,
+        duracaoFinal: total,
+        deveParar: () => parar.current,
+        aoProgresso,
+      });
+      if (!parar.current) {
+        setPronto({ url: URL.createObjectURL(blob), nome: `${nomeDoArquivo(textos)}-blackout.mp4` });
+      }
+    } catch (erro) {
+      console.error(erro);
+      setAviso(
+        "Não deu para gerar o vídeo nesta máquina ou navegador. Tente no Google Chrome atualizado, ou recarregue a página e tente de novo."
+      );
+    } finally {
+      setEstado("parado");
+      setTempo(0);
+    }
+  }
+
   async function reproduzir(gravar: boolean, desde = 0) {
     if (gravar) desde = 0;
     if (trechos.length === 0 || ocupado) return;
 
-    const formato = formatoDeGravacao();
-    if (gravar && !formato) {
+    const semTravar = gravar && suportaGravacaoSemTravar();
+    const formato = semTravar ? null : formatoDeGravacao();
+    if (gravar && !semTravar && !formato) {
       setAviso("Este navegador não grava vídeo. Use o Google Chrome atualizado.");
       return;
     }
@@ -745,6 +817,12 @@ export default function EditorDeVideo() {
     setAviso("");
     setPronto(null);
     parar.current = false;
+
+    if (semTravar) {
+      await gravarSemTravarFluxo();
+      return;
+    }
+
     setEstado(gravar ? "gravando" : "tocando");
 
     const a = ligarAudio();
@@ -911,14 +989,7 @@ export default function EditorDeVideo() {
       await fim;
       if (!parar.current) {
         const arquivo = new Blob(pedacos, { type: formato.tipo });
-        const nomeBase =
-          (`${textos.marca} ${textos.modelo}`.trim() || "video")
-            .normalize("NFD")
-            .replace(/[̀-ͯ]/g, "")
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "") || "video";
-        setPronto({ url: URL.createObjectURL(arquivo), nome: `${nomeBase}-blackout.${formato.extensao}` });
+        setPronto({ url: URL.createObjectURL(arquivo), nome: `${nomeDoArquivo(textos)}-blackout.${formato.extensao}` });
       }
     }
 
@@ -1344,6 +1415,8 @@ export default function EditorDeVideo() {
                     ["cartao", "Cartão de crédito"],
                     ["manual", "Manual / chave reserva"],
                     ["cautelar", "Cautelar 100% aprovada"],
+                    ["semEntrada", "Financiamento sem entrada"],
+                    ["entradaFacilitada", "Entrada facilitada"],
                   ] as [keyof Mostrar, string][]
                 ).map(([campo, rotulo]) => (
                   <label key={campo} className="flex items-center gap-2 text-[11px] font-bold text-black/70">
@@ -1776,7 +1849,9 @@ export default function EditorDeVideo() {
 
             {estado === "gravando" && (
               <p className="mt-2 text-[11px] font-bold text-black/55">
-                A gravação acontece em tempo real. Não troque de aba nem minimize até terminar.
+                {suportaGravacaoSemTravar()
+                  ? "Quadro a quadro, sem travar - numa máquina mais fraca pode demorar mais que a duração do vídeo. Não troque de aba nem minimize até terminar."
+                  : "A gravação acontece em tempo real. Não troque de aba nem minimize até terminar."}
               </p>
             )}
 

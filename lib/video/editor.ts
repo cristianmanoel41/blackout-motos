@@ -60,6 +60,9 @@ export type Mostrar = {
   cartao: boolean;
   manual: boolean;
   cautelar: boolean;
+  /* Nem toda moto aceita - como manual/cautelar, começam desligados (pedido de 25/11/2026). */
+  semEntrada: boolean;
+  entradaFacilitada: boolean;
 };
 
 /*
@@ -79,6 +82,8 @@ export type Cartoes = {
   km: number;
   financiamento: number;
   cartao: number;
+  semEntrada: number;
+  entradaFacilitada: number;
   preco: number;
 };
 
@@ -89,7 +94,16 @@ export const CARTAO_MAX_PARCELAS = 24;
 export const DURACAO_CARD = 3.4;
 export const DURACAO_PRECO = 4.6;
 
-export type CampoDoCard = "ano" | "manual" | "cautelar" | "km" | "financiamento" | "cartao" | "preco";
+export type CampoDoCard =
+  | "ano"
+  | "manual"
+  | "cautelar"
+  | "km"
+  | "financiamento"
+  | "cartao"
+  | "semEntrada"
+  | "entradaFacilitada"
+  | "preco";
 
 /* A duração de um card: a escolhida na tela, ou o padrão (painel de preço fica mais tempo). */
 export function duracaoDoCard(cartoes: Cartoes, campo: CampoDoCard) {
@@ -104,7 +118,17 @@ export function timelinePadrao(total: number): Cartoes {
   const outroDuracao = Math.min(5.5, Math.max(3, total * 0.14));
   const janela = Math.max(total - PRIMEIRO_CARD - outroDuracao, 4);
 
-  const passos = [DURACAO_CARD, DURACAO_CARD, DURACAO_CARD, DURACAO_CARD, DURACAO_CARD, DURACAO_CARD, DURACAO_PRECO];
+  const passos = [
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_CARD,
+    DURACAO_PRECO,
+  ];
   const somaPassos = passos.reduce((a, b) => a + b, 0);
   const folga = Math.max(0, (janela - somaPassos) / (passos.length + 1));
 
@@ -122,8 +146,10 @@ export function timelinePadrao(total: number): Cartoes {
     cautelar: inicios[2],
     km: inicios[3],
     financiamento: inicios[4],
-    cartao: inicios[5],
-    preco: inicios[6],
+    semEntrada: inicios[5],
+    entradaFacilitada: inicios[6],
+    cartao: inicios[7],
+    preco: inicios[8],
   };
 }
 
@@ -145,6 +171,14 @@ export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: b
     { chave: "km", rotulo: "Km", inicio: cartoes.km, duracao: duracaoDoCard(cartoes, "km"), ligado: mostrar.km },
     { chave: "financiamento", rotulo: "Financiamento", inicio: cartoes.financiamento, duracao: duracaoDoCard(cartoes, "financiamento"), ligado: mostrar.financiamento },
     { chave: "cartao", rotulo: "Cartão", inicio: cartoes.cartao, duracao: duracaoDoCard(cartoes, "cartao"), ligado: mostrar.cartao },
+    { chave: "semEntrada", rotulo: "Sem entrada", inicio: cartoes.semEntrada, duracao: duracaoDoCard(cartoes, "semEntrada"), ligado: mostrar.semEntrada },
+    {
+      chave: "entradaFacilitada",
+      rotulo: "Entrada facilitada",
+      inicio: cartoes.entradaFacilitada,
+      duracao: duracaoDoCard(cartoes, "entradaFacilitada"),
+      ligado: mostrar.entradaFacilitada,
+    },
     { chave: "preco", rotulo: "Painel de preço", inicio: cartoes.preco, duracao: duracaoDoCard(cartoes, "preco"), ligado: temPreco },
   ];
 
@@ -284,6 +318,8 @@ const SINAIS_DA_FALA: [CampoDoCard, RegExp[]][] = [
   ["km", [/\bquilomet/, /\bkilomet/, /\bkm\b/, /\brodad/]],
   ["financiamento", [/\bfinanc/]],
   ["cartao", [/\bcartao\b/, /\bcartoes\b/, /\b(24|vinte e quatro) ?(x|vezes)\b/]],
+  ["semEntrada", [/\bsem entrada\b/, /\bzero de entrada\b/, /\bsem precisar de entrada\b/]],
+  ["entradaFacilitada", [/\bentrada facilitada\b/, /\bentrada baixa\b/, /\bfacilita a entrada\b/, /\bentrada menor\b/]],
   ["preco", [/\bpor apenas\b/, /\bpor (so|somente)\b/, /r\$/, /\bvalor\b/, /\bpreco\b/, /\breais\b/]],
 ];
 
@@ -486,28 +522,43 @@ function cardDeInformacao(
   if (op <= 0) return;
   ctx.save();
   ctx.globalAlpha = op;
+  const e = Math.min(ex, ey);
 
-  ctx.font = pesoPreto(92 * Math.min(ex, ey));
-  const vw = ctx.measureText(valor).width;
-  ctx.font = pesoRotulo(26 * Math.min(ex, ey));
+  /*
+   * Nem todo valor é curto como "2020" ou "15.000 KM": "ENTRADA
+   * FACILITADA" (pedido de 25/11/2026) no tamanho fixo de sempre
+   * vazava pra fora do vídeo. Encolhe a fonte do valor até caber
+   * na largura do quadro, igual já se fazia no painel de preço.
+   */
+  const larguraMaxima = L - 160 * ex;
+  let tamanhoValor = 92 * e;
+  let vw = 0;
+  for (let tentativas = 0; tentativas < 10; tentativas += 1) {
+    ctx.font = pesoPreto(tamanhoValor);
+    vw = ctx.measureText(valor).width;
+    if (vw + 110 * ex <= larguraMaxima || tamanhoValor <= 36 * e) break;
+    tamanhoValor *= 0.9;
+  }
+
+  ctx.font = pesoRotulo(26 * e);
   const lw = [...rotulo].reduce((a, c) => a + ctx.measureText(c).width, 0) + 6 * (rotulo.length - 1);
-  const largura = Math.max(vw, lw) + 110 * ex;
+  const largura = Math.min(larguraMaxima, Math.max(vw, lw) + 110 * ex);
   const altura = 200 * ey;
   const x0 = (L - largura) / 2;
   const y0 = A - (360 * ey); // topo do card, de baixo para cima - 1560/1920 do padrão
 
   degrade(ctx, L, A - 520 * ey, A, 0, 0.55);
-  vidro(ctx, x0, y0, largura, altura, 40 * Math.min(ex, ey));
+  vidro(ctx, x0, y0, largura, altura, 40 * e);
 
   ctx.fillStyle = GOLD;
   ctx.fillRect(L / 2 - 26 * ex, y0 + 24 * ey, 52 * ex, 5 * ey);
 
   ctx.textAlign = "center";
-  textoEspacado(ctx, L / 2, y0 + 42 * ey + 26 * Math.min(ex, ey) * 0.75, rotulo, 6 * ex, "c");
+  textoEspacado(ctx, L / 2, y0 + 42 * ey + 26 * e * 0.75, rotulo, 6 * ex, "c");
 
-  ctx.font = pesoPreto(92 * Math.min(ex, ey));
+  ctx.font = pesoPreto(tamanhoValor);
   ctx.fillStyle = TEXTO;
-  ctx.fillText(valor, L / 2, y0 + 78 * ey + 92 * Math.min(ex, ey) * 0.78);
+  ctx.fillText(valor, L / 2, y0 + 78 * ey + tamanhoValor * 0.78);
   ctx.restore();
 }
 
@@ -796,6 +847,8 @@ function duracoesNaTela(cartoes: Cartoes, mostrar: Mostrar, textos: Textos) {
     ["km", mostrar.km && Boolean(textos.km)],
     ["financiamento", mostrar.financiamento],
     ["cartao", mostrar.cartao],
+    ["semEntrada", mostrar.semEntrada],
+    ["entradaFacilitada", mostrar.entradaFacilitada],
     ["preco", Boolean(textos.preco)],
   ];
   const ordem = ligados
@@ -869,6 +922,8 @@ export function desenharQuadro(
     if (mostrar.km && textos.km) cardDeInformacao(ctx, L, A, ex, ey, "QUILOMETRAGEM", textos.km.toUpperCase(), opacidadeNaJanela(tempo, cartoes.km, naTela.km));
     if (mostrar.financiamento) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", `ATÉ ${FINANCIAMENTO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.financiamento, naTela.financiamento));
     if (mostrar.cartao) cardDeInformacao(ctx, L, A, ex, ey, "CARTÃO DE CRÉDITO", `ATÉ ${CARTAO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.cartao, naTela.cartao));
+    if (mostrar.semEntrada) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", "SEM ENTRADA", opacidadeNaJanela(tempo, cartoes.semEntrada, naTela.semEntrada));
+    if (mostrar.entradaFacilitada) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", "ENTRADA FACILITADA", opacidadeNaJanela(tempo, cartoes.entradaFacilitada, naTela.entradaFacilitada));
     painelDePreco(ctx, L, A, ex, ey, textos, opacidadeNaJanela(tempo, cartoes.preco, naTela.preco));
   }
 
