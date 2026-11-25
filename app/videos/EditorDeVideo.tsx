@@ -44,7 +44,7 @@ import {
   type Textos,
   type Trecho,
 } from "@/lib/video/editor";
-import { gravarQuadroAQuadro, suportaGravacaoSemTravar } from "@/lib/video/gravarSemTravar";
+import { gerarQuadroAQuadro, QUALIDADES, suportaQuadroAQuadro, type Resolucao } from "@/lib/video/exportar";
 
 /*
  * O padrão de vídeo (PADRAO_VIDEO_BLACKOUT.md) pede Inter/Inter
@@ -69,7 +69,7 @@ const FONTE_GOOGLE =
  *
  * A edição roda no navegador (lib/video/editor). A gravação final
  * é quadro a quadro, sem depender da velocidade da máquina
- * (lib/video/gravarSemTravar, pedido de 25/11/2026) - uma máquina
+ * (lib/video/exportar, pedido de 25/11/2026), em 1080p ou 4K - uma máquina
  * fraca demora mais que a duração do vídeo, mas nunca perde
  * quadro. Em navegador sem WebCodecs cai para o jeito antigo (em
  * tempo real, aba precisa ficar aberta na frente).
@@ -328,6 +328,7 @@ export default function EditorDeVideo() {
   const [tempo, setTempo] = useState(0);
   const [aviso, setAviso] = useState("");
   const [pronto, setPronto] = useState<{ url: string; nome: string } | null>(null);
+  const [resolucao, setResolucao] = useState<Resolucao>("1080");
 
   const [chat, setChat] = useState<{ de: "eu" | "ia"; texto: string }[]>([]);
   const [pedido, setPedido] = useState("");
@@ -753,7 +754,7 @@ export default function EditorDeVideo() {
   }
 
   /*
-   * Gravação sem travar (pedido de 25/11/2026, lib/video/gravarSemTravar):
+   * Gravação sem travar (pedido de 25/11/2026, lib/video/exportar):
    * desenha e grava quadro a quadro, sem depender da velocidade da
    * máquina - numa máquina fraca demora mais, mas nunca perde quadro,
    * e o MP4 já sai aceito pelo WhatsApp de cara. Só entra para a
@@ -771,26 +772,51 @@ export default function EditorDeVideo() {
       }
     };
     try {
-      const blob = await gravarQuadroAQuadro({
+      /*
+       * Tela no tamanho escolhido (1080p ou 4K); a prévia mostra o
+       * quadro que está sendo gerado. A tela final usa o total com
+       * ela (`total`), igual à prévia - senão, com "tela final depois
+       * do vídeo", ela entraria antes e cortaria a fala.
+       */
+      const tamanho = tamanhoDoQuadro(trechos, QUALIDADES[resolucao].ladoMaior);
+      const previa = canvas.current?.getContext("2d");
+      let previaEm = 0;
+      const resultado = await gerarQuadroAQuadro({
         trechos,
         videos: videos.current,
+        largura: tamanho.largura,
+        altura: tamanho.altura,
+        bitrate: QUALIDADES[resolucao].bitrate,
+        totalVideo,
+        total,
         musicaUrl: musica?.url || null,
         volumeOriginal,
         volumeMusica,
-        canvas: canvas.current!,
-        largura: quadro.largura,
-        altura: quadro.altura,
-        logo: logo.current,
-        mostrar,
-        textos,
-        cartoes,
-        frases,
-        duracaoFinal: total,
-        deveParar: () => parar.current,
-        aoProgresso,
+        desenhar: (ctx, video, t) =>
+          desenharQuadro(ctx, {
+            largura: tamanho.largura,
+            altura: tamanho.altura,
+            video,
+            tempo: t,
+            duracaoTotal: total,
+            logo: logo.current,
+            ...config.current,
+          }),
+        aoProgresso: (t, tela) => {
+          aoProgresso(t);
+          const ms = performance.now();
+          if (ms - previaEm < 150) return;
+          previaEm = ms;
+          previa?.drawImage(tela, 0, 0, quadro.largura, quadro.altura);
+        },
+        cancelado: () => parar.current,
       });
-      if (!parar.current) {
-        setPronto({ url: URL.createObjectURL(blob), nome: `${nomeDoArquivo(textos)}-blackout.mp4` });
+      if (resultado && "erro" in resultado) setAviso(resultado.erro);
+      if (resultado && "blob" in resultado && !parar.current) {
+        setPronto({
+          url: URL.createObjectURL(resultado.blob),
+          nome: `${nomeDoArquivo(textos)}-blackout${resolucao === "4k" ? "-4k" : ""}.mp4`,
+        });
       }
     } catch (erro) {
       console.error(erro);
@@ -807,7 +833,7 @@ export default function EditorDeVideo() {
     if (gravar) desde = 0;
     if (trechos.length === 0 || ocupado) return;
 
-    const semTravar = gravar && suportaGravacaoSemTravar();
+    const semTravar = gravar && suportaQuadroAQuadro();
     const formato = semTravar ? null : formatoDeGravacao();
     if (gravar && !semTravar && !formato) {
       setAviso("Este navegador não grava vídeo. Use o Google Chrome atualizado.");
@@ -1835,6 +1861,22 @@ export default function EditorDeVideo() {
               </span>
             </div>
 
+            <label className="mt-3 block text-[11px] font-bold text-black/55">
+              Qualidade do vídeo final
+              <select
+                className={`${CAMPO} mt-1`}
+                value={resolucao}
+                disabled={ocupado}
+                onChange={(e) => setResolucao(e.target.value as Resolucao)}
+              >
+                {(Object.keys(QUALIDADES) as Resolucao[]).map((chave) => (
+                  <option key={chave} value={chave}>
+                    {QUALIDADES[chave].rotulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <button
               type="button"
               className={`${BOTAO_FORTE} mt-3 w-full`}
@@ -1849,7 +1891,7 @@ export default function EditorDeVideo() {
 
             {estado === "gravando" && (
               <p className="mt-2 text-[11px] font-bold text-black/55">
-                {suportaGravacaoSemTravar()
+                {suportaQuadroAQuadro()
                   ? "Quadro a quadro, sem travar - numa máquina mais fraca pode demorar mais que a duração do vídeo. Não troque de aba nem minimize até terminar."
                   : "A gravação acontece em tempo real. Não troque de aba nem minimize até terminar."}
               </p>

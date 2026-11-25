@@ -240,15 +240,15 @@ const LADO_MAIOR = 1920;
 export const DURACAO_AUTOMATICA = 60;
 
 /* O tamanho do vídeo final, pela orientação do primeiro trecho. */
-export function tamanhoDoQuadro(trechos: Trecho[]) {
+export function tamanhoDoQuadro(trechos: Trecho[], ladoMaior = LADO_MAIOR) {
   const primeiro = trechos[0];
   if (!primeiro || !primeiro.largura || !primeiro.altura) return { largura: 720, altura: 1280 };
 
   const par = (n: number) => Math.round(n / 2) * 2;
   if (primeiro.largura >= primeiro.altura) {
-    return { largura: LADO_MAIOR, altura: par((LADO_MAIOR * primeiro.altura) / primeiro.largura) };
+    return { largura: ladoMaior, altura: par((ladoMaior * primeiro.altura) / primeiro.largura) };
   }
-  return { largura: par((LADO_MAIOR * primeiro.largura) / primeiro.altura), altura: LADO_MAIOR };
+  return { largura: par((ladoMaior * primeiro.largura) / primeiro.altura), altura: ladoMaior };
 }
 
 export function duracaoTotal(trechos: Trecho[]) {
