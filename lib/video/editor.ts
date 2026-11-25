@@ -71,6 +71,8 @@ export type Mostrar = {
  */
 export type Cartoes = {
   outroDuracao: number;
+  /* Quanto tempo cada card fica na tela, quando alguém mudou à mão (pedido de 23/11/2026); sem valor = o padrão. */
+  duracoes?: Partial<Record<CampoDoCard, number>>;
   ano: number;
   manual: number;
   cautelar: number;
@@ -84,8 +86,17 @@ export type Cartoes = {
 export const FINANCIAMENTO_MAX_PARCELAS = 48;
 export const CARTAO_MAX_PARCELAS = 24;
 
-const DURACAO_CARD = 3.4;
-const DURACAO_PRECO = 4.6;
+export const DURACAO_CARD = 3.4;
+export const DURACAO_PRECO = 4.6;
+
+export type CampoDoCard = "ano" | "manual" | "cautelar" | "km" | "financiamento" | "cartao" | "preco";
+
+/* A duração de um card: a escolhida na tela, ou o padrão (painel de preço fica mais tempo). */
+export function duracaoDoCard(cartoes: Cartoes, campo: CampoDoCard) {
+  const escolhida = cartoes.duracoes?.[campo];
+  if (typeof escolhida === "number" && escolhida > 0) return escolhida;
+  return campo === "preco" ? DURACAO_PRECO : DURACAO_CARD;
+}
 const JANELA_FADE = 0.4;
 const PRIMEIRO_CARD = 2;
 
@@ -128,13 +139,13 @@ export function timelinePadrao(total: number): Cartoes {
  */
 export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: boolean, total: number): string[] {
   const candidatos: { chave: string; rotulo: string; inicio: number; duracao: number; ligado: boolean }[] = [
-    { chave: "ano", rotulo: "Ano", inicio: cartoes.ano, duracao: DURACAO_CARD, ligado: mostrar.ano },
-    { chave: "manual", rotulo: "Manual", inicio: cartoes.manual, duracao: DURACAO_CARD, ligado: mostrar.manual },
-    { chave: "cautelar", rotulo: "Cautelar", inicio: cartoes.cautelar, duracao: DURACAO_CARD, ligado: mostrar.cautelar },
-    { chave: "km", rotulo: "Km", inicio: cartoes.km, duracao: DURACAO_CARD, ligado: mostrar.km },
-    { chave: "financiamento", rotulo: "Financiamento", inicio: cartoes.financiamento, duracao: DURACAO_CARD, ligado: mostrar.financiamento },
-    { chave: "cartao", rotulo: "Cartão", inicio: cartoes.cartao, duracao: DURACAO_CARD, ligado: mostrar.cartao },
-    { chave: "preco", rotulo: "Painel de preço", inicio: cartoes.preco, duracao: DURACAO_PRECO, ligado: temPreco },
+    { chave: "ano", rotulo: "Ano", inicio: cartoes.ano, duracao: duracaoDoCard(cartoes, "ano"), ligado: mostrar.ano },
+    { chave: "manual", rotulo: "Manual", inicio: cartoes.manual, duracao: duracaoDoCard(cartoes, "manual"), ligado: mostrar.manual },
+    { chave: "cautelar", rotulo: "Cautelar", inicio: cartoes.cautelar, duracao: duracaoDoCard(cartoes, "cautelar"), ligado: mostrar.cautelar },
+    { chave: "km", rotulo: "Km", inicio: cartoes.km, duracao: duracaoDoCard(cartoes, "km"), ligado: mostrar.km },
+    { chave: "financiamento", rotulo: "Financiamento", inicio: cartoes.financiamento, duracao: duracaoDoCard(cartoes, "financiamento"), ligado: mostrar.financiamento },
+    { chave: "cartao", rotulo: "Cartão", inicio: cartoes.cartao, duracao: duracaoDoCard(cartoes, "cartao"), ligado: mostrar.cartao },
+    { chave: "preco", rotulo: "Painel de preço", inicio: cartoes.preco, duracao: duracaoDoCard(cartoes, "preco"), ligado: temPreco },
   ];
 
   const janelas = candidatos
@@ -148,7 +159,7 @@ export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: b
     const proximo = janelas[i + 1];
     if (proximo.inicio < atual.fim) {
       avisos.push(
-        `"${atual.rotulo}" só termina aos ${atual.fim.toFixed(1)}s, mas "${proximo.rotulo}" já começa aos ${proximo.inicio.toFixed(1)}s`
+        `"${atual.rotulo}" só termina aos ${atual.fim.toFixed(1)}s, mas "${proximo.rotulo}" já começa aos ${proximo.inicio.toFixed(1)}s → coloque "${proximo.rotulo}" em ${paraCima(atual.fim)}s ou mais`
       );
     }
   }
@@ -157,11 +168,20 @@ export function conflitosDeTempo(cartoes: Cartoes, mostrar: Mostrar, temPreco: b
   const ultimo = janelas[janelas.length - 1];
   if (ultimo && ultimo.fim > outroInicio) {
     avisos.push(
-      `"${ultimo.rotulo}" só termina aos ${ultimo.fim.toFixed(1)}s, mas a tela final começa aos ${outroInicio.toFixed(1)}s`
+      `"${ultimo.rotulo}" só termina aos ${ultimo.fim.toFixed(1)}s, mas a tela final começa aos ${outroInicio.toFixed(1)}s → coloque "${ultimo.rotulo}" em ${paraBaixo(outroInicio - (ultimo.fim - ultimo.inicio))}s ou menos`
     );
   }
 
   return avisos;
+}
+
+/* Sugestão de tempo no aviso: arredonda pra casa de 0.1s sem voltar a cobrir o card vizinho. */
+function paraCima(segundos: number) {
+  return (Math.ceil(segundos * 10 - 1e-6) / 10).toFixed(1);
+}
+
+function paraBaixo(segundos: number) {
+  return (Math.max(0, Math.floor(segundos * 10 + 1e-6)) / 10).toFixed(1);
 }
 
 /* 0 fora da janela, sobe e desce em JANELA_FADE segundos, 1 no meio - igual ao padrão: card só aparece/some com fade. */
@@ -240,6 +260,95 @@ export function montagemAutomatica(trechos: Trecho[]): Trecho[] {
     const inicio = Math.max(t.inicio, meio - usa / 2);
     return { ...t, inicio: arredondar(inicio), fim: arredondar(Math.min(t.fim, inicio + usa)) };
   });
+}
+
+/*
+ * MONTAR TUDO AUTOMÁTICO (pedido de 24/11/2026)
+ *
+ * Com a fala transcrita (cada palavra com o seu tempo), põe cada
+ * card no instante em que o vendedor fala daquilo - um pouco
+ * antes, pra o card já estar entrando quando a palavra sai.
+ * Para cada card vale o primeiro sinal da lista que aparecer
+ * (os de cima são mais certeiros), na primeira vez que aparece.
+ *
+ * Card que não foi falado vai para o maior espaço livre entre os
+ * outros; se não couber, fica no tempo padrão. A tela avisa
+ * quais foram "chutados", pra conferir.
+ */
+export type Palavra = { inicio: number; fim: number; texto: string };
+
+const SINAIS_DA_FALA: [CampoDoCard, RegExp[]][] = [
+  ["ano", [/\b(19|20)\d\d\b/, /\bdois mil\b/, /\banos?\b/]],
+  ["manual", [/\bmanual\b/, /\bchave reserva\b/, /\bchaves?\b/]],
+  ["cautelar", [/\bcautelar\b/, /\blaudo\b/, /\bvistori/]],
+  ["km", [/\bquilomet/, /\bkilomet/, /\bkm\b/, /\brodad/]],
+  ["financiamento", [/\bfinanc/]],
+  ["cartao", [/\bcartao\b/, /\bcartoes\b/, /\b(24|vinte e quatro) ?(x|vezes)\b/]],
+  ["preco", [/\bpor apenas\b/, /\bpor (so|somente)\b/, /r\$/, /\bvalor\b/, /\bpreco\b/, /\breais\b/]],
+];
+
+/* Quanto antes da palavra o card começa a entrar. */
+const ANTECIPA_CARD = 0.3;
+
+function normalizarFala(texto: string) {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9$]+/g, " ")
+    .trim();
+}
+
+export function cartoesPelaFala(
+  falas: Palavra[],
+  base: Cartoes,
+  ligados: CampoDoCard[],
+  totalVideo: number
+): { cartoes: Cartoes; achados: CampoDoCard[] } {
+  /* Junta tudo num texto só e guarda onde começa cada palavra, pra voltar do texto pro tempo. */
+  let texto = " ";
+  const marcas: { ate: number; inicio: number }[] = [];
+  for (const f of falas) {
+    const n = normalizarFala(f.texto);
+    if (!n) continue;
+    texto += n + " ";
+    marcas.push({ ate: texto.length, inicio: f.inicio });
+  }
+
+  const novo: Cartoes = { ...base };
+  const achados: CampoDoCard[] = [];
+  for (const [campo, sinais] of SINAIS_DA_FALA) {
+    if (!ligados.includes(campo)) continue;
+    for (const sinal of sinais) {
+      const m = sinal.exec(texto);
+      const marca = m ? marcas.find((x) => m.index < x.ate) : undefined;
+      if (!marca) continue;
+      novo[campo] = arredondar(Math.max(0, marca.inicio - ANTECIPA_CARD));
+      achados.push(campo);
+      break;
+    }
+  }
+
+  /* Os que não foram falados: no maior espaço livre que couber, longe dos achados. */
+  const colocados: CampoDoCard[] = [...achados];
+  for (const campo of ligados) {
+    if (achados.includes(campo)) continue;
+    const dura = duracaoDoCard(novo, campo);
+    const ocupados = colocados
+      .map((c) => [novo[c], novo[c] + duracaoDoCard(novo, c)] as const)
+      .sort((a, b) => a[0] - b[0]);
+    let melhor: { de: number; tamanho: number } | null = null;
+    let livreDesde = PRIMEIRO_CARD;
+    for (const [de, ate] of [...ocupados, [totalVideo, totalVideo] as const]) {
+      const tamanho = de - livreDesde;
+      if (tamanho >= dura && (!melhor || tamanho > melhor.tamanho)) melhor = { de: livreDesde, tamanho };
+      livreDesde = Math.max(livreDesde, ate);
+    }
+    if (melhor) novo[campo] = arredondar(melhor.de + (melhor.tamanho - dura) / 2);
+    colocados.push(campo);
+  }
+
+  return { cartoes: novo, achados };
 }
 
 function arredondar(n: number) {
@@ -463,6 +572,8 @@ function cabecalho(
   const e = Math.min(ex, ey);
   const xd = L - 56 * ex;
   ctx.textAlign = "right";
+  /* Marca da moto em dourado, igual ao logo da loja (pedido de 23/11/2026 - antes saía preta). */
+  ctx.fillStyle = GOLD;
   ctx.font = pesoRotulo(20 * e);
   textoEspacado(ctx, xd, 62 * ey + 20 * e * 0.8, textos.marca.toUpperCase(), 5 * ex, "r");
   ctx.font = pesoForte(40 * e);
@@ -590,7 +701,7 @@ function telaFinal(
   }
 
   ctx.textAlign = "center";
-  ctx.fillStyle = TEXTO2;
+  ctx.fillStyle = GOLD;
   ctx.font = pesoRotulo(30 * e);
   textoEspacado(ctx, L / 2, 560 * ey + 30 * e, textos.marca.toUpperCase(), 10 * ex, "c");
 
@@ -670,6 +781,38 @@ function telaFinal(
  * ffmpeg, sem a estabilização - essa só dá para fazer fora do
  * navegador.
  */
+/*
+ * Quanto cada card fica DE FATO na tela: a duração dele, mas
+ * cortada no instante em que o próximo card entra (pedido de
+ * 23/11/2026 - o Financiamento ficava aparecendo por baixo do
+ * Cartão). Assim nunca tem dois cards ao mesmo tempo: o de
+ * antes some com fade e o seguinte entra logo depois.
+ */
+function duracoesNaTela(cartoes: Cartoes, mostrar: Mostrar, textos: Textos) {
+  const ligados: [CampoDoCard, boolean][] = [
+    ["ano", mostrar.ano && Boolean(textos.ano)],
+    ["manual", mostrar.manual],
+    ["cautelar", mostrar.cautelar],
+    ["km", mostrar.km && Boolean(textos.km)],
+    ["financiamento", mostrar.financiamento],
+    ["cartao", mostrar.cartao],
+    ["preco", Boolean(textos.preco)],
+  ];
+  const ordem = ligados
+    .filter(([, ligado]) => ligado)
+    .map(([campo]) => campo)
+    .sort((a, b) => cartoes[a] - cartoes[b]);
+  const resultado = {} as Record<CampoDoCard, number>;
+  for (const [campo] of ligados) resultado[campo] = duracaoDoCard(cartoes, campo);
+  ordem.forEach((campo, i) => {
+    const proximo = ordem[i + 1];
+    if (proximo && cartoes[proximo] > cartoes[campo]) {
+      resultado[campo] = Math.min(resultado[campo], cartoes[proximo] - cartoes[campo]);
+    }
+  });
+  return resultado;
+}
+
 export function desenharQuadro(
   ctx: CanvasRenderingContext2D,
   opcoes: {
@@ -697,9 +840,16 @@ export function desenharQuadro(
     const escala = Math.min(L / video.videoWidth, A / video.videoHeight);
     const w = video.videoWidth * escala;
     const h = video.videoHeight * escala;
-    ctx.filter = "contrast(1.04) saturate(1.04)";
+    /*
+     * Qualidade da imagem (revisão de 24/11/2026): o vídeo do
+     * celular costuma vir em 4K e é reduzido para 1080x1920 - com
+     * a suavização padrão ("low") a redução serrilha e borra. E o
+     * filtro de contraste que havia aqui era refeito a cada quadro,
+     * pesava a máquina e fazia o vídeo gravado perder quadros.
+     */
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(video, (L - w) / 2, (A - h) / 2, w, h);
-    ctx.filter = "none";
   }
 
   const outroInicio = Math.max(2, total - cartoes.outroDuracao);
@@ -711,14 +861,15 @@ export function desenharQuadro(
   } else if (mostrar.textos && textos.modelo) {
     /* Sem abertura com texto grande (revisão de 19/11/2026): o vídeo começa só com a imagem e o cabeçalho. */
     if (mostrar.logo) cabecalho(ctx, L, ex, ey, logo, textos, 1);
+    const naTela = duracoesNaTela(cartoes, mostrar, textos);
 
-    if (mostrar.ano && textos.ano) cardDeInformacao(ctx, L, A, ex, ey, "ANO", textos.ano, opacidadeNaJanela(tempo, cartoes.ano, DURACAO_CARD));
-    if (mostrar.manual) cardManualEChave(ctx, L, A, ex, ey, opacidadeNaJanela(tempo, cartoes.manual, DURACAO_CARD));
-    if (mostrar.cautelar) cardDeInformacao(ctx, L, A, ex, ey, "CAUTELAR", "100% APROVADA", opacidadeNaJanela(tempo, cartoes.cautelar, DURACAO_CARD));
-    if (mostrar.km && textos.km) cardDeInformacao(ctx, L, A, ex, ey, "QUILOMETRAGEM", textos.km.toUpperCase(), opacidadeNaJanela(tempo, cartoes.km, DURACAO_CARD));
-    if (mostrar.financiamento) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", `ATÉ ${FINANCIAMENTO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.financiamento, DURACAO_CARD));
-    if (mostrar.cartao) cardDeInformacao(ctx, L, A, ex, ey, "CARTÃO DE CRÉDITO", `ATÉ ${CARTAO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.cartao, DURACAO_CARD));
-    painelDePreco(ctx, L, A, ex, ey, textos, opacidadeNaJanela(tempo, cartoes.preco, DURACAO_PRECO));
+    if (mostrar.ano && textos.ano) cardDeInformacao(ctx, L, A, ex, ey, "ANO", textos.ano, opacidadeNaJanela(tempo, cartoes.ano, naTela.ano));
+    if (mostrar.manual) cardManualEChave(ctx, L, A, ex, ey, opacidadeNaJanela(tempo, cartoes.manual, naTela.manual));
+    if (mostrar.cautelar) cardDeInformacao(ctx, L, A, ex, ey, "CAUTELAR", "100% APROVADA", opacidadeNaJanela(tempo, cartoes.cautelar, naTela.cautelar));
+    if (mostrar.km && textos.km) cardDeInformacao(ctx, L, A, ex, ey, "QUILOMETRAGEM", textos.km.toUpperCase(), opacidadeNaJanela(tempo, cartoes.km, naTela.km));
+    if (mostrar.financiamento) cardDeInformacao(ctx, L, A, ex, ey, "FINANCIAMENTO", `ATÉ ${FINANCIAMENTO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.financiamento, naTela.financiamento));
+    if (mostrar.cartao) cardDeInformacao(ctx, L, A, ex, ey, "CARTÃO DE CRÉDITO", `ATÉ ${CARTAO_MAX_PARCELAS}X`, opacidadeNaJanela(tempo, cartoes.cartao, naTela.cartao));
+    painelDePreco(ctx, L, A, ex, ey, textos, opacidadeNaJanela(tempo, cartoes.preco, naTela.preco));
   }
 
   if (mostrar.legendas) {
@@ -743,11 +894,7 @@ export function desenharQuadro(
     }
   }
 
-  /* A barra de progresso dourada, do início ao fim do vídeo todo. */
-  if (mostrar.textos && total > 0) {
-    ctx.fillStyle = GOLD;
-    ctx.fillRect(0, A - 10 * ey, L * Math.min(1, tempo / total), 10 * ey);
-  }
+  /* Sem barra de progresso dourada no rodapé (tirada a pedido em 23/11/2026). */
 
   ctx.restore();
 }
@@ -755,7 +902,14 @@ export function desenharQuadro(
 /* O formato que o navegador sabe gravar: MP4 quando dá (abre em tudo), senão WebM. */
 export function formatoDeGravacao() {
   if (typeof MediaRecorder === "undefined") return null;
+  /*
+   * H.264 "High" (avc1.640028) primeiro: o "Baseline 3.0"
+   * (avc1.42E01E) que vinha antes é feito para vídeo pequeno e
+   * deixava o 1080x1920 cheio de borrão e quadradinhos.
+   */
   const opcoes = [
+    "video/mp4;codecs=avc1.640028,mp4a.40.2",
+    "video/mp4;codecs=avc1.4D0028,mp4a.40.2",
     "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
     "video/mp4;codecs=avc1,mp4a",
     "video/mp4",

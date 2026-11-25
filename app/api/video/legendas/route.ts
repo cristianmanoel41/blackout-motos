@@ -17,6 +17,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type Segmento = { start: number; end: number; text: string };
+type Palavra = { start: number; end: number; word: string };
 
 export async function POST(request: Request) {
   const semLogin = await recusarSemLogin();
@@ -38,6 +39,9 @@ export async function POST(request: Request) {
   envio.append("model", "whisper-1");
   envio.append("language", "pt");
   envio.append("response_format", "verbose_json");
+  /* O tempo de cada palavra serve pro "Montar tudo automático" pôr o card na hora exata da fala. */
+  envio.append("timestamp_granularities[]", "segment");
+  envio.append("timestamp_granularities[]", "word");
 
   const resposta = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
@@ -46,15 +50,27 @@ export async function POST(request: Request) {
   });
 
   if (!resposta.ok) {
-    console.error("[legendas] OpenAI recusou:", resposta.status, await resposta.text());
+    const corpo = await resposta.text();
+    console.error("[legendas] OpenAI recusou:", resposta.status, corpo);
+    /* Visto em 24/11/2026: a conta ficou sem crédito e a tela só dizia "falhou". */
+    if (resposta.status === 429 && /insufficient_quota|credit/.test(corpo)) {
+      return Response.json(
+        { error: "A conta da OpenAI está sem crédito. Coloque crédito em platform.openai.com → Settings → Billing e tente de novo." },
+        { status: 402 }
+      );
+    }
     return Response.json({ error: "A transcrição falhou. Tente de novo." }, { status: 502 });
   }
 
-  const dados = (await resposta.json()) as { segments?: Segmento[] };
+  const dados = (await resposta.json()) as { segments?: Segmento[]; words?: Palavra[] };
 
   const frases = (dados.segments || [])
     .map((s) => ({ inicio: s.start, fim: s.end, texto: String(s.text || "").trim() }))
     .filter((s) => s.texto);
 
-  return Response.json({ frases });
+  const palavras = (dados.words || [])
+    .map((p) => ({ inicio: p.start, fim: p.end, texto: String(p.word || "").trim() }))
+    .filter((p) => p.texto);
+
+  return Response.json({ frases, palavras });
 }

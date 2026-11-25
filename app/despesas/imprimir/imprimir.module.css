@@ -235,3 +235,34 @@
     box-shadow: none;
   }
 }
+
+/*
+ * A tabela na folha branca (corrigido em 24/11/2026).
+ *
+ * O tema escuro do sistema (blackout-brand-final.css e
+ * v4-sistema.css) pinta todo td/th de branco e o thead de preto,
+ * com !important - na folha branca a lista ficava invisível.
+ * Aqui volta a tinta escura, com seletor mais forte que o do tema.
+ */
+.fundo .folha .tabela.tabela :is(table, thead, tbody, tr, td, th) {
+  color: #15171a !important;
+}
+
+.fundo .folha .tabela.tabela thead,
+.fundo .folha .tabela.tabela tbody tr,
+.fundo .folha .tabela.tabela tbody tr:hover {
+  background: transparent !important;
+}
+
+.fundo .folha .tabela.tabela thead th {
+  color: #767b82 !important;
+  border-bottom: 1px solid #d8dade !important;
+}
+
+.fundo .folha .tabela.tabela tbody tr {
+  border-color: #e3e5e8 !important;
+}
+
+.fundo .folha .tabela.tabela td.colData {
+  color: #3d4147 !important;
+}
