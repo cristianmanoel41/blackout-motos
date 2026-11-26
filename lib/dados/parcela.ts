@@ -20,8 +20,9 @@
  * quando o mercado muda - e quem for mexer precisa achar isso
  * em um lugar só, não espalhado pela conta.
  */
-export const TAXA_MINIMA = 0.025;
-export const TAXA_MAXIMA = 0.035;
+/* 3,0% a 4,0% ao mês desde 26/11/2026 (antes 2,5% a 3,5%). */
+export const TAXA_MINIMA = 0.03;
+export const TAXA_MAXIMA = 0.04;
 
 /*
  * O mesmo número, escrito para a tela.
