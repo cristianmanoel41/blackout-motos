@@ -45,6 +45,7 @@ import {
   type Trecho,
 } from "@/lib/video/editor";
 import { gerarQuadroAQuadro, QUALIDADES, suportaQuadroAQuadro, type Resolucao } from "@/lib/video/exportar";
+import { apagarDoRascunho, chavesDoRascunho, gravarNoRascunho, lerDoRascunho, limparRascunho } from "@/lib/video/rascunho";
 
 /*
  * O padrão de vídeo (PADRAO_VIDEO_BLACKOUT.md) pede Inter/Inter
@@ -220,6 +221,16 @@ function avisarNoBotao(botao: HTMLButtonElement, texto: string) {
   }, 1800);
 }
 
+/*
+ * Barra de arrastar desenhada à mão (classe barra-v4, em
+ * app/v4-sistema.css): a parte já percorrida vem desta variável.
+ * Na máquina da loja o Chrome desenhava a barra padrão branca.
+ */
+function barra(valor: number, maximo: number, minimo = 0) {
+  const pct = maximo > minimo ? ((valor - minimo) / (maximo - minimo)) * 100 : 0;
+  return { "--pct": `${Math.min(100, Math.max(0, pct))}%` } as React.CSSProperties;
+}
+
 function umaCasa(n: number) {
   return Math.round(n * 10) / 10;
 }
@@ -285,6 +296,38 @@ const BOTAO =
 const BOTAO_FORTE =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-black text-white transition hover:bg-black/80 disabled:opacity-40";
 
+const MOSTRAR_PADRAO: Mostrar = {
+  logo: true,
+  textos: true,
+  legendas: false,
+  ano: true,
+  km: true,
+  financiamento: true,
+  cartao: true,
+  manual: false,
+  cautelar: false,
+  semEntrada: false,
+  entradaFacilitada: false,
+};
+
+/* O que vai para o rascunho no navegador (lib/video/rascunho) - os arquivos ficam à parte, um por chave. */
+type EstadoSalvo = {
+  versao: 1;
+  salvoEm: string;
+  trechos: Omit<Trecho, "url" | "arquivo">[];
+  motoId: string;
+  textos: Textos;
+  cartoes: Cartoes;
+  timelineManual: boolean;
+  telaFinalDepois: boolean;
+  mostrar: Mostrar;
+  musica: string | null;
+  volumeOriginal: number;
+  volumeMusica: number;
+  frases: Frase[];
+  resolucao: Resolucao;
+};
+
 export default function EditorDeVideo() {
   const [trechos, setTrechos] = useState<Trecho[]>([]);
   const [motos, setMotos] = useState<MotoDoEditor[]>([]);
@@ -304,20 +347,8 @@ export default function EditorDeVideo() {
    * quadro parado por baixo e só a música tocando.
    */
   const [telaFinalDepois, setTelaFinalDepois] = useState(false);
-  const [mostrar, setMostrar] = useState<Mostrar>({
-    logo: true,
-    textos: true,
-    legendas: false,
-    ano: true,
-    km: true,
-    financiamento: true,
-    cartao: true,
-    manual: false,
-    cautelar: false,
-    semEntrada: false,
-    entradaFacilitada: false,
-  });
-  const [musica, setMusica] = useState<{ nome: string; url: string } | null>(null);
+  const [mostrar, setMostrar] = useState<Mostrar>(MOSTRAR_PADRAO);
+  const [musica, setMusica] = useState<{ nome: string; url: string; arquivo?: File } | null>(null);
   const [volumeOriginal, setVolumeOriginal] = useState(1);
   const [volumeMusica, setVolumeMusica] = useState(0.35);
   const [frases, setFrases] = useState<Frase[]>([]);
@@ -362,7 +393,7 @@ export default function EditorDeVideo() {
    * pra o <select> não perder o que está marcado.
    */
   const motosDaLista = useMemo(() => {
-    const termos = semAcento(buscaMoto).split(/s+/).filter(Boolean);
+    const termos = semAcento(buscaMoto).split(/\s+/).filter(Boolean);
     return motos.filter((m) => {
       if (String(m.id) === motoId) return true;
       const vendida = m.status === "vendida";
@@ -451,6 +482,162 @@ export default function EditorDeVideo() {
       audio.current.musica.gain.value = volumeMusica;
     }
   }, [volumeOriginal, volumeMusica]);
+
+  /*
+   * Rascunho no navegador (pedido de 26/11/2026): ao abrir a tela,
+   * volta a última edição - vídeos já cortados, moto, textos,
+   * cards, legendas, música e volumes. Cada mudança é salva sozinha
+   * meio segundo depois. "Começar do zero" apaga.
+   */
+  const rascunhoPronto = useRef(false);
+  const videosSalvos = useRef(new Set<string>());
+  const musicaSalva = useRef<File | null>(null);
+  const filaDoRascunho = useRef<Promise<unknown>>(Promise.resolve());
+  const [rascunhoAviso, setRascunhoAviso] = useState("");
+  const [salvoAs, setSalvoAs] = useState("");
+  const [confirmarLimpar, setConfirmarLimpar] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      const salvo = await lerDoRascunho<EstadoSalvo>("estado");
+      if (!vivo) return;
+      const restaurados: Trecho[] = [];
+      let arquivoMusica: File | undefined;
+      if (salvo && salvo.versao === 1) {
+        for (const t of salvo.trechos) {
+          const arquivo = await lerDoRascunho<File>(`video:${t.id}`);
+          if (arquivo) restaurados.push({ ...t, arquivo, url: URL.createObjectURL(arquivo) });
+        }
+        if (salvo.musica) arquivoMusica = await lerDoRascunho<File>("musica");
+      }
+      if (!vivo) {
+        restaurados.forEach((t) => URL.revokeObjectURL(t.url));
+        return;
+      }
+      if (salvo && salvo.versao === 1) {
+        restaurados.forEach((t) => videosSalvos.current.add(t.id));
+        setTrechos(restaurados);
+        setMotoId(salvo.motoId || "");
+        setTextos(salvo.textos);
+        setTimelineManual(salvo.timelineManual);
+        setCartoes(salvo.cartoes);
+        setTelaFinalDepois(salvo.telaFinalDepois);
+        setMostrar({ ...MOSTRAR_PADRAO, ...salvo.mostrar });
+        setVolumeOriginal(salvo.volumeOriginal);
+        setVolumeMusica(salvo.volumeMusica);
+        setFrases(salvo.frases || []);
+        setResolucao(salvo.resolucao || "1080");
+        if (arquivoMusica && salvo.musica) {
+          musicaSalva.current = arquivoMusica;
+          setMusica({ nome: salvo.musica, url: URL.createObjectURL(arquivoMusica), arquivo: arquivoMusica });
+        }
+        const faltaram = salvo.trechos.length - restaurados.length;
+        if (restaurados.length || salvo.textos.modelo) {
+          const quando = new Date(salvo.salvoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+          setRascunhoAviso(
+            `Edição anterior recuperada (salva em ${quando}).` +
+              (faltaram > 0 ? ` ${faltaram} vídeo(s) não puderam ser recuperados - anexe de novo.` : "")
+          );
+        }
+      }
+      rascunhoPronto.current = true;
+      /* Vídeos que sobraram de edições antigas (aba fechada no meio de salvar). */
+      const sobras = (await chavesDoRascunho()).filter(
+        (chave) => chave.startsWith("video:") && !videosSalvos.current.has(chave.slice(6))
+      );
+      for (const chave of sobras) await apagarDoRascunho(chave);
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!rascunhoPronto.current) return;
+    const estado: EstadoSalvo = {
+      versao: 1,
+      salvoEm: new Date().toISOString(),
+      trechos: trechos.map((t) => ({
+        id: t.id,
+        nome: t.nome,
+        duracao: t.duracao,
+        largura: t.largura,
+        altura: t.altura,
+        inicio: t.inicio,
+        fim: t.fim,
+      })),
+      motoId,
+      textos,
+      cartoes,
+      timelineManual,
+      telaFinalDepois,
+      mostrar,
+      musica: musica?.arquivo ? musica.nome : null,
+      volumeOriginal,
+      volumeMusica,
+      frases,
+      resolucao,
+    };
+    const arquivos = trechos.map((t) => [t.id, t.arquivo] as const);
+    const arquivoMusica = musica?.arquivo || null;
+    const espera = window.setTimeout(() => {
+      filaDoRascunho.current = filaDoRascunho.current.then(async () => {
+        /* Pede ao Chrome para não apagar o rascunho sozinho quando faltar espaço. */
+        navigator.storage?.persist?.().catch(() => {});
+        for (const [id, arquivo] of arquivos) {
+          if (videosSalvos.current.has(id)) continue;
+          if (await gravarNoRascunho(`video:${id}`, arquivo)) videosSalvos.current.add(id);
+        }
+        const ficam = new Set(arquivos.map(([id]) => id));
+        for (const id of [...videosSalvos.current]) {
+          if (ficam.has(id)) continue;
+          await apagarDoRascunho(`video:${id}`);
+          videosSalvos.current.delete(id);
+        }
+        if (arquivoMusica !== musicaSalva.current) {
+          if (arquivoMusica) await gravarNoRascunho("musica", arquivoMusica);
+          else await apagarDoRascunho("musica");
+          musicaSalva.current = arquivoMusica;
+        }
+        if (await gravarNoRascunho("estado", estado)) {
+          setSalvoAs(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+        }
+      });
+    }, 500);
+    return () => window.clearTimeout(espera);
+  }, [trechos, motoId, textos, cartoes, timelineManual, telaFinalDepois, mostrar, musica, volumeOriginal, volumeMusica, frases, resolucao]);
+
+  /* Dois cliques de propósito: o primeiro só pede confirmação, para ninguém apagar a edição sem querer. */
+  function comecarDoZero() {
+    if (!confirmarLimpar) {
+      setConfirmarLimpar(true);
+      window.setTimeout(() => setConfirmarLimpar(false), 4000);
+      return;
+    }
+    setConfirmarLimpar(false);
+    trechos.forEach((t) => URL.revokeObjectURL(t.url));
+    if (musica) URL.revokeObjectURL(musica.url);
+    videos.current.clear();
+    videosSalvos.current.clear();
+    musicaSalva.current = null;
+    filaDoRascunho.current = filaDoRascunho.current.then(() => limparRascunho());
+    setTrechos([]);
+    setMusica(null);
+    setMotoId("");
+    setTextos({ marca: "", modelo: "", ano: "", km: "", preco: "" });
+    setTimelineManual(false);
+    setCartoes(timelinePadrao(0));
+    setTelaFinalDepois(false);
+    setMostrar(MOSTRAR_PADRAO);
+    setVolumeOriginal(1);
+    setVolumeMusica(0.35);
+    setFrases([]);
+    setPronto(null);
+    setAviso("");
+    setAvisoMontagem("");
+    setRascunhoAviso("");
+  }
 
   function desenhar(video: HTMLVideoElement | null, t: number) {
     const ctx = canvas.current?.getContext("2d");
@@ -637,7 +824,7 @@ export default function EditorDeVideo() {
     const arquivo = arquivos?.[0];
     if (!arquivo) return;
     if (musica) URL.revokeObjectURL(musica.url);
-    setMusica({ nome: arquivo.name, url: URL.createObjectURL(arquivo) });
+    setMusica({ nome: arquivo.name, url: URL.createObjectURL(arquivo), arquivo });
   }
 
   /*
@@ -1261,6 +1448,23 @@ export default function EditorDeVideo() {
               </div>
             </div>
 
+            {(rascunhoAviso || salvoAs || trechos.length > 0 || textos.modelo) && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 px-3 py-2">
+                <p className="min-w-0 flex-1 text-[11px] font-bold text-black/60">
+                  {rascunhoAviso || "A edição fica salva neste computador - pode sair da tela sem perder nada."}
+                  {salvoAs && <span className="text-black/45"> · Salvo às {salvoAs}</span>}
+                </p>
+                <button
+                  type="button"
+                  className={`${BOTAO} py-1 text-xs ${confirmarLimpar ? "border-red-500 text-red-500" : ""}`}
+                  disabled={ocupado}
+                  onClick={comecarDoZero}
+                >
+                  <Trash2 size={13} /> {confirmarLimpar ? "Clique de novo para apagar tudo" : "Começar do zero"}
+                </button>
+              </div>
+            )}
+
             {avisoMontagem && (
               <p className="mt-3 rounded-lg border border-amber-400/60 bg-amber-50 px-3 py-2 text-xs font-bold text-[#0b0b0c]">
                 {avisoMontagem}
@@ -1305,7 +1509,7 @@ export default function EditorDeVideo() {
                   {trechos.map((t, i) => (
                     <li
                       key={t.id}
-                      className="flex gap-4 rounded-2xl border border-black/10 bg-white p-3 shadow-sm transition hover:border-[#a97800]/60"
+                      className="flex gap-4 rounded-2xl border border-white/10 bg-[#18181b] p-3 transition hover:border-[#e0b129]/60"
                     >
                       <div className="relative shrink-0">
                         <video
@@ -1333,21 +1537,21 @@ export default function EditorDeVideo() {
                             </p>
                             <p className="text-[11px] font-bold text-black/50">Vídeo de {segundos(t.duracao)}</p>
                           </div>
-                          <div className="flex shrink-0 items-center rounded-lg border border-black/10">
+                          <div className="flex shrink-0 items-center rounded-lg border border-white/15">
                             <button type="button" title="Subir" className="p-1.5 text-black/55 hover:text-black disabled:opacity-30" disabled={ocupado || i === 0} onClick={() => mover(t.id, -1)}>
                               <ArrowUp size={15} />
                             </button>
-                            <button type="button" title="Descer" className="border-l border-black/10 p-1.5 text-black/55 hover:text-black disabled:opacity-30" disabled={ocupado || i === trechos.length - 1} onClick={() => mover(t.id, 1)}>
+                            <button type="button" title="Descer" className="border-l border-white/15 p-1.5 text-black/55 hover:text-black disabled:opacity-30" disabled={ocupado || i === trechos.length - 1} onClick={() => mover(t.id, 1)}>
                               <ArrowDown size={15} />
                             </button>
-                            <button type="button" title="Tirar" className="border-l border-black/10 p-1.5 text-black/55 hover:text-red-600 disabled:opacity-30" disabled={ocupado} onClick={() => remover(t.id)}>
+                            <button type="button" title="Tirar" className="border-l border-white/15 p-1.5 text-black/55 hover:text-red-600 disabled:opacity-30" disabled={ocupado} onClick={() => remover(t.id)}>
                               <Trash2 size={15} />
                             </button>
                           </div>
                         </div>
 
                         {/* Barra: o vídeo inteiro, com a parte usada em dourado */}
-                        <div className="relative mt-3 h-2.5 rounded-full bg-black/10">
+                        <div className="relative mt-3 h-2.5 rounded-full bg-white/10">
                           <div
                             className="absolute inset-y-0 rounded-full bg-[#a97800]"
                             style={{
@@ -1370,7 +1574,8 @@ export default function EditorDeVideo() {
                             step={0.1}
                             value={t.inicio}
                             disabled={ocupado}
-                            className="flex-1 accent-[#a97800]"
+                            className="barra-v4 flex-1"
+                            style={barra(t.inicio, t.duracao)}
                             onChange={(e) => {
                               const inicio = Math.min(Number(e.target.value), t.fim - 0.5);
                               mudarTrecho(t.id, { inicio });
@@ -1388,7 +1593,8 @@ export default function EditorDeVideo() {
                             step={0.1}
                             value={t.fim}
                             disabled={ocupado}
-                            className="flex-1 accent-[#a97800]"
+                            className="barra-v4 flex-1"
+                            style={barra(t.fim, t.duracao)}
                             onChange={(e) => {
                               const fim = Math.max(Number(e.target.value), t.inicio + 0.5);
                               mudarTrecho(t.id, { fim });
@@ -1419,44 +1625,102 @@ export default function EditorDeVideo() {
                 </label>
               </div>
             </div>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            {/*
+             * Escolha da moto (pedido de 26/11/2026): era um <select>
+             * fechado, difícil de ler. Agora é uma lista de cartões
+             * com pesquisa, filtro em botões e a moto marcada em dourado.
+             */}
+            <div className="mt-3 rounded-xl border border-black/10 bg-black/[0.03] p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-black/55">Escolha a moto (preenche sozinho)</p>
               <input
-                className={`${CAMPO} sm:flex-1`}
+                className={`${CAMPO} mt-2`}
                 value={buscaMoto}
-                placeholder="Pesquisar moto: modelo, cor, placa, ano…"
+                placeholder="Pesquisar: modelo, cor, placa, ano…"
                 onChange={(e) => setBuscaMoto(e.target.value)}
               />
-              <select
-                className={`${CAMPO} sm:w-44`}
-                value={filtroMoto}
-                onChange={(e) => setFiltroMoto(e.target.value as "todas" | "estoque" | "vendidas")}
-              >
-                <option value="todas">Todas</option>
-                <option value="estoque">Só no estoque</option>
-                <option value="vendidas">Só vendidas</option>
-              </select>
-            </div>
-            <select className={`${CAMPO} mt-2`} value={motoId} onChange={(e) => escolherMoto(e.target.value)}>
-              <option value="">
-                {motosDaLista.length === 0
-                  ? "Nenhuma moto encontrada na pesquisa"
-                  : `Escolha a moto para preencher sozinho… (${motosDaLista.length})`}
-              </option>
-              {[
-                { rotulo: "No estoque", lista: motosDaLista.filter((m) => m.status !== "vendida") },
-                { rotulo: "Já vendidas", lista: motosDaLista.filter((m) => m.status === "vendida") },
-              ]
-                .filter((grupo) => grupo.lista.length > 0)
-                .map((grupo) => (
-                  <optgroup key={grupo.rotulo} label={grupo.rotulo}>
-                    {grupo.lista.map((m) => (
-                      <option key={m.id} value={String(m.id)}>
-                        {nomeDaMoto(m)} {anoDaMoto(m)} {m.cor ? `· ${m.cor}` : ""}
-                      </option>
-                    ))}
-                  </optgroup>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["todas", "Todas"],
+                    ["estoque", "No estoque"],
+                    ["vendidas", "Vendidas"],
+                  ] as const
+                ).map(([valor, rotulo]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    onClick={() => setFiltroMoto(valor)}
+                    className={`rounded-full border px-3 py-1 text-xs font-black transition ${
+                      filtroMoto === valor
+                        ? "border-[#a97800] bg-[#a97800] text-white"
+                        : "border-white/15 bg-[#18181b] text-black/70 hover:border-[#e0b129]"
+                    }`}
+                  >
+                    {rotulo}
+                  </button>
                 ))}
-            </select>
+                <span className="ml-auto self-center text-[11px] font-bold text-black/50">
+                  {motosDaLista.length} {motosDaLista.length === 1 ? "moto" : "motos"}
+                </span>
+              </div>
+
+              <ul className="mt-2 max-h-80 space-y-1.5 overflow-y-auto pr-1">
+                {motosDaLista.length === 0 && (
+                  <li className="rounded-lg bg-[#18181b] px-3 py-4 text-center text-sm font-bold text-black/50">
+                    Nenhuma moto encontrada na pesquisa
+                  </li>
+                )}
+                {motosDaLista.map((m) => {
+                  const escolhida = String(m.id) === motoId;
+                  const vendida = m.status === "vendida";
+                  const km = numero(m.quilometragem) || 0;
+                  const preco = numero(m.preco_anunciado) || 0;
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => escolherMoto(String(m.id))}
+                        className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+                          escolhida
+                            ? "border-[#e0b129] bg-[#e0b129]/15 ring-2 ring-[#e0b129]/40"
+                            : "border-white/10 bg-[#18181b] hover:border-[#e0b129]/60"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                            escolhida ? "border-[#e0b129] bg-[#e0b129]" : "border-white/30"
+                          }`}
+                        >
+                          {escolhida && <span className="h-2 w-2 rounded-full bg-white" />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-black text-black">
+                            {nomeDaMoto(m)} <span className="text-black/55">{anoDaMoto(m)}</span>
+                          </span>
+                          <span className="mt-0.5 flex flex-wrap gap-x-3 text-[11px] font-bold text-black/55">
+                            {m.cor && <span>{m.cor}</span>}
+                            {km > 0 && <span>{km.toLocaleString("pt-BR")} km</span>}
+                            {m.placa && <span>{m.placa}</span>}
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 flex-col items-end gap-1">
+                          {preco > 0 && (
+                            <span className="text-sm font-black text-black">R$ {preco.toLocaleString("pt-BR")}</span>
+                          )}
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
+                              vendida ? "bg-white/10 text-black/55" : "bg-emerald-500/20 text-emerald-300"
+                            }`}
+                          >
+                            {vendida ? "Vendida" : "Estoque"}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <label className="text-[11px] font-bold text-black/55">
                 Marca
@@ -1625,7 +1889,8 @@ export default function EditorDeVideo() {
                       value={Math.min(tempo, total)}
                       disabled={trechos.length === 0 || estado === "gravando"}
                       onChange={(e) => procurar(Number(e.target.value))}
-                      className="mt-2 block h-6 w-full cursor-pointer accent-[#d4a017] disabled:opacity-40"
+                      className="barra-v4 mt-2 block w-full disabled:opacity-40"
+                      style={barra(Math.min(tempo, total), Math.max(total, 0.1))}
                     />
 
                     <div className="mt-2 space-y-1.5">
@@ -1805,11 +2070,11 @@ export default function EditorDeVideo() {
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <label className="text-[11px] font-bold text-black/55">
                 Som do vídeo: {Math.round(volumeOriginal * 100)}%
-                <input type="range" min={0} max={1} step={0.05} value={volumeOriginal} className="w-full accent-[#a97800]" onChange={(e) => setVolumeOriginal(Number(e.target.value))} />
+                <input type="range" min={0} max={1} step={0.05} value={volumeOriginal} className="barra-v4 w-full" style={barra(volumeOriginal, 1)} onChange={(e) => setVolumeOriginal(Number(e.target.value))} />
               </label>
               <label className="text-[11px] font-bold text-black/55">
                 Música: {Math.round(volumeMusica * 100)}%
-                <input type="range" min={0} max={1} step={0.05} value={volumeMusica} className="w-full accent-[#a97800]" onChange={(e) => setVolumeMusica(Number(e.target.value))} />
+                <input type="range" min={0} max={1} step={0.05} value={volumeMusica} className="barra-v4 w-full" style={barra(volumeMusica, 1)} onChange={(e) => setVolumeMusica(Number(e.target.value))} />
               </label>
             </div>
 
@@ -1872,7 +2137,8 @@ export default function EditorDeVideo() {
                 value={Math.min(tempo, total)}
                 disabled={trechos.length === 0 || estado === "gravando"}
                 onChange={(e) => procurar(Number(e.target.value))}
-                className="mt-2 block h-6 w-full cursor-pointer accent-[#d4a017] disabled:opacity-40"
+                className="barra-v4 mt-2 block w-full disabled:opacity-40"
+                style={barra(Math.min(tempo, total), Math.max(total, 0.1))}
               />
             <div className="mt-1 flex justify-center gap-2">
               <button type="button" className={BOTAO} disabled={trechos.length === 0 || estado === "gravando"} onClick={() => procurar(tempo - 2)}>

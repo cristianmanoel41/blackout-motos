@@ -232,6 +232,79 @@
   accent-color: var(--v4-ouro);
 }
 
+/*
+ * Barras de arrastar (linha do tempo do editor de vídeo, volumes,
+ * início/fim dos trechos - pedido de 26/11/2026): o Chrome desenha
+ * a parte vazia da barra em cinza-claro quase branco, porque a
+ * página não diz que é tema escuro. color-scheme: dark troca para
+ * o cinza-escuro, e o fundo de campo (#14171a, do tema antigo)
+ * sai para não virar uma caixa atrás da barra.
+ */
+:root [data-v4] main input[type='range'] {
+  color-scheme: dark;
+  accent-color: var(--v4-ouro);
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Barra desenhada à mão (editor de vídeo): o desenho padrão do
+ * Chrome ainda saía branco na máquina da loja. Trilho escuro, a
+ * parte percorrida em dourado (--pct, vem do componente) e a
+ * bolinha dourada - igual em qualquer computador.
+ */
+:root [data-v4] main input[type='range'].barra-v4 {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
+:root [data-v4] main input[type='range'].barra-v4::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--v4-ouro) var(--pct, 0%), #2c2c33 var(--pct, 0%));
+}
+
+:root [data-v4] main input[type='range'].barra-v4::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--v4-ouro);
+  border: 2px solid #0b0b0c;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+:root [data-v4] main input[type='range'].barra-v4::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #2c2c33;
+}
+
+:root [data-v4] main input[type='range'].barra-v4::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--v4-ouro);
+}
+
+:root [data-v4] main input[type='range'].barra-v4::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--v4-ouro);
+  border: 2px solid #0b0b0c;
+}
+
+:root [data-v4] main input[type='range'].barra-v4:focus-visible {
+  outline: 2px solid rgba(224, 177, 41, 0.7);
+  outline-offset: 2px;
+}
+
 /* ---------- Tabelas ---------- */
 
 :root:root [data-v4] main thead {
