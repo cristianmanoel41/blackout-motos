@@ -64,9 +64,6 @@ export default function PassosDoFinanciamento({
   const parcelaMinima = parcelaPrice(financiado, TAXA_MINIMA, meses);
   const parcelaMaxima = parcelaPrice(financiado, TAXA_MAXIMA, meses);
 
-  const totalMinimo = parcelaMinima * meses + paga;
-  const totalMaximo = parcelaMaxima * meses + paga;
-
   const porcentagem = preco > 0 ? (paga / preco) * 100 : 0;
 
   /* Só vale mostrar conta quando há o que financiar. */
@@ -149,14 +146,6 @@ export default function PassosDoFinanciamento({
               <dt>Taxa estimada</dt>
               <dd>
                 {MINIMA_ESCRITA} a {MAXIMA_ESCRITA} a.m.
-              </dd>
-            </div>
-
-            <div>
-              <dt>Total a prazo</dt>
-              <dd>
-                {formatarMoeda(totalMinimo)}
-                <br />a {formatarMoeda(totalMaximo)}
               </dd>
             </div>
           </dl>
