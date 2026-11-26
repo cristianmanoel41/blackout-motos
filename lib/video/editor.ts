@@ -496,7 +496,8 @@ function pilulas(ctx: CanvasRenderingContext2D, x: number, y: number, itens: Pil
       ctx.stroke();
     }
     ctx.fillStyle = it.destaque ? FUNDO : TEXTO;
-    ctx.fillText(it.texto, cursor + margem, y + altura / 2 + Number(ctx.font.match(/(\d+)px/)?.[1] || 20) * 0.32);
+    /* Tamanho com decimais ("18.0481px"): ler só "\d+" pegava "0481" e jogava o texto para fora do quadro. */
+    ctx.fillText(it.texto, cursor + margem, y + altura / 2 + Number(ctx.font.match(/([\d.]+)px/)?.[1] || 20) * 0.32);
     cursor += w + 12;
   });
   ctx.textAlign = alinhoOriginal;

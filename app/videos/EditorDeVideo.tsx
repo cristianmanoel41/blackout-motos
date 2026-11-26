@@ -1273,42 +1273,95 @@ export default function EditorDeVideo() {
               </p>
             ) : (
               <>
-                <p className="mt-2 text-xs font-bold text-black/55">
-                  Vídeo final: {segundos(total)} · {trechos.length} {trechos.length === 1 ? "trecho" : "trechos"}
-                </p>
-                <div className="mt-3 space-y-3">
-                  {trechos.map((t, i) => (
-                    <div key={t.id} className="flex gap-3 rounded-xl border border-black/10 p-3">
-                      <video
-                        ref={(el) => {
-                          if (el) videos.current.set(t.id, el);
+                {/* Resumo: duração final e a faixa com o tamanho de cada trecho */}
+                <div className="mt-3 rounded-xl border border-black/10 bg-black/[0.03] p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-xs font-bold uppercase tracking-wide text-black/55">Vídeo final</p>
+                    <p className="text-sm font-black text-black">
+                      {segundos(total)}{" "}
+                      <span className="text-xs font-bold text-black/50">
+                        · {trechos.length} {trechos.length === 1 ? "trecho" : "trechos"}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="mt-2 flex h-7 gap-1 overflow-hidden rounded-lg">
+                    {trechos.map((t, i) => (
+                      <div
+                        key={t.id}
+                        title={`${i + 1}. ${t.nome} - ${(t.fim - t.inicio).toFixed(1)} s`}
+                        className="flex min-w-[28px] items-center justify-center rounded-md text-[11px] font-black text-white"
+                        style={{
+                          flexGrow: Math.max(t.fim - t.inicio, 0.1),
+                          background: i % 2 === 0 ? "#a97800" : "#7a5700",
                         }}
-                        src={t.url}
-                        playsInline
-                        preload="auto"
-                        onLoadedData={i === 0 ? () => desenharParado() : undefined}
-                        className="h-24 w-20 shrink-0 rounded-lg bg-black object-contain"
-                      />
+                      >
+                        {i + 1}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <ol className="mt-3 space-y-3">
+                  {trechos.map((t, i) => (
+                    <li
+                      key={t.id}
+                      className="flex gap-4 rounded-2xl border border-black/10 bg-white p-3 shadow-sm transition hover:border-[#a97800]/60"
+                    >
+                      <div className="relative shrink-0">
+                        <video
+                          ref={(el) => {
+                            if (el) videos.current.set(t.id, el);
+                          }}
+                          src={t.url}
+                          playsInline
+                          preload="auto"
+                          onLoadedData={i === 0 ? () => desenharParado() : undefined}
+                          className="h-36 w-24 rounded-xl bg-black object-contain"
+                        />
+                        <span className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#a97800] text-xs font-black text-white shadow">
+                          {i + 1}
+                        </span>
+                        <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] font-black text-white">
+                          {(t.fim - t.inicio).toFixed(1)} s
+                        </span>
+                      </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="min-w-0 flex-1 truncate text-sm font-black text-black">
-                            {i + 1}. {t.nome}
-                          </p>
-                          <button type="button" title="Subir" className="p-1 text-black/50 hover:text-black" disabled={ocupado || i === 0} onClick={() => mover(t.id, -1)}>
-                            <ArrowUp size={15} />
-                          </button>
-                          <button type="button" title="Descer" className="p-1 text-black/50 hover:text-black" disabled={ocupado || i === trechos.length - 1} onClick={() => mover(t.id, 1)}>
-                            <ArrowDown size={15} />
-                          </button>
-                          <button type="button" title="Tirar" className="p-1 text-black/50 hover:text-red-600" disabled={ocupado} onClick={() => remover(t.id)}>
-                            <Trash2 size={15} />
-                          </button>
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-black text-black" title={t.nome}>
+                              {t.nome}
+                            </p>
+                            <p className="text-[11px] font-bold text-black/50">Vídeo de {segundos(t.duracao)}</p>
+                          </div>
+                          <div className="flex shrink-0 items-center rounded-lg border border-black/10">
+                            <button type="button" title="Subir" className="p-1.5 text-black/55 hover:text-black disabled:opacity-30" disabled={ocupado || i === 0} onClick={() => mover(t.id, -1)}>
+                              <ArrowUp size={15} />
+                            </button>
+                            <button type="button" title="Descer" className="border-l border-black/10 p-1.5 text-black/55 hover:text-black disabled:opacity-30" disabled={ocupado || i === trechos.length - 1} onClick={() => mover(t.id, 1)}>
+                              <ArrowDown size={15} />
+                            </button>
+                            <button type="button" title="Tirar" className="border-l border-black/10 p-1.5 text-black/55 hover:text-red-600 disabled:opacity-30" disabled={ocupado} onClick={() => remover(t.id)}>
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-[11px] font-bold text-black/50">
-                          Usa de {segundos(t.inicio)} até {segundos(t.fim)} ({(t.fim - t.inicio).toFixed(1)} s de{" "}
-                          {segundos(t.duracao)})
-                        </p>
-                        <label className="mt-1 flex items-center gap-2 text-[11px] font-bold text-black/60">
+
+                        {/* Barra: o vídeo inteiro, com a parte usada em dourado */}
+                        <div className="relative mt-3 h-2.5 rounded-full bg-black/10">
+                          <div
+                            className="absolute inset-y-0 rounded-full bg-[#a97800]"
+                            style={{
+                              left: `${(t.inicio / (t.duracao || 1)) * 100}%`,
+                              width: `${((t.fim - t.inicio) / (t.duracao || 1)) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="mt-1 flex justify-between text-[11px] font-black text-black/70">
+                          <span>Começa em {segundos(t.inicio)}</span>
+                          <span>Termina em {segundos(t.fim)}</span>
+                        </div>
+
+                        <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-black/60">
                           <span className="w-10">Início</span>
                           <input
                             type="range"
@@ -1345,9 +1398,9 @@ export default function EditorDeVideo() {
                           />
                         </label>
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ol>
               </>
             )}
           </section>
